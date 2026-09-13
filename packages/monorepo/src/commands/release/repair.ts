@@ -8,12 +8,14 @@ import { getWorkspacePackages } from '../../core/workspace'
 import { buildGitHubReleaseBodyFromChangelog } from './body'
 import { ReleaseCommandError } from './errors'
 import { GitHubClient } from './github'
+import { reconcileRelease } from './reconcile'
 import { capture, getReleaseEnv } from './shared'
 
 export interface RepairReleaseNotesOptions extends ReleaseOptions {
   tag?: string
   all?: boolean
   dryRun?: boolean
+  createMissing?: boolean
   github?: Pick<GitHubOperations, 'listReleases' | 'updateRelease' | 'readReleasePullRequestContributors'>
 }
 
@@ -95,6 +97,22 @@ export async function repairReleaseNotes(options: RepairReleaseNotesOptions) {
     throw new ReleaseCommandError('release notes repair requires --all or --tag <package@version>')
   }
   const github = options.github ?? new GitHubClient()
+  if (options.createMissing) {
+    if (!options.tag) {
+      throw new ReleaseCommandError('release notes repair --create-missing requires --tag <package@version>')
+    }
+    const separator = options.tag.lastIndexOf('@')
+    if (separator <= 0) {
+      throw new ReleaseCommandError(`invalid release tag ${options.tag}`)
+    }
+    const result = await reconcileRelease({
+      ...options,
+      packageName: options.tag.slice(0, separator),
+      packageVersion: options.tag.slice(separator + 1),
+      github: github as never,
+    })
+    return { repaired: result.repaired, skipped: result.skipped }
+  }
   if (!github.listReleases || !github.updateRelease) {
     throw new ReleaseCommandError('GitHub release repair requires listReleases and updateRelease operations')
   }

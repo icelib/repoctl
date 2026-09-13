@@ -53,7 +53,8 @@ export function registerReleaseCommands(program: Command, cwd: string) {
     .option('--all', localize('Repair every recognized GitHub Release', '修复所有可识别的 GitHub Release'))
     .option('--tag <package@version>', localize('Repair only the specified package@version', '只修复指定 package@version'))
     .option('--dry-run', localize('Generate and summarize without updating GitHub Releases', '只生成并统计，不更新 GitHub Release'))
-    .action(async (opts: { all?: boolean, tag?: string, dryRun?: boolean }) => {
+    .option('--create-missing', localize('Create a missing GitHub Release after validating the published package and tag', '核验已发布 package 和 tag 后补建缺失的 GitHub Release'))
+    .action(async (opts: { all?: boolean, tag?: string, dryRun?: boolean, createMissing?: boolean }) => {
       await runReleaseAction(async () => {
         const { repairReleaseNotes } = await import('@/commands')
         const result = await repairReleaseNotes({
@@ -61,6 +62,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
           ...(opts.all ? { all: true } : {}),
           ...(opts.tag ? { tag: opts.tag } : {}),
           ...(opts.dryRun ? { dryRun: true } : {}),
+          ...(opts.createMissing ? { createMissing: true } : {}),
         })
         logger.success(localize(
           `Release notes repaired: ${result.repaired.length}; skipped: ${result.skipped.length}`,
