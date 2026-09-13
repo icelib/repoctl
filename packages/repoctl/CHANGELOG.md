@@ -1,5 +1,14 @@
 # repoctl
 
+## 5.5.1
+
+### Patch Changes
+
+- Retry transient release API failures and reconcile partially published releases
+
+- Updated dependencies:
+  - @icebreakers/monorepo@5.5.1
+
 ## 5.5.0
 
 ### Minor Changes

@@ -1,14 +1,35 @@
 import { describe, expect, it, vi } from 'vitest'
 import { GitHubClient } from '@/commands/release'
 
-function response(body: unknown, status = 200) {
+function response(body: unknown, status = 200, headers?: Record<string, string>) {
   return new Response(body === undefined ? '' : JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...headers },
   })
 }
 
 describe('GitHub release client', () => {
+  it('retries transient responses four times and honors Retry-After', async () => {
+    const sleeps: number[] = []
+    const requestFetch = vi.fn()
+      .mockResolvedValueOnce(new Response('{', { status: 502 }))
+      .mockResolvedValueOnce(response({ message: 'busy' }, 429, { 'retry-after': '2' }))
+      .mockResolvedValueOnce(response({ message: 'busy' }, 503))
+      .mockResolvedValueOnce(response({ id: 1, tag_name: 'repo@1.0.0' }))
+    const client = new GitHubClient({
+      token: 'token',
+      repository: 'acme/repo',
+      fetch: requestFetch,
+      sleep: async (ms) => { sleeps.push(ms) },
+      retryDelay: 10,
+    })
+
+    await client.ensureRelease({ tag: 'repo@1.0.0', target: 'abc123' })
+
+    expect(requestFetch).toHaveBeenCalledTimes(4)
+    expect(sleeps).toEqual([10, 2_000, 40])
+  })
+
   it('creates a release pull request from the configured repository', async () => {
     const requestFetch = vi.fn()
       .mockResolvedValueOnce(response([]))

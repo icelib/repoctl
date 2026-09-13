@@ -37,7 +37,7 @@ export class GitHubClient implements GitHubOperations {
     this.repository = options.repository ?? process.env['GITHUB_REPOSITORY']
     this.apiUrl = (options.apiUrl ?? process.env['GITHUB_API_URL'] ?? 'https://api.github.com').replace(/\/$/, '')
     this.requestFetch = options.fetch ?? globalThis.fetch
-    this.retryAttempts = Math.max(1, options.retryAttempts ?? 3)
+    this.retryAttempts = Math.max(1, options.retryAttempts ?? 4)
     this.retryDelay = Math.max(0, options.retryDelay ?? 1_000)
     this.sleep = options.sleep ?? (milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)))
   }
@@ -83,6 +83,10 @@ export class GitHubClient implements GitHubOperations {
           data = JSON.parse(text) as T
         }
         catch {
+          if (attempt < this.retryAttempts) {
+            await this.sleep(this.retryDelay * 2 ** (attempt - 1))
+            continue
+          }
           throw new GitHubApiError(`GitHub API returned invalid JSON for ${method} ${endpoint}`, response.status, text)
         }
       }
@@ -91,7 +95,14 @@ export class GitHubClient implements GitHubOperations {
           ? String((data as { message: unknown }).message)
           : text || response.statusText
         if ((response.status === 429 || response.status >= 500) && attempt < this.retryAttempts) {
-          await this.sleep(this.retryDelay * 2 ** (attempt - 1))
+          const retryAfter = response.headers.get('retry-after')
+          const reset = response.headers.get('x-ratelimit-reset')
+          const retrySeconds = retryAfter && /^\d+(?:\.\d+)?$/.test(retryAfter)
+            ? Number(retryAfter)
+            : retryAfter ? Math.max(0, (Date.parse(retryAfter) - Date.now()) / 1000) : 0
+          const resetSeconds = reset && /^\d+$/.test(reset) ? Math.max(0, Number(reset) - Date.now() / 1000) : 0
+          const delay = Math.max(this.retryDelay * 2 ** (attempt - 1), retrySeconds * 1000, resetSeconds * 1000)
+          await this.sleep(delay)
           continue
         }
         throw new GitHubApiError(`GitHub API ${method} ${endpoint} failed (${response.status}): ${message}`, response.status, text)
@@ -184,7 +195,7 @@ export class GitHubClient implements GitHubOperations {
       return created.data
     }
     catch (error) {
-      if (!(error instanceof GitHubApiError) || error.status !== 422) {
+      if (!(error instanceof GitHubApiError) || (![0, 429, 500, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511].includes(error.status) && error.status !== 422)) {
         throw error
       }
       const recovered = await this.request<GitHubRelease>('GET', `/releases/tags/${encodeURIComponent(options.tag)}`)
