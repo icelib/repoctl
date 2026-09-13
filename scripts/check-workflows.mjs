@@ -56,7 +56,7 @@ function checkReleaseWorkflow() {
 
   assert.ok(source.startsWith('# repoctl-managed: release/v2\n'))
   assert.deepEqual(branches, ['main', 'alpha', 'beta', 'rc', 'next'])
-  assert.deepEqual(modes, ['auto', 'prepare', 'publish', 'publish-unpublished'])
+  assert.deepEqual(modes, ['auto', 'prepare', 'publish', 'publish-unpublished', 'reconcile'])
   assert.equal(workflow.permissions?.contents, 'write')
   assert.equal(workflow.permissions?.['pull-requests'], 'write')
   assert.equal(workflow.permissions?.['id-token'], 'write')

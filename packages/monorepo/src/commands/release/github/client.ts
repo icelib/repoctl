@@ -28,12 +28,18 @@ export class GitHubClient implements GitHubOperations {
   private readonly repository: string | undefined
   private readonly apiUrl: string
   private readonly requestFetch: typeof fetch
+  private readonly retryAttempts: number
+  private readonly retryDelay: number
+  private readonly sleep: (milliseconds: number) => Promise<void>
 
   constructor(options: GitHubClientOptions = {}) {
     this.token = options.token ?? process.env['GITHUB_TOKEN']
     this.repository = options.repository ?? process.env['GITHUB_REPOSITORY']
     this.apiUrl = (options.apiUrl ?? process.env['GITHUB_API_URL'] ?? 'https://api.github.com').replace(/\/$/, '')
     this.requestFetch = options.fetch ?? globalThis.fetch
+    this.retryAttempts = Math.max(1, options.retryAttempts ?? 3)
+    this.retryDelay = Math.max(0, options.retryDelay ?? 1_000)
+    this.sleep = options.sleep ?? (milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)))
   }
 
   private getRepository() {
@@ -48,40 +54,51 @@ export class GitHubClient implements GitHubOperations {
 
   private async request<T>(method: string, endpoint: string, body?: unknown): Promise<{ status: number, data: T | undefined }> {
     const repository = this.getRepository()
-    let response: Response
-    try {
-      response = await this.requestFetch(`${this.apiUrl}/repos/${repository}${endpoint}`, {
-        method,
-        headers: {
-          'Accept': 'application/vnd.github+json',
-          'Authorization': `Bearer ${this.token}`,
-          'X-GitHub-Api-Version': '2022-11-28',
-          ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
-        },
-        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      })
-    }
-    catch (error) {
-      const detail = error instanceof Error ? error.message : String(error)
-      throw new GitHubApiError(`GitHub API request ${method} ${endpoint} failed: ${detail}. Check network access and GITHUB_API_URL.`, 0)
-    }
-    const text = await response.text()
-    let data: T | undefined
-    if (text) {
+    for (let attempt = 1; attempt <= this.retryAttempts; attempt += 1) {
+      let response: Response
       try {
-        data = JSON.parse(text) as T
+        response = await this.requestFetch(`${this.apiUrl}/repos/${repository}${endpoint}`, {
+          method,
+          headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': `Bearer ${this.token}`,
+            'X-GitHub-Api-Version': '2022-11-28',
+            ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+          },
+          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+        })
       }
-      catch {
-        throw new GitHubApiError(`GitHub API returned invalid JSON for ${method} ${endpoint}`, response.status, text)
+      catch (error) {
+        if (attempt < this.retryAttempts) {
+          await this.sleep(this.retryDelay * 2 ** (attempt - 1))
+          continue
+        }
+        const detail = error instanceof Error ? error.message : String(error)
+        throw new GitHubApiError(`GitHub API request ${method} ${endpoint} failed: ${detail}. Check network access and GITHUB_API_URL.`, 0)
       }
+      const text = await response.text()
+      let data: T | undefined
+      if (text) {
+        try {
+          data = JSON.parse(text) as T
+        }
+        catch {
+          throw new GitHubApiError(`GitHub API returned invalid JSON for ${method} ${endpoint}`, response.status, text)
+        }
+      }
+      if (!response.ok) {
+        const message = typeof data === 'object' && data !== null && 'message' in data
+          ? String((data as { message: unknown }).message)
+          : text || response.statusText
+        if ((response.status === 429 || response.status >= 500) && attempt < this.retryAttempts) {
+          await this.sleep(this.retryDelay * 2 ** (attempt - 1))
+          continue
+        }
+        throw new GitHubApiError(`GitHub API ${method} ${endpoint} failed (${response.status}): ${message}`, response.status, text)
+      }
+      return { status: response.status, data }
     }
-    if (!response.ok) {
-      const message = typeof data === 'object' && data !== null && 'message' in data
-        ? String((data as { message: unknown }).message)
-        : text || response.statusText
-      throw new GitHubApiError(`GitHub API ${method} ${endpoint} failed (${response.status}): ${message}`, response.status, text)
-    }
-    return { status: response.status, data }
+    throw new GitHubApiError(`GitHub API request ${method} ${endpoint} exhausted retries`, 0)
   }
 
   private getRequest(): GitHubRequest {
@@ -107,7 +124,7 @@ export class GitHubClient implements GitHubOperations {
       return created.data
     }
     catch (error) {
-      if (!(error instanceof GitHubApiError) || error.status !== 422) {
+      if (!(error instanceof GitHubApiError) || (![0, 429, 500, 502, 503, 504, 505, 506, 507, 508, 509, 510, 511].includes(error.status) && error.status !== 422)) {
         throw error
       }
       const recovered = await this.request<GitHubPullRequest[]>('GET', `/pulls?${query.toString()}`)

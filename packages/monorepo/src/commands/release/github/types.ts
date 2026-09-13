@@ -35,6 +35,9 @@ export interface GitHubClientOptions {
   repository?: string
   apiUrl?: string
   fetch?: typeof fetch
+  retryAttempts?: number
+  retryDelay?: number
+  sleep?: (milliseconds: number) => Promise<void>
 }
 
 export interface EnsurePullRequestOptions {
