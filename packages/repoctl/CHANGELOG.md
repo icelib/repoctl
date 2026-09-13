@@ -1,5 +1,14 @@
 # repoctl
 
+## 5.5.2
+
+### Patch Changes
+
+- Harden GitHub release recovery with rate limit aware retries and an explicit create-missing repair mode.
+
+- Updated dependencies:
+  - @icebreakers/monorepo@5.5.2
+
 ## 5.5.1
 
 ### Patch Changes
