@@ -4,7 +4,7 @@ import type { GitHubOperations } from './github'
 
 export const prereleaseBranches = new Set(['alpha', 'beta', 'rc', 'next'])
 
-export type ReleaseMode = 'auto' | 'prepare' | 'publish' | 'publish-unpublished'
+export type ReleaseMode = 'auto' | 'prepare' | 'publish' | 'publish-unpublished' | 'reconcile'
 
 export interface ReleaseOptions {
   cwd: string
@@ -20,6 +20,7 @@ export interface ReleaseCiOptions extends ReleaseOptions {
   mode?: ReleaseMode
   packageName?: string
   packageVersion?: string
+  dryRun?: boolean
   github?: GitHubOperations
 }
 

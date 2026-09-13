@@ -9,6 +9,7 @@ import { GitHubClient } from './github'
 import { runAfterPublishHooks, runQualityScripts, runReleaseHooks } from './hooks'
 import { releasePrerelease } from './prerelease'
 import { publishWithRetry } from './publish'
+import { reconcileRelease } from './reconcile'
 import { capture, clearPublishSummary, getReleaseEnv, hasPendingIntents, readPublishSummary, resolveBranch, run } from './shared'
 import { prepareStable, publishStable } from './stable'
 import { readReleaseTriggerContext, shouldRunRelease } from './trigger'
@@ -211,8 +212,11 @@ export async function releaseCi(options: ReleaseCiOptions) {
   if (mode === 'publish-unpublished') {
     return recoverUnpublished(options)
   }
+  if (mode === 'reconcile') {
+    return reconcileRelease({ ...options, dryRun: options.dryRun ?? getReleaseEnv(options)['REPO_RELEASE_DRY_RUN'] === 'true' })
+  }
   if (mode !== 'auto') {
-    throw new ReleaseCommandError(`unknown release CI mode ${mode}; expected auto, prepare, publish, or publish-unpublished`)
+    throw new ReleaseCommandError(`unknown release CI mode ${mode}; expected auto, prepare, publish, publish-unpublished, or reconcile`)
   }
 
   // GitHub push events use the same trigger contract as Changesets. Local and

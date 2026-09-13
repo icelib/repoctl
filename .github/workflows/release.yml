@@ -21,6 +21,7 @@ on:
           - prepare
           - publish
           - publish-unpublished
+          - reconcile
       package:
         description: Package used for unpublished-version recovery
         required: false
@@ -29,6 +30,11 @@ on:
         description: Version used for unpublished-version recovery
         required: false
         type: string
+      dry-run:
+        description: Preview release reconciliation without changes
+        required: false
+        default: false
+        type: boolean
 
 env:
   HUSKY: 0
@@ -75,4 +81,5 @@ jobs:
           REPO_RELEASE_MODE: ${{ inputs.mode || 'auto' }}
           REPO_RELEASE_PACKAGE: ${{ inputs.package }}
           REPO_RELEASE_VERSION: ${{ inputs.version }}
+          REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
         run: pnpm exec repo release ci

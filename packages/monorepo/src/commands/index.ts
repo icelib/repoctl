@@ -20,7 +20,7 @@ import { runDoctor } from './doctor'
 import { collectEnvInfo, collectEnvPaths, collectEnvSnapshot, collectEnvSupportBundle } from './env'
 import { init, initMetadata, initTooling, initToolingTargets, normalizeInitToolingTargets } from './init'
 import { setVscodeBinaryMirror } from './mirror'
-import { createReleasePullRequest, enterPrerelease, exitPrerelease, GitHubApiError, GitHubClient, parsePublishSummary, prepareStable, publishStable, recoverUnpublished, releaseCi, releasePrerelease, releaseStable, repairReleaseNotes } from './release'
+import { createReleasePullRequest, enterPrerelease, exitPrerelease, GitHubApiError, GitHubClient, parsePublishSummary, prepareStable, publishStable, reconcileRelease, recoverUnpublished, releaseCi, releasePrerelease, releaseStable, repairReleaseNotes } from './release'
 import { getSkillTargetPaths, skillTargets, syncSkills } from './skills'
 import { checkTemplates } from './templates'
 import { upgradeMonorepo } from './upgrade'
@@ -100,6 +100,7 @@ export {
   parsePublishSummary,
   prepareStable,
   publishStable,
+  reconcileRelease,
   recoverUnpublished,
   releaseCi,
   releasePrerelease,
