@@ -160,6 +160,10 @@
   dir: packages/monorepo
   intents:
     - slow-cherries-throw
+"@icebreakers/monorepo@5.5.2":
+  dir: packages/monorepo
+  intents:
+    - fuzzy-releases-recover
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -286,6 +290,10 @@ repoctl@5.5.1:
   dir: packages/repoctl
   intents:
     - slow-cherries-throw
+repoctl@5.5.2:
+  dir: packages/repoctl
+  intents:
+    - fuzzy-releases-recover
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
