@@ -1,7 +1,7 @@
 {
   "name": "repoctl",
   "type": "module",
-  "version": "5.5.0",
+  "version": "5.5.1",
   "description": "Task-first CLI for initializing, maintaining, validating, and releasing pnpm and Turborepo monorepos",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",

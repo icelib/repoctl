@@ -156,6 +156,10 @@
     - large-moles-begin
     - orange-ducks-move
     - rapid-ai-create
+"@icebreakers/monorepo@5.5.1":
+  dir: packages/monorepo
+  intents:
+    - slow-cherries-throw
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -278,6 +282,10 @@ repoctl@5.5.0:
     - fresh-apples-catalog
     - orange-ducks-move
     - rapid-ai-create
+repoctl@5.5.1:
+  dir: packages/repoctl
+  intents:
+    - slow-cherries-throw
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
