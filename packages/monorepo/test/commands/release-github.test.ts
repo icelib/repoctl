@@ -9,6 +9,19 @@ function response(body: unknown, status = 200, headers?: Record<string, string>)
 }
 
 describe('GitHub release client', () => {
+  it('retries when a response body is interrupted', async () => {
+    const interrupted = { text: async () => {
+      throw new TypeError('socket closed')
+    } } as unknown as Response
+    const requestFetch = vi.fn()
+      .mockResolvedValueOnce(response(undefined, 404))
+      .mockResolvedValueOnce(interrupted)
+      .mockResolvedValueOnce(response({ id: 1, tag_name: 'repo@1.0.0' }, 201))
+    const client = new GitHubClient({ token: 'token', repository: 'acme/repo', fetch: requestFetch, retryDelay: 0 })
+    await expect(client.ensureRelease({ tag: 'repo@1.0.0', target: 'abc123' })).resolves.toMatchObject({ id: 1 })
+    expect(requestFetch).toHaveBeenCalledTimes(3)
+  })
+
   it('retries transient responses four times and honors Retry-After', async () => {
     const sleeps: number[] = []
     const requestFetch = vi.fn()

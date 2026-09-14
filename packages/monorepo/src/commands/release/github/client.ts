@@ -76,7 +76,18 @@ export class GitHubClient implements GitHubOperations {
         const detail = error instanceof Error ? error.message : String(error)
         throw new GitHubApiError(`GitHub API request ${method} ${endpoint} failed: ${detail}. Check network access and GITHUB_API_URL.`, 0)
       }
-      const text = await response.text()
+      let text: string
+      try {
+        text = await response.text()
+      }
+      catch (error) {
+        if (attempt < this.retryAttempts) {
+          await this.sleep(this.retryDelay * 2 ** (attempt - 1))
+          continue
+        }
+        const detail = error instanceof Error ? error.message : String(error)
+        throw new GitHubApiError(`GitHub API response ${method} ${endpoint} was interrupted: ${detail}`, 0)
+      }
       let data: T | undefined
       if (text) {
         try {
