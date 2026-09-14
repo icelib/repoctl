@@ -5,6 +5,8 @@
 ## 选择第一次操作
 
 - 如果还没有运行过命令，阅读[安装并初始化](./install.md)。
+- 阅读[什么是 repoctl？](./what-is-repoctl.md)了解产品定位。
+- 阅读[安装 repoctl](./install-repoctl.md)快速完成设置。
 - 如果已经安装 repoctl，直接[运行第一次诊断](./diagnose.md)。
 - 得到诊断结果后，进入[选择下一项任务](./choose-next.md)。
 

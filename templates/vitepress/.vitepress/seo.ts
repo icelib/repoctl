@@ -29,6 +29,14 @@ export function createPageHead({ page, title, description }: TransformContext): 
   const socialImageAlt = isChinese
     ? 'repoctl：面向 pnpm 与 Turborepo monorepo 的任务型 CLI'
     : 'repoctl: task-first CLI for pnpm and Turborepo monorepos'
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      { '@type': 'Organization', 'name': 'repoctl', 'url': siteOrigin, 'logo': `${siteOrigin}/brand/repoctl-mark.svg`, 'sameAs': ['https://github.com/sonofmagic/repoctl', 'https://www.npmjs.com/package/repoctl'] },
+      { '@type': 'SoftwareApplication', 'name': 'repoctl', 'applicationCategory': 'DeveloperApplication', 'operatingSystem': 'macOS, Linux, Windows', 'url': siteOrigin, description, 'sameAs': ['https://github.com/sonofmagic/repoctl', 'https://www.npmjs.com/package/repoctl'], 'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' } },
+      { '@type': 'WebSite', 'name': 'repoctl', 'url': siteOrigin, 'potentialAction': { '@type': 'SearchAction', 'target': `${siteOrigin}/reference/commands?q={search_term_string}`, 'query-input': 'required name=search_term_string' } },
+    ],
+  }
 
   return [
     ['link', { rel: 'canonical', href: canonical }],
@@ -45,10 +53,14 @@ export function createPageHead({ page, title, description }: TransformContext): 
     ['meta', { property: 'og:image:width', content: '1200' }],
     ['meta', { property: 'og:image:height', content: '630' }],
     ['meta', { property: 'og:image:alt', content: socialImageAlt }],
+    ['meta', { property: 'og:image:type', content: 'image/png' }],
+    ['meta', { name: 'author', content: 'repoctl contributors' }],
+    ['meta', { name: 'application-name', content: 'repoctl' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: title }],
     ['meta', { name: 'twitter:description', content: description }],
     ['meta', { name: 'twitter:image', content: socialImage }],
     ['meta', { name: 'twitter:image:alt', content: socialImageAlt }],
+    ['script', { type: 'application/ld+json' }, JSON.stringify(jsonLd)],
   ]
 }

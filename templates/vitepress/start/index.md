@@ -5,6 +5,8 @@ Use this section when repoctl is new to you. The shortest useful path is to inst
 ## Pick your first move
 
 - [Install and initialize](./install.md) if this is your first repoctl command.
+- [What is repoctl?](./what-is-repoctl.md) for the product overview.
+- [Install repoctl](./install-repoctl.md) for the shortest setup path.
 - [Run the first diagnosis](./diagnose.md) if repoctl is already installed.
 - [Choose the next task](./choose-next.md) after you have a diagnosis.
 
