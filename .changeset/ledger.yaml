@@ -164,6 +164,10 @@
   dir: packages/monorepo
   intents:
     - fuzzy-releases-recover
+"@icebreakers/monorepo@5.5.3":
+  dir: packages/monorepo
+  intents:
+    - auto-pr-894
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
