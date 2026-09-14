@@ -69,14 +69,30 @@ export class GitHubClient implements GitHubOperations {
         })
       }
       catch (error) {
-        if (attempt < this.retryAttempts) {
+        // A mutating request may have been accepted even when the transport
+        // fails before returning a response. Let the caller reconcile it
+        // before issuing another POST.
+        if (method !== 'POST' && attempt < this.retryAttempts) {
           await this.sleep(this.retryDelay * 2 ** (attempt - 1))
           continue
         }
         const detail = error instanceof Error ? error.message : String(error)
         throw new GitHubApiError(`GitHub API request ${method} ${endpoint} failed: ${detail}. Check network access and GITHUB_API_URL.`, 0)
       }
-      const text = await response.text()
+      let text: string
+      try {
+        text = await response.text()
+      }
+      catch (error) {
+        // The server may have committed a POST before the response stream
+        // was interrupted. Reconcile by the resource's idempotency key first.
+        if (method !== 'POST' && attempt < this.retryAttempts) {
+          await this.sleep(this.retryDelay * 2 ** (attempt - 1))
+          continue
+        }
+        const detail = error instanceof Error ? error.message : String(error)
+        throw new GitHubApiError(`GitHub API response ${method} ${endpoint} was interrupted: ${detail}`, 0)
+      }
       let data: T | undefined
       if (text) {
         try {
