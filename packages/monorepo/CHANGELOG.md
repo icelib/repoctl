@@ -1,5 +1,11 @@
 # @icebreakers/monorepo
 
+## 5.5.3
+
+### Patch Changes
+
+- fix(release): recover interrupted GitHub responses (#894)
+
 ## 5.5.2
 
 ### Patch Changes
