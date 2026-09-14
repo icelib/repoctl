@@ -69,7 +69,10 @@ export class GitHubClient implements GitHubOperations {
         })
       }
       catch (error) {
-        if (attempt < this.retryAttempts) {
+        // A mutating request may have been accepted even when the transport
+        // fails before returning a response. Let the caller reconcile it
+        // before issuing another POST.
+        if (method !== 'POST' && attempt < this.retryAttempts) {
           await this.sleep(this.retryDelay * 2 ** (attempt - 1))
           continue
         }
@@ -81,7 +84,9 @@ export class GitHubClient implements GitHubOperations {
         text = await response.text()
       }
       catch (error) {
-        if (attempt < this.retryAttempts) {
+        // The server may have committed a POST before the response stream
+        // was interrupted. Reconcile by the resource's idempotency key first.
+        if (method !== 'POST' && attempt < this.retryAttempts) {
           await this.sleep(this.retryDelay * 2 ** (attempt - 1))
           continue
         }

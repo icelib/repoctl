@@ -22,6 +22,22 @@ describe('GitHub release client', () => {
     expect(requestFetch).toHaveBeenCalledTimes(3)
   })
 
+  it('reconciles a release after an accepted POST response is interrupted', async () => {
+    const interrupted = { text: async () => {
+      throw new TypeError('socket closed')
+    } } as unknown as Response
+    const requestFetch = vi.fn()
+      .mockResolvedValueOnce(response(undefined, 404))
+      .mockResolvedValueOnce(interrupted)
+      .mockResolvedValueOnce(response({ id: 9, tag_name: 'repo@1.0.0' }))
+    const client = new GitHubClient({ token: 'token', repository: 'acme/repo', fetch: requestFetch, retryDelay: 0 })
+
+    await expect(client.ensureRelease({ tag: 'repo@1.0.0', target: 'abc123' })).resolves.toMatchObject({ id: 9 })
+    expect(requestFetch).toHaveBeenCalledTimes(3)
+    expect(requestFetch.mock.calls[1]?.[1]).toMatchObject({ method: 'POST' })
+    expect(requestFetch.mock.calls[2]?.[1]).toMatchObject({ method: 'GET' })
+  })
+
   it('retries transient responses four times and honors Retry-After', async () => {
     const sleeps: number[] = []
     const requestFetch = vi.fn()
