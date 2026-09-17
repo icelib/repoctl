@@ -60,8 +60,8 @@
     }
   },
   "dependencies": {
-    "@unocss/config": "66.10.2",
-    "@unocss/core": "66.10.2",
+    "@unocss/config": "66.10.5",
+    "@unocss/core": "66.10.5",
     "postcss": "catalog:",
     "postcss-tailwindcss": "workspace:*"
   },
