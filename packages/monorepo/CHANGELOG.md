@@ -1,5 +1,18 @@
 # @icebreakers/monorepo
 
+## 5.5.4
+
+### Patch Changes
+
+- chore(deps): update cloudflare workers tooling (#896)
+
+- chore(deps): update all non-major dependencies (#898)
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.1
+  - @icebreakers/monorepo-templates@2.0.1
+  - @icebreakers/stylelint-config@5.1.1
+
 ## 5.5.3
 
 ### Patch Changes

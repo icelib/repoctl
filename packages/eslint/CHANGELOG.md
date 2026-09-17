@@ -1,5 +1,18 @@
 # @icebreakers/eslint-config
 
+## 8.0.1
+
+### Patch Changes
+
+- chore(deps): update devdependency prettier-plugin-astro to v1 (#880)
+
+- chore(deps): update unocss packages to v66.10.5 (#881)
+
+- chore(deps): update all non-major dependencies (#898)
+
+- Updated dependencies:
+  - @icebreakers/stylelint-config@5.1.1
+
 ## 8.0.0
 
 ### Major Changes
