@@ -1,5 +1,12 @@
 # @icebreakers/stylelint-config
 
+## 5.1.1
+
+### Patch Changes
+
+- Updated dependencies:
+  - stylelint-plugin-tailwindcss@3.1.1
+
 ## 5.1.0
 
 ### Minor Changes

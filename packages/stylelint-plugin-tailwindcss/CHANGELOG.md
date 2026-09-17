@@ -1,5 +1,14 @@
 # stylelint-plugin-tailwindcss
 
+## 3.1.1
+
+### Patch Changes
+
+- chore(deps): update unocss packages to v66.10.5 (#881)
+
+- Updated dependencies:
+  - postcss-tailwindcss@3.1.1
+
 ## 3.1.0
 
 ### Minor Changes

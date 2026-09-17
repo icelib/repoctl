@@ -44,6 +44,12 @@
     - light-lemons-beg
     - orange-ducks-move
     - shaggy-foxes-dress
+"@icebreakers/eslint-config@8.0.1":
+  dir: packages/eslint
+  intents:
+    - auto-pr-880
+    - auto-pr-881
+    - auto-pr-898
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -96,6 +102,10 @@
     - large-moles-begin
     - light-lemons-beg
     - rapid-ai-create
+"@icebreakers/monorepo-templates@2.0.1":
+  dir: packages/monorepo-templates
+  intents:
+    - auto-pr-898
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -168,6 +178,11 @@
   dir: packages/monorepo
   intents:
     - auto-pr-894
+"@icebreakers/monorepo@5.5.4":
+  dir: packages/monorepo
+  intents:
+    - auto-pr-896
+    - auto-pr-898
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -255,6 +270,10 @@ postcss-tailwindcss@3.1.0:
   intents:
     - fresh-apples-catalog
     - orange-ducks-move
+postcss-tailwindcss@3.1.1:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - auto-pr-898
 repoctl@5.2.0:
   dir: packages/repoctl
   intents:
@@ -320,3 +339,7 @@ stylelint-plugin-tailwindcss@3.1.0:
     - fresh-apples-catalog
     - large-moles-begin
     - orange-ducks-move
+stylelint-plugin-tailwindcss@3.1.1:
+  dir: packages/stylelint-plugin-tailwindcss
+  intents:
+    - auto-pr-881
