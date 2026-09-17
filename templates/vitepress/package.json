@@ -52,6 +52,6 @@
     "vitepress-plugin-llms": "^1.14.0",
     "vitepress-plugin-mermaid": "^2.0.17",
     "vue-tsc": "^3.3.11",
-    "wrangler": "^4.133.0"
+    "wrangler": "^4.134.0"
   }
 }
