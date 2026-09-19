@@ -51,7 +51,7 @@
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.55.0",
+    "@cloudflare/vite-plugin": "^1.56.0",
     "@hono/node-server": "^2.1.1",
     "@hono/trpc-server": "^0.4.2",
     "@tailwindcss/vite": "^4.3.3",
@@ -67,7 +67,7 @@
     "vite-plugin-vue-devtools": "^8.2.1",
     "vite-tsconfig-paths": "^6.1.1",
     "vue-tsc": "3.3.11",
-    "wrangler": "^4.134.0",
+    "wrangler": "^4.135.0",
     "zod": "^4.6.5"
   }
 }
