@@ -137,5 +137,5 @@ interface TailwindAnalysis {
 ## 项目链接
 
 - 文档：https://repoctl.icebreaker.top
-- 仓库：https://github.com/sonofmagic/repoctl/tree/main/packages/postcss-tailwindcss
-- 问题反馈：https://github.com/sonofmagic/repoctl/issues
+- 仓库：https://github.com/icelib/repoctl/tree/main/packages/postcss-tailwindcss
+- 问题反馈：https://github.com/icelib/repoctl/issues

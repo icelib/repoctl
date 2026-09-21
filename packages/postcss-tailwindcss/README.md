@@ -137,5 +137,5 @@ This package provides the low-level analysis layer; the Stylelint plugin provide
 ## Project links
 
 - Documentation: https://repoctl.icebreaker.top
-- Repository: https://github.com/sonofmagic/repoctl/tree/main/packages/postcss-tailwindcss
-- Issues: https://github.com/sonofmagic/repoctl/issues
+- Repository: https://github.com/icelib/repoctl/tree/main/packages/postcss-tailwindcss
+- Issues: https://github.com/icelib/repoctl/issues

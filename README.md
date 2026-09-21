@@ -6,7 +6,7 @@
   <img alt="repoctl" src="./brand/svg/repoctl-lockup-primary.svg" width="300" height="64">
 </picture>
 
-[![codecov](https://codecov.io/gh/sonofmagic/repoctl/branch/main/graph/badge.svg?token=mWA3D53rSl)](https://codecov.io/gh/sonofmagic/repoctl)
+[![codecov](https://codecov.io/gh/icelib/repoctl/branch/main/graph/badge.svg?token=mWA3D53rSl)](https://codecov.io/gh/icelib/repoctl)
 
 English | [简体中文](README.zh-CN.md)
 
@@ -116,8 +116,8 @@ keeps its own npm version and release intent.
 ## Documentation
 
 - Documentation: https://repoctl.icebreaker.top
-- GitHub: https://github.com/sonofmagic/repoctl
-- Issues: https://github.com/sonofmagic/repoctl/issues
+- GitHub: https://github.com/icelib/repoctl
+- Issues: https://github.com/icelib/repoctl/issues
 - Security: [SECURITY.md](SECURITY.md)
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 

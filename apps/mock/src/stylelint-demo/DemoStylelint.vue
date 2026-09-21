@@ -10,7 +10,7 @@
       <ul class="demo-shell__links">
         <li>
           <a
-            href="https://github.com/sonofmagic/repoctl/blob/main/apps/mock/src/stylelint-demo/README.md"
+            href="https://github.com/icelib/repoctl/blob/main/apps/mock/src/stylelint-demo/README.md"
             target="_blank"
             rel="noreferrer"
           >
@@ -19,7 +19,7 @@
         </li>
         <li>
           <a
-            href="https://github.com/sonofmagic/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-css.md"
+            href="https://github.com/icelib/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-css.md"
             target="_blank"
             rel="noreferrer"
           >
@@ -28,7 +28,7 @@
         </li>
         <li>
           <a
-            href="https://github.com/sonofmagic/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-scss.md"
+            href="https://github.com/icelib/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-scss.md"
             target="_blank"
             rel="noreferrer"
           >
@@ -37,7 +37,7 @@
         </li>
         <li>
           <a
-            href="https://github.com/sonofmagic/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-vue.md"
+            href="https://github.com/icelib/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-vue.md"
             target="_blank"
             rel="noreferrer"
           >
@@ -46,7 +46,7 @@
         </li>
         <li>
           <a
-            href="https://github.com/sonofmagic/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-unocss.md"
+            href="https://github.com/icelib/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-unocss.md"
             target="_blank"
             rel="noreferrer"
           >
@@ -55,7 +55,7 @@
         </li>
         <li>
           <a
-            href="https://github.com/sonofmagic/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-formatting.md"
+            href="https://github.com/icelib/repoctl/blob/main/apps/mock/src/stylelint-demo/demo-formatting.md"
             target="_blank"
             rel="noreferrer"
           >

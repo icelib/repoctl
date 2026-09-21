@@ -31,4 +31,4 @@ pnpm test
 
 修改模板或受管根资产时，先修改源码，再运行 `pnpm --filter @icebreakers/monorepo-templates sync:assets` 刷新随包副本。
 
-缺陷请提交到 https://github.com/sonofmagic/repoctl/issues；尚未形成具体实现的设计问题请使用 Discussions。
+缺陷请提交到 https://github.com/icelib/repoctl/issues；尚未形成具体实现的设计问题请使用 Discussions。

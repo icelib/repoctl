@@ -18,5 +18,5 @@ Output is English by default. Pass `--lang zh-CN` or set `REPOCTL_LANG=zh-CN` fo
 ## Project links
 
 - Documentation: https://repoctl.icebreaker.top
-- Repository: https://github.com/sonofmagic/repoctl/tree/main/packages/create-icebreaker
-- Issues: https://github.com/sonofmagic/repoctl/issues
+- Repository: https://github.com/icelib/repoctl/tree/main/packages/create-icebreaker
+- Issues: https://github.com/icelib/repoctl/issues

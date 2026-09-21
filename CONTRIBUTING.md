@@ -31,4 +31,4 @@ The repository includes repoctl's CLI and monorepo engine, template assets, shar
 
 When changing templates or managed root assets, update their source first and refresh packaged copies with `pnpm --filter @icebreakers/monorepo-templates sync:assets`.
 
-Report bugs at https://github.com/sonofmagic/repoctl/issues and use discussions for design questions that do not yet have a concrete implementation.
+Report bugs at https://github.com/icelib/repoctl/issues and use discussions for design questions that do not yet have a concrete implementation.

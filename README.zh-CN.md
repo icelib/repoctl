@@ -6,7 +6,7 @@
   <img alt="repoctl" src="./brand/svg/repoctl-lockup-primary.svg" width="300" height="64">
 </picture>
 
-[![codecov](https://codecov.io/gh/sonofmagic/repoctl/branch/main/graph/badge.svg?token=mWA3D53rSl)](https://codecov.io/gh/sonofmagic/repoctl)
+[![codecov](https://codecov.io/gh/icelib/repoctl/branch/main/graph/badge.svg?token=mWA3D53rSl)](https://codecov.io/gh/icelib/repoctl)
 
 [English](README.md) | 简体中文
 
@@ -114,8 +114,8 @@ dev-configs 相关开发包、测试、fixtures 和 demo 与 repoctl 在同一�
 ## 相关链接
 
 - 文档：https://repoctl.icebreaker.top
-- GitHub：https://github.com/sonofmagic/repoctl
-- Issues：https://github.com/sonofmagic/repoctl/issues
+- GitHub：https://github.com/icelib/repoctl
+- Issues：https://github.com/icelib/repoctl/issues
 - 安全策略：[SECURITY.md](SECURITY.md)
 - 贡献指南：[CONTRIBUTING.md](CONTRIBUTING.md)
 

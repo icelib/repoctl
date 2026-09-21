@@ -304,5 +304,5 @@ The stricter preset is documented in
 ## Project links
 
 - Documentation: https://repoctl.icebreaker.top
-- Repository: https://github.com/sonofmagic/repoctl/tree/main/packages/stylelint-plugin-tailwindcss
-- Issues: https://github.com/sonofmagic/repoctl/issues
+- Repository: https://github.com/icelib/repoctl/tree/main/packages/stylelint-plugin-tailwindcss
+- Issues: https://github.com/icelib/repoctl/issues

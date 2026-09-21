@@ -28,7 +28,7 @@ export default withMermaid(defineConfig({
       alt: 'repoctl',
     },
     search: { provider: 'local' },
-    socialLinks: [{ icon: 'github', link: 'https://github.com/sonofmagic/repoctl' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/icelib/repoctl' }],
   },
   locales: {
     root: {
@@ -41,7 +41,7 @@ export default withMermaid(defineConfig({
         outline: { label: 'On This Page', level: [2, 3] },
         sidebar: createSidebars('en'),
         editLink: {
-          pattern: 'https://github.com/sonofmagic/repoctl/edit/main/templates/vitepress/:path',
+          pattern: 'https://github.com/icelib/repoctl/edit/main/templates/vitepress/:path',
           text: 'Edit this page',
         },
         docFooter: { prev: 'Previous page', next: 'Next page' },
@@ -59,7 +59,7 @@ export default withMermaid(defineConfig({
         outline: { label: '目录', level: [2, 3] },
         sidebar: createSidebars('zh'),
         editLink: {
-          pattern: 'https://github.com/sonofmagic/repoctl/edit/main/templates/vitepress/:path',
+          pattern: 'https://github.com/icelib/repoctl/edit/main/templates/vitepress/:path',
           text: '为此页提供修改建议',
         },
         docFooter: { prev: '上一页', next: '下一页' },

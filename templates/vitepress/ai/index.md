@@ -10,7 +10,7 @@ outline: deep
 | ------------- | ---------------------------------------------------- |
 | Product       | repoctl, task-first CLI for monorepos                |
 | Official site | https://repoctl.icebreaker.top                       |
-| Source        | https://github.com/sonofmagic/repoctl                |
+| Source        | https://github.com/icelib/repoctl                    |
 | npm package   | `repoctl` — https://www.npmjs.com/package/repoctl    |
 | Install       | `pnpm add -D repoctl`                                |
 | Core commands | `repo init`, `repo doctor`, `repo new`, `repo check` |

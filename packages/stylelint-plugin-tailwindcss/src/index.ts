@@ -76,7 +76,7 @@ interface StylelintPluginConfig {
   rules: NonNullable<Config['rules']>
 }
 
-const RULE_DOCS_BASE_URL = 'https://github.com/sonofmagic/repoctl/blob/main/packages/stylelint-plugin-tailwindcss/docs/rules'
+const RULE_DOCS_BASE_URL = 'https://github.com/icelib/repoctl/blob/main/packages/stylelint-plugin-tailwindcss/docs/rules'
 
 function getRuleDocUrl(ruleName: string) {
   const [namespace, name] = ruleName.split('/')
