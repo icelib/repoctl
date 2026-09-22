@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { GitHubClient } from '@/commands/release'
+import { GitHubClient, renderGitHubRelease } from '@/commands/release'
 
 function response(body: unknown, status = 200, headers?: Record<string, string>) {
   return new Response(body === undefined ? '' : JSON.stringify(body), {
@@ -195,6 +195,43 @@ describe('GitHub release client', () => {
 
     const fallbackClient = new GitHubClient({ token: 'token', repository: 'acme/repo', fetch: vi.fn().mockRejectedValue(new Error('offline')) })
     await expect(fallbackClient.enrichReleaseNote(document)).resolves.toEqual(document)
+  })
+
+  it('does not treat a Git commit display name as a GitHub login', async () => {
+    const document = {
+      packages: [{ name: 'repo', version: '1.0.0' }],
+      entries: [{
+        packageName: 'repo',
+        version: '1.0.0',
+        category: 'fixes' as const,
+        summary: 'Fix #1050.',
+        commits: [
+          { sha: 'abc123', subject: 'fix: release (#1050)' },
+          { sha: 'def456', subject: 'fix: follow-up' },
+        ],
+        pullRequests: [1050],
+        issues: [],
+        authors: [],
+      }],
+      contributors: [],
+      compareUrls: [],
+    }
+    const requestFetch = vi.fn()
+      .mockResolvedValueOnce(response({ author: null, commit: { author: { name: 'ice breaker' } } }))
+      .mockResolvedValueOnce(response({ author: { login: 'sonofmagic' } }))
+      .mockResolvedValueOnce(response({ user: { login: 'daguanren21' } }))
+    const client = new GitHubClient({ token: 'token', repository: 'weapp-vite/weapp-vite', fetch: requestFetch })
+
+    const enriched = await client.enrichReleaseNote(document)
+
+    expect(enriched).toMatchObject({
+      contributors: ['sonofmagic', 'daguanren21'],
+      entries: [{ authors: ['sonofmagic', 'daguanren21'] }],
+    })
+    const release = renderGitHubRelease(enriched, { repository: 'weapp-vite/weapp-vite' })
+    expect(release).toContain('Thanks to @daguanren21 · @sonofmagic')
+    expect(release).not.toContain('@ice breaker')
+    expect(release).not.toContain('@bob')
   })
 
   it('reads contributors from the merged release pull request for a target commit', async () => {

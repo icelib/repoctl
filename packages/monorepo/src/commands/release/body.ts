@@ -76,14 +76,13 @@ export async function readPendingIntentCommits(options: ReleaseOptions) {
       if (!sha) {
         continue
       }
-      const metadata = capture('git', ['show', '-s', '--format=%H%x1F%s%x1F%b%x1F%an', sha], options)
-      const [fullSha, subject, body, author] = metadata.split('\x1F')
+      const metadata = capture('git', ['show', '-s', '--format=%H%x1F%s%x1F%b', sha], options)
+      const [fullSha, subject, body] = metadata.split('\x1F')
       if (fullSha) {
         commits.push({
           sha: fullSha,
           subject: subject ?? '',
           body: body ?? '',
-          ...(author ? { author } : {}),
           ...(packages.length ? { packages } : {}),
           ...(summary ? { summary } : {}),
         })
