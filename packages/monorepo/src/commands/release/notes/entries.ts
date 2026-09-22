@@ -138,7 +138,7 @@ function normalizeMarkdownEntry(item: { heading: string, summary: string }): Nor
   const commitMatches = [...raw.matchAll(/\[{1,2}`?([0-9a-f]{7,40})`?\]\(([^)]+\/commit\/[^)]+)\)/gi)]
   const pullRequests = [...raw.matchAll(/\[#(\d+)\]\(([^)]+\/pull\/\d+)\)/gi)].map(match => Number(match[1]))
   const issues = [...raw.matchAll(/\[#(\d+)\]\(([^)]+\/issues\/\d+)\)/gi)].map(match => Number(match[1]))
-  const authors = [...raw.matchAll(/\bby\s+(@?[\w-]+(?:\[bot\])?)/gi)].map(match => match[1] as string)
+  const authors = [...raw.matchAll(/\bby\s+(@[\w-]+(?:\[bot\])?)/gi)].map(match => match[1] as string)
   const arrowDependency = raw.match(/→\s*`([^`]+)`/)?.[1]
   const dependencyVersions = [...raw.matchAll(/(?:^|\s)((?:@[\w.-]+\/)?[\w.-]+@\d+\.\d+\.\d+(?:-[\w.-]+)?)/g)].map(match => match[1] as string)
   const dependencyLabel = /\bdependenc(?:y|ies):/i.test(raw)
@@ -154,7 +154,7 @@ function normalizeMarkdownEntry(item: { heading: string, summary: string }): Nor
     : raw
         .replace(/\[{1,2}`?([0-9a-f]{7,40})`?\]\([^)]+\)/gi, '')
         .replace(/\[#\d+\]\([^)]+\)/g, '')
-        .replace(/\bby\s+@?[\w-]+(?:\[bot\])?/gi, '')
+        .replace(/\bby\s+@[\w-]+(?:\[bot\])?/gi, '')
         .replace(/\*\*/g, '')
         .replace(/`/g, '')
         .replace(/^[-*]\s+/, '')
