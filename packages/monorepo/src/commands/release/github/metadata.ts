@@ -32,7 +32,7 @@ export async function enrichReleaseNote(request: GitHubRequest, document: Releas
   for (const sha of commitShas) {
     try {
       const response = await request<GitHubCommit>('GET', `/commits/${encodeURIComponent(sha)}`)
-      const author = response.data?.author?.login || response.data?.commit?.author?.name
+      const author = response.data?.author?.login
       if (author) {
         commitAuthors.set(sha, author)
       }
