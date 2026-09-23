@@ -70,13 +70,13 @@
   },
   "dependencies": {
     "@antfu/eslint-config": "9.5.1",
-    "@eslint-react/eslint-plugin": "^5.19.1",
+    "@eslint-react/eslint-plugin": "^5.20.5",
     "@icebreakers/stylelint-config": "workspace:*",
-    "@typescript-eslint/rule-tester": "^8.70.0",
-    "@typescript-eslint/typescript-estree": "^8.70.0",
-    "@typescript-eslint/utils": "^8.70.0",
+    "@typescript-eslint/rule-tester": "^8.70.1",
+    "@typescript-eslint/typescript-estree": "^8.70.1",
+    "@typescript-eslint/utils": "^8.70.1",
     "@vue/compiler-sfc": "^3.5.43",
-    "@weapp-vite/eslint": "^0.2.4",
+    "@weapp-vite/eslint": "^0.2.7",
     "defu": "^6.1.7",
     "eslint-flat-config-utils": "3.2.0",
     "eslint-plugin-better-tailwindcss": "^4.7.0",
@@ -113,10 +113,10 @@
     "eslint-plugin-astro": "^3.2.1",
     "eslint-plugin-better-stylelint": "workspace:*",
     "eslint-plugin-svelte": "^3.23.0",
-    "prettier": "^3.9.7",
+    "prettier": "^3.9.8",
     "prettier-plugin-astro": "^1.0.1",
     "semver": "catalog:",
-    "svelte": "^5.57.0",
+    "svelte": "^5.57.1",
     "svelte-eslint-parser": "^1.8.1"
   }
 }
