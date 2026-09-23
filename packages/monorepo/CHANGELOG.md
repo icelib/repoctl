@@ -1,5 +1,23 @@
 # @icebreakers/monorepo
 
+## 5.5.5
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#899)
+
+- Only use verified GitHub logins when rendering release note contributors, so local Git author display names are not mentioned as GitHub users.
+
+- Preserve ordinary changelog prose such as "by default" and "by bob" without turning it into GitHub contributor mentions. Only explicit `by @username` author metadata is extracted when generating or repairing release notes.
+
+- Update repository links for the move to the icelib GitHub organization and migrate the release workflow to npm trusted publishing. Package names and public APIs are unchanged.
+
+- Updated dependencies:
+  - @icebreakers/commitlint-config@4.1.1
+  - @icebreakers/eslint-config@8.0.2
+  - @icebreakers/monorepo-templates@2.0.2
+  - @icebreakers/stylelint-config@5.1.2
+
 ## 5.5.4
 
 ### Patch Changes

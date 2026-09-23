@@ -1,7 +1,7 @@
 {
   "name": "create-icebreaker",
   "type": "module",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Compatibility create command for repoctl-managed workspaces",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",

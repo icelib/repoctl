@@ -1,7 +1,7 @@
 {
   "name": "@icebreakers/monorepo-templates",
   "type": "module",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Built-in project templates and managed workspace assets for repoctl",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",

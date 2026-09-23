@@ -1,5 +1,13 @@
 # @icebreakers/changelog-github
 
+## 2.1.1
+
+### Patch Changes
+
+- chore(deps): update dependency dotenv to v18 (#901)
+
+- Update repository links for the move to the icelib GitHub organization and migrate the release workflow to npm trusted publishing. Package names and public APIs are unchanged.
+
 ## 2.1.0
 
 ### Minor Changes

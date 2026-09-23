@@ -1,7 +1,7 @@
 {
   "name": "@icebreakers/stylelint-config",
   "type": "module",
-  "version": "5.1.1",
+  "version": "5.1.2",
   "description": "Stylelint preset from the repoctl development toolchain",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",

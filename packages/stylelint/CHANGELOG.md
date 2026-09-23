@@ -1,5 +1,14 @@
 # @icebreakers/stylelint-config
 
+## 5.1.2
+
+### Patch Changes
+
+- Update repository links for the move to the icelib GitHub organization and migrate the release workflow to npm trusted publishing. Package names and public APIs are unchanged.
+
+- Updated dependencies:
+  - stylelint-plugin-tailwindcss@3.1.2
+
 ## 5.1.1
 
 ### Patch Changes
