@@ -1,7 +1,7 @@
 {
   "name": "eslint-plugin-better-stylelint",
   "type": "module",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Bridge Stylelint diagnostics into ESLint for style files and Vue SFCs",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
