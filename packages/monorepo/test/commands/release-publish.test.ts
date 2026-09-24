@@ -19,6 +19,7 @@ describe('publish retry', () => {
       },
       stdoutSequences: {
         'pnpm publish -r --report-summary --provenance --no-git-checks': ['CA_CREATE_SIGNING_CERTIFICATE_ERROR'],
+        'npm view repoctl@1.0.0 version': ['', '', '1.0.0'],
       },
     })
 
@@ -27,7 +28,9 @@ describe('publish retry', () => {
     expect(calls).toEqual([
       { command: 'pnpm', args: publishArgs },
       { command: 'npm', args: ['view', 'repoctl@1.0.0', 'version'] },
+      { command: 'npm', args: ['view', 'repoctl@1.0.0', 'version'] },
       { command: 'pnpm', args: [...publishArgs, '--filter', 'repoctl'] },
+      { command: 'npm', args: ['view', 'repoctl@1.0.0', 'version'] },
     ])
     expect(retry).toHaveBeenCalledWith(20_000)
   })

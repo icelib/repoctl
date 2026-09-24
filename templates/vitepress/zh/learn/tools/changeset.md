@@ -38,7 +38,7 @@ pnpm version -r
 pnpm publish -r --report-summary --provenance --no-git-checks
 ```
 
-pnpm 会跳过 registry 中已经存在的版本，并把新发布包写入 `pnpm-publish-summary.json`。CI 根据 summary 创建 `package@version` Git tag 和 GitHub Release，因此重复执行不会重新发布已存在版本。
+pnpm 会跳过 registry 中已经存在的版本，并把新发布包写入 `pnpm-publish-summary.json`。CI 根据 summary 创建 `package@version` Git tag 和 GitHub Release，发布器会保留本次调用的部分成功状态，等待 registry 确认可见后再创建元数据；不要在传播延迟期间直接重跑整个生命周期，详见[发布任务](/zh/tasks/release)。
 
 本地推荐使用 repoctl 包装命令：
 

@@ -33,7 +33,7 @@ CI 将版本号、各包 `CHANGELOG.md` 和 `.changeset/ledger.yaml` 提交到 R
 pnpm publish -r --report-summary --provenance --no-git-checks
 ```
 
-pnpm 根据 registry 中已有的版本自动跳过已发布包。CI 读取 `pnpm-publish-summary.json` 创建 `package@version` tag 和 GitHub Release，发布操作可以安全重试。
+pnpm 根据 registry 中已有的版本自动跳过已发布包。CI 读取 `pnpm-publish-summary.json` 创建 `package@version` tag 和 GitHub Release，发布器在本次调用内保留已接收上传的版本，确认 registry 可见性后再执行后置流程；失败后的处理见[部分发布与 registry 延迟](/zh/tasks/release#部分发布与-registry-延迟)。
 
 ## Workspace versioning 配置
 

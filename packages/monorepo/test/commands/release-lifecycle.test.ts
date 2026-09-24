@@ -147,6 +147,7 @@ describe('release lifecycle configuration', () => {
       'chore(release): alpha [skip ci]',
       'publish:check',
       '--no-git-checks',
+      'version',
       'HEAD:alpha',
       'release:sync',
     ])

@@ -79,6 +79,14 @@ function checkReleaseWorkflow() {
     runner.env?.REPO_RELEASE_MODE,
     githubExpression('inputs.mode || \'auto\''),
   )
+  const artifact = steps.find(step => step.uses?.startsWith('actions/upload-artifact@'))
+  assert.ok(artifact, 'release workflow must preserve publish diagnostics')
+  assert.equal(artifact.if, githubExpression('always()'))
+  assert.equal(artifact.with?.name, `npm-publish-progress-${githubExpression('github.run_id')}-${githubExpression('github.run_attempt')}`)
+  assert.equal(artifact.with?.path, 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\n')
+  assert.equal(artifact.with?.['if-no-files-found'], 'ignore')
+  assert.equal(artifact.with?.['retention-days'], 14)
+  assert.notEqual(runner['continue-on-error'], true)
   assertPinnedActions(steps, 'Release')
 
   for (const legacyEntry of [

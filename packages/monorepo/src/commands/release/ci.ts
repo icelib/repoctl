@@ -178,11 +178,8 @@ async function recoverUnpublished(options: ReleaseCiOptions) {
     ['publish', '-r', '--filter', packageName, '--report-summary', '--provenance', '--no-git-checks'],
     options,
     [{ name: packageName, version: packageVersion }],
+    true,
   )
-  const publishedVersion = capture('npm', ['view', `${packageName}@${packageVersion}`, 'version'], options)
-  if (publishedVersion !== packageVersion) {
-    throw new ReleaseCommandError(`npm did not report ${packageName}@${packageVersion} after recovery`)
-  }
   const packages = await readPublishSummary(options.cwd)
   await publishMetadata(packages, options)
   runAfterPublishHooks(packages, options)

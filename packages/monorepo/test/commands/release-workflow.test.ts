@@ -1,3 +1,4 @@
+import { assetsDir } from '@icebreakers/monorepo-templates'
 import { describe, expect, it } from 'vitest'
 import YAML from 'yaml'
 import { rootDir } from '@/constants'
@@ -17,6 +18,25 @@ function getActionUses(workflow: string) {
 }
 
 describe('release workflow', () => {
+  it.each([rootDir, assetsDir])('preserves progress even on failure in %s', async (root) => {
+    const workflow = YAML.parse(await fs.readFile(`${root}/.github/workflows/release.yml`, 'utf8'))
+    const steps = workflow.jobs.release.steps
+    const artifact = steps.find((step: { uses?: string }) => step.uses?.startsWith('actions/upload-artifact@'))
+    expect(artifact).toMatchObject({
+      if: '$' + '{{ always() }}',
+      uses: expect.stringMatching(/^actions\/upload-artifact@[0-9a-f]{40}$/),
+      with: {
+        'name': 'npm-publish-progress-$' + '{{ github.run_id }}-$' + '{{ github.run_attempt }}',
+        'path': 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\n',
+        'if-no-files-found': 'ignore',
+        'retention-days': 14,
+      },
+    })
+    expect(steps.find((step: { run?: string }) => step.run === 'pnpm exec repo release ci')['continue-on-error']).toBeUndefined()
+    const gitignore = await fs.readFile(`${root}/${root === rootDir ? '.gitignore' : 'gitignore'}`, 'utf8')
+    expect(gitignore).toContain('/repoctl-publish-progress.json')
+  })
+
   it('uses one repoctl entrypoint for release orchestration', async () => {
     const workflow = await fs.readFile(`${rootDir}/.github/workflows/release.yml`, 'utf8')
     const actionUses = getActionUses(workflow)
@@ -49,7 +69,7 @@ describe('release workflow', () => {
     expect(workflow).not.toContain('peter-evans/create-pull-request')
     expect(workflow).not.toContain('gh release')
     expect(workflow).not.toContain('jq ')
-    expect(workflow).not.toContain('pnpm-publish-summary.json')
+    expect(workflow).toContain('pnpm-publish-summary.json')
   })
 
   it('keeps stable and prerelease branch triggers in the single workflow', async () => {

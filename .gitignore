@@ -40,3 +40,9 @@ config.ts.timestamp-*.mjs
 
 # local AI task artifacts
 /.qoder/
+
+# release diagnostics (retained as CI artifacts)
+/pnpm-publish-summary.json
+/repoctl-publish-progress.json
+/pnpm-publish-summary.json.*.tmp
+/repoctl-publish-progress.json.*.tmp
