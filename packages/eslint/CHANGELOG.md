@@ -1,5 +1,11 @@
 # @icebreakers/eslint-config
 
+## 8.0.3
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#909)
+
 ## 8.0.2
 
 ### Patch Changes
