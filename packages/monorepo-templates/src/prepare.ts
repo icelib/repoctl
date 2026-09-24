@@ -44,6 +44,13 @@ const publishedToolingConfigs = {
 }
 const sourceRepoReleaseToolingBuildStepPattern = /\r?\n\s+- name: Build Release Tooling\r?\n\s+run: pnpm run tooling:build\r?\n/g
 
+// npm intentionally excludes files named `.npmrc` from published tarballs.
+// Keep the managed config under a publishable name and restore the dotfile
+// when it is copied into a generated workspace.
+function toPublishedAssetPath(target: string) {
+  return target === '.npmrc' ? 'npmrc' : toPublishGitignorePath(target)
+}
+
 export interface PrepareAssetsOptions {
   overwriteExisting?: boolean
   silent?: boolean
@@ -175,12 +182,13 @@ async function copyAssets(repoRoot: string, overwriteExisting: boolean) {
     if (!await pathExists(from)) {
       continue
     }
-    const to = path.join(assetsDir, toPublishGitignorePath(target))
+    const to = path.join(assetsDir, toPublishedAssetPath(target))
     const stats = await fs.stat(from)
     const filter = target === '.husky'
       ? (src: string) => !huskySkippedEntryPattern.test(src)
       : undefined
-    await copyEntry(from, to, overwriteExisting, filter)
+    const refreshManagedMetadata = ['package.json', '.npmrc', 'pnpm-workspace.yaml', 'AGENTS.md', 'CLAUDE.md'].includes(target)
+    await copyEntry(from, to, overwriteExisting || refreshManagedMetadata, filter)
     if (target === 'tsconfig.json') {
       await fs.writeFile(to, `${JSON.stringify({
         extends: 'repoctl/tsconfig.json',
@@ -202,13 +210,13 @@ async function writePublishedToolingConfigs() {
   }))
 }
 
-async function writePublishedAgentSkill(repoRoot: string, overwriteExisting: boolean) {
+async function writePublishedAgentSkill(repoRoot: string) {
   const skillFrom = path.join(repoRoot, 'packages/monorepo/resources/skills/repoctl')
   if (!await pathExists(skillFrom)) {
     return
   }
   const skillTo = path.join(assetsDir, '.agents', 'skills', 'repoctl')
-  await copyEntry(skillFrom, skillTo, overwriteExisting)
+  await copyEntry(skillFrom, skillTo, true)
 }
 
 async function sanitizePublishedWorkspace() {
@@ -248,6 +256,7 @@ async function removeSourceRepoWorkerTypeChecks() {
   if (await pathExists(manifestPath)) {
     const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'))
     delete manifest.scripts?.['test:worker-types']
+    delete manifest.scripts?.['test:packaged-create']
     await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
   }
 }
@@ -273,11 +282,13 @@ export async function prepareAssets(options: PrepareAssetsOptions = {}) {
   }
   await resetDir(assetsDir, overwriteExisting)
   await resetDir(templatesDir, overwriteExisting)
+  // Remove the old ignored filename when refreshing an existing local cache.
+  await fs.rm(path.join(assetsDir, '.npmrc'), { force: true })
   await copyAssets(repoRoot, overwriteExisting)
   await sanitizePublishedWorkspace()
   await removePublishedReleaseState()
   await writePublishedToolingConfigs()
-  await writePublishedAgentSkill(repoRoot, overwriteExisting)
+  await writePublishedAgentSkill(repoRoot)
   await removeSourceRepoReleaseToolingBuildStep()
   await removeSourceRepoWorkerTypeChecks()
   await copyTemplates(repoRoot, overwriteExisting)

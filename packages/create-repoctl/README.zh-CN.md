@@ -6,29 +6,30 @@
 
 ```bash
 npm create repoctl@latest
-pnpm create repoctl
-yarn create repoctl
+pnpm create repoctl@latest
+yarn create repoctl@latest
 ```
 
 交互流程会选择目标目录和需要包含的内置模板。代理或不需要提问时：
 
 ```bash
-pnpm create repoctl my-app -- --yes --templates vue-hono
+pnpm create repoctl@latest my-app -- --yes --templates vue-hono
 npm create repoctl@latest my-app -- --yes --templates vue-hono
-npx create-repoctl my-app --yes --templates vue-hono
+npx create-repoctl@latest my-app --yes --templates vue-hono
 ```
 
 模板 key：`vue-hono`、`hono-server`、`tsdown`、`vue-lib`、`vitepress`、`cli`。创建完成后运行：
 
 ```bash
 cd <project>
+corepack enable
 pnpm install
 pnpm exec repo init
 pnpm exec repo doctor
 pnpm exec repo check
 ```
 
-默认输出英文。传入 `--lang zh-CN` 或设置 `REPOCTL_LANG=zh-CN` 可切换为简体中文。
+请在 repoctl 源仓库之外的新目录或空目录中运行。默认输出英文。传入 `--lang zh-CN` 或设置 `REPOCTL_LANG=zh-CN` 可切换为简体中文。
 
 ## 项目链接
 

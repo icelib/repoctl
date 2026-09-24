@@ -12,7 +12,7 @@ import { resolveCommandConfig } from '../../core/config'
 import { GitClient } from '../../core/git'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
-import { escapeStringRegexp, isIgnorableFsError, isMatch, toWorkspaceGitignorePath, updateIssueTemplateConfig } from '../../utils'
+import { escapeStringRegexp, isIgnorableFsError, isMatch, toWorkspaceAssetPath, updateIssueTemplateConfig } from '../../utils'
 import { migrateLegacyToolingReferences } from '../tooling-migration'
 import { isAgentsMarkdownEquivalent, mergeAgentsMarkdown } from './agents'
 import { evaluateWriteIntent, flushPendingOverwrites, scheduleOverwrite } from './overwrite'
@@ -86,7 +86,7 @@ export async function upgradeMonorepo(opts: CliOpts) {
   const pendingOverwrites: PendingOverwrite[] = []
   for await (const file of klaw(assetsDir, {
     filter(p) {
-      const rel = toWorkspaceGitignorePath(path.relative(assetsDir, p))
+      const rel = toWorkspaceAssetPath(path.relative(assetsDir, p))
       return isMatch(rel, regexpArr)
     },
   })) {
@@ -94,7 +94,7 @@ export async function upgradeMonorepo(opts: CliOpts) {
       continue
     }
 
-    const relPath = toWorkspaceGitignorePath(path.relative(assetsDir, file.path))
+    const relPath = toWorkspaceAssetPath(path.relative(assetsDir, file.path))
 
     if (skipChangesetMarkdown && relPath.startsWith('.changeset/') && relPath.endsWith('.md')) {
       continue

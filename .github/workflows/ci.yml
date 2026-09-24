@@ -81,6 +81,10 @@ jobs:
       - name: Check Worker type generation from packaged templates
         run: pnpm test:worker-types
 
+      - name: Check packaged monorepo creation
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-create
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:

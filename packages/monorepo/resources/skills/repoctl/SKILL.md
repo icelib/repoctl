@@ -1,6 +1,6 @@
 ---
 name: repoctl
-description: Create and maintain pnpm/Turborepo workspaces with repoctl. Use when the user says 使用 repoctl 创建项目, create a monorepo, pnpm create repoctl, scaffold Vue/Hono/tsdown/vitepress, or run repo init/doctor/new/check.
+description: Create and maintain pnpm/Turborepo workspaces with repoctl. Use when the user says 使用 repoctl 创建项目, create a monorepo, pnpm create repoctl@latest, scaffold Vue/Hono/tsdown/vitepress, or run repo init/doctor/new/check.
 ---
 
 # repoctl
@@ -9,17 +9,22 @@ The package name is `repoctl`. The command is `repo`.
 
 ## Empty directory
 
-Do not prompt. Map the request to template keys, then:
+Create into a new or empty directory outside the repoctl source workspace. Do
+not add a business project under the source checkout, and do not point the
+create command at a non-empty directory unless the user explicitly asks to
+replace it with `--force`. Do not prompt. Map the request to template keys,
+then:
 
 ```bash
-pnpm create repoctl <dir> -- --yes --templates <keys>
+pnpm create repoctl@latest <dir> -- --yes --templates <keys>
 cd <dir>
+corepack enable
 pnpm install
 pnpm exec repo init
 pnpm exec repo doctor
 ```
 
-`npm create` and `pnpm create` need the extra `--` before flags. `npx create-repoctl <dir> --yes --templates <keys>` does not.
+`npm create` and `pnpm create` need the extra `--` before flags. `npx create-repoctl@latest <dir> --yes --templates <keys>` does not.
 
 | User intent              | `--templates` key  |
 | ------------------------ | ------------------ |

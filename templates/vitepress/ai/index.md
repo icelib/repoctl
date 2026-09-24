@@ -23,7 +23,7 @@ repoctl publishes AI-readable documentation alongside the human site.
 - `/llms.txt`: compact English index and product summary.
 - `/llms-full.txt`: combined page content when a larger context is appropriate.
 - `/zh/`: Simplified Chinese documentation.
-- [Create a project](./create.md): non-interactive `pnpm create repoctl --yes` recipe.
+- [Create a project](./create.md): non-interactive `pnpm create repoctl@latest --yes` recipe.
 - [llms.txt Guide](./llms-txt.md): usage and maintenance rules.
 
 ## Using It In AI Tools

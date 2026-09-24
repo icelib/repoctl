@@ -17,6 +17,8 @@ catalog:
 
 minimumReleaseAge: 0
 
+pmOnFail: error
+
 versioning:
   fixed:
     - ['@icebreakers/monorepo', repoctl]

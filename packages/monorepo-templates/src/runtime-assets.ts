@@ -1,7 +1,8 @@
-import { access, open, rm } from 'node:fs/promises'
+import { access, open, readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
+import { readPackageManagerFromManifest } from './package-manager/read'
 import { assetsDir, packageDir, templatesDir } from './paths'
-import { prepareAssets } from './prepare'
+import { prepareAssets, sanitizePublishedWorkspaceContent } from './prepare'
 
 const lockFileName = '.prepare-assets.lock'
 const lockPollIntervalMs = 200
@@ -38,7 +39,76 @@ async function isPrepared() {
     path.join(templatesDir, 'tsdown'),
   ]
   const results = await Promise.all(checks.map(pathExists))
-  return results.every(Boolean)
+  if (!results.every(Boolean)) {
+    return false
+  }
+
+  const sourceRoot = path.resolve(packageDir, '..', '..')
+  const sourceManifest = path.join(sourceRoot, 'package.json')
+  let sourcePackage: { name?: unknown }
+  try {
+    sourcePackage = JSON.parse(await readFile(sourceManifest, 'utf8')) as { name?: unknown }
+  }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return true
+    }
+    throw error
+  }
+
+  if (sourcePackage.name !== 'repoctl-workspace') {
+    return true
+  }
+
+  const [sourcePackageManager, sourceNpmrc, sourceWorkspace] = await Promise.all([
+    readPackageManagerFromManifest(sourceManifest),
+    readFile(path.join(sourceRoot, '.npmrc'), 'utf8'),
+    readFile(path.join(sourceRoot, 'pnpm-workspace.yaml'), 'utf8'),
+  ])
+
+  let preparedPackageManager: string
+  let preparedNpmrc: string
+  let preparedWorkspace: string
+  let sourceAgentContent: string[]
+  let preparedAgentContent: string[]
+  let sourceSkillContent: string
+  let preparedSkillContent: string
+  try {
+    const sourceAgentFiles = ['AGENTS.md', 'CLAUDE.md'] as const
+    const [prepared, sourceAgents, preparedAgents, sourceSkill, preparedSkill] = await Promise.all([
+      Promise.all([
+        readPackageManagerFromManifest(path.join(assetsDir, 'package.json')),
+        readFile(path.join(assetsDir, 'npmrc'), 'utf8'),
+        readFile(path.join(assetsDir, 'pnpm-workspace.yaml'), 'utf8'),
+      ]),
+      Promise.all(sourceAgentFiles.map(filename => readFile(path.join(sourceRoot, 'packages/monorepo/assets', filename), 'utf8'))),
+      Promise.all(sourceAgentFiles.map(filename => readFile(path.join(assetsDir, filename), 'utf8'))),
+      readFile(path.join(sourceRoot, 'packages/monorepo/resources/skills/repoctl/SKILL.md'), 'utf8'),
+      readFile(path.join(assetsDir, '.agents/skills/repoctl/SKILL.md'), 'utf8'),
+    ])
+    preparedPackageManager = prepared[0]
+    preparedNpmrc = prepared[1]
+    preparedWorkspace = prepared[2]
+    sourceAgentContent = sourceAgents
+    preparedAgentContent = preparedAgents
+    sourceSkillContent = sourceSkill
+    preparedSkillContent = preparedSkill
+  }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT' || error instanceof SyntaxError) {
+      return false
+    }
+    if (error instanceof Error && error.message.startsWith('Invalid packageManager in ')) {
+      return false
+    }
+    throw error
+  }
+
+  return sourcePackageManager === preparedPackageManager
+    && sourceNpmrc === preparedNpmrc
+    && sanitizePublishedWorkspaceContent(sourceWorkspace) === preparedWorkspace
+    && sourceAgentContent.every((content, index) => content === preparedAgentContent[index])
+    && sourceSkillContent === preparedSkillContent
 }
 
 async function waitForPrepared() {

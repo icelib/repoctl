@@ -1,11 +1,15 @@
 # Repository Guidelines
 
 This is the **repoctl source workspace**. If a user asked you to create a new
-business project, do not add apps here. Use:
+business project, do not add apps here. Use a new or empty directory outside
+this source checkout:
 
 ```bash
-pnpm create repoctl <dir> -- --yes --templates <keys>
+pnpm create repoctl@latest <dir> -- --yes --templates <keys>
 ```
+
+After entering the generated project, run `corepack enable` before installing
+dependencies so pnpm uses the version declared by the workspace.
 
 ## Project Structure & Module Organization
 
