@@ -1,8 +1,10 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { getWorkspacePackageManager } from '@icebreakers/monorepo-templates'
 
 interface PackageJsonLike {
   name?: string
+  packageManager?: string
   devDependencies?: Record<string, string>
   scripts?: Record<string, string>
   [key: string]: unknown
@@ -17,17 +19,12 @@ export async function updateRootPackageJson(targetDir: string, projectName: stri
   const raw = await fs.readFile(pkgPath, 'utf8')
   const pkg = JSON.parse(raw) as PackageJsonLike
   pkg.name = projectName
+  pkg.packageManager = await getWorkspacePackageManager()
 
-  const devDependencies = pkg.devDependencies
-  if (devDependencies && devDependencies[legacyToolPackageName]) {
-    delete devDependencies[legacyToolPackageName]
-  }
-  if (devDependencies && devDependencies[repoctlPackageName]?.startsWith('workspace:')) {
-    devDependencies[repoctlPackageName] = publishedRepoctlVersion
-  }
-  if (devDependencies && Object.keys(devDependencies).length === 0) {
-    delete pkg.devDependencies
-  }
+  const devDependencies = pkg.devDependencies ?? {}
+  delete devDependencies[legacyToolPackageName]
+  devDependencies[repoctlPackageName] = publishedRepoctlVersion
+  pkg.devDependencies = devDependencies
 
   const scripts = pkg.scripts
   if (scripts) {

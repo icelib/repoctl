@@ -11,7 +11,7 @@ npm create icebreaker@latest
 pnpm create icebreaker
 ```
 
-New projects should prefer `npm create repoctl@latest` or `pnpm create repoctl`. Both entrypoints use the same maintained scaffold engine and lead into the `repo init`, `repo doctor`, `repo new`, and `repo check` workflow.
+New projects should prefer `npm create repoctl@latest` or `pnpm create repoctl@latest`. Run the command in a new or empty directory outside the repoctl source checkout. Both entrypoints use the same maintained scaffold engine and lead into the `repo init`, `repo doctor`, `repo new`, and `repo check` workflow. After entering the generated project, run `corepack enable` before installing dependencies.
 
 Output is English by default. Pass `--lang zh-CN` or set `REPOCTL_LANG=zh-CN` for Simplified Chinese.
 

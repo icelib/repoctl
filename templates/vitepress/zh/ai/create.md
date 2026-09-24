@@ -1,5 +1,5 @@
 ---
-description: 给 AI 代理用的非交互配方：pnpm create repoctl --yes 创建 repoctl 工作区。
+description: 给 AI 代理用的非交互配方：pnpm create repoctl@latest --yes 创建 repoctl 工作区。
 outline: deep
 ---
 
@@ -9,18 +9,21 @@ outline: deep
 
 ## 空目录
 
-不要提问。直接运行：
+目标目录应是 repoctl 源仓库之外的新目录或空目录。不要把业务项目放进
+源仓库，也不要在非空目录上运行，除非用户明确要求使用 `--force` 覆盖。
+不要提问，直接运行：
 
 ```bash
-pnpm create repoctl <dir> -- --yes --templates <keys>
+pnpm create repoctl@latest <dir> -- --yes --templates <keys>
 cd <dir>
+corepack enable
 pnpm install
 pnpm exec repo init
 pnpm exec repo doctor
 ```
 
 等价命令：`npm create repoctl@latest <dir> -- --yes --templates <keys>` 与
-`npx create-repoctl <dir> --yes --templates <keys>`。
+`npx create-repoctl@latest <dir> --yes --templates <keys>`。
 `pnpm create` / `npm create` 的 flag 前必须加 `--`。
 
 ## 模板 key

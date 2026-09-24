@@ -1,6 +1,7 @@
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { getWorkspacePackageManager } from '@icebreakers/monorepo-templates'
 import { describe, expect, it } from 'vitest'
 import { updateRootPackageJson } from './package-json'
 
@@ -47,4 +48,31 @@ describe('updateRootPackageJson', () => {
       await rm(targetDir, { force: true, recursive: true })
     }
   })
+
+  it.each([undefined, { 'repoctl': '^1.0.0', '@icebreakers/monorepo': '^1.0.0', 'typescript': '^6.0.3' }])(
+    'always selects the latest repoctl and managed pnpm version',
+    async (devDependencies) => {
+      const targetDir = await mkdtemp(path.join(tmpdir(), 'repoctl-manifest-'))
+      const manifestPath = path.join(targetDir, 'package.json')
+      try {
+        await writeFile(manifestPath, JSON.stringify({
+          name: 'old-template',
+          packageManager: 'pnpm@10.20.0',
+          devDependencies,
+        }))
+        await updateRootPackageJson(targetDir, 'my-project')
+
+        const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+        expect(manifest.name).toBe('my-project')
+        expect(manifest.packageManager).toBe(await getWorkspacePackageManager())
+        expect(manifest.devDependencies).toEqual({
+          ...(devDependencies?.typescript ? { typescript: devDependencies.typescript } : {}),
+          repoctl: 'latest',
+        })
+      }
+      finally {
+        await rm(targetDir, { recursive: true, force: true })
+      }
+    },
+  )
 })

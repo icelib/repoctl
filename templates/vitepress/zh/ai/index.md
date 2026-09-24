@@ -12,7 +12,7 @@ AI 文档入口用于给 Cursor、Claude Code、Codex 和其他 AI 编程工具�
 | ------------------------------ | ------------------------------------------------ |
 | `/llms.txt`                    | 轻量文档索引，适合先交给 AI 工具判断要读哪些页面 |
 | `/llms-full.txt`               | 合并后的完整文档，适合需要一次性提供上下文的场景 |
-| [创建项目](./create.md)        | 非交互 `pnpm create repoctl --yes` 配方          |
+| [创建项目](./create.md)        | 非交互 `pnpm create repoctl@latest --yes` 配方   |
 | [llms.txt 说明](./llms-txt.md) | 维护约定、访问方式和页面 frontmatter 要求        |
 
 ## 2. 在 AI 工具里怎么用

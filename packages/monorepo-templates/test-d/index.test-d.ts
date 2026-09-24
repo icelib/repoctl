@@ -9,6 +9,7 @@ import {
   getTemplateKeys,
   getTemplateSource,
   getTemplateTarget,
+  getWorkspacePackageManager,
   isTemplateCategory,
   isTemplateKey,
   suggestTemplateKey,
@@ -16,14 +17,17 @@ import {
   templateChoices,
   templateSourceMap,
   templateTargetMap,
+  toWorkspaceAssetPath,
   toWorkspaceGitignorePath,
 } from '..'
 
 expectType<string[]>(assetTargets)
 expectType<string[]>(getAssetTargets())
+expectType<Promise<string>>(getWorkspacePackageManager())
 expectType<string | undefined>(templateSourceMap['cli'])
 expectType<string | undefined>(templateTargetMap['cli'])
 expectType<string>(toWorkspaceGitignorePath('gitignore'))
+expectType<string>(toWorkspaceAssetPath('npmrc'))
 expectAssignable<TemplateChoice[]>(templateChoices)
 expectAssignable<readonly string[]>(templateCategories)
 expectAssignable<TemplateChoice[]>(getTemplateChoices())

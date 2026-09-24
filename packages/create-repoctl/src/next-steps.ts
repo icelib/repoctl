@@ -7,6 +7,7 @@ export function formatNextSteps(targetDir: string, cwd = process.cwd(), heading 
     '',
     heading,
     `  cd ${relative}`,
+    '  corepack enable',
     '  pnpm install',
     '  pnpm exec repo init',
     '  pnpm exec repo doctor',

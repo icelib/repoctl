@@ -31,6 +31,7 @@
     "dev": "turbo run dev --parallel",
     "test": "node -e \"require('node:fs').mkdirSync('coverage/.tmp', { recursive: true })\" && pnpm check:no-tracked-build-artifacts && vitest run && pnpm test:types",
     "test:packaged-doctor": "node scripts/smoke-packaged-doctor.mjs",
+    "test:packaged-create": "node scripts/smoke-packaged-create.mjs",
     "test:worker-types": "node scripts/worker-types/index.mjs",
     "test:dev": "node -e \"require('node:fs').mkdirSync('coverage/.tmp', { recursive: true })\" && pnpm check:no-tracked-build-artifacts && vitest",
     "lint": "pnpm run tooling:build && turbo run lint",

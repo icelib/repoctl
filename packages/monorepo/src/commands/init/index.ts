@@ -1,5 +1,6 @@
 import type { InitToolingTarget } from './tooling/types'
 import type { PackageJson } from '@/types'
+import { getWorkspacePackageManager } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import YAML from 'yaml'
 import fs from '@/utils/fs'
@@ -54,7 +55,7 @@ async function ensureRootPackageJson(cwd: string) {
       type: 'module',
       version: '0.0.0',
       private: true,
-      packageManager: 'pnpm@12.3.4',
+      packageManager: await getWorkspacePackageManager(),
       engines: {
         node: '>=22.13.0',
       },

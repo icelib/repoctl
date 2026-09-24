@@ -48,16 +48,20 @@ Use `repoctl` when a longer, explicit executable name is preferable. Both bins e
 ```bash
 npm create repoctl@latest
 # or
-pnpm create repoctl
+pnpm create repoctl@latest
 ```
 
 The create command lets you select the built-in templates to include, then prepares the workspace for the normal `repo init`, `repo doctor`, `repo new`, and `repo check` workflow.
 
 ### For AI agents
 
+Run this from a new or empty directory outside the repoctl source checkout; do
+not create a business project inside this repository.
+
 ```bash
-pnpm create repoctl my-app -- --yes --templates vue-hono
+pnpm create repoctl@latest my-app -- --yes --templates vue-hono
 cd my-app
+corepack enable
 pnpm install
 pnpm exec repo init
 pnpm exec repo doctor

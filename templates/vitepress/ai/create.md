@@ -1,5 +1,5 @@
 ---
-description: Non-interactive recipe for AI agents to create a repoctl workspace with pnpm create repoctl --yes.
+description: Non-interactive recipe for AI agents to create a repoctl workspace with pnpm create repoctl@latest --yes.
 outline: deep
 ---
 
@@ -9,18 +9,22 @@ Use this page when an agent is asked to create a new project with repoctl.
 
 ## Empty directory
 
-Do not prompt. Run:
+Use a new or empty directory outside the repoctl source checkout. Do not add a
+business project inside the source workspace, and do not use a non-empty target
+unless the user explicitly asks to replace it with `--force`. Do not prompt.
+Run:
 
 ```bash
-pnpm create repoctl <dir> -- --yes --templates <keys>
+pnpm create repoctl@latest <dir> -- --yes --templates <keys>
 cd <dir>
+corepack enable
 pnpm install
 pnpm exec repo init
 pnpm exec repo doctor
 ```
 
 `npm create repoctl@latest <dir> -- --yes --templates <keys>` and
-`npx create-repoctl <dir> --yes --templates <keys>` are equivalent.
+`npx create-repoctl@latest <dir> --yes --templates <keys>` are equivalent.
 `pnpm create` and `npm create` need the extra `--` before flags.
 
 ## Template keys

@@ -37,6 +37,10 @@ export function toWorkspaceGitignorePath(input: string) {
   return replaceBasename(input, publishBasename, workspaceBasename)
 }
 
+export function toWorkspaceAssetPath(input: string) {
+  return replaceBasename(toWorkspaceGitignorePath(input), 'npmrc', '.npmrc')
+}
+
 export function isGitignoreFile(name: string) {
   return toPublishGitignorePath(name) !== name || toWorkspaceGitignorePath(name) !== name
 }

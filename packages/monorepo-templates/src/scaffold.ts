@@ -4,7 +4,7 @@ import path from 'node:path'
 import { templateChoices } from '../template-data.mjs'
 import { assetsDir as defaultAssetsDir, templatesDir as defaultTemplatesDir } from './paths'
 import { ensureTemplateAssetsPrepared } from './runtime-assets'
-import { toWorkspaceGitignorePath } from './utils/gitignore'
+import { toWorkspaceAssetPath, toWorkspaceGitignorePath } from './utils/gitignore'
 import { shouldSkipTemplatePath } from './utils/template-filter'
 
 type TargetMode = 'prepare' | 'ensure' | 'skip'
@@ -172,7 +172,10 @@ export async function scaffoldWorkspace(options: ScaffoldWorkspaceOptions) {
   }
 
   if (includeAssets) {
-    await copyDirContents(assetsDir, targetDir, { rootDir: assetsDir })
+    await copyDirContents(assetsDir, targetDir, {
+      rootDir: assetsDir,
+      renameEntry: toWorkspaceAssetPath,
+    })
   }
 
   if (!templateKeys.length) {
