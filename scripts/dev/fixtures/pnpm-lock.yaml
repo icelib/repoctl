@@ -1,0 +1,16 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+  .: {}
+
+  packages/repoctl:
+    dependencies:
+      upstream:
+        specifier: workspace:*
+        version: link:../upstream
+
+  packages/upstream: {}

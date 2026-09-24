@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'pathe'
@@ -67,6 +67,15 @@ export function createSpawnMock(options: {
     const sequenceIndex = sequenceIndexes.get(commandLine) ?? 0
     sequenceIndexes.set(commandLine, sequenceIndex + 1)
 
+    if (command === 'pnpm' && args[0] === 'version' && spawnOptions?.cwd) {
+      for (const pkg of options.publishedPackages ?? []) {
+        const filename = path.join(spawnOptions.cwd, 'packages', 'repoctl', 'package.json')
+        const manifest = JSON.parse(readFileSync(filename, 'utf8'))
+        if (manifest.name === pkg.name) {
+          writeFileSync(filename, JSON.stringify({ ...manifest, version: pkg.version }))
+        }
+      }
+    }
     if (command === 'pnpm' && args[0] === 'publish' && spawnOptions?.cwd) {
       writeFileSync(path.join(spawnOptions.cwd, 'pnpm-publish-summary.json'), JSON.stringify({
         publishedPackages: options.publishedPackages ?? [],
@@ -82,7 +91,9 @@ export function createSpawnMock(options: {
 
     return {
       status: options.statusSequences?.[commandLine]?.[sequenceIndex] ?? options.statuses?.[commandLine] ?? 0,
-      stdout: options.stdoutSequences?.[commandLine]?.[sequenceIndex] ?? options.stdout?.[commandLine] ?? '',
+      stdout: options.stdoutSequences?.[commandLine]?.[sequenceIndex] ?? options.stdout?.[commandLine] ?? (command === 'npm' && args[0] === 'view'
+        ? options.publishedPackages?.find(pkg => `${pkg.name}@${pkg.version}` === args[1])?.version ?? ''
+        : ''),
       stderr: options.stderrSequences?.[commandLine]?.[sequenceIndex] ?? options.stderr?.[commandLine] ?? '',
     }
   })
