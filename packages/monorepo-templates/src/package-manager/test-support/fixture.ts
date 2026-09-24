@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { cp, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises'
+import { access, cp, mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -13,6 +13,60 @@ const sourceRoot = path.resolve(sourcePackageDir, '../..')
 async function outputFile(file: string, content: string) {
   await mkdir(path.dirname(file), { recursive: true })
   await writeFile(file, content)
+}
+
+async function resolveDependency(name: string, fromDir: string) {
+  let currentDir = fromDir
+  while (true) {
+    try {
+      return await realpath(path.join(currentDir, 'node_modules', name))
+    }
+    catch {
+      const parentDir = path.dirname(currentDir)
+      if (parentDir === currentDir) {
+        break
+      }
+      currentDir = parentDir
+    }
+  }
+  const storePath = path.join(sourceRoot, 'node_modules/.pnpm')
+  try {
+    for (const entry of await readdir(storePath)) {
+      const candidate = path.join(storePath, entry, 'node_modules', name)
+      try {
+        await access(candidate)
+        return await realpath(candidate)
+      }
+      catch {
+        // Continue through pnpm's virtual store entries.
+      }
+    }
+  }
+  catch {
+    // Fall through to the normal resolution error below.
+  }
+  return await realpath(path.join(sourcePackageDir, 'node_modules', name))
+}
+
+async function copyDependency(name: string, destinationRoot: string, seen = new Set<string>(), fromDir = sourcePackageDir) {
+  if (seen.has(name)) {
+    return
+  }
+  seen.add(name)
+  const source = await resolveDependency(name, fromDir)
+  const destination = path.join(destinationRoot, name)
+  await mkdir(path.dirname(destination), { recursive: true })
+  await cp(source, destination, { recursive: true })
+  const manifest = JSON.parse(await readFile(path.join(source, 'package.json'), 'utf8')) as {
+    dependencies?: Record<string, string>
+    optionalDependencies?: Record<string, string>
+  }
+  for (const dependency of new Set([
+    ...Object.keys(manifest.dependencies ?? {}),
+    ...Object.keys(manifest.optionalDependencies ?? {}),
+  ])) {
+    await copyDependency(dependency, destinationRoot, seen, source)
+  }
 }
 
 export async function createPackageManagerFixture() {
@@ -44,8 +98,14 @@ export async function createPackageManagerFixture() {
     outputFile(path.join(assetsDir, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\npmOnFail: warn\n'),
     ...['AGENTS.md', 'CLAUDE.md', 'LICENSE', '.agents/skills/repoctl/SKILL.md'].map(name => outputFile(path.join(assetsDir, name), 'outdated cached asset\n')),
     mkdir(path.join(packageDir, 'templates/tsdown'), { recursive: true }),
-    symlink(path.join(sourcePackageDir, 'node_modules'), path.join(packageDir, 'node_modules'), 'junction'),
   ])
+  const packageManifest = JSON.parse(await readFile(path.join(sourcePackageDir, 'package.json'), 'utf8')) as {
+    dependencies?: Record<string, string>
+  }
+  const dependencies = Object.keys(packageManifest.dependencies ?? {})
+  for (const dependency of dependencies) {
+    await copyDependency(dependency, path.join(packageDir, 'node_modules'))
+  }
 
   return {
     root,
