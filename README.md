@@ -97,6 +97,8 @@ The workspaces under `templates/` are private source assets. They are shipped th
 
 ## Development
 
+`pnpm dev` develops the repoctl dependency chain. Use `pnpm dev:create`, `pnpm dev:configs`, or `pnpm dev:packages` to build and watch other package scopes in dependency order. Start template services separately with `pnpm dev:client`, `pnpm dev:server`, or `pnpm dev:docs`. See the [development scenarios guide](docs/development.md) for asset synchronization and debugging details.
+
 ```bash
 corepack enable
 pnpm install

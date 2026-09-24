@@ -1,85 +1,19 @@
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import * as path from 'node:path'
-import YAML from 'yaml'
-import { assetTargets } from '../assets-data.mjs'
-import { templateChoices } from '../template-data.mjs'
-import { assetsDir, packageDir, templatesDir } from './paths'
-import { toPublishGitignorePath } from './utils/gitignore'
-import { shouldSkipTemplatePath } from './utils/template-filter'
+import { assetTargets } from '../../assets-data.mjs'
+import { templateChoices } from '../../template-data.mjs'
+import { assetsDir, packageDir, templatesDir } from '../paths'
+import { toPublishGitignorePath } from '../utils/gitignore'
+import { shouldSkipTemplatePath } from '../utils/template-filter'
+import { publishedToolingConfigs, removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedManifestContent, sanitizePublishedWorkspaceContent } from './published'
+
+export { removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedWorkspaceContent } from './published'
 
 const huskySkippedEntryPattern = /[\\/]_$/
-const publishedToolingConfigs = {
-  'commitlint.config.ts': [
-    `import { defineCommitlintConfig } from 'repoctl/tooling'`,
-    '',
-    'export default await defineCommitlintConfig()',
-    '',
-  ].join('\n'),
-  'eslint.config.js': [
-    `import { defineEslintConfig } from 'repoctl/tooling'`,
-    '',
-    'export default await defineEslintConfig()',
-    '',
-  ].join('\n'),
-  'lint-staged.config.js': [
-    `import { defineLintStagedConfig } from 'repoctl/tooling'`,
-    '',
-    'export default await defineLintStagedConfig()',
-    '',
-  ].join('\n'),
-  'stylelint.config.js': [
-    `import { defineStylelintConfig } from 'repoctl/tooling'`,
-    '',
-    'export default await defineStylelintConfig()',
-    '',
-  ].join('\n'),
-  'vitest.config.ts': [
-    `import { defineConfig } from 'vitest/config'`,
-    `import { defineVitestConfig } from 'repoctl/tooling'`,
-    '',
-    'export default defineConfig(async () => await defineVitestConfig())',
-    '',
-  ].join('\n'),
-}
-const sourceRepoReleaseToolingBuildStepPattern = /\r?\n\s+- name: Build Release Tooling\r?\n\s+run: pnpm run tooling:build\r?\n/g
-
 export interface PrepareAssetsOptions {
   overwriteExisting?: boolean
   silent?: boolean
-}
-
-export function removeSourceRepoReleaseToolingBuildStepContent(content: string) {
-  return content.replaceAll(sourceRepoReleaseToolingBuildStepPattern, '\n')
-}
-
-export function sanitizePublishedWorkspaceContent(content: string) {
-  const workspace = YAML.parse(content) as {
-    catalog?: unknown
-    catalogs?: unknown
-    versioning?: Record<string, unknown>
-  } | null
-  if (!workspace || typeof workspace !== 'object') {
-    return content
-  }
-
-  let changed = false
-  if (workspace.versioning && typeof workspace.versioning === 'object') {
-    delete workspace.versioning['fixed']
-    delete workspace.versioning['ignore']
-    delete workspace.versioning['lanes']
-    changed = true
-  }
-  if ('catalog' in workspace) {
-    delete workspace.catalog
-    changed = true
-  }
-  if ('catalogs' in workspace) {
-    delete workspace.catalogs
-    changed = true
-  }
-
-  return changed ? YAML.stringify(workspace) : content
 }
 
 async function pathExists(targetPath: string) {
@@ -238,7 +172,7 @@ async function removeSourceRepoReleaseToolingBuildStep() {
   }
 }
 
-async function removeSourceRepoWorkerTypeChecks() {
+async function removeSourceRepoChecks() {
   const workflowPath = path.join(assetsDir, '.github/workflows/ci.yml')
   if (await pathExists(workflowPath)) {
     const workflow = await fs.readFile(workflowPath, 'utf8')
@@ -246,9 +180,8 @@ async function removeSourceRepoWorkerTypeChecks() {
   }
   const manifestPath = path.join(assetsDir, 'package.json')
   if (await pathExists(manifestPath)) {
-    const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'))
-    delete manifest.scripts?.['test:worker-types']
-    await fs.writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+    const content = await fs.readFile(manifestPath, 'utf8')
+    await fs.writeFile(manifestPath, sanitizePublishedManifestContent(content))
   }
 }
 
@@ -279,6 +212,6 @@ export async function prepareAssets(options: PrepareAssetsOptions = {}) {
   await writePublishedToolingConfigs()
   await writePublishedAgentSkill(repoRoot, overwriteExisting)
   await removeSourceRepoReleaseToolingBuildStep()
-  await removeSourceRepoWorkerTypeChecks()
+  await removeSourceRepoChecks()
   await copyTemplates(repoRoot, overwriteExisting)
 }

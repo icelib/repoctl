@@ -12,7 +12,7 @@ This file adds package-local guidance. Global rules are defined in the repositor
 - `assets/`: upgrade/init assets synced into target workspaces
 - `templates/`: project templates used by scaffold flows
 - `assets-data.mjs` / `template-data.mjs`: published target registries
-- `src/prepare.ts`: sync pipeline that rebuilds package assets from repo sources
+- `src/prepare/`: sync pipeline and published-content transformations that rebuild package assets from repo sources
 
 ## Local Rules
 

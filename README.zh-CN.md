@@ -97,6 +97,8 @@ REPOCTL_LANG=zh-CN pnpm exec repo doctor
 
 ## 开发
 
+`pnpm dev` 开发 repoctl 主链路；`pnpm dev:create`、`pnpm dev:configs`、`pnpm dev:packages` 按依赖顺序构建并监听对应的包。模板服务使用 `pnpm dev:client`、`pnpm dev:server` 或 `pnpm dev:docs` 单独启动。完整入口、资产同步和调试方式见[开发场景](docs/development.md)。
+
 ```bash
 corepack enable
 pnpm install

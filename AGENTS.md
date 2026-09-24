@@ -14,7 +14,7 @@ This repository is the source workspace for repoctl, a task-first CLI for pnpm a
 ## Build, Test, and Development Commands
 
 - `pnpm install` — set up workspaces; ensure Node 22.13+ as defined in `package.json`.
-- `pnpm dev` — run `turbo run dev --parallel` for all apps that expose a `dev` script.
+- `pnpm dev` — build the repoctl dependency closure, sync template assets, then rebuild changes in dependency order with Turbo watch. Use `dev:create`, `dev:configs`, or `dev:packages` for other package scopes, and `dev:client`, `dev:server`, or `dev:docs` for individual services. See `docs/development.md`.
 - `pnpm build` — execute `turbo run build` to build every workspace with caching.
 - `pnpm test` / `pnpm test:dev` — run Vitest suites once or in watch mode across packages.
 - `pnpm lint` — invoke `turbo run lint` to apply ESLint/Stylelint policies repo-wide.
