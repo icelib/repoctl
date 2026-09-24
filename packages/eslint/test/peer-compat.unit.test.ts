@@ -85,6 +85,7 @@ describe('peer compatibility', () => {
   it.each(BUNDLED_RUNTIME_PACKAGES)('bundles %s as a runtime dependency', (name) => {
     expect(packageJson.dependencies?.[name]).toBeTruthy()
     expect(packageJson.optionalDependencies?.[name]).toBeUndefined()
+    expect(packageJson.peerDependencies?.[name]).toBeUndefined()
   })
 
   it.each([...OPTIONAL_A11Y_PACKAGES, ...CONSUMER_PROVIDED_FEATURE_PACKAGES])('keeps %s consumer provided', (name) => {
@@ -112,7 +113,16 @@ describe('peer compatibility', () => {
   })
 
   it('installs @weapp-vite/eslint with the config package', () => {
-    expect(packageJson.dependencies?.['@weapp-vite/eslint']).toBe('^0.2.3')
+    // Do not pin the exact caret range; patch bumps must not fail this test.
+    const range = packageJson.dependencies?.['@weapp-vite/eslint']
+    expect(range).toEqual(expect.stringMatching(/^\^\d+\.\d+\.\d+$/))
     expect(packageJson.peerDependencies?.['@weapp-vite/eslint']).toBeUndefined()
+    expect(
+      semver.satisfies(
+        readInstalledPackageJson('@weapp-vite/eslint').version,
+        range!,
+        { includePrerelease: true },
+      ),
+    ).toBe(true)
   })
 })

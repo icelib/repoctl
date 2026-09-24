@@ -4,7 +4,7 @@ export function sanitizePublishedManifestContent(content: string) {
   const manifest = JSON.parse(content) as { scripts?: Record<string, string> }
   if (manifest.scripts) {
     for (const name of Object.keys(manifest.scripts)) {
-      if (name.startsWith('dev:') || name === 'test:dev-scenarios' || name === 'test:worker-types') {
+      if (name.startsWith('dev:') || name === 'test:dev-scenarios' || name === 'test:worker-types' || name === 'test:packaged-create') {
         delete manifest.scripts[name]
       }
     }

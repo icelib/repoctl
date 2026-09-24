@@ -10,7 +10,7 @@ outline: deep
 | ------------- | ---------------------------------------------------- |
 | Product       | repoctl, task-first CLI for monorepos                |
 | Official site | https://repoctl.icebreaker.top                       |
-| Source        | https://github.com/sonofmagic/repoctl                |
+| Source        | https://github.com/icelib/repoctl                    |
 | npm package   | `repoctl` — https://www.npmjs.com/package/repoctl    |
 | Install       | `pnpm add -D repoctl`                                |
 | Core commands | `repo init`, `repo doctor`, `repo new`, `repo check` |
@@ -23,7 +23,7 @@ repoctl publishes AI-readable documentation alongside the human site.
 - `/llms.txt`: compact English index and product summary.
 - `/llms-full.txt`: combined page content when a larger context is appropriate.
 - `/zh/`: Simplified Chinese documentation.
-- [Create a project](./create.md): non-interactive `pnpm create repoctl --yes` recipe.
+- [Create a project](./create.md): non-interactive `pnpm create repoctl@latest --yes` recipe.
 - [llms.txt Guide](./llms-txt.md): usage and maintenance rules.
 
 ## Using It In AI Tools

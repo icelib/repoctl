@@ -62,6 +62,7 @@ it('built scaffold output receives portable dev scripts instead of source profil
   assert.equal(published.scripts.dev, 'turbo run dev --concurrency=20')
   assert.ok(!Object.keys(published.scripts).some(name => name.startsWith('dev:')))
   assert.ok(!JSON.stringify(published.scripts).includes('test:dev-scenarios'))
+  assert.ok(!('test:packaged-create' in published.scripts))
   assert.equal(published.scripts['test:dev'], manifest.scripts['test:dev'])
   const config = JSON.parse(await readFile(`${directory}/turbo.json`, 'utf8'))
   assert.deepEqual(config.tasks.dev.dependsOn, ['^build'])

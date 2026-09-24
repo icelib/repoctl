@@ -252,7 +252,7 @@ describe('release pull request body', () => {
       if (args[0] === 'log') {
         return { status: 0, stdout: sha }
       }
-      return { status: 0, stdout: `${sha}\x1Ffix: release change (#42)\x1FCloses #17` }
+      return { status: 0, stdout: `${sha}\x1Ffix: release change (#42)\x1FCloses #17\x1Fice breaker` }
     }
 
     const commits = await readPendingIntentCommits({ cwd, spawn: spawn as never })
@@ -266,7 +266,7 @@ describe('release pull request body', () => {
     }])
     expect(calls).toEqual([
       ['git', 'log', '-1', '--format=%H', '--', '.changeset/pending.md'],
-      ['git', 'show', '-s', '--format=%H%x1F%s%x1F%b%x1F%an', sha],
+      ['git', 'show', '-s', '--format=%H%x1F%s%x1F%b', sha],
     ])
   })
 })

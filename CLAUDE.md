@@ -3,7 +3,10 @@
 This file provides repository-specific guidance for AI-assisted changes.
 
 This is the **repoctl source workspace**. If a user asked you to create a new
-business project, do not add apps here. Use `pnpm create repoctl <dir> -- --yes --templates <keys>`.
+business project, do not add apps here. Use a new or empty directory outside
+this source checkout: `pnpm create repoctl@latest <dir> -- --yes --templates <keys>`.
+After entering the generated project, run `corepack enable` before installing
+dependencies so pnpm uses the version declared by the workspace.
 
 ## Product
 

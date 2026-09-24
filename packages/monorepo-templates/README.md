@@ -26,5 +26,5 @@ The source workspaces under the repository's `templates/` directory are private.
 ## Project links
 
 - Documentation: https://repoctl.icebreaker.top
-- Repository: https://github.com/sonofmagic/repoctl/tree/main/packages/monorepo-templates
-- Issues: https://github.com/sonofmagic/repoctl/issues
+- Repository: https://github.com/icelib/repoctl/tree/main/packages/monorepo-templates
+- Issues: https://github.com/icelib/repoctl/issues

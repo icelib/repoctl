@@ -250,5 +250,5 @@ The underlying plugin supports both Tailwind CSS v3 and v4, and switches automat
 ## Project links
 
 - Documentation: https://repoctl.icebreaker.top
-- Repository: https://github.com/sonofmagic/repoctl/tree/main/packages/stylelint
-- Issues: https://github.com/sonofmagic/repoctl/issues
+- Repository: https://github.com/icelib/repoctl/tree/main/packages/stylelint
+- Issues: https://github.com/icelib/repoctl/issues

@@ -6,7 +6,7 @@
   <img alt="repoctl" src="./brand/svg/repoctl-lockup-primary.svg" width="300" height="64">
 </picture>
 
-[![codecov](https://codecov.io/gh/sonofmagic/repoctl/branch/main/graph/badge.svg?token=mWA3D53rSl)](https://codecov.io/gh/sonofmagic/repoctl)
+[![codecov](https://codecov.io/gh/icelib/repoctl/branch/main/graph/badge.svg?token=mWA3D53rSl)](https://codecov.io/gh/icelib/repoctl)
 
 English | [简体中文](README.zh-CN.md)
 
@@ -48,16 +48,20 @@ Use `repoctl` when a longer, explicit executable name is preferable. Both bins e
 ```bash
 npm create repoctl@latest
 # or
-pnpm create repoctl
+pnpm create repoctl@latest
 ```
 
 The create command lets you select the built-in templates to include, then prepares the workspace for the normal `repo init`, `repo doctor`, `repo new`, and `repo check` workflow.
 
 ### For AI agents
 
+Run this from a new or empty directory outside the repoctl source checkout; do
+not create a business project inside this repository.
+
 ```bash
-pnpm create repoctl my-app -- --yes --templates vue-hono
+pnpm create repoctl@latest my-app -- --yes --templates vue-hono
 cd my-app
+corepack enable
 pnpm install
 pnpm exec repo init
 pnpm exec repo doctor
@@ -118,8 +122,8 @@ keeps its own npm version and release intent.
 ## Documentation
 
 - Documentation: https://repoctl.icebreaker.top
-- GitHub: https://github.com/sonofmagic/repoctl
-- Issues: https://github.com/sonofmagic/repoctl/issues
+- GitHub: https://github.com/icelib/repoctl
+- Issues: https://github.com/icelib/repoctl/issues
 - Security: [SECURITY.md](SECURITY.md)
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 

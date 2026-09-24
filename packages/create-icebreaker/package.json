@@ -1,18 +1,18 @@
 {
   "name": "create-icebreaker",
   "type": "module",
-  "version": "2.0.0",
+  "version": "2.0.3",
   "description": "Compatibility create command for repoctl-managed workspaces",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
   "homepage": "https://repoctl.icebreaker.top",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sonofmagic/repoctl.git",
+    "url": "git+https://github.com/icelib/repoctl.git",
     "directory": "packages/create-icebreaker"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/repoctl/issues"
+    "url": "https://github.com/icelib/repoctl/issues"
   },
   "keywords": [
     "repoctl",

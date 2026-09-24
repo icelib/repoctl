@@ -1,18 +1,18 @@
 {
   "name": "@icebreakers/monorepo-templates",
   "type": "module",
-  "version": "2.0.0",
+  "version": "2.0.3",
   "description": "Built-in project templates and managed workspace assets for repoctl",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
   "homepage": "https://repoctl.icebreaker.top",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sonofmagic/repoctl.git",
+    "url": "git+https://github.com/icelib/repoctl.git",
     "directory": "packages/monorepo-templates"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/repoctl/issues"
+    "url": "https://github.com/icelib/repoctl/issues"
   },
   "keywords": [
     "repoctl",

@@ -1,18 +1,18 @@
 {
   "name": "eslint-plugin-better-stylelint",
   "type": "module",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Bridge Stylelint diagnostics into ESLint for style files and Vue SFCs",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
   "homepage": "https://repoctl.icebreaker.top",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sonofmagic/repoctl.git",
+    "url": "git+https://github.com/icelib/repoctl.git",
     "directory": "packages/eslint-plugin-better-stylelint"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/repoctl/issues"
+    "url": "https://github.com/icelib/repoctl/issues"
   },
   "keywords": [
     "repoctl",

@@ -10,7 +10,7 @@
 
 不要为疑似漏洞创建公开 issue。请使用 `sonofmagic/repoctl` 的 GitHub 私密漏洞报告：
 
-https://github.com/sonofmagic/repoctl/security/advisories/new
+https://github.com/icelib/repoctl/security/advisories/new
 
 报告应包含受影响版本、运行环境、影响、复现步骤和可用的缓解建议。维护者会在合理时间内确认完整报告，并与报告者协调验证、修复和披露。
 

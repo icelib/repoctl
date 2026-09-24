@@ -193,7 +193,8 @@ Usage:
 
 ## skills sync
 
-Purpose: sync the `repoctl` skill into global agent skill directories.
+Purpose: sync the `repoctl` skill into global agent skill directories. Use
+`--all` when all supported agents should receive the same skill version.
 Usage:
 
 - pnpm exec repo skills sync

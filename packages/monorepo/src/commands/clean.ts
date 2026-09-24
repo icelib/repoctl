@@ -83,7 +83,7 @@ export async function cleanProjects(cwd: string, overrides?: Partial<CleanComman
   }))
   const name = path.resolve(workspaceDir, 'package.json')
   const pkgJson = await fs.readJson(name)
-  // fix https://github.com/sonofmagic/repoctl/issues/76
+  // fix https://github.com/icelib/repoctl/issues/76
   // 确保根目录仍旧依赖 repoctl。
   if (pkgJson.devDependencies && typeof pkgJson.devDependencies === 'object') {
     delete pkgJson.devDependencies['@icebreakers/monorepo']

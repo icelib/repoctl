@@ -1,5 +1,32 @@
 # create-icebreaker
 
+## 2.0.3
+
+### Patch Changes
+
+- Keep generated repoctl workspaces aligned with the source workspace package manager and guide agents to use the latest repoctl create entrypoint.
+
+  Refresh stale local metadata, preserve the complete pnpm version declaration, and enforce it through Corepack and the workspace package-manager policy. Ship the strict npmrc asset under a publishable filename and restore it during creation and upgrades.
+
+- Updated dependencies:
+  - create-repoctl@1.0.3
+
+## 2.0.2
+
+### Patch Changes
+
+- Update repository links for the move to the icelib GitHub organization and migrate the release workflow to npm trusted publishing. Package names and public APIs are unchanged.
+
+- Updated dependencies:
+  - create-repoctl@1.0.2
+
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies:
+  - create-repoctl@1.0.1
+
 ## 2.0.0
 
 ### Major Changes

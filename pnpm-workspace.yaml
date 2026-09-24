@@ -5,17 +5,19 @@ packages:
   - '!**/test/**'
 
 catalog:
-  '@commitlint/cli': ^21.2.2
+  '@commitlint/cli': ^21.2.3
   '@types/semver': ^7.8.0
   commander: ^15.0.0
   comment-json: ^5.0.0
   postcss: ^8.5.28
   semver: ^7.8.5
   stylelint: ^17.15.0
-  vitest: ^5.0.0
-  yaml: ^2.9.0
+  vitest: ^5.0.1
+  yaml: ^2.9.1
 
 minimumReleaseAge: 0
+
+pmOnFail: error
 
 versioning:
   fixed:
@@ -33,15 +35,15 @@ allowBuilds:
   vue-demi: true
   workerd: true
 overrides:
-  prettier: 3.9.6
+  prettier: 3.9.9
   typescript: 6.0.3
   vite: 8.3.0
   postcss: 8.5.28
   postcss-selector-parser: 7.1.6
-  js-yaml: 5.4.1
+  js-yaml: 5.4.2
   nanoid: 6.0.1
-  brace-expansion: 5.0.9
+  brace-expansion: 5.0.12
   cross-spawn: 7.0.6
-  adm-zip: 0.6.0
+  adm-zip: 0.6.1
   uuid: 14.0.2
   esbuild: 0.28.2

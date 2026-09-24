@@ -25,7 +25,7 @@
 
 ## tsdown
 
-repoctl 当前的通用类库模板是 [tsdown](https://github.com/sonofmagic/repoctl/tree/main/templates/tsdown)
+repoctl 当前的通用类库模板是 [tsdown](https://github.com/icelib/repoctl/tree/main/templates/tsdown)
 
 :::code-group
 
@@ -45,8 +45,8 @@ export default defineConfig({
 
 ## vite
 
-repoctl 的内置模板之一 [vue-lib](https://github.com/sonofmagic/repoctl/tree/main/templates/vue-lib)
+repoctl 的内置模板之一 [vue-lib](https://github.com/icelib/repoctl/tree/main/templates/vue-lib)
 
 你可以在 [`vite` 库模式官方文档](https://vite.dev/guide/build.html#library-mode) 来查看打包 `vue` 组件的方式
 
-这些能力已经配置在 [vue-lib](https://github.com/sonofmagic/repoctl/tree/main/templates/vue-lib) 中
+这些能力已经配置在 [vue-lib](https://github.com/icelib/repoctl/tree/main/templates/vue-lib) 中

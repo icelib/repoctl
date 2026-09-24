@@ -1,18 +1,18 @@
 {
   "name": "@icebreakers/stylelint-config",
   "type": "module",
-  "version": "5.1.0",
+  "version": "5.1.2",
   "description": "Stylelint preset from the repoctl development toolchain",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
   "homepage": "https://repoctl.icebreaker.top",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sonofmagic/repoctl.git",
+    "url": "git+https://github.com/icelib/repoctl.git",
     "directory": "packages/stylelint"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/repoctl/issues"
+    "url": "https://github.com/icelib/repoctl/issues"
   },
   "keywords": [
     "repoctl",

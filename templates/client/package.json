@@ -9,11 +9,11 @@
   "homepage": "https://repoctl.icebreaker.top",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sonofmagic/repoctl.git",
+    "url": "git+https://github.com/icelib/repoctl.git",
     "directory": "templates/client"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/repoctl/issues"
+    "url": "https://github.com/icelib/repoctl/issues"
   },
   "keywords": [
     "repoctl",
@@ -37,37 +37,37 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
-    "@tanstack/vue-query": "^5.102.8",
-    "@tanstack/vue-query-devtools": "^6.1.48",
+    "@tanstack/vue-query": "^5.103.2",
+    "@tanstack/vue-query-devtools": "^6.2.4",
     "@tanstack/vue-table": "^9.2.4",
-    "@tanstack/vue-virtual": "^3.13.38",
-    "@trpc/client": "^11.18.0",
+    "@tanstack/vue-virtual": "^3.13.39",
+    "@trpc/client": "^11.19.0",
     "clsx": "^2.1.1",
     "pinia": "^4.0.3",
-    "tailwind-merge": "^3.6.0",
+    "tailwind-merge": "^3.7.0",
     "tailwind-variants": "^3.3.1",
-    "vue": "^3.5.42",
-    "vue-i18n": "^11.4.10",
+    "vue": "^3.5.43",
+    "vue-i18n": "^11.4.12",
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.54.8",
+    "@cloudflare/vite-plugin": "^1.56.0",
     "@hono/node-server": "^2.1.1",
     "@hono/trpc-server": "^0.4.2",
     "@tailwindcss/vite": "^4.3.3",
-    "@trpc/server": "^11.18.0",
-    "@vitejs/plugin-vue": "^6.0.8",
+    "@trpc/server": "^11.19.0",
+    "@vitejs/plugin-vue": "^6.0.9",
     "@vitejs/plugin-vue-jsx": "^5.1.6",
     "@vue/tsconfig": "^0.9.1",
     "consola": "^3.4.2",
-    "hono": "^4.13.7",
+    "hono": "^4.13.9",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
     "vite": "^8.3.0",
     "vite-plugin-vue-devtools": "^8.2.1",
     "vite-tsconfig-paths": "^6.1.1",
     "vue-tsc": "3.3.11",
-    "wrangler": "^4.131.1",
-    "zod": "^4.6.2"
+    "wrangler": "^4.135.0",
+    "zod": "^4.6.5"
   }
 }

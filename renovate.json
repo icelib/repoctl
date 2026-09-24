@@ -6,6 +6,9 @@
     ":semanticCommitTypeAll(chore)"
   ],
   "rangeStrategy": "bump",
+  "gitIgnoredAuthors": [
+    "41898282+github-actions[bot]@users.noreply.github.com"
+  ],
   "npm": {
     "commitMessageTopic": "{{prettyDepType}} {{depName}}"
   },

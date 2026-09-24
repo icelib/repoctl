@@ -6,7 +6,7 @@
   <img alt="repoctl" src="./brand/svg/repoctl-lockup-primary.svg" width="300" height="64">
 </picture>
 
-[![codecov](https://codecov.io/gh/sonofmagic/repoctl/branch/main/graph/badge.svg?token=mWA3D53rSl)](https://codecov.io/gh/sonofmagic/repoctl)
+[![codecov](https://codecov.io/gh/icelib/repoctl/branch/main/graph/badge.svg?token=mWA3D53rSl)](https://codecov.io/gh/icelib/repoctl)
 
 [English](README.md) | 简体中文
 
@@ -48,16 +48,19 @@ pnpm exec repo check
 ```bash
 npm create repoctl@latest
 # 或
-pnpm create repoctl
+pnpm create repoctl@latest
 ```
 
 create 命令会让你选择需要的内置模板，然后进入 `repo init`、`repo doctor`、`repo new` 与 `repo check` 的标准工作流。
 
 ### 给 AI 代理
 
+请在 repoctl 源仓库之外的新目录或空目录中运行，不要把业务项目创建在本仓库内。
+
 ```bash
-pnpm create repoctl my-app -- --yes --templates vue-hono
+pnpm create repoctl@latest my-app -- --yes --templates vue-hono
 cd my-app
+corepack enable
 pnpm install
 pnpm exec repo init
 pnpm exec repo doctor
@@ -116,8 +119,8 @@ dev-configs 相关开发包、测试、fixtures 和 demo 与 repoctl 在同一�
 ## 相关链接
 
 - 文档：https://repoctl.icebreaker.top
-- GitHub：https://github.com/sonofmagic/repoctl
-- Issues：https://github.com/sonofmagic/repoctl/issues
+- GitHub：https://github.com/icelib/repoctl
+- Issues：https://github.com/icelib/repoctl/issues
 - 安全策略：[SECURITY.md](SECURITY.md)
 - 贡献指南：[CONTRIBUTING.md](CONTRIBUTING.md)
 

@@ -1,5 +1,48 @@
 # @icebreakers/monorepo
 
+## 5.5.6
+
+### Patch Changes
+
+- Keep generated repoctl workspaces aligned with the source workspace package manager and guide agents to use the latest repoctl create entrypoint.
+
+  Refresh stale local metadata, preserve the complete pnpm version declaration, and enforce it through Corepack and the workspace package-manager policy. Ship the strict npmrc asset under a publishable filename and restore it during creation and upgrades.
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.3
+  - @icebreakers/monorepo-templates@2.0.3
+
+## 5.5.5
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#899)
+
+- Only use verified GitHub logins when rendering release note contributors, so local Git author display names are not mentioned as GitHub users.
+
+- Preserve ordinary changelog prose such as "by default" and "by bob" without turning it into GitHub contributor mentions. Only explicit `by @username` author metadata is extracted when generating or repairing release notes.
+
+- Update repository links for the move to the icelib GitHub organization and migrate the release workflow to npm trusted publishing. Package names and public APIs are unchanged.
+
+- Updated dependencies:
+  - @icebreakers/commitlint-config@4.1.1
+  - @icebreakers/eslint-config@8.0.2
+  - @icebreakers/monorepo-templates@2.0.2
+  - @icebreakers/stylelint-config@5.1.2
+
+## 5.5.4
+
+### Patch Changes
+
+- chore(deps): update cloudflare workers tooling (#896)
+
+- chore(deps): update all non-major dependencies (#898)
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.1
+  - @icebreakers/monorepo-templates@2.0.1
+  - @icebreakers/stylelint-config@5.1.1
+
 ## 5.5.3
 
 ### Patch Changes

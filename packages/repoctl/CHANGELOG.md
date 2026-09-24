@@ -1,5 +1,28 @@
 # repoctl
 
+## 5.5.6
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/monorepo@5.5.6
+
+## 5.5.5
+
+### Patch Changes
+
+- Update repository links for the move to the icelib GitHub organization and migrate the release workflow to npm trusted publishing. Package names and public APIs are unchanged.
+
+- Updated dependencies:
+  - @icebreakers/monorepo@5.5.5
+
+## 5.5.4
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/monorepo@5.5.4
+
 ## 5.5.3
 
 ### Patch Changes

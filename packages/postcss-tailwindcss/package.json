@@ -1,18 +1,18 @@
 {
   "name": "postcss-tailwindcss",
   "type": "module",
-  "version": "3.1.0",
+  "version": "3.1.2",
   "description": "PostCSS AST utilities for analyzing Tailwind CSS syntax",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
   "homepage": "https://repoctl.icebreaker.top",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sonofmagic/repoctl.git",
+    "url": "git+https://github.com/icelib/repoctl.git",
     "directory": "packages/postcss-tailwindcss"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/repoctl/issues"
+    "url": "https://github.com/icelib/repoctl/issues"
   },
   "keywords": [
     "repoctl",
@@ -51,7 +51,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "enhanced-resolve": "^5.24.5",
+    "enhanced-resolve": "^5.25.1",
     "get-tsconfig": "^4.14.3",
     "postcss": "catalog:",
     "postcss-selector-parser": "^7.1.6",

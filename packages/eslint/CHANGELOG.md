@@ -1,5 +1,37 @@
 # @icebreakers/eslint-config
 
+## 8.0.3
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#909)
+
+## 8.0.2
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#899)
+
+- chore(deps): update pnpm-workspace.overrides prettier to v3.9.9 (#907)
+
+- Update repository links for the move to the icelib GitHub organization and migrate the release workflow to npm trusted publishing. Package names and public APIs are unchanged.
+
+- Updated dependencies:
+  - @icebreakers/stylelint-config@5.1.2
+
+## 8.0.1
+
+### Patch Changes
+
+- chore(deps): update devdependency prettier-plugin-astro to v1 (#880)
+
+- chore(deps): update unocss packages to v66.10.5 (#881)
+
+- chore(deps): update all non-major dependencies (#898)
+
+- Updated dependencies:
+  - @icebreakers/stylelint-config@5.1.1
+
 ## 8.0.0
 
 ### Major Changes

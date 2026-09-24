@@ -1,18 +1,18 @@
 {
   "name": "@icebreakers/eslint-config",
   "type": "module",
-  "version": "8.0.0",
+  "version": "8.0.3",
   "description": "ESLint preset from the repoctl development toolchain",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
   "homepage": "https://repoctl.icebreaker.top",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sonofmagic/repoctl.git",
+    "url": "git+https://github.com/icelib/repoctl.git",
     "directory": "packages/eslint"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/repoctl/issues"
+    "url": "https://github.com/icelib/repoctl/issues"
   },
   "keywords": [
     "repoctl",
@@ -70,19 +70,19 @@
   },
   "dependencies": {
     "@antfu/eslint-config": "9.5.1",
-    "@eslint-react/eslint-plugin": "^5.19.0",
+    "@eslint-react/eslint-plugin": "^5.20.8",
     "@icebreakers/stylelint-config": "workspace:*",
-    "@typescript-eslint/rule-tester": "^8.70.0",
-    "@typescript-eslint/typescript-estree": "^8.70.0",
-    "@typescript-eslint/utils": "^8.70.0",
-    "@vue/compiler-sfc": "^3.5.42",
-    "@weapp-vite/eslint": "^0.2.3",
+    "@typescript-eslint/rule-tester": "^8.70.1",
+    "@typescript-eslint/typescript-estree": "^8.70.1",
+    "@typescript-eslint/utils": "^8.70.1",
+    "@vue/compiler-sfc": "^3.5.43",
+    "@weapp-vite/eslint": "^0.2.7",
     "defu": "^6.1.7",
     "eslint-flat-config-utils": "3.2.0",
     "eslint-plugin-better-tailwindcss": "^4.7.0",
     "eslint-plugin-format": "2.0.1",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.6",
+    "eslint-plugin-react-refresh": "^0.5.7",
     "eslint-plugin-tailwindcss": "4.4.0"
   },
   "publishConfig": {
@@ -108,15 +108,15 @@
   "devDependencies": {
     "@prettier/plugin-xml": "^3.4.2",
     "@types/semver": "catalog:",
-    "@unocss/eslint-plugin": "66.10.2",
+    "@unocss/eslint-plugin": "66.10.5",
     "astro-eslint-parser": "^3.1.0",
-    "eslint-plugin-astro": "^3.1.0",
+    "eslint-plugin-astro": "^3.2.1",
     "eslint-plugin-better-stylelint": "workspace:*",
     "eslint-plugin-svelte": "^3.23.0",
-    "prettier": "^3.9.6",
-    "prettier-plugin-astro": "^0.14.1",
+    "prettier": "^3.9.9",
+    "prettier-plugin-astro": "^1.0.1",
     "semver": "catalog:",
-    "svelte": "^5.57.0",
+    "svelte": "^5.57.1",
     "svelte-eslint-parser": "^1.8.1"
   }
 }

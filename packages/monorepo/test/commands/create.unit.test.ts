@@ -229,11 +229,11 @@ describe('createNewProject unit scenarios', () => {
       author: 'ice breaker <hi@sonofmagic.top>',
       homepage: 'https://repoctl.icebreaker.top',
       bugs: {
-        url: 'https://github.com/sonofmagic/repoctl/issues',
+        url: 'https://github.com/icelib/repoctl/issues',
       },
       repository: {
         type: 'git',
-        url: 'git+https://github.com/sonofmagic/repoctl.git',
+        url: 'git+https://github.com/icelib/repoctl.git',
       },
     } as any)
     getRepoNameMock.mockImplementation(async () => undefined as any)

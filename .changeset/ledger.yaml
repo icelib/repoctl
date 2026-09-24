@@ -11,6 +11,11 @@
   dir: packages/changelog-github
   intents:
     - orange-ducks-move
+"@icebreakers/changelog-github@2.1.1":
+  dir: packages/changelog-github
+  intents:
+    - auto-pr-901
+    - icelib-repository-migration
 "@icebreakers/commitlint-config@4.0.6":
   dir: packages/commitlint
   intents:
@@ -20,6 +25,11 @@
   dir: packages/commitlint
   intents:
     - orange-ducks-move
+"@icebreakers/commitlint-config@4.1.1":
+  dir: packages/commitlint
+  intents:
+    - auto-pr-899
+    - icelib-repository-migration
 "@icebreakers/eslint-config@7.1.1":
   dir: packages/eslint
   intents:
@@ -44,6 +54,22 @@
     - light-lemons-beg
     - orange-ducks-move
     - shaggy-foxes-dress
+"@icebreakers/eslint-config@8.0.1":
+  dir: packages/eslint
+  intents:
+    - auto-pr-880
+    - auto-pr-881
+    - auto-pr-898
+"@icebreakers/eslint-config@8.0.2":
+  dir: packages/eslint
+  intents:
+    - auto-pr-899
+    - auto-pr-907
+    - icelib-repository-migration
+"@icebreakers/eslint-config@8.0.3":
+  dir: packages/eslint
+  intents:
+    - auto-pr-909
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -96,6 +122,18 @@
     - large-moles-begin
     - light-lemons-beg
     - rapid-ai-create
+"@icebreakers/monorepo-templates@2.0.1":
+  dir: packages/monorepo-templates
+  intents:
+    - auto-pr-898
+"@icebreakers/monorepo-templates@2.0.2":
+  dir: packages/monorepo-templates
+  intents:
+    - icelib-repository-migration
+"@icebreakers/monorepo-templates@2.0.3":
+  dir: packages/monorepo-templates
+  intents:
+    - steady-pnpm-alignment
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -168,6 +206,22 @@
   dir: packages/monorepo
   intents:
     - auto-pr-894
+"@icebreakers/monorepo@5.5.4":
+  dir: packages/monorepo
+  intents:
+    - auto-pr-896
+    - auto-pr-898
+"@icebreakers/monorepo@5.5.5":
+  dir: packages/monorepo
+  intents:
+    - auto-pr-899
+    - fix-release-author-mentions
+    - fix-release-author-prose
+    - icelib-repository-migration
+"@icebreakers/monorepo@5.5.6":
+  dir: packages/monorepo
+  intents:
+    - steady-pnpm-alignment
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -178,6 +232,10 @@
   intents:
     - fresh-apples-catalog
     - orange-ducks-move
+"@icebreakers/stylelint-config@5.1.2":
+  dir: packages/stylelint
+  intents:
+    - icelib-repository-migration
 create-icebreaker@1.1.0:
   dir: packages/create-icebreaker
   intents:
@@ -199,6 +257,14 @@ create-icebreaker@2.0.0:
   intents:
     - giant-walls-sing
     - rapid-ai-create
+create-icebreaker@2.0.2:
+  dir: packages/create-icebreaker
+  intents:
+    - icelib-repository-migration
+create-icebreaker@2.0.3:
+  dir: packages/create-icebreaker
+  intents:
+    - steady-pnpm-alignment
 create-repoctl@0.1.0:
   dir: packages/create-repoctl
   intents:
@@ -216,6 +282,14 @@ create-repoctl@1.0.0:
   intents:
     - giant-walls-sing
     - rapid-ai-create
+create-repoctl@1.0.2:
+  dir: packages/create-repoctl
+  intents:
+    - icelib-repository-migration
+create-repoctl@1.0.3:
+  dir: packages/create-repoctl
+  intents:
+    - steady-pnpm-alignment
 eslint-plugin-better-stylelint@2.0.4:
   dir: packages/eslint-plugin-better-stylelint
   intents:
@@ -231,6 +305,10 @@ eslint-plugin-better-stylelint@2.1.0:
     - fresh-apples-catalog
     - light-lemons-beg
     - orange-ducks-move
+eslint-plugin-better-stylelint@2.1.1:
+  dir: packages/eslint-plugin-better-stylelint
+  intents:
+    - icelib-repository-migration
 lightningcss-tailwindcss@2.0.4:
   dir: packages/lightningcss-tailwindcss
   intents:
@@ -240,6 +318,10 @@ lightningcss-tailwindcss@2.1.0:
   dir: packages/lightningcss-tailwindcss
   intents:
     - orange-ducks-move
+lightningcss-tailwindcss@2.1.1:
+  dir: packages/lightningcss-tailwindcss
+  intents:
+    - icelib-repository-migration
 postcss-tailwindcss@3.0.7:
   dir: packages/postcss-tailwindcss
   intents:
@@ -255,6 +337,14 @@ postcss-tailwindcss@3.1.0:
   intents:
     - fresh-apples-catalog
     - orange-ducks-move
+postcss-tailwindcss@3.1.1:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - auto-pr-898
+postcss-tailwindcss@3.1.2:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - icelib-repository-migration
 repoctl@5.2.0:
   dir: packages/repoctl
   intents:
@@ -298,6 +388,10 @@ repoctl@5.5.2:
   dir: packages/repoctl
   intents:
     - fuzzy-releases-recover
+repoctl@5.5.5:
+  dir: packages/repoctl
+  intents:
+    - icelib-repository-migration
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
@@ -320,3 +414,11 @@ stylelint-plugin-tailwindcss@3.1.0:
     - fresh-apples-catalog
     - large-moles-begin
     - orange-ducks-move
+stylelint-plugin-tailwindcss@3.1.1:
+  dir: packages/stylelint-plugin-tailwindcss
+  intents:
+    - auto-pr-881
+stylelint-plugin-tailwindcss@3.1.2:
+  dir: packages/stylelint-plugin-tailwindcss
+  intents:
+    - icelib-repository-migration

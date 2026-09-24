@@ -1,18 +1,18 @@
 {
   "name": "@icebreakers/changelog-github",
   "type": "module",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "Changesets GitHub changelog formatter for the repoctl development toolchain",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
   "homepage": "https://repoctl.icebreaker.top",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sonofmagic/repoctl.git",
+    "url": "git+https://github.com/icelib/repoctl.git",
     "directory": "packages/changelog-github"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/repoctl/issues"
+    "url": "https://github.com/icelib/repoctl/issues"
   },
   "keywords": [
     "changesets",
@@ -64,7 +64,7 @@
   "dependencies": {
     "@changesets/get-github-info": "^1.0.1",
     "@changesets/types": "^7.0.0",
-    "dotenv": "^17.4.2"
+    "dotenv": "^18.0.3"
   },
   "devDependencies": {
     "@changesets/parse": "^1.0.0"

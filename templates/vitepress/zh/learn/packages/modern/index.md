@@ -14,7 +14,7 @@ outline: [2, 4]
 
 为此我们需要提升包的质量，具体的手段如下
 
-此代码的演变用例见 [examples](https://github.com/sonofmagic/repoctl/tree/main/templates/vitepress/learn/packages/examples)
+此代码的演变用例见 [examples](https://github.com/icelib/repoctl/tree/main/templates/vitepress/learn/packages/examples)
 
 ## 确定包的模块入口点
 

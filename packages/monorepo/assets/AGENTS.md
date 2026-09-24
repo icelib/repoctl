@@ -22,6 +22,21 @@ pnpm exec repo new <name> --template <key>
 
 Preview without writing files: `pnpm exec repo new <name> --template <key> --dry-run`.
 
+## Create a new project
+
+If the user asks you to create a new business project, do not add it inside an
+existing unrelated repository. Use a new or empty directory outside the repoctl
+source checkout. Start a new workspace with:
+
+```bash
+pnpm create repoctl@latest <dir> -- --yes --templates <keys>
+cd <dir>
+corepack enable
+pnpm install
+pnpm exec repo init
+pnpm exec repo doctor
+```
+
 ## Verify
 
 ```bash
@@ -38,5 +53,5 @@ pnpm exec repo check
 ## Requirements
 
 - Node.js 22.13 or newer
-- pnpm
+- pnpm (run `corepack enable` so the declared workspace version is used)
 - CLI output is English by default; `--lang zh-CN` or `REPOCTL_LANG=zh-CN` selects Simplified Chinese

@@ -5,6 +5,20 @@
 ### Patch Changes
 
 - Updated dependencies:
+  - @icebreakers/stylelint-config@5.1.2
+
+## 0.0.53
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/stylelint-config@5.1.1
+
+## 0.0.53
+
+### Patch Changes
+
+- Updated dependencies:
   - @icebreakers/stylelint-config@5.1.0
 
 ## 0.0.53
