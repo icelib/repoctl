@@ -1,5 +1,14 @@
 # @icebreakers/monorepo
 
+## 5.5.7
+
+### Patch Changes
+
+- Preserve partial npm publish progress across retries, confirm registry visibility without re-uploading accepted versions, and retain release diagnostics as CI artifacts. Fixes #912.
+
+- Updated dependencies:
+  - @icebreakers/monorepo-templates@2.0.4
+
 ## 5.5.6
 
 ### Patch Changes

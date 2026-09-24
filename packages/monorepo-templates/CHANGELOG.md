@@ -1,5 +1,13 @@
 # @icebreakers/monorepo-templates
 
+## 2.0.4
+
+### Patch Changes
+
+- Preserve partial npm publish progress across retries, confirm registry visibility without re-uploading accepted versions, and retain release diagnostics as CI artifacts. Fixes #912.
+
+- Keep source development profiles out of generated workspaces and build dependencies before starting dev services.
+
 ## 2.0.3
 
 ### Patch Changes

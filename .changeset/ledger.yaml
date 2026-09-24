@@ -134,6 +134,11 @@
   dir: packages/monorepo-templates
   intents:
     - steady-pnpm-alignment
+"@icebreakers/monorepo-templates@2.0.4":
+  dir: packages/monorepo-templates
+  intents:
+    - calm-publish-progress
+    - olive-tigers-enjoy
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -222,6 +227,10 @@
   dir: packages/monorepo
   intents:
     - steady-pnpm-alignment
+"@icebreakers/monorepo@5.5.7":
+  dir: packages/monorepo
+  intents:
+    - calm-publish-progress
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -392,6 +401,10 @@ repoctl@5.5.5:
   dir: packages/repoctl
   intents:
     - icelib-repository-migration
+repoctl@5.5.7:
+  dir: packages/repoctl
+  intents:
+    - calm-publish-progress
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
