@@ -1,5 +1,17 @@
 # @icebreakers/monorepo
 
+## 5.5.6
+
+### Patch Changes
+
+- Keep generated repoctl workspaces aligned with the source workspace package manager and guide agents to use the latest repoctl create entrypoint.
+
+  Refresh stale local metadata, preserve the complete pnpm version declaration, and enforce it through Corepack and the workspace package-manager policy. Ship the strict npmrc asset under a publishable filename and restore it during creation and upgrades.
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.3
+  - @icebreakers/monorepo-templates@2.0.3
+
 ## 5.5.5
 
 ### Patch Changes

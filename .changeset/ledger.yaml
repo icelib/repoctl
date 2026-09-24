@@ -66,6 +66,10 @@
     - auto-pr-899
     - auto-pr-907
     - icelib-repository-migration
+"@icebreakers/eslint-config@8.0.3":
+  dir: packages/eslint
+  intents:
+    - auto-pr-909
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -126,6 +130,10 @@
   dir: packages/monorepo-templates
   intents:
     - icelib-repository-migration
+"@icebreakers/monorepo-templates@2.0.3":
+  dir: packages/monorepo-templates
+  intents:
+    - steady-pnpm-alignment
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -210,6 +218,10 @@
     - fix-release-author-mentions
     - fix-release-author-prose
     - icelib-repository-migration
+"@icebreakers/monorepo@5.5.6":
+  dir: packages/monorepo
+  intents:
+    - steady-pnpm-alignment
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -249,6 +261,10 @@ create-icebreaker@2.0.2:
   dir: packages/create-icebreaker
   intents:
     - icelib-repository-migration
+create-icebreaker@2.0.3:
+  dir: packages/create-icebreaker
+  intents:
+    - steady-pnpm-alignment
 create-repoctl@0.1.0:
   dir: packages/create-repoctl
   intents:
@@ -270,6 +286,10 @@ create-repoctl@1.0.2:
   dir: packages/create-repoctl
   intents:
     - icelib-repository-migration
+create-repoctl@1.0.3:
+  dir: packages/create-repoctl
+  intents:
+    - steady-pnpm-alignment
 eslint-plugin-better-stylelint@2.0.4:
   dir: packages/eslint-plugin-better-stylelint
   intents:
