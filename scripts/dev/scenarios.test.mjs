@@ -22,7 +22,7 @@ it('package profiles select their dependency closures without starting template 
     const graph = JSON.parse(execFileSync(process.execPath, [turbo, 'run', 'build', ...filters, '--dry=json'], { cwd: root, encoding: 'utf8' }))
     const packages = graph.tasks.map(task => task.package)
     assert.ok(graph.tasks.length > 0)
-    assert.ok(graph.tasks.every(task => task.directory.startsWith('packages/')))
+    assert.ok(graph.tasks.every(task => task.directory.replaceAll('\\', '/').startsWith('packages/')))
     if (profile === 'repoctl') {
       const tasks = new Map(graph.tasks.map(task => [task.taskId, task]))
       assert.ok(tasks.get('repoctl#build').dependencies.includes('@icebreakers/monorepo#build'))

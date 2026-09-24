@@ -17,6 +17,9 @@ it('watch builds cold dependencies, propagates updates, blocks failed dependents
   await writeFile(path.join(cwd, '.gitignore'), 'node_modules\n.turbo\ndist\nrunning.pid\n')
   await copyFile(new URL('../../turbo.json', import.meta.url), path.join(cwd, 'turbo.json'))
   await copyFile(new URL('./fixtures/build.mjs', import.meta.url), path.join(cwd, 'build.mjs'))
+  // The build fixture only reads files; it has no registry dependencies to install.
+  // Supply its workspace dependency graph without resolving pnpm itself offline.
+  await copyFile(new URL('./fixtures/pnpm-lock.yaml', import.meta.url), path.join(cwd, 'pnpm-lock.yaml'))
   for (const name of ['upstream', 'repoctl']) {
     await mkdir(path.join(cwd, 'packages', name, 'src'), { recursive: true })
     await writeFile(path.join(cwd, 'packages', name, 'package.json'), JSON.stringify({
@@ -30,7 +33,6 @@ it('watch builds cold dependencies, propagates updates, blocks failed dependents
   const outputFile = path.join(cwd, 'packages/repoctl/dist/value.txt')
   await writeFile(source, 'first')
   execFileSync('git', ['init', '--quiet'], { cwd })
-  execFileSync('pnpm', ['install', '--ignore-scripts', '--offline'], { cwd, stdio: 'pipe' })
 
   const watchArgs = manifest.scripts['dev:repoctl'].split(' && ').at(-1).split(' ').slice(1)
   const child = spawn(process.execPath, [turbo, ...watchArgs, '--ui=stream'], { cwd, detached: true, stdio: ['ignore', 'pipe', 'pipe'] })
