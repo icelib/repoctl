@@ -1,10 +1,11 @@
 import { execFile } from 'node:child_process'
-import { cp, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises'
+import { cp, mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
+import { linkDependencies } from './dependencies'
 
 const execFileAsync = promisify(execFile)
 const sourcePackageDir = fileURLToPath(new URL('../../../', import.meta.url))
@@ -47,8 +48,7 @@ export async function createPackageManagerFixture() {
   ])
   // Only assets and built code need isolation. Reuse the installed dependency graph
   // instead of copying every transitive dependency for every test case.
-  // Junctions work on Windows without requiring symlink privileges.
-  await symlink(await realpath(path.join(sourcePackageDir, 'node_modules')), path.join(packageDir, 'node_modules'), 'junction')
+  await linkDependencies(sourcePackageDir, packageDir)
 
   return {
     root,
