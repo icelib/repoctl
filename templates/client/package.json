@@ -22,18 +22,19 @@
     "template"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.18.0"
   },
   "scripts": {
-    "dev": "pnpm cf-typegen && vite --host",
+    "dev": "pnpm cf-typegen && cf dev",
     "build": "pnpm cf-typegen && vue-tsc -b && vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
-    "deploy": "wrangler deploy",
-    "cf-typegen": "wrangler types",
-    "cf-typegen:check": "wrangler types --check",
-    "typecheck": "pnpm cf-typegen && vue-tsc -b"
+    "deploy": "cf deploy",
+    "cf-typegen": "cf workers types",
+    "cf-typegen:check": "node scripts/check-worker-types.mjs",
+    "typecheck": "pnpm cf-typegen && vue-tsc -b",
+    "deploy:dry-run": "cf deploy --dry-run"
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
@@ -51,7 +52,9 @@
     "vue-router": "^5.3.1"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.56.0",
+    "@cloudflare/config": "0.20.0",
+    "@cloudflare/runtime-types": "0.1.4",
+    "@cloudflare/vite-plugin": "2.0.0-beta.sha-ad79608dd",
     "@hono/node-server": "^2.1.3",
     "@hono/trpc-server": "^0.4.2",
     "@tailwindcss/vite": "^4.3.3",
@@ -59,6 +62,7 @@
     "@vitejs/plugin-vue": "^6.0.9",
     "@vitejs/plugin-vue-jsx": "^5.1.6",
     "@vue/tsconfig": "^0.9.1",
+    "cf": "1.0.0-beta.5",
     "consola": "^3.4.2",
     "hono": "^4.13.11",
     "tailwindcss": "^4.3.3",
@@ -67,7 +71,6 @@
     "vite-plugin-vue-devtools": "^8.2.1",
     "vite-tsconfig-paths": "^6.1.1",
     "vue-tsc": "3.3.11",
-    "wrangler": "^4.135.0",
     "zod": "^4.6.5"
   }
 }

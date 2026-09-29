@@ -9,6 +9,7 @@ const skipDirs = new Set([
   '.tmp',
   '.vue-global-types',
   '.wrangler',
+  '.cloudflare',
 ])
 
 const skipFiles = new Set([

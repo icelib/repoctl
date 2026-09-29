@@ -10,6 +10,6 @@ export default await defineEslintConfig({
     tailwindcss: {
       entryPoint: tailwindEntryPoint,
     },
-    ignores: ['**/fixtures/**', '**/*.svg', 'worker-configuration.d.ts'],
+    ignores: ['**/fixtures/**', '**/*.svg', 'worker-configuration.d.ts', '.cloudflare/**'],
   },
 })

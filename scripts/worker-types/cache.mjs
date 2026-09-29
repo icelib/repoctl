@@ -15,7 +15,9 @@ function hashes(workspace) {
 export function checkCacheInputs(workspace) {
   const before = hashes(workspace)
   for (const [relative, content] of [
-    ['apps/server/wrangler.jsonc', '\n// compatibility and bindings are cache inputs\n'],
+    ['apps/server/cloudflare.config.ts', '\n// compatibility and bindings are cache inputs\n'],
+    ['apps/server/wrangler.config.ts', '\n// tooling changes invalidate tasks\n'],
+    ['apps/client/cloudflare.config.ts', '\n// client configuration changes invalidate tasks\n'],
     ['apps/client/worker/cache-input.ts', 'export {}\n'],
     ['apps/server/.dev.vars', 'CACHE_TEST=value\n'],
     ['apps/server/.env', 'CACHE_TEST=value\n'],
@@ -77,9 +79,17 @@ export function checkCacheRestore(workspace, task) {
     expected.set(file, readFileSync(file, 'utf8'))
     rmSync(file)
   }
+  const clientOutput = path.join(workspace, 'apps/client/.cloudflare/output')
+  if (task === 'build') {
+    rmSync(clientOutput, { recursive: true, force: true })
+  }
   const planned = tasks(workspace).filter(item => item.task === task)
   assert.ok(planned.every(item => item.cache.status === 'HIT'), `${task} must be cached before restoring declarations`)
   run('pnpm', ['run', task], workspace)
+  if (task === 'build') {
+    assert.ok(existsSync(path.join(clientOutput, 'v0/workers/default/bundle/index.js')), 'build cache must restore the Worker bundle')
+    assert.ok(existsSync(path.join(clientOutput, 'v0/workers/default/assets/index.html')), 'build cache must restore client assets')
+  }
   for (const [file, content] of expected) {
     assert.equal(readFileSync(file, 'utf8'), content, `${task} cache must restore declarations`)
   }

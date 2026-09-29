@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import process from 'node:process'
 
 const TRACKED_BUILD_ARTIFACT_PATTERNS = [
+  /^(?:templates|apps|packages)\/[^/]+\/\.cloudflare\//u,
   /^packages\/[^/]+\/dist\//u,
   /^apps\/[^/]+\/dist\//u,
   /^(?:templates|apps|packages)\/[^/]+\/worker-configuration\.d\.ts$/u,

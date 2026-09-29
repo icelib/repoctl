@@ -18,6 +18,9 @@
     ".vitepress/env.d.ts",
     "scripts/**/*.ts",
     "why/examples/2.npm-basic-package/src/**/*.ts",
-    "why/examples/3.npm-basic-package/src/**/*.ts"
+    "why/examples/3.npm-basic-package/src/**/*.ts",
+    "cloudflare.config.ts",
+    "wrangler.config.ts",
+    ".vitepress/config.ts"
   ]
 }

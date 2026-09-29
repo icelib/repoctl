@@ -22,16 +22,16 @@
     "monorepo"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": ">=22.18.0"
   },
   "scripts": {
     "dev": "vitepress dev",
     "check:locales": "node --experimental-strip-types scripts/check-locales.ts",
     "build": "pnpm run check:locales && vitepress build",
     "preview": "vitepress preview",
-    "deploy": "wrangler deploy",
-    "deploy:preview": "wrangler versions upload",
-    "deploy:dry-run": "wrangler deploy --dry-run",
+    "deploy": "pnpm build && cf deploy",
+    "deploy:preview": "pnpm build && cf workers versions create",
+    "deploy:dry-run": "pnpm build && cf deploy --dry-run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "vue-tsc -p tsconfig.json --noEmit"
@@ -42,6 +42,7 @@
   "devDependencies": {
     "@braintree/sanitize-url": "^7.1.2",
     "@tailwindcss/vite": "^4.3.3",
+    "cf": "1.0.0-beta.5",
     "cytoscape": "^3.34.3",
     "cytoscape-cose-bilkent": "^4.1.0",
     "dayjs": "^1.11.23",
@@ -52,6 +53,6 @@
     "vitepress-plugin-llms": "^1.14.0",
     "vitepress-plugin-mermaid": "^2.0.17",
     "vue-tsc": "^3.3.11",
-    "wrangler": "^4.135.0"
+    "wrangler": "4.136.3"
   }
 }

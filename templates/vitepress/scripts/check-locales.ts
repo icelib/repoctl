@@ -6,7 +6,7 @@ import { homeContent } from '../.vitepress/home/content.ts'
 import { routePath, routeSections } from '../.vitepress/navigation/routes.ts'
 
 const root = process.cwd()
-const ignoredDirectories = new Set(['.vitepress', 'node_modules'])
+const ignoredDirectories = new Set(['.vitepress', '.cloudflare', '.wrangler', 'node_modules'])
 const ignoredFiles = new Set(['CHANGELOG.md'])
 
 function toPosixPath(value: string) {

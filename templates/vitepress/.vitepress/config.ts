@@ -7,7 +7,7 @@ import { createPageHead, siteOrigin } from './seo'
 
 export default withMermaid(defineConfig({
   outDir: '.vitepress/dist',
-  srcExclude: ['CHANGELOG.md', 'learn/packages/examples/**', 'zh/learn/packages/examples/**'],
+  srcExclude: ['.cloudflare/**', '.wrangler/**', 'CHANGELOG.md', 'learn/packages/examples/**', 'zh/learn/packages/examples/**'],
   title: 'repoctl',
   titleTemplate: ':title — Official CLI for pnpm and Turborepo Monorepos',
   description: 'A practical CLI guide for setting up, checking, and maintaining pnpm and Turborepo monorepos.',
@@ -82,6 +82,8 @@ export default withMermaid(defineConfig({
           'thinking.md',
           'learn/packages/examples/**',
           '.vitepress/**',
+          '.cloudflare/**',
+          '.wrangler/**',
           '**/node_modules/**',
           '**/internal/**',
           '**/fixtures/**',

@@ -63,10 +63,12 @@ exports[`createNewProject > createNewProject demo client case 1`] = `
 [
   ".gitignore",
   "AGENTS.md",
+  "cloudflare.config.ts",
   "eslint.config.js",
   "index.html",
   "package.mock.json",
   "public/vite.svg",
+  "scripts/check-worker-types.mjs",
   "src/App.vue",
   "src/main.ts",
   "src/pages/index.vue",
@@ -88,7 +90,6 @@ exports[`createNewProject > createNewProject demo client case 1`] = `
   "worker/fetch-entry.ts",
   "worker/node-entry.ts",
   "worker/trpc-router.ts",
-  "wrangler.jsonc",
 ]
 `;
 
@@ -107,8 +108,10 @@ exports[`createNewProject > createNewProject demo default case 1`] = `
 exports[`createNewProject > createNewProject demo server case 1`] = `
 [
   ".gitignore",
+  "cloudflare.config.ts",
   "eslint.config.js",
   "package.mock.json",
+  "scripts/check-worker-types.mjs",
   "src/app.ts",
   "src/config.ts",
   "src/fetch-entry.ts",
@@ -119,7 +122,7 @@ exports[`createNewProject > createNewProject demo server case 1`] = `
   "tsdown.config.ts",
   "turbo.json",
   "vitest.config.ts",
-  "wrangler.jsonc",
+  "wrangler.config.ts",
 ]
 `;
 
@@ -163,6 +166,8 @@ exports[`createNewProject > createNewProject demo website case 1`] = `
   "ai/create.md",
   "ai/index.md",
   "ai/llms-txt.md",
+  "cloudflare.config.ts",
+  "eslint.config.js",
   "index.md",
   "learn/index.md",
   "learn/monorepo/commands.md",
@@ -268,7 +273,7 @@ exports[`createNewProject > createNewProject demo website case 1`] = `
   "tasks/reports.md",
   "tasks/troubleshooting.md",
   "tsconfig.json",
-  "wrangler.jsonc",
+  "wrangler.config.ts",
   "zh/ai/create.md",
   "zh/ai/index.md",
   "zh/ai/llms-txt.md",

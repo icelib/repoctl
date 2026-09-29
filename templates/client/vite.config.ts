@@ -26,6 +26,7 @@ export default defineConfig(({ command }): UserConfig => {
   }
 
   return {
+    server: { host: true, port: 8787 },
     build: {
       target: 'baseline-widely-available',
     },
