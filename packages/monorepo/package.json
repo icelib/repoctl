@@ -94,7 +94,7 @@
     "@pnpm/find-workspace-dir": "^1000.1.5",
     "@pnpm/logger": "^1100.0.0",
     "@pnpm/types": "^1102.1.1",
-    "@pnpm/worker": "^1100.4.4",
+    "@pnpm/worker": "^1100.4.5",
     "@pnpm/workspace.find-packages": "^1000.0.65",
     "@pnpm/workspace.read-manifest": "^1000.3.1",
     "c12": "^3.3.4",
@@ -113,7 +113,7 @@
     "yaml": "catalog:"
   },
   "devDependencies": {
-    "@types/klaw": "^3.0.7",
+    "@types/klaw": "^3.0.8",
     "@types/micromatch": "^4.0.10",
     "@types/semver": "catalog:",
     "ci-info": "^4.4.0",
