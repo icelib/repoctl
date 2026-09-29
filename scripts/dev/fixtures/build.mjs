@@ -1,8 +1,9 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { appendFile, mkdir, readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import { setTimeout } from 'node:timers/promises'
 
 const { name } = JSON.parse(await readFile('package.json', 'utf8'))
+await appendFile('../../build-events.log', `START ${name}\n`)
 const value = await readFile(name === 'upstream' ? 'src/value.txt' : '../upstream/dist/value.txt', 'utf8')
 if (value === 'broken') {
   console.error('INTENTIONAL_BUILD_FAILURE')
@@ -14,4 +15,5 @@ if (name === 'upstream' && value === 'slow') {
 }
 await mkdir('dist', { recursive: true })
 await writeFile('dist/value.txt', value)
+await appendFile('../../build-events.log', `DONE ${name} ${value}\n`)
 console.log(`BUILT ${name} ${value}`)

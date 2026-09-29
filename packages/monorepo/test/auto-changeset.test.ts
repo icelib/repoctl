@@ -46,7 +46,7 @@ describe('automatic changesets', () => {
     expect(changesetPath(42)).toBe('.changeset/auto-pr-42.md')
   })
 
-  it('commits same-repository PR changesets and skips existing intent', async () => {
+  it('commits same-repository PR changesets', async () => {
     const calls: string[] = []
     const client = {
       getPullRequest: async () => ({
@@ -69,6 +69,32 @@ describe('automatic changesets', () => {
     await expect(processPullRequest(client as never, 42)).resolves.toEqual({ action: 'committed', number: 42, path: '.changeset/auto-pr-42.md' })
     expect(calls).toEqual(['updateRef'])
   })
+
+  it.each(['unchanged', 'manual', 'edited', 'draft', 'release', 'private'])(
+    'does not append another commit for %s release intent',
+    async (scenario) => {
+      const generated = renderChangeset({ packages: ['demo'], number: 42, title: 'Fix package' })
+      const client = {
+        getPullRequest: async () => ({
+          number: 42,
+          title: 'Fix package',
+          draft: scenario === 'draft',
+          labels: [],
+          head: { ref: scenario === 'release' ? 'release/pnpm-version' : 'renovate/demo', sha: 'head', repo: { full_name: 'acme/repo' } },
+          base: { ref: 'main', repo: { full_name: 'acme/repo' } },
+        }),
+        getPullRequestFiles: async () => [
+          { filename: 'packages/demo/package.json' },
+          { filename: scenario === 'manual' ? '.changeset/manual.md' : changesetPath(42) },
+        ],
+        getContent: async (path: string) => path.endsWith('package.json')
+          ? JSON.stringify({ name: 'demo', private: scenario === 'private' })
+          : scenario === 'edited' ? `${generated}\nMaintainer notes.\n` : generated,
+        getRef: async () => { throw new Error('Must not attempt a write') },
+      }
+      await expect(processPullRequest(client as never, 42)).resolves.toEqual({ action: 'skipped', number: 42 })
+    },
+  )
 
   it('comments once instead of writing to a fork PR', async () => {
     const comments: string[] = []

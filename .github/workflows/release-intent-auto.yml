@@ -27,14 +27,38 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
 
       - name: Setup Node.js environment
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
 
+      - name: Validate GitHub App configuration
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          APP_CLIENT_ID: ${{ vars.REPOCTL_APP_CLIENT_ID }}
+          APP_PRIVATE_KEY_CONFIGURED: ${{ secrets.REPOCTL_APP_PRIVATE_KEY != '' }}
+        run: |
+          if { [ -n "$APP_CLIENT_ID" ] && [ "$APP_PRIVATE_KEY_CONFIGURED" != 'true' ]; } ||
+             { [ -z "$APP_CLIENT_ID" ] && [ "$APP_PRIVATE_KEY_CONFIGURED" = 'true' ]; }; then
+            echo 'Configure both REPOCTL_APP_CLIENT_ID and REPOCTL_APP_PRIVATE_KEY.' >&2
+            exit 1
+          fi
+
+      - name: Create GitHub App token
+        if: ${{ vars.REPOCTL_APP_CLIENT_ID != '' && (github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.REPOCTL_APP_CLIENT_ID }}
+          private-key: ${{ secrets.REPOCTL_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
       - name: Generate or backfill changesets
         env:
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
           PR_NUMBERS: ${{ inputs.pr_numbers }}
         run: node .github/auto-changeset/index.mjs
