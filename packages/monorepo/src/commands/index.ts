@@ -121,3 +121,5 @@ export {
   verifyPrePush,
   verifyStagedTypecheck,
 }
+
+export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { publishWithRetry } from '@/commands/release/publish'
+import { refreshRegistry } from '@/commands/release/publish/registry'
+import { PublishState } from '@/commands/release/publish/state'
 import { cleanupReleaseTempRoots, createSpawnMock, createTempWorkspace } from './release-fixtures'
 
 afterEach(async () => {
@@ -16,7 +18,9 @@ describe('publish retry', () => {
     const { calls, spawn } = createSpawnMock({
       statusSequences: {
         'pnpm publish -r --report-summary --provenance --no-git-checks': [1],
+        'npm view repoctl@1.0.0 version': [1, 1, 0],
       },
+      stderrSequences: { 'npm view repoctl@1.0.0 version': ['E404 Not Found', 'E404 Not Found', ''] },
       stdoutSequences: {
         'pnpm publish -r --report-summary --provenance --no-git-checks': ['CA_CREATE_SIGNING_CERTIFICATE_ERROR'],
         'npm view repoctl@1.0.0 version': ['', '', '1.0.0'],
@@ -83,6 +87,8 @@ describe('publish retry', () => {
     const retry = vi.fn(async () => {})
     const filteredArgs = [...publishArgs, '--filter', 'repoctl']
     const { calls, spawn } = createSpawnMock({
+      statuses: { 'npm view repoctl@1.0.0 version': 1 },
+      stderr: { 'npm view repoctl@1.0.0 version': 'E404 Not Found' },
       statusSequences: {
         [`pnpm ${publishArgs.join(' ')}`]: [1],
         [`pnpm ${filteredArgs.join(' ')}`]: [1, 1],
@@ -99,4 +105,11 @@ describe('publish retry', () => {
     expect(calls.filter(call => call.command === 'pnpm')).toHaveLength(3)
     expect(retry).toHaveBeenCalledTimes(2)
   })
+})
+
+it('classifies packages beyond the query deadline as unknown', async () => {
+  const packages = [{ name: 'repoctl', version: '1.0.0' }]
+  const spawn = vi.fn()
+  await expect(refreshRegistry(new PublishState(packages), { cwd: '.', spawn: spawn as never }, packages, 0)).resolves.toEqual(packages)
+  expect(spawn).not.toHaveBeenCalled()
 })

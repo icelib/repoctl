@@ -1,3 +1,4 @@
+import type { ReleaseLifecycleState } from '../lifecycle/types'
 import type { ReleaseNoteDocument } from '../notes/model'
 import type {
   CloseLegacyPullRequestsOptions,
@@ -13,15 +14,12 @@ import type {
 } from './types'
 import process from 'node:process'
 import { logger } from '../../../core/logger'
-import { ReleaseCommandError } from '../errors'
+import { GitHubApiError } from './errors'
 import { enrichReleaseNote, readReleasePullRequestContributors } from './metadata'
+import { readReleaseState, writeReleaseState } from './state'
+import { ensureTag, readTagTarget } from './tags'
 
-export class GitHubApiError extends ReleaseCommandError {
-  constructor(message: string, public readonly status: number, public readonly responseBody?: string) {
-    super(message)
-    this.name = 'GitHubApiError'
-  }
-}
+export { GitHubApiError } from './errors'
 
 export class GitHubClient implements GitHubOperations {
   private readonly token: string | undefined
@@ -59,6 +57,7 @@ export class GitHubClient implements GitHubOperations {
       try {
         response = await this.requestFetch(`${this.apiUrl}/repos/${repository}${endpoint}`, {
           method,
+          signal: AbortSignal.timeout(30_000),
           headers: {
             'Accept': 'application/vnd.github+json',
             'Authorization': `Bearer ${this.token}`,
@@ -72,7 +71,7 @@ export class GitHubClient implements GitHubOperations {
         // A mutating request may have been accepted even when the transport
         // fails before returning a response. Let the caller reconcile it
         // before issuing another POST.
-        if (method !== 'POST' && attempt < this.retryAttempts) {
+        if (method !== 'POST' && method !== 'PUT' && attempt < this.retryAttempts) {
           await this.sleep(this.retryDelay * 2 ** (attempt - 1))
           continue
         }
@@ -86,7 +85,7 @@ export class GitHubClient implements GitHubOperations {
       catch (error) {
         // The server may have committed a POST before the response stream
         // was interrupted. Reconcile by the resource's idempotency key first.
-        if (method !== 'POST' && attempt < this.retryAttempts) {
+        if (method !== 'POST' && method !== 'PUT' && attempt < this.retryAttempts) {
           await this.sleep(this.retryDelay * 2 ** (attempt - 1))
           continue
         }
@@ -99,18 +98,18 @@ export class GitHubClient implements GitHubOperations {
           data = JSON.parse(text) as T
         }
         catch {
-          if (attempt < this.retryAttempts) {
+          if (method !== 'POST' && method !== 'PUT' && attempt < this.retryAttempts) {
             await this.sleep(this.retryDelay * 2 ** (attempt - 1))
             continue
           }
-          throw new GitHubApiError(`GitHub API returned invalid JSON for ${method} ${endpoint}`, response.status, text)
+          throw new GitHubApiError(`GitHub API returned invalid JSON for ${method} ${endpoint}`, method === 'POST' || method === 'PUT' ? 0 : response.status, text)
         }
       }
       if (!response.ok) {
         const message = typeof data === 'object' && data !== null && 'message' in data
           ? String((data as { message: unknown }).message)
           : text || response.statusText
-        if ((response.status === 429 || response.status >= 500) && attempt < this.retryAttempts) {
+        if (method !== 'POST' && method !== 'PUT' && (response.status === 429 || response.status >= 500) && attempt < this.retryAttempts) {
           const retryAfter = response.headers.get('retry-after')
           const reset = response.headers.get('x-ratelimit-reset')
           const retrySeconds = retryAfter && /^\d+(?:\.\d+)?$/.test(retryAfter)
@@ -118,7 +117,7 @@ export class GitHubClient implements GitHubOperations {
             : retryAfter ? Math.max(0, (Date.parse(retryAfter) - Date.now()) / 1000) : 0
           const resetSeconds = reset && /^\d+$/.test(reset) ? Math.max(0, Number(reset) - Date.now() / 1000) : 0
           const delay = Math.max(this.retryDelay * 2 ** (attempt - 1), retrySeconds * 1000, resetSeconds * 1000)
-          await this.sleep(delay)
+          await this.sleep(Math.min(delay, 30_000))
           continue
         }
         throw new GitHubApiError(`GitHub API ${method} ${endpoint} failed (${response.status}): ${message}`, response.status, text)
@@ -130,6 +129,14 @@ export class GitHubClient implements GitHubOperations {
 
   private getRequest(): GitHubRequest {
     return this.request.bind(this)
+  }
+
+  async readReleaseState(key: string) {
+    return readReleaseState(this.getRequest(), key)
+  }
+
+  async writeReleaseState(key: string, state: ReleaseLifecycleState, revision?: string) {
+    return writeReleaseState(this.getRequest(), key, state, revision)
   }
 
   async ensurePullRequest(options: EnsurePullRequestOptions) {
@@ -192,6 +199,7 @@ export class GitHubClient implements GitHubOperations {
           ...(options.name === undefined ? {} : { name: options.name }),
           ...(options.body === undefined ? {} : { body: options.body }),
           prerelease: options.prerelease ?? false,
+          draft: false,
         })
         return updated.data ?? existing
       }
@@ -261,25 +269,11 @@ export class GitHubClient implements GitHubOperations {
     return readReleasePullRequestContributors(this.getRequest(), target)
   }
 
+  async readTagTarget(tag: string) {
+    return readTagTarget(this.getRequest(), tag)
+  }
+
   async ensureTag(options: EnsureTagOptions) {
-    const endpoint = `/git/ref/tags/${encodeURIComponent(options.tag)}`
-    try {
-      await this.request('GET', endpoint)
-      return
-    }
-    catch (error) {
-      if (!(error instanceof GitHubApiError) || error.status !== 404) {
-        throw error
-      }
-    }
-    try {
-      await this.request('POST', '/git/refs', { ref: `refs/tags/${options.tag}`, sha: options.target })
-    }
-    catch (error) {
-      if (!(error instanceof GitHubApiError) || error.status !== 422) {
-        throw error
-      }
-      await this.request('GET', endpoint)
-    }
+    return ensureTag(this.getRequest(), options)
   }
 }

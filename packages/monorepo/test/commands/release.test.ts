@@ -58,12 +58,7 @@ describe('release commands', () => {
       'git log -1 --format=%s HEAD': 'chore(release): version packages',
     } })
 
-    await releaseCi({
-      branch: 'main',
-      cwd,
-      env: { GITHUB_EVENT_NAME: 'push', GITHUB_REF_NAME: 'main' },
-      spawn: spawn as never,
-    })
+    await releaseCi({ github: { ensurePullRequest: vi.fn(), ensureRelease: vi.fn() }, branch: 'main', cwd, env: { GITHUB_EVENT_NAME: 'push', GITHUB_REF_NAME: 'main' }, spawn: spawn as never })
 
     expect(calls).toContainEqual({ command: 'pnpm', args: ['publish', '-r', '--report-summary', '--provenance', '--no-git-checks'] })
   })
@@ -92,12 +87,7 @@ describe('release commands', () => {
     const cwd = await createTempWorkspace('main')
     const { calls, spawn } = createSpawnMock()
 
-    await releaseCi({
-      branch: 'main',
-      cwd,
-      env: { GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF_NAME: 'main' },
-      spawn: spawn as never,
-    })
+    await releaseCi({ github: { ensurePullRequest: vi.fn(), ensureRelease: vi.fn() }, branch: 'main', cwd, env: { GITHUB_EVENT_NAME: 'workflow_dispatch', GITHUB_REF_NAME: 'main' }, spawn: spawn as never })
 
     expect(calls[0]).toEqual({ command: 'pnpm', args: ['run', 'build'] })
   })
@@ -106,7 +96,7 @@ describe('release commands', () => {
     const cwd = await createTempWorkspace('main')
     const { calls, spawn } = createSpawnMock()
 
-    await releaseCi({ mode: 'auto', branch: 'main', cwd, spawn: spawn as never })
+    await releaseCi({ github: { ensurePullRequest: vi.fn(), ensureRelease: vi.fn() }, mode: 'auto', branch: 'main', cwd, spawn: spawn as never })
 
     expect(calls).toEqual([
       { command: 'pnpm', args: ['run', 'build'] },

@@ -106,7 +106,7 @@ function checkReleaseWorkflow() {
   assert.ok(artifact, 'release workflow must preserve publish diagnostics')
   assert.equal(artifact.if, githubExpression('always()'))
   assert.equal(artifact.with?.name, `npm-publish-progress-${githubExpression('github.run_id')}-${githubExpression('github.run_attempt')}`)
-  assert.equal(artifact.with?.path, 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\n')
+  assert.equal(artifact.with?.path, 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\nrepoctl-release-progress.json\n')
   assert.equal(artifact.with?.['if-no-files-found'], 'ignore')
   assert.equal(artifact.with?.['retention-days'], 14)
   assert.notEqual(runner['continue-on-error'], true)

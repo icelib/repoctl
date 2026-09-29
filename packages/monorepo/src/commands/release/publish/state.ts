@@ -24,7 +24,7 @@ export class PublishState {
   private readonly confirmed = new Set<string>()
   private readonly allowed: Set<string>
 
-  constructor(readonly candidates: PublishedPackage[]) {
+  constructor(readonly candidates: PublishedPackage[], private readonly checkpoint?: (accepted: PublishedPackage[]) => Promise<void>) {
     this.allowed = new Set(candidates.map(packageKey))
   }
 
@@ -65,5 +65,6 @@ export class PublishState {
       confirmedPackages: acceptedPackages.filter(pkg => this.confirmed.has(packageKey(pkg))),
     })
     await writeJsonAtomic(path.join(cwd, 'pnpm-publish-summary.json'), { publishedPackages: acceptedPackages })
+    await this.checkpoint?.(acceptedPackages)
   }
 }

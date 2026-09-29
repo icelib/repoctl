@@ -27,8 +27,9 @@ export async function getPublishCandidates(cwd: string): Promise<PublishedPackag
 }
 
 /** Only pnpm uploads; accepted versions never re-enter its retry filters. */
-export async function publishWithRetry(args: string[], options: ReleaseOptions, candidates: PublishedPackage[], confirmAll = false) {
-  const state = new PublishState(candidates)
+export async function publishWithRetry(args: string[], options: ReleaseOptions, candidates: PublishedPackage[], confirmAll = false, recovery?: { accepted: PublishedPackage[], save: (accepted: PublishedPackage[]) => Promise<void> }) {
+  const state = new PublishState(candidates, recovery?.save)
+  state.accept(recovery?.accepted ?? [])
   let attemptArgs = args
   let recovering = confirmAll
   try {
@@ -65,14 +66,19 @@ export async function publishWithRetry(args: string[], options: ReleaseOptions, 
       const delay = retryDelays[attempt - 1]!
       logger.warn(`npm publish transient failure; reconciling before retry in ${delay / 1000}s (attempt ${attempt + 1}/${publishAttempts}).`)
       await sleep(delay, options)
-      await refreshRegistry(state, options)
+      const unknown = await refreshRegistry(state, options)
       await state.save(options.cwd, 'publishing')
+      const unresolved = unknown.filter(pkg => state.pendingUploads.some(pending => packageKey(pending) === packageKey(pkg)))
+      if (unresolved.length) {
+        throw new ReleaseCommandError(`npm registry state is unknown; refusing to retry uploads for: ${unresolved.map(packageKey).join(', ')}`)
+      }
       if (!state.pendingUploads.length) {
         await confirmVisibility(state, options, candidates)
         await state.save(options.cwd, 'complete')
         return
       }
-      attemptArgs = [...args, ...state.pendingUploads.flatMap(pkg => ['--filter', pkg.name])]
+      const unfilteredArgs = args.filter((arg, index) => arg !== '--filter' && args[index - 1] !== '--filter')
+      attemptArgs = [...unfilteredArgs, ...state.pendingUploads.flatMap(pkg => ['--filter', pkg.name])]
     }
   }
   catch (error) {
