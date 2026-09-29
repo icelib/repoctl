@@ -8,6 +8,14 @@
 
 cf 的配置加载器使用 Node.js 模块钩子，实际要求 Node.js 22.18+。源码工作区和 Cloudflare 模板提高最低版本；独立 repoctl CLI 的最低版本不变。
 
+## 跨平台验收阻塞
+
+当前 PR 保持草稿，尚不满足完整替换的合入条件。Linux 和 macOS 的 Node 22/24 四组 CI 已通过，但 Windows Node 22/24 两组都在客户端冷部署 dry-run 时失败：`spawn .../@cloudflare/vite-plugin/bin/cf-vite ENOENT`。见 [Windows Node 22](https://github.com/icelib/repoctl/actions/runs/36598468860/job/109509378211) 和 [Windows Node 24 失败日志](https://github.com/icelib/repoctl/actions/runs/36598468860/job/109509378227)。
+
+核对已发布包可确认：cf 的开发/构建委托发现器选择插件的 `bin/cf-vite`，该文件是带 Node shebang 的无扩展名 JavaScript 脚本；委托启动器直接调用 `node:child_process.spawn(binary, args)`，没有经由 Node 可执行文件启动 npm 委托。Windows 不能按 Unix shebang 规则运行该路径。此问题发生在真实 `cf deploy --dry-run` 的构建委托阶段，不是类型检查断言失败；修复后还需验证 Windows 上的 `cf dev` 和 Wrangler 委托。
+
+不跳过 Windows 验收，也不在生成的项目中加入依赖源码补丁。解除阻塞需要上游提供可跨平台启动 npm 委托的版本，更新固定工具链后重新运行完整六组矩阵。当前版本只能确认 Linux/macOS 的已覆盖流程可用，不能宣称三平台完整迁移已完成。
+
 ## 命令与配置边界
 
 | 现有能力 | 迁移后的实现 |
