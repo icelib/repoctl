@@ -16,6 +16,10 @@
   intents:
     - auto-pr-901
     - icelib-repository-migration
+"@icebreakers/changelog-github@2.1.2":
+  dir: packages/changelog-github
+  intents:
+    - auto-pr-914
 "@icebreakers/commitlint-config@4.0.6":
   dir: packages/commitlint
   intents:
@@ -70,6 +74,11 @@
   dir: packages/eslint
   intents:
     - auto-pr-909
+"@icebreakers/eslint-config@8.0.4":
+  dir: packages/eslint
+  intents:
+    - auto-pr-914
+    - auto-pr-917
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -139,6 +148,10 @@
   intents:
     - calm-publish-progress
     - olive-tigers-enjoy
+"@icebreakers/monorepo-templates@2.0.5":
+  dir: packages/monorepo-templates
+  intents:
+    - github-app-pr-ci
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -231,6 +244,11 @@
   dir: packages/monorepo
   intents:
     - calm-publish-progress
+"@icebreakers/monorepo@5.5.8":
+  dir: packages/monorepo
+  intents:
+    - auto-pr-914
+    - auto-pr-917
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -354,6 +372,10 @@ postcss-tailwindcss@3.1.2:
   dir: packages/postcss-tailwindcss
   intents:
     - icelib-repository-migration
+postcss-tailwindcss@3.1.3:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - auto-pr-917
 repoctl@5.2.0:
   dir: packages/repoctl
   intents:

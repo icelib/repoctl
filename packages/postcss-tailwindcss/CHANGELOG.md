@@ -1,5 +1,11 @@
 # postcss-tailwindcss
 
+## 3.1.3
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#917)
+
 ## 3.1.2
 
 ### Patch Changes
