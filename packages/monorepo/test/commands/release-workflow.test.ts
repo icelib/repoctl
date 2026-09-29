@@ -45,7 +45,7 @@ describe('release workflow', () => {
     expect(workflow).toContain('- publish-unpublished')
     expect(workflow).toContain('REPO_RELEASE_MODE: $' + '{{ inputs.mode || \'auto\' }}')
     expect(workflow).toContain('run: pnpm exec repo release ci')
-    expect(workflow).toContain('GITHUB_TOKEN: $' + '{{ secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token }}')
+    expect(workflow).toContain('GITHUB_TOKEN: $' + '{{ steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token }}')
     expect(workflow).not.toContain('GITHUB_TOKEN: $' + '{{ secrets.GITHUB_TOKEN }}')
     expect(workflow).toContain('contents: write')
     expect(workflow).toContain('pull-requests: write')

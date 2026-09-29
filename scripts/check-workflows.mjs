@@ -43,6 +43,25 @@ function assertPinnedActions(steps, workflowName) {
   }
 }
 
+function checkAppAuthentication(steps, condition) {
+  const token = steps.find(step => step.id === 'app-token')
+  const validation = steps.find(step => step.name === 'Validate GitHub App configuration')
+  assert.ok(validation, 'App configuration must be validated before requesting a token')
+  assert.ok(token)
+  assert.ok(steps.indexOf(validation) < steps.indexOf(token))
+  assert.equal(token.if, githubExpression(condition))
+  assert.match(token.uses, /^actions\/create-github-app-token@[0-9a-f]{40}$/)
+  assert.equal(token.with?.['client-id'], githubExpression('vars.REPOCTL_APP_CLIENT_ID'))
+  assert.equal(token.with?.['private-key'], githubExpression('secrets.REPOCTL_APP_PRIVATE_KEY'))
+  assert.equal(token.with?.['permission-contents'], 'write')
+  assert.equal(token.with?.['permission-pull-requests'], 'write')
+  // Omitting both scopes restricts the token to the calling repository.
+  assert.equal(token.with?.owner, undefined)
+  assert.equal(token.with?.repositories, undefined)
+  assert.notEqual(token['continue-on-error'], true)
+  assert.notEqual(token.with?.['skip-token-revoke'], true)
+}
+
 function checkReleaseWorkflow() {
   const { source, workflow } = readWorkflow('release.yml')
   const release = workflow.jobs?.release
@@ -72,9 +91,13 @@ function checkReleaseWorkflow() {
   assert.equal(
     runner.env?.GITHUB_TOKEN,
     githubExpression(
-      'secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token',
+      'steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token',
     ),
   )
+  assert.equal(checkout?.with?.token, runner.env?.GITHUB_TOKEN, 'Git pushes and API calls must use the same credential')
+  assert.notEqual(checkout?.with?.['persist-credentials'], false)
+  checkAppAuthentication(steps, 'vars.REPOCTL_APP_CLIENT_ID != \'\'')
+  assert.ok(steps.findIndex(step => step.id === 'app-token') < steps.indexOf(checkout))
   assert.equal(
     runner.env?.REPO_RELEASE_MODE,
     githubExpression('inputs.mode || \'auto\''),
@@ -163,6 +186,13 @@ function checkAutomaticReleaseIntentWorkflow() {
   assert.equal(workflow.permissions?.['pull-requests'], 'write')
   assert.ok(job)
   assert.ok(steps.some(step => step.run === 'node .github/auto-changeset/index.mjs'))
+  const checkout = steps.find(step => step.uses?.startsWith('actions/checkout@'))
+  assert.equal(checkout?.with?.ref, githubExpression('github.event.pull_request.base.sha || github.sha'))
+  assert.equal(checkout?.with?.['persist-credentials'], false)
+  const trustedWrite = 'github.event_name == \'workflow_dispatch\' || github.event.pull_request.head.repo.full_name == github.repository'
+  checkAppAuthentication(steps, `vars.REPOCTL_APP_CLIENT_ID != '' && (${trustedWrite})`)
+  assert.equal(steps.find(step => step.name === 'Validate GitHub App configuration').if, githubExpression(trustedWrite))
+  assert.equal(steps.find(step => step.run === 'node .github/auto-changeset/index.mjs').env?.GITHUB_TOKEN, githubExpression('steps.app-token.outputs.token || github.token'))
   assert.match(source, /GITHUB_TOKEN:/)
   assert.match(source, /PR_NUMBERS:/)
   assertPinnedActions(steps, 'Automatic Release Intent')
