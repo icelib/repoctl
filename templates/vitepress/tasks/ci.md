@@ -124,6 +124,8 @@ The repoctl documentation is deployed as the `repoctl-docs` Cloudflare Worker. V
 
 The build command checks locale parity before VitePress generates `.vitepress/dist`. The Worker config serves the generated `404.html` for missing routes and keeps `public/_redirects` active for legacy `/en/*` links.
 
+Production uses `cf deploy`; non-production uses `cf workers versions create`, which uploads a version without changing production traffic. The deployment scripts render VitePress first, then cf assembles Cloudflare deployment output. They do not use the separate Worker Previews product. Use Node.js 22.18+ in Workers Builds.
+
 ### Preview, release, and rollback
 
 Run a local validation before changing production:
@@ -131,14 +133,14 @@ Run a local validation before changing production:
 ```bash
 pnpm --filter @icebreakers/website build
 pnpm --filter @icebreakers/website run deploy:dry-run
-pnpm --filter @icebreakers/website exec wrangler dev
+pnpm --filter @icebreakers/website exec cf dev
 ```
 
 Non-production Workers Builds upload a preview version. Promote a validated build through the production deploy command. To roll back, inspect the version history and select the last known-good version:
 
 ```bash
-pnpm --filter @icebreakers/website exec wrangler versions list
-pnpm --filter @icebreakers/website exec wrangler rollback <VERSION_ID>
+pnpm --filter @icebreakers/website exec cf workers versions list --worker repoctl-docs
+pnpm --filter @icebreakers/website exec cf workers deployments create --worker repoctl-docs --strategy percentage --versions '[{"version_id":"<VERSION_ID>","percentage":100}]'
 ```
 
 `repoctl.icebreaker.top` is the canonical custom domain. Cloudflare Redirect Rules send `repo.icebreaker.top/*` and `monorepo.icebreaker.top/*` to the canonical host with a permanent redirect while preserving the path and query string.

@@ -1,6 +1,6 @@
 # 源仓库开发场景
 
-使用 Node.js 22.13+ 和根 `package.json` 指定的 pnpm 版本。先执行 `pnpm install`；安装后的 `postinstall` 会构建工作区。
+使用 Node.js 22.18+ 和根 `package.json` 指定的 pnpm 版本。先执行 `pnpm install`；安装后的 `postinstall` 会构建工作区。
 
 自动 changeset 与 Release PR 的 GitHub App 配置见 [自动提交与 PR 检查](./github-app-automation.md)。
 

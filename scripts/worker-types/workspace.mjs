@@ -7,7 +7,7 @@ import { execaSync } from 'execa'
 import YAML from 'yaml'
 
 export const repoRoot = path.resolve(import.meta.dirname, '../..')
-export const declarations = 'worker-configuration.d.ts'
+export const declarations = '.cloudflare/types/index.d.ts'
 
 export function run(command, args, cwd, success = true) {
   const result = execaSync(command, args, {
@@ -52,7 +52,8 @@ function linkDependencies(source, target) {
   }
 }
 
-export async function createWorkspace(tempRoot) {
+export async function createWorkspace(tempRoot, includeDocs = false) {
+  const names = includeDocs ? ['client', 'server', 'vitepress'] : ['client', 'server']
   const packDir = path.join(tempRoot, 'pack')
   mkdirSync(packDir)
   run('pnpm', ['--filter', '@icebreakers/monorepo-templates', 'pack', '--pack-destination', packDir], repoRoot)
@@ -65,10 +66,10 @@ export async function createWorkspace(tempRoot) {
   linkDependencies(path.join(repoRoot, 'packages/monorepo-templates/node_modules'), path.join(packedRoot, 'node_modules'))
   const { scaffoldWorkspace } = await import(pathToFileURL(path.join(packedRoot, 'dist/index.mjs')).href)
   const workspace = path.join(tempRoot, 'workspace')
-  await scaffoldWorkspace({ targetDir: workspace, templateKeys: ['vue-hono', 'hono-server'], includeAssets: false })
-  for (const name of ['client', 'server']) {
-    assert.ok(!readdirSync(path.join(packedRoot, 'templates', name)).includes(declarations), 'packed templates must exclude generated declarations')
-    linkDependencies(path.join(repoRoot, 'templates', name, 'node_modules'), path.join(workspace, 'apps', name, 'node_modules'))
+  await scaffoldWorkspace({ targetDir: workspace, templateKeys: ['vue-hono', 'hono-server', ...(includeDocs ? ['vitepress'] : [])], includeAssets: false })
+  for (const name of names) {
+    assert.ok(!readdirSync(path.join(packedRoot, 'templates', name)).includes('.cloudflare'), 'packed templates must exclude generated declarations')
+    linkDependencies(path.join(repoRoot, 'templates', name, 'node_modules'), path.join(workspace, 'apps', name === 'vitepress' ? 'website' : name, 'node_modules'))
   }
   linkDependencies(path.join(repoRoot, 'node_modules'), path.join(workspace, 'node_modules'))
   const manifest = json(path.join(repoRoot, 'package.json'))
@@ -82,8 +83,8 @@ export async function createWorkspace(tempRoot) {
   const documents = YAML.parseAllDocuments(readFileSync(path.join(repoRoot, 'pnpm-lock.yaml'), 'utf8')).map(doc => doc.toJS())
   const lock = documents.find(doc => doc.importers?.['templates/client'])
   assert.ok(lock, 'the lockfile must describe the source templates')
-  for (const name of ['client', 'server']) {
-    lock.importers[`apps/${name}`] = lock.importers[`templates/${name}`]
+  for (const name of names) {
+    lock.importers[`apps/${name === 'vitepress' ? 'website' : name}`] = lock.importers[`templates/${name}`]
     delete lock.importers[`templates/${name}`]
   }
   writeFileSync(path.join(workspace, 'pnpm-lock.yaml'), documents.map(doc => `---\n${YAML.stringify(doc)}`).join('\n'))

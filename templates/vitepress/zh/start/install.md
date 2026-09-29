@@ -8,6 +8,8 @@
 - pnpm。推荐通过 Corepack 启用：`corepack enable`。
 - Git。`repo doctor` 会读取仓库信息，用来补全 package metadata 和诊断提交链路。
 
+Cloudflare 模板额外要求 Node.js 22.18+，用于加载 cf 配置。
+
 ```bash
 node -v
 pnpm -v

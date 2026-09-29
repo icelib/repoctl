@@ -33,10 +33,14 @@
       ],
       "matchPackageNames": [
         "wrangler",
-        "@cloudflare/vite-plugin"
+        "@cloudflare/vite-plugin",
+        "cf",
+        "@cloudflare/config",
+        "@cloudflare/runtime-types"
       ],
       "groupName": "Cloudflare Workers tooling",
-      "groupSlug": "cloudflare-workers-tooling"
+      "groupSlug": "cloudflare-workers-tooling",
+      "automerge": false
     }
   ]
 }

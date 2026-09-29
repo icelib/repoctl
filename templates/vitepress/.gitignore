@@ -1,2 +1,6 @@
 .vitepress/cache
 .vitepress/dist
+
+.cloudflare
+.wrangler
+.dev.vars*

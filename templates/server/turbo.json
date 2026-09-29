@@ -2,10 +2,10 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "outputs": ["dist/**", "worker-configuration.d.ts"]
+      "outputs": ["dist/**", ".cloudflare/types/**"]
     },
     "typecheck": {
-      "outputs": ["worker-configuration.d.ts"]
+      "outputs": [".cloudflare/types/**"]
     }
   }
 }

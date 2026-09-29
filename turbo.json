@@ -17,7 +17,10 @@
         ".env*",
         "package.json",
         "tsconfig*.json",
-        "*.config.{js,ts,mjs,mts}"
+        "*.config.{js,ts,mjs,mts}",
+        "cloudflare.config.ts",
+        "wrangler.config.ts",
+        "scripts/**"
       ],
       "outputs": [
         "dist/**",
@@ -88,7 +91,10 @@
         ".env*",
         "test/**",
         "package.json",
-        "tsconfig*.json"
+        "tsconfig*.json",
+        "cloudflare.config.ts",
+        "wrangler.config.ts",
+        "scripts/**"
       ],
       "outputs": []
     },

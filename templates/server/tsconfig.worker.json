@@ -3,11 +3,13 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.worker.tsbuildinfo",
     "types": [
-      "./worker-configuration.d.ts"
+      "./.cloudflare/types/index.d.ts"
     ]
   },
   "include": [
-    "src"
+    "src",
+    "cloudflare.config.ts",
+    "wrangler.config.ts"
   ],
   "exclude": [
     "src/node-entry.ts",

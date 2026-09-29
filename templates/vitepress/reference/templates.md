@@ -76,11 +76,13 @@ Check first:
 
 ### Cloudflare Worker types
 
-The `vue-hono` and `hono-server` templates generate `worker-configuration.d.ts` from the installed Wrangler version and `wrangler.jsonc` before `dev`, `build`, and `typecheck`. This generated file is ignored by Git and excluded from published templates. Dependency updates do not require committing regenerated declarations.
+Cloudflare templates require Node.js 22.18+ and use the pinned `cf` beta CLI with `cloudflare.config.ts`. The Vue template uses Cloudflare Vite plugin v2 beta; Hono and VitePress retain Wrangler internally as cf's build/development implementation. Application scripts use cf directly.
 
-Run `pnpm cf-typegen` in the app workspace to refresh editor types after changing bindings or compatibility settings. `pnpm cf-typegen:check` is a read-only diagnostic: it reports missing or outdated declarations. Build and typecheck regenerate them automatically and still fail on invalid configuration or TypeScript errors.
+The `vue-hono` and `hono-server` templates run `cf workers types` before `dev`, `build`, and `typecheck`, generating `.cloudflare/types/index.d.ts`. Bindings are inferred from the configuration; runtime types follow the compatibility date and flags. `.cloudflare` is ignored and excluded from published templates.
 
-For existing projects, update these scripts and the Turbo inputs/outputs, then remove `worker-configuration.d.ts` from the Git index with `git rm --cached worker-configuration.d.ts` and add it to `.gitignore`.
+Use `pnpm cf-typegen` to generate declarations. `pnpm cf-typegen:check` compares expected declarations in memory without creating or modifying them. Missing, stale, or corrupted output and invalid configuration fail the check. This adapter uses the same pinned `@cloudflare/config` and `@cloudflare/runtime-types` versions as cf because cf currently has no `types --check` command. Binding edits can update inferred types without changing the declaration text; `typecheck` validates their usage.
+
+For existing projects, migrate on a branch: upgrade Node, install the pinned toolchain from the current template, and run `pnpm exec cf migrate`. Resolve its follow-ups, move Vite development settings into `vite.config.ts`, and keep Wrangler implementation settings in `wrangler.config.ts` where needed. Update package scripts, the Worker tsconfig type path, and Turbo inputs/outputs from the matching template; include its `scripts/check-worker-types.mjs`. Ignore `.cloudflare`, remove any tracked `worker-configuration.d.ts`, and remove the old Wrangler JSON/TOML configuration after checking every migrated field. Run build, typecheck, type checks, local development, and deployment dry-run before switching your CI commands. repoctl does not automatically migrate existing app configurations.
 
 ### Create a docs site
 

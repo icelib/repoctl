@@ -8,6 +8,8 @@ This guide follows the order you would use when adding repoctl to a workspace.
 - pnpm. Corepack is recommended: `corepack enable`.
 - Git. `repo doctor` reads repository metadata and checks the commit workflow.
 
+Cloudflare templates additionally require Node.js 22.18+ for the cf configuration loader.
+
 ```bash
 node -v
 pnpm -v

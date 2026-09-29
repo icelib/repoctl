@@ -1,2 +1,5 @@
 .wrangler
 worker-configuration.d.ts
+
+.cloudflare
+.dev.vars*

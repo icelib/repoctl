@@ -22,6 +22,9 @@ describe('checkTemplates', () => {
     const { shouldSkipTemplatePath } = await import('@icebreakers/monorepo-templates')
     const sourceDir = '/repo/templates/client'
 
+    expect(shouldSkipTemplatePath(sourceDir, path.join(sourceDir, '.cloudflare/types/index.d.ts'))).toBe(true)
+    expect(shouldSkipTemplatePath(sourceDir, path.join(sourceDir, '.cloudflare/build/worker.js'))).toBe(true)
+    expect(shouldSkipTemplatePath(sourceDir, path.join(sourceDir, 'cloudflare.config.ts'))).toBe(false)
     expect(shouldSkipTemplatePath(sourceDir, path.join(sourceDir, 'worker-configuration.d.ts'))).toBe(true)
     expect(shouldSkipTemplatePath(sourceDir, path.join(sourceDir, 'src/env.d.ts'))).toBe(false)
     expect(shouldSkipTemplatePath(sourceDir, path.join(sourceDir, 'route-map.d.ts'))).toBe(true)

@@ -78,11 +78,13 @@ repo new api --template hono-server
 
 ### Cloudflare Worker 类型
 
-`vue-hono` 和 `hono-server` 模板会在 `dev`、`build`、`typecheck` 前，根据已安装的 Wrangler 版本和 `wrangler.jsonc` 自动生成 `worker-configuration.d.ts`。该文件由 Git 忽略，也不会打入发布的模板包；依赖升级无需再提交重新生成的声明。
+Cloudflare 模板要求 Node.js 22.18+，使用固定版本的 `cf` beta CLI 和 `cloudflare.config.ts`。Vue 模板采用 Cloudflare Vite 插件 v2 beta；Hono 与 VitePress 保留 Wrangler 作为 cf 内部使用的构建、开发实现。应用脚本直接使用 cf。
 
-修改 binding 或兼容性配置后，可在应用工作区运行 `pnpm cf-typegen` 刷新编辑器类型。`pnpm cf-typegen:check` 保留为只读诊断命令，文件缺失或过期时会报错。构建和类型检查会自动重新生成，配置错误和真实 TypeScript 错误仍会阻止通过。
+`vue-hono` 和 `hono-server` 在 `dev`、`build`、`typecheck` 前运行 `cf workers types`，生成 `.cloudflare/types/index.d.ts`。绑定类型从配置推导，运行时类型取决于兼容日期和标志。`.cloudflare` 由 Git 忽略，不会打入发布模板。
 
-已有项目需同步这些脚本和 Turbo 的输入、输出配置，再执行 `git rm --cached worker-configuration.d.ts` 移除 Git 跟踪，并将文件加入 `.gitignore`。
+`pnpm cf-typegen` 生成声明；`pnpm cf-typegen:check` 在内存中比较预期声明，不创建或改写声明文件。文件缺失、过期、损坏或配置无效都会失败。由于 cf 暂无 `types --check`，适配脚本使用与 cf 一致的固定版本 `@cloudflare/config` 和 `@cloudflare/runtime-types`。绑定修改可以直接改变推导类型而不改变声明文本，绑定的使用正确性由 `typecheck` 验证。
+
+已有项目请在分支内迁移：升级 Node，参考当前模板安装固定版本工具链，运行 `pnpm exec cf migrate` 并处理其后续提示。Vite 开发设置迁入 `vite.config.ts`；需要时将 Wrangler 实现设置保留在 `wrangler.config.ts`。同步对应模板的脚本、Worker tsconfig 类型路径及 Turbo 输入输出，并复制 `scripts/check-worker-types.mjs`。忽略 `.cloudflare`，移除被跟踪的 `worker-configuration.d.ts`，逐项核对配置后删除旧 Wrangler JSON/TOML 文件。构建、类型检查、声明检查、本地开发和部署 dry-run 全部通过后再切换 CI 命令。repoctl 不会自动迁移已有应用配置。
 
 ### 要创建文档站
 

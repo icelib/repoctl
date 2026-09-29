@@ -9,6 +9,7 @@ export default [
   {
     ignores: [
       '**/*.svg',
+      '**/.cloudflare/**',
       'packages/monorepo/test/fixtures/demo/**',
       'templates/vitepress/.vitepress/config.ts.timestamp-*.mjs',
     ],

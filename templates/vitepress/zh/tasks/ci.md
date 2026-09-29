@@ -152,6 +152,8 @@ repoctl 文档通过名为 `repoctl-docs` 的 Cloudflare Worker 部署。VitePre
 
 构建命令会先校验双语页面，再由 VitePress 生成 `.vitepress/dist`。Worker 配置会为不存在的路由返回生成后的 `404.html`，并继续读取 `public/_redirects`，兼容旧的 `/en/*` 链接。
 
+生产使用 `cf deploy`；非生产使用 `cf workers versions create`，只上传版本，不切换生产流量。部署脚本先构建 VitePress，再由 cf 组装 Cloudflare 部署产物，不使用独立的 Worker Previews 产品。Workers Builds 需使用 Node.js 22.18+。
+
 ### 预览、发布与回滚
 
 修改生产部署前，先完成本地验证：
@@ -159,14 +161,14 @@ repoctl 文档通过名为 `repoctl-docs` 的 Cloudflare Worker 部署。VitePre
 ```bash
 pnpm --filter @icebreakers/website build
 pnpm --filter @icebreakers/website run deploy:dry-run
-pnpm --filter @icebreakers/website exec wrangler dev
+pnpm --filter @icebreakers/website exec cf dev
 ```
 
 非生产 Workers Builds 上传预览版本。验证通过后再执行生产部署。需要回滚时，先查看版本历史，再选择最近的稳定版本：
 
 ```bash
-pnpm --filter @icebreakers/website exec wrangler versions list
-pnpm --filter @icebreakers/website exec wrangler rollback <VERSION_ID>
+pnpm --filter @icebreakers/website exec cf workers versions list --worker repoctl-docs
+pnpm --filter @icebreakers/website exec cf workers deployments create --worker repoctl-docs --strategy percentage --versions '[{"version_id":"<VERSION_ID>","percentage":100}]'
 ```
 
 `repoctl.icebreaker.top` 是唯一 canonical custom domain。Cloudflare Redirect Rules 把 `repo.icebreaker.top/*` 和 `monorepo.icebreaker.top/*` 永久跳转到主域名，同时保留路径和查询参数。
