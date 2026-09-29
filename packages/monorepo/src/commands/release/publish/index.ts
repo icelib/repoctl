@@ -27,8 +27,9 @@ export async function getPublishCandidates(cwd: string): Promise<PublishedPackag
 }
 
 /** Only pnpm uploads; accepted versions never re-enter its retry filters. */
-export async function publishWithRetry(args: string[], options: ReleaseOptions, candidates: PublishedPackage[], confirmAll = false) {
-  const state = new PublishState(candidates)
+export async function publishWithRetry(args: string[], options: ReleaseOptions, candidates: PublishedPackage[], confirmAll = false, recovery?: { accepted: PublishedPackage[], save: (accepted: PublishedPackage[]) => Promise<void> }) {
+  const state = new PublishState(candidates, recovery?.save)
+  state.accept(recovery?.accepted ?? [])
   let attemptArgs = args
   let recovering = confirmAll
   try {
@@ -72,7 +73,8 @@ export async function publishWithRetry(args: string[], options: ReleaseOptions, 
         await state.save(options.cwd, 'complete')
         return
       }
-      attemptArgs = [...args, ...state.pendingUploads.flatMap(pkg => ['--filter', pkg.name])]
+      const unfilteredArgs = args.filter((arg, index) => arg !== '--filter' && args[index - 1] !== '--filter')
+      attemptArgs = [...unfilteredArgs, ...state.pendingUploads.flatMap(pkg => ['--filter', pkg.name])]
     }
   }
   catch (error) {

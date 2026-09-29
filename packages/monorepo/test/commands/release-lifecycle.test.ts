@@ -159,11 +159,12 @@ describe('release lifecycle configuration', () => {
     expect(ensureRelease.mock.invocationCallOrder[0]).toBeLessThan(spawn.mock.invocationCallOrder.at(-1)!)
   })
 
-  it('skips post-publish hooks when no npm packages were published', async () => {
+  it('retains empty-summary behavior for legacy programmatic adapters', async () => {
     const cwd = await createTempWorkspace('main')
     const { calls, spawn } = createSpawnMock()
 
     await releaseCi({
+      github: { ensurePullRequest: vi.fn(), ensureRelease: vi.fn() },
       mode: 'publish',
       branch: 'main',
       cwd,

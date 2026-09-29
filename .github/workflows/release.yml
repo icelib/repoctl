@@ -117,5 +117,6 @@ jobs:
           path: |
             pnpm-publish-summary.json
             repoctl-publish-progress.json
+            repoctl-release-progress.json
           if-no-files-found: ignore
           retention-days: 14

@@ -27,7 +27,7 @@ describe('release workflow', () => {
       uses: expect.stringMatching(/^actions\/upload-artifact@[0-9a-f]{40}$/),
       with: {
         'name': 'npm-publish-progress-$' + '{{ github.run_id }}-$' + '{{ github.run_attempt }}',
-        'path': 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\n',
+        'path': 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\nrepoctl-release-progress.json\n',
         'if-no-files-found': 'ignore',
         'retention-days': 14,
       },

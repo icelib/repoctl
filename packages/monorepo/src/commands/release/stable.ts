@@ -20,7 +20,7 @@ export async function prepareStable(options: ReleaseOptions) {
   return hasGitChanges(options)
 }
 
-export async function publishStable(options: ReleaseOptions) {
+export async function assertStablePublish(options: ReleaseOptions, quality = true) {
   const branch = resolveBranch(options)
   if (branch !== 'main') {
     throw new ReleaseCommandError(`repo release stable publish is only allowed on main, got ${branch}`)
@@ -29,7 +29,13 @@ export async function publishStable(options: ReleaseOptions) {
   if (await hasPendingIntents(options.cwd)) {
     throw new ReleaseCommandError('stable publish found unconsumed change intents; prepare and merge the Release PR before publishing')
   }
-  await runQualityScripts(options)
+  if (quality) {
+    await runQualityScripts(options)
+  }
+}
+
+export async function publishStable(options: ReleaseOptions) {
+  await assertStablePublish(options)
   runReleaseHooks('beforePublish', options)
   await clearPublishSummary(options.cwd)
   await publishWithRetry(

@@ -5,7 +5,7 @@ import { getPublishCandidates, publishWithRetry } from './publish'
 import { assertLaneAssignments, clearPublishSummary, hasGitChanges, hasPendingIntents, readPublishSummary, resolveBranch, run, runLane } from './shared'
 import { prereleaseBranches } from './types'
 
-export async function releasePrerelease(options: ReleaseOptions) {
+export async function releasePrerelease(options: ReleaseOptions, publish?: () => Promise<import('./types').PublishedPackage[]>) {
   const branch = resolveBranch(options)
   if (!prereleaseBranches.has(branch)) {
     throw new ReleaseCommandError(`repo release pre is only allowed on alpha, beta, rc, or next branches, got ${branch}`)
@@ -13,7 +13,10 @@ export async function releasePrerelease(options: ReleaseOptions) {
 
   await assertLaneAssignments(branch, options)
   if (!await hasPendingIntents(options.cwd)) {
-    return
+    if (publish) {
+      await runQualityScripts(options)
+    }
+    return publish?.()
   }
 
   runReleaseHooks('beforeVersion', options)
@@ -26,6 +29,10 @@ export async function releasePrerelease(options: ReleaseOptions) {
 
   run('git', ['add', '-A'], options)
   run('git', ['commit', '-m', `chore(release): ${branch} [skip ci]`], options)
+  if (publish) {
+    run('git', ['push', 'origin', `HEAD:${branch}`], options)
+    return publish()
+  }
   runReleaseHooks('beforePublish', options)
   await clearPublishSummary(options.cwd)
   await publishWithRetry(
