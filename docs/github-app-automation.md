@@ -7,10 +7,12 @@
 1. 在组织中创建专用 GitHub App，关闭 webhook，只授予仓库 **Contents: Read and write**、**Pull requests: Read and write**；Metadata 的只读权限由 GitHub 自动提供。不需要 Actions 写权限或组织权限。
 2. 将 App 安装到指定仓库，选择 **Only select repositories**。本仓库仅选择 `icelib/repoctl`。
 3. 将 App 的 Client ID 保存为仓库 Actions variable `REPOCTL_APP_CLIENT_ID`。
-4. 生成 App 私钥，将完整 PEM 内容保存为仓库 Actions secret `REPOCTL_APP_PRIVATE_KEY`。不要把私钥写入 Git、日志或 PR。
+4. 在 App 的 **Private keys → Generate a private key** 下载 `.pem` 文件，将包含 `BEGIN` / `END` 行的完整文件内容保存为 Actions secret `REPOCTL_APP_PRIVATE_KEY`。不要使用 Client secret、文件路径或额外 Base64 编码；否则会出现 `Invalid keyData` 等私钥解析错误。不要把私钥写入 Git、日志或 PR。
 5. 查询 App 的机器人身份：`gh api 'users/<app-slug>[bot]' --jq .id`。把 `<id>+<app-slug>[bot]@users.noreply.github.com` 加入 `renovate.json` 的 `gitIgnoredAuthors`，保留原有 `github-actions[bot]` 邮箱。
 
 工作流使用固定 SHA 的 `actions/create-github-app-token`，申请仅限当前仓库、仅有上述两项写权限的短期令牌，并在任务结束时撤销令牌。令牌有效期为一小时；Release 工作流如需运行超过一小时，应拆分发布阶段并重新申请令牌。
+
+变量和 Secret 也可以配置在组织级别，只需确保其仓库访问策略包含当前仓库。Client ID 与数字 App ID 不同，`REPOCTL_APP_CLIENT_ID` 应使用 App 设置中的 Client ID。
 
 ## 工作流边界
 
