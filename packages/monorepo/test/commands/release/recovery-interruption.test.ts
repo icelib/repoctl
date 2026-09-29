@@ -1,7 +1,7 @@
-import { releaseCi } from '@icebreakers/monorepo'
+import { publishStable, releaseCi } from '@icebreakers/monorepo'
 import { afterEach, expect, it } from 'vitest'
 import { cleanupReleaseTempRoots } from '../release-fixtures'
-import { a, b } from './publish-fixtures'
+import { a, b, publishHarness } from './publish-fixtures'
 import { keyOf, recoveryRemote, recoveryRunner } from './recovery-fixtures'
 
 afterEach(cleanupReleaseTempRoots)
@@ -85,4 +85,15 @@ it('retains the full original batch when legacy recovery finds one Release alrea
   expect(h.uploads()).toHaveLength(0)
   const hook = h.calls.find(call => call.args[1] === 'after')
   expect(JSON.parse(hook!.options!.env!['REPO_RELEASE_PUBLISHED_PACKAGES']!)).toEqual(expect.arrayContaining([a, b]))
+})
+
+it('never retries an unacknowledged upload when the recovery lookup is unknown', async () => {
+  const h = await publishHarness([{ status: 1, summary: [a], stderr: 'HTTP 503' }], () => '')
+  const original = h.spawn.getMockImplementation()!
+  h.spawn.mockImplementation((command, args, options) => command === 'npm'
+    ? { status: 1, stdout: '', stderr: 'ECONNRESET' }
+    : original(command, args, options))
+  await expect(publishStable(h.options)).rejects.toThrow('registry state is unknown')
+  expect(h.uploads()).toHaveLength(1)
+  expect(await h.report()).toMatchObject({ status: 'failed', acceptedPackages: [a] })
 })

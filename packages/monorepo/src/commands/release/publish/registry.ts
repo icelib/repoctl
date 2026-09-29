@@ -16,9 +16,12 @@ export function sleep(milliseconds: number, options: ReleaseOptions) {
 }
 
 export async function refreshRegistry(state: PublishState, options: ReleaseOptions, packages = state.candidates, deadline = performance.now() + visibilityBudget) {
-  for (const pkg of state.unconfirmed(packages)) {
+  const unknown: PublishedPackage[] = []
+  const pending = state.unconfirmed(packages)
+  for (const [index, pkg] of pending.entries()) {
     const remaining = Math.floor(deadline - performance.now())
     if (remaining <= 0) {
+      unknown.push(...pending.slice(index))
       break
     }
     const result = (options.spawn ?? spawnSync)('npm', ['view', packageKey(pkg), 'version'], {
@@ -34,7 +37,11 @@ export async function refreshRegistry(state: PublishState, options: ReleaseOptio
       state.confirm(pkg)
       await state.save(options.cwd, 'confirming')
     }
+    else if (result.error || result.status === 0 || !/\bE404\b/.test(outputText(result.stderr))) {
+      unknown.push(pkg)
+    }
   }
+  return unknown
 }
 
 export async function confirmVisibility(state: PublishState, options: ReleaseOptions, packages: PublishedPackage[], initialDelay = 0) {
