@@ -27,12 +27,16 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
     throw new ReleaseCommandError('Source recovery requires full Git history')
   }
   run('git', ['merge-base', '--is-ancestor', source, 'origin/main'], options)
+  const origin = capture('git', ['remote', 'get-url', 'origin'], options)
   const root = await mkdtemp(path.join(tmpdir(), 'repoctl-release-source-'))
   const cwd = path.join(root, 'source')
   try {
     run('git', ['clone', '--shared', '--no-checkout', options.cwd, cwd], options)
     const env: NodeJS.ProcessEnv = { ...getReleaseEnv(options), GITHUB_SHA: source, GITHUB_REF_NAME: 'main', REPO_RELEASE_SOURCE_SHA: source }
     let recovery: ReleaseCiOptions = { ...options, cwd, branch: 'main', env }
+    // A local clone uses the source directory as origin; builds and provenance
+    // must continue to see the actual repository identity.
+    run('git', ['remote', 'set-url', 'origin', origin], recovery)
     run('git', ['checkout', '--detach', source], recovery)
     clearWorkspaceCache()
     const workspaceCandidates = await getPublishCandidates(cwd)
