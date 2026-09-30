@@ -29,7 +29,7 @@ describe('tooling factories', () => {
     const config = createMonorepoLintStagedConfig({
       repoCommand: 'pnpm exec repo',
     })
-    const command = config['*.{ts,tsx,mts,cts,vue,json}']
+    const command = config['*.{ts,tsx,mts,cts,vue,astro,mdx,json}']
 
     expect(typeof command).toBe('function')
     if (typeof command !== 'function') {
@@ -181,7 +181,7 @@ describe('tooling factories', () => {
       'selector-class-pattern': null,
     })
 
-    const command = lintStaged['*.{ts,tsx,mts,cts,vue,json}']
+    const command = lintStaged['*.{ts,tsx,mts,cts,vue,astro,mdx,json}']
     expect(typeof command).toBe('function')
     if (typeof command !== 'function') {
       throw new TypeError('expected lint-staged rule to be callable')

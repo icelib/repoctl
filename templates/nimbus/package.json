@@ -1,0 +1,34 @@
+{
+  "name": "@icebreakers/nimbus-template",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Bilingual Nimbus documentation starter",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "pnpm check:locales && astro build",
+    "preview": "astro preview",
+    "typecheck": "astro check && tsc --noEmit",
+    "lint": "eslint . && stylelint \"src/styles/**/*.css\" && nimbus-docs lint",
+    "lint:docs": "nimbus-docs lint",
+    "lint:docs:fix": "nimbus-docs lint --fix",
+    "check:locales": "node scripts/check-locales.mjs"
+  },
+  "dependencies": {
+    "@cloudflare/nimbus-docs": "0.15.2",
+    "astro": "7.3.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.8",
+    "@astrojs/language-server": "2.16.13",
+    "astro-eslint-parser": "^3.2.0",
+    "eslint-plugin-astro": "^3.2.1",
+    "eslint-plugin-mdx": "^3.8.1",
+    "pagefind": "^1.5.2",
+    "typescript": "^6.0.3"
+  }
+}

@@ -94,7 +94,7 @@ JSON 适合机器判断，不适合人工长时间阅读：
 ```bash
 repo doctor --json --out reports/doctor.json
 repo templates --check --json --out reports/templates.json
-repo new docs --template vitepress --json --out plans/docs.json
+repo new docs --template nimbus --json --out plans/docs.json
 ```
 
 常见消费方式：

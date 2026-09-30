@@ -61,7 +61,7 @@ repoctl 的失败状态遵循阻塞优先：
 如果只是想知道会发生什么，先加 `--dry-run` 或输出计划：
 
 ```bash
-repo new docs --template vitepress --json --out plans/docs.json
+repo new docs --template nimbus --json --out plans/docs.json
 repo check --markdown --out reports/check-plan.md
 ```
 

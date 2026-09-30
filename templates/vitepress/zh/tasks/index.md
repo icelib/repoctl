@@ -36,7 +36,7 @@ pnpm exec repo doctor --markdown --redact --out reports/doctor-after.md
 ```bash
 pnpm exec repo templates
 pnpm exec repo new sdk --template tsdown
-pnpm exec repo new docs --template vitepress --dry-run
+pnpm exec repo new docs --template nimbus --dry-run
 ```
 
 如果只是日常开发，根脚本也可以：

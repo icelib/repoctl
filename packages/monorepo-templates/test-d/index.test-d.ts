@@ -41,3 +41,6 @@ expectType<string | undefined>(getTemplateTarget('cli'))
 expectType<{ source: string, target: string } | undefined>(getTemplateDefinition('cli'))
 expectType<string | undefined>(suggestTemplateKey('tsdwon'))
 expectType<string | undefined>(suggestTemplateKey('custom', { keys: ['custom-template'] }))
+
+expectType<TemplateChoice | undefined>(getTemplateChoice('nimbus'))
+expectType<string | undefined>(getTemplateTarget('nimbus'))

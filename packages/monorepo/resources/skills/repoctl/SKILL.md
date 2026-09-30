@@ -1,6 +1,6 @@
 ---
 name: repoctl
-description: Create and maintain pnpm/Turborepo workspaces with repoctl. Use when the user says 使用 repoctl 创建项目, create a monorepo, pnpm create repoctl@latest, scaffold Vue/Hono/tsdown/vitepress, or run repo init/doctor/new/check.
+description: Create and maintain pnpm/Turborepo workspaces with repoctl. Use when the user says 使用 repoctl 创建项目, create a monorepo, pnpm create repoctl@latest, scaffold Vue/Hono/tsdown/Nimbus/VitePress, or run repo init/doctor/new/check.
 ---
 
 # repoctl
@@ -32,7 +32,7 @@ pnpm exec repo doctor
 | API / Hono service       | `hono-server`      |
 | TypeScript library / SDK | `tsdown`           |
 | Vue component library    | `vue-lib`          |
-| Documentation site       | `vitepress`        |
+| Documentation site       | `nimbus`           |
 | CLI                      | `cli`              |
 | Unspecified              | omit `--templates` |
 

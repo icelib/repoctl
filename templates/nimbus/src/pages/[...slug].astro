@@ -1,0 +1,36 @@
+---
+import { getDocsPage, getDocsStaticPaths, getSidebar, getTOC, stripBase } from '@cloudflare/nimbus-docs/runtime'
+import { components } from '../components'
+import DocsLayout from '../layouts/docs.astro'
+import { alternatePath, isChinese, localizeSidebar } from '../lib/locale'
+
+export const prerender = true
+export const getStaticPaths = getDocsStaticPaths
+
+const page = await getDocsPage(Astro)
+if (page instanceof Response) {
+  return page
+}
+const { entry, Content, headings, markdownUrl } = page
+const pathname = stripBase(Astro.url.pathname, import.meta.env.BASE_URL)
+const chinese = isChinese(pathname)
+const sidebar = localizeSidebar(await getSidebar(pathname), chinese)
+const toc = entry.data.tableOfContents === false ? false : getTOC(headings, entry.data.tableOfContents)
+---
+
+<DocsLayout
+  title={entry.data.title}
+  description={entry.data.description}
+  sidebar={entry.data.sidebar === false ? false : sidebar}
+  headings={toc}
+  markdownUrl={markdownUrl}
+  collection={entry.collection}
+  entryId={entry.id}
+  noindex={entry.data.noindex}
+  draft={entry.data.draft}
+  searchable={entry.data.searchable}
+  chinese={chinese}
+  alternate={alternatePath(pathname)}
+>
+  <Content components={components} />
+</DocsLayout>

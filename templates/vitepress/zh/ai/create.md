@@ -34,7 +34,7 @@ pnpm exec repo doctor
 | API / Hono 服务     | `hono-server`                         |
 | TypeScript 库 / SDK | `tsdown`                              |
 | Vue 组件库          | `vue-lib`                             |
-| 文档站              | `vitepress`                           |
+| 文档站              | `nimbus`                              |
 | CLI                 | `cli`                                 |
 
 意图不清时省略 `--templates`。初始化后再：

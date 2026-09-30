@@ -1,0 +1,26 @@
+---
+import type { SidebarItem } from '@cloudflare/nimbus-docs/types'
+import { withBase } from '@cloudflare/nimbus-docs/runtime'
+
+interface Props { items: SidebarItem[] }
+const { items } = Astro.props
+---
+
+<ul class="navigation-list">
+  {items.map(item => (
+    <li>
+      {item.type === 'group'
+        ? (
+            <>
+              {item.indexHref
+                ? <a href={withBase(item.indexHref, import.meta.env.BASE_URL)} aria-current={item.indexIsCurrent ? 'page' : undefined}>{item.label}</a>
+                : <span>{item.label}</span>}
+              <Astro.self items={item.children} />
+            </>
+          )
+        : (
+            <a href={withBase(item.href, import.meta.env.BASE_URL)} aria-current={item.type === 'link' && item.isCurrent ? 'page' : undefined}>{item.label}</a>
+          )}
+    </li>
+  ))}
+</ul>

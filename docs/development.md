@@ -76,3 +76,9 @@ pnpm --filter @icebreakers/mock lint:styles:formatting
 遵循 build → lint → typecheck → tsd → test 的顺序。`pnpm test` 包含 `test:dev-scenarios`，也可在构建后单独执行 `pnpm test:dev-scenarios`。场景测试检查实际 Turbo 任务图、构建产物生成的工作区脚本，以及临时工作区中的冷启动、上游修改、失败恢复和子进程清理。
 
 源仓库的 `dev:*` 入口和场景测试不会进入生成项目。生成项目使用 `turbo run dev --concurrency=20`，其 dev 任务先等待 `^build`。若项目常驻任务达到 20 个，需要调高并发上限。
+
+## Nimbus template validation
+
+`templates/nimbus` is the default template for new documentation sites. The source repository's `dev:docs` profile continues to run the existing VitePress website.
+
+Run `pnpm --filter @icebreakers/nimbus-template dev` to work on the starter. After building packages, `pnpm test:packaged-nimbus` packs the local CLI dependency closure, installs it into a temporary workspace outside this checkout, generates both documentation templates, and verifies their builds, language routing, agent endpoints, draft exclusion and Turbo cache invalidation. It installs real dependencies without linking back to source workspaces. `NIMBUS_SMOKE_REGISTRY` can select a registry mirror for this check; `NIMBUS_SMOKE_KEEP=1` retains its printed temporary directory for diagnosis.

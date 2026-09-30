@@ -18,7 +18,7 @@ import {
 } from '@icebreakers/monorepo-templates'
 
 const libraries = getTemplateChoices({ category: 'library' })
-const vitepress = getTemplateDefinition('vitepress')
+const nimbus = getTemplateDefinition('nimbus')
 ```
 
 The source workspaces under the repository's `templates/` directory are private. This package is their supported distribution boundary.

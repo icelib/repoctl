@@ -15,6 +15,7 @@ repoctl 的模板能力不只是复制目录。它会把模板元数据、默认
 | `hono-server` | `templates/server`    | `apps/server`      | Hono service          |
 | `vue-hono`    | `templates/client`    | `apps/client`      | Vue + Hono app        |
 | `vitepress`   | `templates/vitepress` | `apps/website`     | docs site             |
+| `nimbus`      | `templates/nimbus`    | `apps/docs`        | default docs site     |
 | `cli`         | `templates/cli`       | `apps/cli`         | command line tool     |
 
 查看实际可用模板：
@@ -42,8 +43,8 @@ repo templates --markdown --out docs/templates.md
 预览创建：
 
 ```bash
-repo new docs --template vitepress --dry-run
-repo new docs --template vitepress --json --out plans/docs.json
+repo new docs --template nimbus --dry-run
+repo new docs --template nimbus --json --out plans/docs.json
 ```
 
 `--json` 和 `--out` 都隐含 `--dry-run`，不会写入文件。

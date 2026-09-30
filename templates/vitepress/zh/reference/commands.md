@@ -79,9 +79,9 @@ repo templates --markdown --out docs/templates.md
 ```bash
 repo new
 repo new sdk --template tsdown
-repo new docs --template vitepress
-repo new docs --template vitepress --dry-run
-repo new docs --template vitepress --json --out plans/docs.json
+repo new docs --template nimbus
+repo new docs --template nimbus --dry-run
+repo new docs --template nimbus --json --out plans/docs.json
 ```
 
 用途：

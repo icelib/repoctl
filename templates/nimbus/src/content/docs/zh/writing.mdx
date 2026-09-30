@@ -1,0 +1,35 @@
+---
+title: 写作指南
+description: 添加适合读者和工具使用的页面。
+sidebar:
+  order: 2
+---
+
+## 添加页面
+
+在 `src/content/docs/` 和 `src/content/docs/zh/` 下创建路径对应的文件，在 frontmatter 中填写标题、描述和导航顺序。
+
+```yaml
+title: 页面标题
+description: 读者将在本页学到什么。
+sidebar:
+  order: 3
+```
+
+## 使用组件
+
+<Aside>
+用文字保留示例的含义。交互图示也需要配套文字说明。
+</Aside>
+
+在 `src/components.ts` 中注册组件，并在 `astro.config.ts` 中定义对应的文本输出。
+
+## 发布前检查
+
+```sh
+pnpm build
+pnpm lint
+pnpm typecheck
+```
+
+未完成的页面设置 `draft: true`。打开构建后的 Markdown 链接，确认示例、链接和组件文字均可阅读。

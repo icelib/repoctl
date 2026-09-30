@@ -64,9 +64,9 @@ Use it to discover built-in template keys, inspect metadata, verify template hea
 ```bash
 repo new
 repo new sdk --template tsdown
-repo new docs --template vitepress
-repo new docs --template vitepress --dry-run
-repo new docs --template vitepress --json --out plans/docs.json
+repo new docs --template nimbus
+repo new docs --template nimbus --dry-run
+repo new docs --template nimbus --json --out plans/docs.json
 ```
 
 Use it to create packages and apps. Explicit template keys are validated first; invalid keys fail with suggestions instead of silently falling back.

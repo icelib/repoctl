@@ -1,5 +1,6 @@
 import { access, open, readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
+import { templateChoices } from '../template-data.mjs'
 import { readPackageManagerFromManifest } from './package-manager/read'
 import { assetsDir, packageDir, templatesDir } from './paths'
 import { prepareAssets, sanitizePublishedWorkspaceContent } from './prepare'
@@ -36,7 +37,7 @@ async function isPrepared() {
   const checks = [
     path.join(assetsDir, 'AGENTS.md'),
     path.join(assetsDir, 'LICENSE'),
-    path.join(templatesDir, 'tsdown'),
+    ...templateChoices.map(template => path.join(templatesDir, template.source)),
   ]
   const results = await Promise.all(checks.map(pathExists))
   if (!results.every(Boolean)) {

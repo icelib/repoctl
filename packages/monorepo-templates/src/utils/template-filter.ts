@@ -9,6 +9,8 @@ const skipDirs = new Set([
   '.tmp',
   '.vue-global-types',
   '.wrangler',
+  '.astro',
+  '.nimbus',
 ])
 
 const skipFiles = new Set([

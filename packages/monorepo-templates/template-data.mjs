@@ -47,4 +47,12 @@ export const templateChoices = [
     category: 'tool',
     description: 'TypeScript 命令行工具模板',
   },
+  {
+    key: 'nimbus',
+    label: 'Nimbus 文档（默认）',
+    source: 'nimbus',
+    target: 'apps/docs',
+    category: 'docs',
+    description: '默认文档模板：Nimbus + Astro，中英双语与 AI 文档入口',
+  },
 ]

@@ -6,14 +6,17 @@ repoctl 的模板由 `@icebreakers/monorepo-templates` 维护。CLI、脚手架�
 
 ## 内置模板
 
-| Key           | Category | 默认目录           | 适合场景                    |
-| ------------- | -------- | ------------------ | --------------------------- |
-| `tsdown`      | library  | `packages/tsdown`  | TypeScript 库包             |
-| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 组件库                |
-| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono 前后端一体应用 |
-| `hono-server` | service  | `apps/server`      | Hono API 服务               |
-| `vitepress`   | docs     | `apps/website`     | VitePress 文档站            |
-| `cli`         | tool     | `apps/cli`         | TypeScript 命令行工具       |
+| Key           | Category | 默认目录           | 适合场景                         |
+| ------------- | -------- | ------------------ | -------------------------------- |
+| `tsdown`      | library  | `packages/tsdown`  | TypeScript 库包                  |
+| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 组件库                     |
+| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono 前后端一体应用      |
+| `hono-server` | service  | `apps/server`      | Hono API 服务                    |
+| `vitepress`   | docs     | `apps/website`     | VitePress 文档站                 |
+| `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro，默认中英双语文档 |
+| `cli`         | tool     | `apps/cli`         | TypeScript 命令行工具            |
+
+Nimbus 是新建文档站点（`Docs Site`）的默认模板，提供英文 `/`、中文 `/zh/`、搜索和 AI 文档入口。VitePress 仍可显式选择，两者分别生成到 `apps/docs` 和 `apps/website`，可以同时使用。通用创建命令仍默认使用 `tsdown`；项目名称 `docs` 不会隐式改变模板。非交互调用请显式指定 `--template nimbus`。
 
 ## 查看模板
 
@@ -31,6 +34,7 @@ repo templates --markdown --out docs/templates.md
 repo new sdk --template tsdown
 repo new ui --template vue-lib
 repo new api --template hono-server
+repo new docs --template nimbus
 repo new website --template vitepress
 repo new toolbox --template cli
 ```
@@ -87,7 +91,7 @@ repo new api --template hono-server
 ### 要创建文档站
 
 ```bash
-repo new docs --template vitepress
+repo new docs --template nimbus
 ```
 
 生成后先检查：

@@ -1,0 +1,36 @@
+---
+title: Quick start
+description: Run, edit and publish your documentation.
+sidebar:
+  order: 1
+---
+
+## Install dependencies
+
+At the monorepo root:
+
+```sh
+corepack enable
+pnpm install
+```
+
+## Start the site
+
+In the documentation workspace:
+
+```sh
+pnpm dev
+```
+
+Edit `src/content/docs/index.mdx` and its Chinese counterpart `src/content/docs/zh/index.mdx`.
+
+## Build and preview
+
+```sh
+pnpm build
+pnpm preview
+```
+
+The build writes `dist/` and creates the search index. Set your production URL in `astro.config.ts` before publishing.
+
+Continue with the [writing guide](/writing/).

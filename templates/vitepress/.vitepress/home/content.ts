@@ -32,7 +32,7 @@ const english = {
   evidence: {
     title: 'See the plan before the repository changes',
     description: 'Preview work, redact local paths, and keep the exact command sequence with the report.',
-    code: 'pnpm exec repo new docs --template vitepress --dry-run\npnpm exec repo check --dry-run\npnpm exec repo doctor --markdown --redact',
+    code: 'pnpm exec repo new docs --template nimbus --dry-run\npnpm exec repo check --dry-run\npnpm exec repo doctor --markdown --redact',
     link: { label: 'See how diagnosis works', href: '/start/diagnose' },
   },
   layers: {
@@ -77,7 +77,7 @@ const chinese = {
   evidence: {
     title: '仓库变化前，先看清执行计划',
     description: '预览操作、脱敏本地路径，并让报告保留准确的命令顺序。',
-    code: 'pnpm exec repo new docs --template vitepress --dry-run\npnpm exec repo check --dry-run\npnpm exec repo doctor --markdown --redact',
+    code: 'pnpm exec repo new docs --template nimbus --dry-run\npnpm exec repo check --dry-run\npnpm exec repo doctor --markdown --redact',
     link: { label: '了解诊断流程', href: '/zh/start/diagnose' },
   },
   layers: {

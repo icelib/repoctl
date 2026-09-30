@@ -1,0 +1,35 @@
+---
+title: Writing guide
+description: Add pages that work for readers and tools.
+sidebar:
+  order: 2
+---
+
+## Add a page
+
+Create matching files under `src/content/docs/` and `src/content/docs/zh/`. Give each page a title, description and sidebar order in frontmatter.
+
+```yaml
+title: Your page
+description: What the reader will learn.
+sidebar:
+  order: 3
+```
+
+## Use components carefully
+
+<Aside>
+Keep the meaning of an example in its text. Interactive illustrations should have a written explanation too.
+</Aside>
+
+Register components in `src/components.ts` and their text representation in `astro.config.ts`.
+
+## Validate before publishing
+
+```sh
+pnpm build
+pnpm lint
+pnpm typecheck
+```
+
+Use `draft: true` while a page is unfinished. Open the published Markdown link and check that examples, links and component text are readable.

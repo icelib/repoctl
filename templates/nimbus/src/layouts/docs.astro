@@ -1,0 +1,70 @@
+---
+import type { DocsPageProps } from '@cloudflare/nimbus-docs/types'
+import { withBase } from '@cloudflare/nimbus-docs/runtime'
+import { config } from 'virtual:nimbus/config'
+import Head from '../components/head.astro'
+import Search from '../components/search/index.astro'
+import Sidebar from '../components/sidebar.astro'
+import { labels } from '../lib/locale'
+import '../styles/site.css'
+
+type Props = Omit<DocsPageProps, 'breadcrumbs' | 'prevNext'> & { chinese: boolean, alternate: string }
+const { title, description, sidebar, headings, markdownUrl, chinese, alternate, noindex, draft, searchable } = Astro.props
+const text = labels[chinese ? 'zh' : 'en']
+const base = import.meta.env.BASE_URL
+const indexUrl = withBase(chinese ? '/zh/llms.txt' : '/llms.txt', base)
+---
+
+<!doctype html>
+<html lang={chinese ? 'zh-CN' : 'en'}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <Head title={title} description={description} markdownUrl={markdownUrl} noindex={noindex || draft} chinese={chinese} />
+    <link rel="alternate" hreflang={chinese ? 'en' : 'zh-CN'} href={new URL(withBase(alternate, base), Astro.site)} />
+    <link rel="alternate" type="text/plain" href={indexUrl} title={text.index} />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">{text.skip}</a>
+    <header class="site-header">
+      <a class="brand" href={withBase(chinese ? '/zh/' : '/', base)}>{config.title}</a>
+      <a class="language-link" href={withBase(alternate, base)} lang={chinese ? 'en' : 'zh-CN'}>{chinese ? 'English' : '简体中文'}</a>
+    </header>
+    <div class="docs-grid">
+      <aside class="site-rail">
+        <Search chinese={chinese} />
+        <nav aria-label={text.navigation}>
+          <p class="rail-title">{text.navigation}</p>
+          {sidebar !== false && <Sidebar items={sidebar} />}
+        </nav>
+        <a class="index-link" href={indexUrl}>llms.txt ↗</a>
+      </aside>
+      <main id="main-content" tabindex="-1">
+        <div data-pagefind-body={searchable !== false && !noindex && !draft ? '' : undefined} data-pagefind-ignore={searchable === false || noindex || draft ? '' : undefined}>
+          <h1>{title}</h1>
+          {description && <p class="description">{description}</p>}
+          <article><slot /></article>
+        </div>
+        {markdownUrl && (
+          <footer>
+            <a href={withBase(markdownUrl, base)}>
+              {text.markdown}
+              {' '}
+              ↗
+            </a>
+          </footer>
+        )}
+      </main>
+      <aside class="page-rail">
+        {headings !== false && headings.length > 0 && (
+          <nav aria-label={text.contents}>
+            <p class="rail-title">{text.contents}</p>
+            <ul class="navigation-list">
+              {headings.map(heading => <li><a href={`#${heading.slug}`}>{heading.text}</a></li>)}
+            </ul>
+          </nav>
+        )}
+      </aside>
+    </div>
+  </body>
+</html>
