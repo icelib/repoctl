@@ -60,3 +60,10 @@ it('blocks unfinished checkpoints even when npm and metadata exist', async () =>
   })).rejects.toThrow('Prepared releases must finish')
   expect(h.calls.some(call => call.command === 'pnpm')).toBe(false)
 })
+
+it('does not overwrite an unpublished prerelease when new intents arrive', async () => {
+  const h = await fixture(1, '', 'E404 Not Found')
+  await writeFile(path.join(h.cwd, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\nversioning:\n  lanes:\n    repoctl: alpha\n')
+  await expect(releaseCi({ ...h.options, mode: 'auto', branch: 'alpha' })).rejects.toThrow(`check out ${source} on alpha`)
+  expect(h.calls.some(call => call.command === 'pnpm')).toBe(false)
+})

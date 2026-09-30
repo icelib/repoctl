@@ -173,7 +173,7 @@ export async function releaseCi(options: ReleaseCiOptions) {
         }
         return publishLifecycle({ ...options, github }, undefined, branch)
       }
-      return releasePrerelease(options, () => publishLifecycle({
+      return releasePrerelease({ ...options, github }, () => publishLifecycle({
         ...options,
         github,
         env: { ...getReleaseEnv(options), GITHUB_SHA: capture('git', ['rev-parse', 'HEAD'], options) },

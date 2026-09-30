@@ -9,7 +9,7 @@ import { packageKey } from '../publish/state'
 import { getReleaseEnv } from '../shared'
 
 /** A prepared version belongs to its original source, even before npm accepts it. */
-export async function assertPreviousReleaseComplete(options: ReleaseCiOptions) {
+export async function assertPreviousReleaseComplete(options: ReleaseCiOptions, distTag = 'latest') {
   const ledger = await readLedger(options.cwd)
   if (!Object.keys(ledger).length) {
     return
@@ -32,7 +32,7 @@ export async function assertPreviousReleaseComplete(options: ReleaseCiOptions) {
   const unfinished = new Set<string>()
   if (repository && github?.readReleaseState) {
     for (const group of [candidates, ...cohorts.values()]) {
-      const key = releaseStateKey(repository, 'latest', group)
+      const key = releaseStateKey(repository, distTag, group)
       const checkpoint = await github.readReleaseState(key)
       if (checkpoint && (!checkpoint.state.complete || checkpoint.state.schemaVersion !== 1)) {
         group.forEach(pkg => unfinished.add(packageKey(pkg)))
@@ -45,10 +45,13 @@ export async function assertPreviousReleaseComplete(options: ReleaseCiOptions) {
     const release = releases?.find(item => item.tag_name === packageKey(pkg))
     const tag = github?.readTagTarget ? await github.readTagTarget(packageKey(pkg)) : undefined
     if (!published || unfinished.has(packageKey(pkg))
-      || (releases && (!release || release.draft || release.prerelease))
+      || (releases && (!release || release.draft || Boolean(release.prerelease) !== (distTag !== 'latest')))
       || (github?.readTagTarget && (!tag || (published.gitHead && tag !== published.gitHead)))) {
       const source = sources.get(packageKey(pkg))!
-      blocked.push(`${packageKey(pkg)} (source ${source}); recover with repo release ci --mode publish --source-sha ${source}`)
+      const recovery = distTag === 'latest'
+        ? `repo release ci --mode publish --source-sha ${source}`
+        : `check out ${source} on ${distTag} and run repo release ci`
+      blocked.push(`${packageKey(pkg)} (source ${source}); recover with ${recovery}`)
     }
   }
   if (blocked.length) {
