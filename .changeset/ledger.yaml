@@ -83,6 +83,10 @@
   dir: packages/eslint
   intents:
     - auto-pr-920
+"@icebreakers/eslint-config@8.0.6":
+  dir: packages/eslint
+  intents:
+    - auto-pr-924
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -160,6 +164,11 @@
   dir: packages/monorepo-templates
   intents:
     - orange-chairs-punch
+"@icebreakers/monorepo-templates@2.0.7":
+  dir: packages/monorepo-templates
+  intents:
+    - calm-recovery-provenance
+    - fair-release-boundaries
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -224,6 +233,12 @@
   dir: packages/monorepo
   intents:
     - slow-cherries-throw
+"@icebreakers/monorepo@5.5.10":
+  dir: packages/monorepo
+  intents:
+    - bright-recovery-origin
+    - calm-recovery-provenance
+    - fair-release-boundaries
 "@icebreakers/monorepo@5.5.2":
   dir: packages/monorepo
   intents:
