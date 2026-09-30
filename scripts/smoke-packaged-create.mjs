@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, 
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { checkPackagedWebsite } from './vitepress/packaged.mjs'
 
 const repoRoot = path.resolve(import.meta.dirname, '..')
 const tempRoot = mkdtempSync(path.join(tmpdir(), 'repoctl-packaged-create-'))
@@ -18,7 +19,8 @@ function run(command, args, cwd) {
     encoding: 'utf8',
     env: { ...process.env, HUSKY: '0', CI: 'true' },
     stdio: ['ignore', 'pipe', 'pipe'],
-    timeout: 180_000,
+    timeout: 600_000,
+    maxBuffer: 10 * 1024 * 1024,
   })
 }
 
@@ -109,7 +111,13 @@ try {
     'generated workspaces must reject a mismatched pnpm version',
   )
   console.log(`Packaged create smoke passed with ${sourceManifest.packageManager}.`)
+  await checkPackagedWebsite({ cliPath, bootstrapDir, tempRoot, run })
 }
 finally {
-  rmSync(tempRoot, { force: true, recursive: true })
+  if (process.env.REPOCTL_SMOKE_KEEP_TEMP) {
+    console.log(`Retained smoke workspace: ${tempRoot}`)
+  }
+  else {
+    rmSync(tempRoot, { force: true, recursive: true })
+  }
 }

@@ -99,6 +99,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "only-allow": "^1.2.2",
+    "playwright": "^1.62.1",
     "repoctl": "workspace:*",
     "stylelint": "^17.15.0",
     "tailwindcss": "^4.3.3",
