@@ -80,6 +80,8 @@ repo release ci --mode prepare
 
 The managed Release workflow exposes the same `source-sha` input for `publish` and `publish-unpublished`. Current tooling checks out the original commit into an isolated directory, installs its locked dependencies, builds and verifies that source, and recovers the full set of versions introduced by its manifests or ledger, including dependency propagation. Package/version inputs validate membership; they do not split the original release. The SHA must belong to `origin/main`. Dry-run only inspects the source and remote release state; it does not install, upload, run hooks, or write checkpoints. Later changes stay pending for a new version. The original source must already include all intended version changes; no versions are changed during recovery.
 
+Recovery preserves GitHub's workflow environment for trusted publishing and provenance: its signed identity refers to the workflow run's commit. The isolated checkout, release checkpoint, Git tags, and Release targets refer to `source-sha`. Do not overwrite `GITHUB_SHA` to recover an older source; npm rejects provenance that disagrees with the signed workflow identity.
+
 ## Next
 
 Read [publishing and changelogs](/learn/monorepo/publish) for repository policy and [reports and output](/tasks/reports) for CI artifacts.

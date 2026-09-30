@@ -32,7 +32,9 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
   const cwd = path.join(root, 'source')
   try {
     run('git', ['clone', '--shared', '--no-checkout', options.cwd, cwd], options)
-    const env: NodeJS.ProcessEnv = { ...getReleaseEnv(options), GITHUB_SHA: source, GITHUB_REF_NAME: 'main', REPO_RELEASE_SOURCE_SHA: source }
+    // GitHub's signed OIDC identity belongs to the dispatching workflow commit.
+    // Keep its environment intact; the checkout and release target use source.
+    const env: NodeJS.ProcessEnv = { ...getReleaseEnv(options), REPO_RELEASE_SOURCE_SHA: source }
     let recovery: ReleaseCiOptions = { ...options, cwd, branch: 'main', env }
     // A local clone uses the source directory as origin; builds and provenance
     // must continue to see the actual repository identity.
