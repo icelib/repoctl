@@ -79,6 +79,10 @@
   intents:
     - auto-pr-914
     - auto-pr-917
+"@icebreakers/eslint-config@8.0.5":
+  dir: packages/eslint
+  intents:
+    - auto-pr-920
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -152,6 +156,10 @@
   dir: packages/monorepo-templates
   intents:
     - github-app-pr-ci
+"@icebreakers/monorepo-templates@2.0.6":
+  dir: packages/monorepo-templates
+  intents:
+    - orange-chairs-punch
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -249,6 +257,10 @@
   intents:
     - auto-pr-914
     - auto-pr-917
+"@icebreakers/monorepo@5.5.9":
+  dir: packages/monorepo
+  intents:
+    - orange-chairs-punch
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -427,6 +439,10 @@ repoctl@5.5.7:
   dir: packages/repoctl
   intents:
     - calm-publish-progress
+repoctl@5.5.9:
+  dir: packages/repoctl
+  intents:
+    - orange-chairs-punch
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
