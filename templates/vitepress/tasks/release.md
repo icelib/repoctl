@@ -64,6 +64,22 @@ If a runner disappears during upload before responses are persisted, recovery pe
 
 Legacy injected `GitHubOperations` adapters retain their previous behavior. Recovery-capable adapters must implement `readReleaseState`, `writeReleaseState`, `listReleases`, and `ensureTag`; `readTagTarget` is recommended. Enforce revision comparison on writes and throw on query errors. A local summary is not a remote checkpoint.
 
+## No-release intents and original-source recovery
+
+An intent containing only `none` (or empty frontmatter) records that no release is needed. It does not open a version PR or block publishing an already prepared release. Consumed intents resurrected by a merge are not versioned twice. pnpm cleans these files during the next effective version operation.
+
+Release PRs use the applied package list returned by pnpm, not arbitrary Git changes. A new package can keep its initial version; it still appears in the release notes. Cleanup alone never opens a release PR.
+
+If an existing prepared version has not completed publication, new version preparation stops before consuming intents and prints its source commit and recovery command. Finish that release first, then run preparation again:
+
+```bash
+repo release ci --mode publish --source-sha <full-main-commit-sha> --dry-run
+repo release ci --mode publish --source-sha <full-main-commit-sha>
+repo release ci --mode prepare
+```
+
+The managed Release workflow exposes the same `source-sha` input for `publish` and `publish-unpublished`. Current tooling checks out the original commit into an isolated directory, installs its locked dependencies, builds and verifies that source, and recovers the full set of versions introduced by its manifests or ledger, including dependency propagation. Package/version inputs validate membership; they do not split the original release. The SHA must belong to `origin/main`. Dry-run only inspects the source and remote release state; it does not install, upload, run hooks, or write checkpoints. Later changes stay pending for a new version. The original source must already include all intended version changes; no versions are changed during recovery.
+
 ## Next
 
 Read [publishing and changelogs](/learn/monorepo/publish) for repository policy and [reports and output](/tasks/reports) for CI artifacts.

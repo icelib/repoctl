@@ -70,6 +70,22 @@ const hook = { script: 'publish:extension', idempotent: true }
 
 程序化注入的旧 `GitHubOperations` adapter 保留原行为；要启用跨 runner 恢复，需要实现 `readReleaseState`、`writeReleaseState`、`listReleases`、`ensureTag`，并建议提供 `readTagTarget`。写入必须校验 revision，查询错误必须抛出。仅有本地 summary 不能代替远端检查点。
 
+## 无需发布的记录与原提交恢复
+
+仅包含 `none` 或空 frontmatter 的 intent 表示无需发布。它不会创建版本 PR，也不阻断已经准备好的版本发布。合并后重新出现、但 ledger 已记录消费的 intent 不会再次升级版本；pnpm 会在下一次有效版本操作中清理这些文件。
+
+版本 PR 以 pnpm 返回的实际发布包列表为依据，不再把任意 Git 改动视为版本变化。新包首次发布可以保留初始版本号，但仍会列入发布说明。仅清理记录不会创建发布 PR。
+
+已有版本尚未完成发布时，新的版本准备会在消费 intent 前失败，并给出原始提交和恢复命令。先恢复旧发布，再准备新版本：
+
+```bash
+repo release ci --mode publish --source-sha <完整的-main-提交-SHA> --dry-run
+repo release ci --mode publish --source-sha <完整的-main-提交-SHA>
+repo release ci --mode prepare
+```
+
+受管 Release 工作流为 `publish` 和 `publish-unpublished` 提供相同的 `source-sha` 输入。当前工具会在独立目录检出原提交，按照其锁文件安装、构建和验证，恢复该提交 manifest 或 ledger 新增的整批版本，包括依赖传播升级的包。package/version 输入只校验是否属于该批发布，不拆分原发布批次。SHA 必须属于 `origin/main` 历史。dry-run 只检查源码与远端状态，不安装、不上传、不运行 hook、不写检查点。后续变更保留到下一版本；恢复过程中不修改版本号。
+
 ## 下一步
 
 阅读[发包与变更日志](/zh/learn/monorepo/publish)，再查看[报告与输出](/zh/tasks/reports)了解 CI 产物。

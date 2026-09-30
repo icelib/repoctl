@@ -1,11 +1,13 @@
-import type { ReleaseOptions } from './types'
+import type { ReleaseCiOptions, ReleaseOptions } from './types'
 import { ReleaseCommandError } from './errors'
 import { runQualityScripts, runReleaseHooks } from './hooks'
+import { assertPreviousReleaseComplete } from './preparation/guard'
+import { applyVersions } from './preparation/result'
 import { getPublishCandidates, publishWithRetry } from './publish'
 import { assertLaneAssignments, clearPublishSummary, hasGitChanges, hasPendingIntents, readPublishSummary, resolveBranch, run, runLane } from './shared'
 import { prereleaseBranches } from './types'
 
-export async function releasePrerelease(options: ReleaseOptions, publish?: () => Promise<import('./types').PublishedPackage[]>) {
+export async function releasePrerelease(options: ReleaseCiOptions, publish?: () => Promise<import('./types').PublishedPackage[]>) {
   const branch = resolveBranch(options)
   if (!prereleaseBranches.has(branch)) {
     throw new ReleaseCommandError(`repo release pre is only allowed on alpha, beta, rc, or next branches, got ${branch}`)
@@ -19,12 +21,16 @@ export async function releasePrerelease(options: ReleaseOptions, publish?: () =>
     return publish?.()
   }
 
+  await assertPreviousReleaseComplete(options, branch)
   runReleaseHooks('beforeVersion', options)
   await runQualityScripts(options)
-  run('pnpm', ['version', '-r', '--no-git-checks'], options)
+  const releases = await applyVersions(options)
   runReleaseHooks('afterVersion', options)
-  if (!hasGitChanges(options)) {
+  if (!releases.length) {
     return
+  }
+  if (!hasGitChanges(options)) {
+    throw new ReleaseCommandError('pnpm reported releases without file changes')
   }
 
   run('git', ['add', '-A'], options)

@@ -31,8 +31,9 @@ export function registerReleaseCommands(program: Command, cwd: string) {
     .option('--mode <mode>', localize('auto / prepare / publish / publish-unpublished / reconcile', 'auto / prepare / publish / publish-unpublished / reconcile'), 'auto')
     .option('--package <name>', localize('Package used by publish-unpublished mode', 'publish-unpublished 使用的 package'))
     .option('--version <version>', localize('Version used by publish-unpublished mode', 'publish-unpublished 使用的版本'))
+    .option('--source-sha <sha>', localize('Recover a prepared release from its original main commit', '从 main 原始提交恢复整批发布'))
     .option('--dry-run', localize('Preview reconcile changes without updating GitHub', '只预览 reconcile 变更，不更新 GitHub'))
-    .action(async (opts: { mode?: 'auto' | 'prepare' | 'publish' | 'publish-unpublished' | 'reconcile', package?: string, version?: string, dryRun?: boolean }) => {
+    .action(async (opts: { mode?: 'auto' | 'prepare' | 'publish' | 'publish-unpublished' | 'reconcile', package?: string, version?: string, sourceSha?: string, dryRun?: boolean }) => {
       await runReleaseAction(async () => {
         const { releaseCi } = await import('@/commands')
         const releaseOptions = await resolveReleaseOptions(cwd)
@@ -41,6 +42,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
           ...(opts.mode ? { mode: opts.mode } : {}),
           ...(opts.package ? { packageName: opts.package } : {}),
           ...(opts.version ? { packageVersion: opts.version } : {}),
+          ...(opts.sourceSha ? { sourceSha: opts.sourceSha } : {}),
           ...(opts.dryRun ? { dryRun: true } : {}),
         })
         logger.success(localize('Release CI finished.', 'Release CI 完成。'))

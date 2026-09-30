@@ -1,6 +1,6 @@
 import type { PublishedPackage, ReleaseCiOptions } from '../types'
 import type { ReleaseLifecycleState, ReleaseTarget } from './types'
-import { createHash, randomUUID } from 'node:crypto'
+import { randomUUID } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 import path from 'pathe'
 import { logger } from '../../../core/logger'
@@ -13,6 +13,7 @@ import { packageKey, PublishState } from '../publish/state'
 import { clearPublishSummary, getReleaseEnv } from '../shared'
 import { finishHooks } from './hooks'
 import { findVersionCommit, verifySource } from './identity'
+import { releaseStateKey } from './key'
 import { inspectRegistry } from './registry'
 
 export async function publishLifecycle(options: ReleaseCiOptions, selected?: PublishedPackage[], distTag = 'latest') {
@@ -26,8 +27,7 @@ export async function publishLifecycle(options: ReleaseCiOptions, selected?: Pub
     throw new ReleaseCommandError('GITHUB_REPOSITORY is required for durable release recovery')
   }
   const candidates = selected ?? await getPublishCandidates(options.cwd)
-  const identity = JSON.stringify({ repository, distTag, packages: candidates.map(packageKey).sort() })
-  const key = createHash('sha256').update(identity).digest('hex')
+  const key = releaseStateKey(repository, distTag, candidates)
   const snapshot = await github.readReleaseState(key)
   let revision = snapshot?.revision
   const releases = new Map((await github.listReleases()).map(release => [release.tag_name, release]))

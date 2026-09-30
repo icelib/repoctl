@@ -52,6 +52,9 @@ export async function publishHarness(attempts: Attempt[], query: (spec: string, 
     if (command === 'pnpm' && args[0] === '--filter') {
       return { status: 0, stdout: a.version }
     }
+    if (command === 'pnpm' && args[0] === 'version') {
+      return { status: 0, stdout: JSON.stringify([a, b].map(pkg => ({ name: pkg.name, currentVersion: pkg.version, newVersion: pkg.version }))) }
+    }
     if (command === 'git' && args[0] === 'diff') {
       return { status: 1, stdout: '' }
     }

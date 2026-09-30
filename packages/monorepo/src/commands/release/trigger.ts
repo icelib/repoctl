@@ -1,6 +1,6 @@
 import type { ReleaseOptions } from './types'
-import { readdir, readFile } from 'node:fs/promises'
-import path from 'pathe'
+import { readFile } from 'node:fs/promises'
+import { readPendingIntents } from './intents'
 import { capture, getReleaseEnv } from './shared'
 
 const releaseBranches = new Set(['main', 'alpha', 'beta', 'rc', 'next'])
@@ -79,18 +79,6 @@ export function shouldRunRelease(context: ReleaseTriggerContext) {
     || hasReleaseArtifactPair(context.changedFiles)
 }
 
-async function readPendingChangesetFiles(cwd: string) {
-  try {
-    const entries = await readdir(path.join(cwd, '.changeset'), { withFileTypes: true })
-    return entries
-      .filter(entry => entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'README.md')
-      .map(entry => `.changeset/${entry.name}`)
-  }
-  catch {
-    return []
-  }
-}
-
 function readGitOutput(options: ReleaseOptions, args: string[]) {
   try {
     return capture('git', args, options)
@@ -133,7 +121,7 @@ export async function readReleaseTriggerContext(options: ReleaseOptions): Promis
   return {
     eventName,
     branch,
-    pendingChangesetFiles: await readPendingChangesetFiles(options.cwd),
+    pendingChangesetFiles: await readPendingIntents(options.cwd),
     changedFiles: await readChangedFiles(options),
     commitMessage: readGitOutput(options, ['log', '-1', '--format=%s', sha]),
   }
