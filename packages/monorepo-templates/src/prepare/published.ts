@@ -13,7 +13,7 @@ export function sanitizePublishedManifestContent(content: string) {
   }
   if (manifest.scripts) {
     for (const name of Object.keys(manifest.scripts)) {
-      if (name.startsWith('dev:') || name === 'test:dev-scenarios' || name === 'test:worker-types' || name === 'test:packaged-create') {
+      if (name.startsWith('dev:') || name === 'test:dev-scenarios' || name === 'test:worker-types' || name === 'test:packaged-create' || name === 'test:packaged-nimbus') {
         delete manifest.scripts[name]
       }
     }

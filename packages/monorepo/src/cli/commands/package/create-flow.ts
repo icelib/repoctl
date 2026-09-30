@@ -2,7 +2,7 @@ import type { CreateNewProjectOptions, CreateNewProjectPlan } from '../../../com
 import process from 'node:process'
 import { input, select } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
-import { createNewProject, getCreateChoices, resolveCreateNewProjectPlan } from '../../../commands'
+import { createNewProject, getCreateChoices, getTemplateMap, resolveCreateNewProjectPlan } from '../../../commands'
 import { defaultTemplate } from '../../../commands/create'
 import { resolveCommandConfig } from '../../../core/config'
 import { logger } from '../../../core/logger'
@@ -17,17 +17,18 @@ function normalizeTargetName(name: string, baseDir: 'packages' | 'apps') {
   return `${baseDir}/${name}`
 }
 
-function resolveBaseDirFromTemplate(type: CreateNewProjectOptions['type']) {
-  const intentChoice = createIntentChoices.find(item => item.defaultTemplate === type)
-  return intentChoice?.defaultBaseDir
+function resolveBaseDirFromTemplate(type: CreateNewProjectOptions['type'], templates: ReturnType<typeof getTemplateMap>) {
+  const target = type ? templates[type]?.target : undefined
+  const baseDir = target?.split('/')[0]
+  return baseDir === 'apps' || baseDir === 'packages' ? baseDir : undefined
 }
 
-function normalizeNameForTemplate(name: string, type: CreateNewProjectOptions['type']) {
+function normalizeNameForTemplate(name: string, type: CreateNewProjectOptions['type'], templates: ReturnType<typeof getTemplateMap>) {
   if (!type) {
     return name
   }
 
-  const baseDir = resolveBaseDirFromTemplate(type)
+  const baseDir = resolveBaseDirFromTemplate(type, templates)
   if (!baseDir) {
     return name
   }
@@ -120,13 +121,14 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
   try {
     const createConfig = await resolveCommandConfig('create', cwd)
     const explicitTemplate = options.template ?? createConfig?.type ?? createConfig?.defaultTemplate
+    const templates = getTemplateMap(createConfig?.templateMap)
 
     let packageName = inputName
 
     if (!explicitTemplate && !canPrompt()) {
       const type = defaultTemplate
       const createOptions = {
-        name: normalizeNameForTemplate(packageName ?? createConfig?.name ?? 'my-package', type),
+        name: normalizeNameForTemplate(packageName ?? createConfig?.name ?? 'my-package', type, templates),
         cwd,
         type,
       }
@@ -172,7 +174,7 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
       }
 
       const createOptions = {
-        name: normalizeTargetName(packageName, intentChoice.defaultBaseDir),
+        name: normalizeNameForTemplate(packageName, type, templates),
         cwd,
         ...(type !== undefined ? { type } : {}),
       }
@@ -204,7 +206,7 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
     })
 
     const createOptions = {
-      name: normalizeNameForTemplate(packageName, type),
+      name: normalizeNameForTemplate(packageName, type, templates),
       cwd,
       ...(type !== undefined ? { type } : {}),
     }

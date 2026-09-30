@@ -4,14 +4,17 @@ repoctl templates are maintained by `@icebreakers/monorepo-templates`. The CLI, 
 
 ## Built-In Templates
 
-| Key           | Category | Default target     | Use case                |
-| ------------- | -------- | ------------------ | ----------------------- |
-| `tsdown`      | library  | `packages/tsdown`  | TypeScript library      |
-| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 component library |
-| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono app        |
-| `hono-server` | service  | `apps/server`      | Hono API service        |
-| `vitepress`   | docs     | `apps/website`     | VitePress docs site     |
-| `cli`         | tool     | `apps/cli`         | TypeScript CLI          |
+| Key           | Category | Default target     | Use case                               |
+| ------------- | -------- | ------------------ | -------------------------------------- |
+| `tsdown`      | library  | `packages/tsdown`  | TypeScript library                     |
+| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 component library                |
+| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono app                       |
+| `hono-server` | service  | `apps/server`      | Hono API service                       |
+| `vitepress`   | docs     | `apps/website`     | VitePress docs site                    |
+| `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro, default bilingual docs |
+| `cli`         | tool     | `apps/cli`         | TypeScript CLI                         |
+
+Nimbus is the default for the interactive **Docs Site** goal. It includes English at `/`, Chinese at `/zh/`, search and AI documentation endpoints. VitePress remains an explicit alternative. Their default targets are `apps/docs` and `apps/website`, so both can coexist. General creation still defaults to `tsdown`; naming a project `docs` does not infer its template. In noninteractive workflows, pass `--template nimbus` explicitly.
 
 ## Discover Templates
 
@@ -29,6 +32,7 @@ repo templates --markdown --out docs/templates.md
 repo new sdk --template tsdown
 repo new ui --template vue-lib
 repo new api --template hono-server
+repo new docs --template nimbus
 repo new website --template vitepress
 repo new toolbox --template cli
 ```
@@ -85,7 +89,7 @@ For existing projects, update these scripts and the Turbo inputs/outputs, then r
 ### Create a docs site
 
 ```bash
-repo new docs --template vitepress
+repo new docs --template nimbus
 ```
 
 Check first:

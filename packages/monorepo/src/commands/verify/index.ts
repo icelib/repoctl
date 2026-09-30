@@ -1,16 +1,19 @@
 import type { Buffer } from 'node:buffer'
-import type { SpawnSyncOptions, SpawnSyncReturns } from 'node:child_process'
+import type { SpawnSyncReturns } from 'node:child_process'
+import type { CommitMsgVerifyOptions, PreCommitVerifyOptions, PrePushVerifyOptions } from './types'
 import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import { resolveToolingConfig } from '../../core/config'
+import { runPnpmCommand } from './run'
+
+export { verifyStagedTypecheck } from './staged'
+
+export type * from './types'
 
 const zeroSha = '0'.repeat(40)
-const typecheckExtensions = new Set(['.ts', '.tsx', '.mts', '.cts', '.vue'])
-const typecheckBasenames = new Set(['package.json'])
 const whitespacePattern = /\s+/
-const gitDirName = '.git'
 const defaultWorkspaceOrder = [
   'packages/create-icebreaker',
   'packages/create-repoctl',
@@ -22,68 +25,9 @@ const defaultWorkspaceOrder = [
   'templates/server',
   'templates/tsdown',
   'templates/vitepress',
+  'templates/nimbus',
   'templates/vue-lib',
 ].sort((left, right) => right.length - left.length)
-
-export interface VerifyCommandOptions {
-  /**
-   * 命令执行根目录。
-   * @default process.cwd()
-   */
-  cwd?: string
-}
-
-export interface PrePushVerifyOptions extends VerifyCommandOptions {
-  /**
-   * pre-push hook 的 stdin 原始文本。
-   * 未提供时会从真实 stdin 读取。
-   * @default undefined
-   */
-  stdinText?: string
-  /**
-   * 参与变更归属计算的 workspace 列表。
-   * @default 内置 `defaultWorkspaceOrder`
-   */
-  workspaces?: string[]
-  /**
-   * 可注入的 `execFileSync` 实现，主要用于测试。
-   * @default node:child_process.execFileSync
-   */
-  execFile?: typeof execFileSync
-  /**
-   * 可注入的 `spawnSync` 实现，主要用于测试。
-   * @default node:child_process.spawnSync
-   */
-  spawn?: typeof spawnSync
-}
-
-export interface StagedTypecheckOptions extends VerifyCommandOptions {
-  /**
-   * 可注入的 `spawnSync` 实现，主要用于测试。
-   * @default node:child_process.spawnSync
-   */
-  spawn?: typeof spawnSync
-}
-
-export interface CommitMsgVerifyOptions extends VerifyCommandOptions {
-  /**
-   * commit message 文件路径。
-   */
-  editFile: string
-  /**
-   * 可注入的 `spawnSync` 实现，主要用于测试。
-   * @default node:child_process.spawnSync
-   */
-  spawn?: typeof spawnSync
-}
-
-export interface PreCommitVerifyOptions extends VerifyCommandOptions {
-  /**
-   * 可注入的 `spawnSync` 实现，主要用于测试。
-   * @default node:child_process.spawnSync
-   */
-  spawn?: typeof spawnSync
-}
 
 function getPackageScripts(dir: string, cwd: string) {
   const packageJsonPath = path.join(cwd, dir, 'package.json')
@@ -150,23 +94,6 @@ function getChangedFilesForNewRemote(head: string, cwd: string, execFile: typeof
   return output.split('\n').filter(Boolean)
 }
 
-function runPnpmCommand(
-  cwd: string,
-  label: string,
-  args: string[],
-  spawn: typeof spawnSync,
-) {
-  process.stdout.write(`${label}\n`)
-  const options: SpawnSyncOptions = {
-    cwd,
-    stdio: 'inherit',
-  }
-  const result = spawn('pnpm', args, options)
-  if (result.status !== 0) {
-    process.exit(result.status ?? 1)
-  }
-}
-
 function runShellCommand(cwd: string, label: string, command: string, spawn: typeof spawnSync) {
   process.stdout.write(`${label}\n`)
   const result = spawn('sh', ['-lc', command], {
@@ -199,56 +126,6 @@ async function readHookStdin() {
   }
 
   return output.trim()
-}
-
-function hasTypecheckScript(dir: string) {
-  const packageJsonPath = path.join(dir, 'package.json')
-  if (!fs.existsSync(packageJsonPath)) {
-    return false
-  }
-
-  try {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'))
-    return typeof packageJson.scripts?.typecheck === 'string' && packageJson.scripts.typecheck.length > 0
-  }
-  catch {
-    return false
-  }
-}
-
-function findRepositoryRoot(startDir: string) {
-  let current = path.resolve(startDir)
-
-  while (true) {
-    if (fs.existsSync(path.join(current, gitDirName))) {
-      return current
-    }
-
-    const next = path.dirname(current)
-    if (next === current) {
-      return path.resolve(startDir)
-    }
-    current = next
-  }
-}
-
-function resolveTypecheckWorkspaceDir(filePath: string, cwd: string) {
-  const workspaceRoot = findRepositoryRoot(cwd)
-  let current = path.dirname(path.resolve(cwd, filePath))
-
-  while (current.startsWith(workspaceRoot)) {
-    if (current !== cwd && hasTypecheckScript(current)) {
-      return current
-    }
-
-    const next = path.dirname(current)
-    if (next === current) {
-      break
-    }
-    current = next
-  }
-
-  return workspaceRoot
 }
 
 /**
@@ -327,40 +204,6 @@ export async function verifyPrePush(options: PrePushVerifyOptions = {}) {
       continue
     }
     runPnpmCommand(cwd, `[pre-push:${task}] .`, [task], spawn)
-  }
-}
-
-/**
- * 对暂存区中涉及类型检查的文件，按最近的 workspace 归属执行 `typecheck`。
- *
- * 当前识别的扩展名：`.ts`、`.tsx`、`.mts`、`.cts`、`.vue`。
- *
- * @param stagedFiles 暂存区文件路径列表
- * @param options 运行参数
- */
-export function verifyStagedTypecheck(stagedFiles: string[], options: StagedTypecheckOptions = {}) {
-  const cwd = options.cwd ?? process.cwd()
-  const spawn = options.spawn ?? spawnSync
-  let workspaceDirs = [...new Set(
-    stagedFiles
-      .filter((file) => {
-        const basename = path.basename(file)
-        return typecheckExtensions.has(path.extname(file)) || typecheckBasenames.has(basename)
-      })
-      .map(file => resolveTypecheckWorkspaceDir(file, cwd)),
-  )]
-
-  if (workspaceDirs.length === 0) {
-    return
-  }
-
-  if (workspaceDirs.includes(cwd)) {
-    workspaceDirs = [cwd]
-  }
-
-  for (const workspaceDir of workspaceDirs) {
-    const label = path.relative(cwd, workspaceDir) || '.'
-    runPnpmCommand(cwd, `[lint-staged:typecheck] ${label}`, ['--dir', workspaceDir, 'typecheck'], spawn)
   }
 }
 

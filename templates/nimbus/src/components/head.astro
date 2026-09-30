@@ -1,0 +1,43 @@
+---
+import { withBase } from '@cloudflare/nimbus-docs/runtime'
+import { config } from 'virtual:nimbus/config'
+
+interface Props {
+  title: string
+  description?: string | undefined
+  markdownUrl?: string | undefined
+  noindex?: boolean | undefined
+  chinese: boolean
+}
+
+const { title, description = config.description, markdownUrl, noindex, chinese } = Astro.props
+const base = import.meta.env.BASE_URL
+const fullTitle = `${title} | ${config.title}`
+const language = chinese ? 'zh-CN' : 'en'
+const canonical = new URL(Astro.url.pathname, Astro.site)
+const structuredData = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  'name': fullTitle,
+  description,
+  'url': canonical.href,
+  'inLanguage': language,
+})
+---
+
+<title>{fullTitle}</title>
+<meta name="generator" content={Astro.generator} />
+<meta name="description" content={description} />
+{noindex && <meta name="robots" content="noindex" />}
+<link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg', base)} />
+<link rel="stylesheet" href={withBase('/_nimbus/shiki.css', base)} />
+<link rel="canonical" href={canonical} />
+<link rel="sitemap" href={withBase('/sitemap-index.xml', base)} />
+{markdownUrl && <link rel="alternate" type="text/markdown" href={new URL(withBase(markdownUrl, base), Astro.site)} />}
+<meta property="og:title" content={fullTitle} />
+<meta property="og:type" content="article" />
+<meta property="og:site_name" content={config.title} />
+<meta property="og:locale" content={chinese ? 'zh_CN' : 'en_US'} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<script type="application/ld+json" set:html={structuredData} />

@@ -20,7 +20,7 @@ repo templates --category library
 
 ```bash
 repo new sdk --template tsdown --dry-run
-repo new docs --template vitepress --json --out plans/docs.json
+repo new docs --template nimbus --json --out plans/docs.json
 ```
 
 A plan records the selected template, source, destination, package name, workspace pattern, and whether fallback behavior was used. Unknown explicit keys fail with a suggestion.

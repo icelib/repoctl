@@ -17,7 +17,9 @@
         ".env*",
         "package.json",
         "tsconfig*.json",
-        "*.config.{js,ts,mjs,mts}"
+        "*.config.{js,ts,mjs,mts}",
+        "public/**",
+        "nimbus.json"
       ],
       "outputs": [
         "dist/**",
@@ -30,12 +32,14 @@
         "^lint"
       ],
       "inputs": [
-        "**/*.{js,jsx,cjs,mjs,ts,tsx,cts,mts,vue}",
+        "**/*.{js,jsx,cjs,mjs,ts,tsx,cts,mts,vue,astro,css,scss,less}",
         "**/*.{json,html,md,mdx,yml,yaml}",
         "*.config.{js,ts,mjs,mts}",
         ".eslintrc*",
         ".stylelintrc*",
-        "package.json"
+        "package.json",
+        "public/**",
+        "nimbus.json"
       ],
       "outputs": []
     },
@@ -88,7 +92,10 @@
         ".env*",
         "test/**",
         "package.json",
-        "tsconfig*.json"
+        "tsconfig*.json",
+        "public/**",
+        "nimbus.json",
+        "*.config.{js,ts,mjs,mts}"
       ],
       "outputs": []
     },

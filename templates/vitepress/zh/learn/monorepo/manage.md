@@ -169,7 +169,7 @@ pnpm run repo:new
 ### 直接指定模板
 
 ```bash
-pnpm exec repo new docs --template vitepress
+pnpm exec repo new docs --template nimbus
 pnpm exec repo new sdk --template tsdown
 ```
 

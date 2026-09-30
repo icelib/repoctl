@@ -1,0 +1,121 @@
+@layer base {
+  :root {
+    font-family: system-ui, sans-serif;
+    line-height: 1.7;
+    color: var(--ink);
+    color-scheme: light dark;
+    background: var(--surface);
+
+    --surface: #fafbfc;
+    --ink: #263247;
+    --muted: #5d6b80;
+    --line: #dce2eb;
+    --accent: #1d4ed8;
+    --soft: #edf2fc;
+  }
+
+  * {
+  box-sizing: border-box;
+}
+
+  body {
+  margin: 0;
+}
+
+  a {
+  color: var(--accent);
+  text-underline-offset: 0.2em;
+}
+
+  a:hover {
+  text-decoration-thickness: 2px;
+}
+
+  :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+  h1, h2, h3 {
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+  h1 {
+  margin: 0 0 1rem;
+  font-family: Charter, Georgia, serif;
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  font-weight: 500;
+}
+
+  h2 {
+  margin-top: 2.5rem;
+  font-size: 1.5rem;
+}
+
+  h3 {
+  margin-top: 2rem;
+}
+
+  p, li {
+  overflow-wrap: anywhere;
+}
+
+  code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.88em;
+}
+
+  pre {
+  padding: 1.2rem;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+}
+
+  :not(pre) > code {
+  padding: 0.15rem 0.35rem;
+  background: var(--soft);
+  border-radius: 0.2rem;
+}
+
+  img {
+  max-width: 100%;
+}
+
+  table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+  td, th {
+  padding: 0.6rem 1rem;
+  text-align: start;
+  border: 1px solid var(--line);
+}
+
+  button, input {
+  font: inherit;
+}
+
+  button, summary {
+  cursor: pointer;
+}
+
+  button {
+  padding: 0.4rem 0.7rem;
+  color: var(--surface);
+  background: var(--accent);
+  border: 0;
+  border-radius: 0.3rem;
+}
+
+  input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+}
+}

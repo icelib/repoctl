@@ -36,7 +36,7 @@ Continue with [Adopt an existing workspace](/tasks/adopt-existing).
 ```bash
 pnpm exec repo templates
 pnpm exec repo new sdk --template tsdown
-pnpm exec repo new docs --template vitepress --dry-run
+pnpm exec repo new docs --template nimbus --dry-run
 ```
 
 For daily development, root scripts also work:

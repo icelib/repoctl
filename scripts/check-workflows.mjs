@@ -147,6 +147,7 @@ function checkCiWorkflow() {
   assert.ok(commands.includes('pnpm test'))
   assert.ok(commands.includes('pnpm test:worker-types'))
   assert.ok(commands.includes('pnpm test:packaged-create'))
+  assert.ok(commands.includes('pnpm test:packaged-nimbus'))
   assertPinnedActions(steps, 'CI')
 }
 

@@ -8,7 +8,7 @@ Intent defaults:
 - library -> `tsdown` -> `packages/<name>`
 - web-app -> `vue-hono` -> `apps/<name>`
 - api-service -> `hono-server` -> `apps/<name>`
-- docs-site -> `vitepress` -> `apps/<name>`
+- docs-site -> `nimbus` -> `apps/<name>`
 - cli-tool -> `cli` -> `apps/<name>`
 
 Run `repo templates` to discover template keys, categories, default targets, and
@@ -36,7 +36,8 @@ Built-in template map:
 - vue-lib -> templates/vue-lib => packages/vue-lib
 - hono-server -> templates/server => apps/server
 - vue-hono -> templates/client => apps/client
-- vitepress -> templates/vitepress => apps/website
+- nimbus -> templates/nimbus => apps/docs (default documentation template)
+- vitepress -> templates/vitepress => apps/website (explicit alternative)
 - cli -> templates/cli => apps/cli
 
 Notes:

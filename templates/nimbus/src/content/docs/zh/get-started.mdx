@@ -1,0 +1,36 @@
+---
+title: 快速开始
+description: 运行、编辑和发布你的文档。
+sidebar:
+  order: 1
+---
+
+## 安装依赖
+
+在 monorepo 根目录执行：
+
+```sh
+corepack enable
+pnpm install
+```
+
+## 启动站点
+
+进入文档工作区执行：
+
+```sh
+pnpm dev
+```
+
+编辑 `src/content/docs/zh/index.mdx`，并同步英文版本 `src/content/docs/index.mdx`。
+
+## 构建与预览
+
+```sh
+pnpm build
+pnpm preview
+```
+
+构建会生成 `dist/` 和搜索索引。发布前，在 `astro.config.ts` 中填写正式站点地址。
+
+继续阅读[写作指南](/zh/writing/)。

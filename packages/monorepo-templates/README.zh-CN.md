@@ -10,7 +10,7 @@ repoctl 的内置项目模板和受管工作区资产包。
 import { getTemplateChoices, getTemplateDefinition } from '@icebreakers/monorepo-templates'
 
 const libraries = getTemplateChoices({ category: 'library' })
-const vitepress = getTemplateDefinition('vitepress')
+const nimbus = getTemplateDefinition('nimbus')
 ```
 
 仓库 `templates/` 下的源码工作区均为私有，本包是这些模板的正式分发边界。

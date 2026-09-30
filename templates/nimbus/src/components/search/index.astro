@@ -1,0 +1,26 @@
+---
+import { labels } from '../../lib/locale'
+
+interface Props { chinese: boolean }
+const { chinese } = Astro.props
+const text = labels[chinese ? 'zh' : 'en']
+---
+
+<details class="search-panel" data-search data-base={import.meta.env.BASE_URL} data-loading={text.loading} data-empty={text.empty} data-unavailable={text.unavailable}>
+  <summary>{text.search}</summary>
+  <form role="search">
+    <label for="docs-search">{text.search}</label>
+    <div class="search-controls">
+      <input id="docs-search" name="query" type="search" required autocomplete="off" />
+      <button type="submit">{text.submit}</button>
+    </div>
+  </form>
+  <p role="status" aria-live="polite"></p>
+  <ul class="search-results"></ul>
+</details>
+
+<script>
+  import { mountSearch } from './client'
+
+  document.querySelectorAll<HTMLElement>('[data-search]').forEach(mountSearch)
+</script>

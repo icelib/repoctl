@@ -83,7 +83,8 @@
     "pr:rc": "repo release pre enter rc",
     "pr:next": "repo release pre enter next",
     "pr:exit": "repo release pre exit",
-    "--------": "----------------"
+    "--------": "----------------",
+    "test:packaged-nimbus": "node scripts/nimbus/index.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

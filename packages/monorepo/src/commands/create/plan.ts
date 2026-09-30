@@ -18,6 +18,7 @@ export const templateMap = {
   'vue-hono': { source: 'client', target: 'apps/client' },
   'vitepress': { source: 'vitepress', target: 'apps/website' },
   'cli': { source: 'cli', target: 'apps/cli' },
+  'nimbus': { source: 'nimbus', target: 'apps/docs' },
 } as const
 
 export type CreateNewProjectType = keyof typeof templateMap
