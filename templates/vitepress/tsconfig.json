@@ -10,14 +10,14 @@
     "skipLibCheck": true
   },
   "include": [
-    ".vitepress/home/**/*.ts",
-    ".vitepress/navigation/**/*.ts",
-    ".vitepress/seo.ts",
-    ".vitepress/theme/**/*.ts",
-    ".vitepress/theme/**/*.vue",
-    ".vitepress/env.d.ts",
+    ".vitepress/**/*.ts",
+    ".vitepress/**/*.vue",
     "scripts/**/*.ts",
-    "why/examples/2.npm-basic-package/src/**/*.ts",
-    "why/examples/3.npm-basic-package/src/**/*.ts"
+    "test/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": [
+    ".vitepress/dist",
+    ".vitepress/cache"
   ]
 }

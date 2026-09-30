@@ -1,11 +1,11 @@
 import Tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
-import { withMermaid } from 'vitepress-plugin-mermaid'
+import { mermaidMarkdown } from './mermaid/markdown'
 import { createNav, createSidebars } from './navigation/routes'
 import { createPageHead, siteOrigin } from './seo'
 
-export default withMermaid(defineConfig({
+export default defineConfig({
   outDir: '.vitepress/dist',
   srcExclude: ['CHANGELOG.md', 'learn/packages/examples/**', 'zh/learn/packages/examples/**'],
   title: 'repoctl',
@@ -69,7 +69,6 @@ export default withMermaid(defineConfig({
   },
   vite: {
     plugins: [
-      // @ts-ignore vitepress-plugin-llms currently exposes Vite 6 plugin types.
       Tailwindcss(),
       llmstxt({
         title: 'repoctl',
@@ -89,5 +88,5 @@ export default withMermaid(defineConfig({
       }),
     ],
   },
-  mermaid: {},
-}))
+  markdown: { config: mermaidMarkdown },
+})

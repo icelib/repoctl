@@ -1,4 +1,5 @@
 import type { HeadConfig, TransformContext } from 'vitepress'
+import { faqContent } from './home/faq'
 
 export const siteOrigin = 'https://repoctl.icebreaker.top'
 
@@ -35,6 +36,16 @@ export function createPageHead({ page, title, description }: TransformContext): 
       { '@type': 'Organization', 'name': 'repoctl', 'url': siteOrigin, 'logo': `${siteOrigin}/brand/repoctl-mark.svg`, 'sameAs': ['https://github.com/icelib/repoctl', 'https://www.npmjs.com/package/repoctl'] },
       { '@type': 'SoftwareApplication', 'name': 'repoctl', 'applicationCategory': 'DeveloperApplication', 'operatingSystem': 'macOS, Linux, Windows', 'url': siteOrigin, description, 'sameAs': ['https://github.com/icelib/repoctl', 'https://www.npmjs.com/package/repoctl'], 'offers': { '@type': 'Offer', 'price': '0', 'priceCurrency': 'USD' } },
       { '@type': 'WebSite', 'name': 'repoctl', 'url': siteOrigin, 'potentialAction': { '@type': 'SearchAction', 'target': `${siteOrigin}/reference/commands?q={search_term_string}`, 'query-input': 'required name=search_term_string' } },
+      ...(page === 'index.md' || page === 'zh/index.md'
+        ? [{
+            '@type': 'FAQPage',
+            'mainEntity': faqContent[isChinese ? 'zh' : 'en'].map(([name, text]) => ({
+              '@type': 'Question',
+              name,
+              'acceptedAnswer': { '@type': 'Answer', text },
+            })),
+          }]
+        : []),
     ],
   }
 
@@ -61,6 +72,6 @@ export function createPageHead({ page, title, description }: TransformContext): 
     ['meta', { name: 'twitter:description', content: description }],
     ['meta', { name: 'twitter:image', content: socialImage }],
     ['meta', { name: 'twitter:image:alt', content: socialImageAlt }],
-    ['script', { type: 'application/ld+json' }, JSON.stringify(jsonLd)],
+    ['script', { type: 'application/ld+json' }, JSON.stringify(jsonLd).replace(/</g, '\\u003c')],
   ]
 }

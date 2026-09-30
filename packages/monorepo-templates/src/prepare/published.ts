@@ -1,7 +1,16 @@
 import YAML from 'yaml'
 
 export function sanitizePublishedManifestContent(content: string) {
-  const manifest = JSON.parse(content) as { scripts?: Record<string, string> }
+  const manifest = JSON.parse(content) as { scripts?: Record<string, string>, devDependencies?: Record<string, string> }
+  // Generated configs import repoctl/tooling, which owns the shared config dependencies.
+  if (manifest.devDependencies) {
+    for (const name of ['@icebreakers/commitlint-config', '@icebreakers/eslint-config', '@icebreakers/monorepo', '@icebreakers/stylelint-config', 'playwright']) {
+      delete manifest.devDependencies[name]
+    }
+    if (manifest.devDependencies['repoctl']?.startsWith('workspace:')) {
+      manifest.devDependencies['repoctl'] = 'latest'
+    }
+  }
   if (manifest.scripts) {
     for (const name of Object.keys(manifest.scripts)) {
       if (name.startsWith('dev:') || name === 'test:dev-scenarios' || name === 'test:worker-types' || name === 'test:packaged-create') {

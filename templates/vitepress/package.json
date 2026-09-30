@@ -34,23 +34,19 @@
     "deploy:dry-run": "wrangler deploy --dry-run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "vue-tsc -p tsconfig.json --noEmit"
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "vue": "^3.5.43"
   },
   "devDependencies": {
-    "@braintree/sanitize-url": "^7.1.2",
     "@tailwindcss/vite": "^4.3.3",
-    "cytoscape": "^3.34.3",
-    "cytoscape-cose-bilkent": "^4.1.0",
-    "dayjs": "^1.11.23",
-    "debug": "^4.4.3",
     "mermaid": "^12.0.0",
     "tailwindcss": "^4.3.3",
-    "vitepress": "^1.6.4",
+    "vitepress": "2.0.0-alpha.20",
     "vitepress-plugin-llms": "^1.14.0",
-    "vitepress-plugin-mermaid": "^2.0.17",
+    "vitest": "~5.0.2",
     "vue-tsc": "^3.3.11",
     "wrangler": "^4.135.0"
   }
