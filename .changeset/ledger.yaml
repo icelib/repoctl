@@ -20,6 +20,10 @@
   dir: packages/changelog-github
   intents:
     - auto-pr-914
+"@icebreakers/changelog-github@2.1.3":
+  dir: packages/changelog-github
+  intents:
+    - auto-pr-933
 "@icebreakers/commitlint-config@4.0.6":
   dir: packages/commitlint
   intents:
@@ -87,6 +91,11 @@
   dir: packages/eslint
   intents:
     - auto-pr-924
+"@icebreakers/eslint-config@8.0.7":
+  dir: packages/eslint
+  intents:
+    - auto-pr-930
+    - auto-pr-933
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -169,6 +178,11 @@
   intents:
     - calm-recovery-provenance
     - fair-release-boundaries
+"@icebreakers/monorepo-templates@2.1.0":
+  dir: packages/monorepo-templates
+  intents:
+    - olive-apes-rescue
+    - silly-spoons-shave
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -276,6 +290,11 @@
   dir: packages/monorepo
   intents:
     - orange-chairs-punch
+"@icebreakers/monorepo@5.6.0":
+  dir: packages/monorepo
+  intents:
+    - auto-pr-933
+    - silly-spoons-shave
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -344,6 +363,10 @@ create-repoctl@1.0.3:
   dir: packages/create-repoctl
   intents:
     - steady-pnpm-alignment
+create-repoctl@1.1.0:
+  dir: packages/create-repoctl
+  intents:
+    - silly-spoons-shave
 eslint-plugin-better-stylelint@2.0.4:
   dir: packages/eslint-plugin-better-stylelint
   intents:
@@ -458,6 +481,10 @@ repoctl@5.5.9:
   dir: packages/repoctl
   intents:
     - orange-chairs-punch
+repoctl@5.6.0:
+  dir: packages/repoctl
+  intents:
+    - silly-spoons-shave
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:

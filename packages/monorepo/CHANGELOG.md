@@ -1,5 +1,19 @@
 # @icebreakers/monorepo
 
+## 5.6.0
+
+### Minor Changes
+
+- 新增中英双语 Nimbus 文档模板，作为 Docs Site 的默认选择；保留 VitePress，补齐 Astro/MDX 校验与模板分发。
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#933)
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.7
+  - @icebreakers/monorepo-templates@2.1.0
+
 ## 5.5.10
 
 ### Patch Changes
