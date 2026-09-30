@@ -67,3 +67,11 @@ it('does not overwrite an unpublished prerelease when new intents arrive', async
   await expect(releaseCi({ ...h.options, mode: 'auto', branch: 'alpha' })).rejects.toThrow(`check out ${source} on alpha`)
   expect(h.calls.some(call => call.command === 'pnpm')).toBe(false)
 })
+
+it('protects propagated versions even when pnpm did not add a ledger entry', async () => {
+  const h = await fixture(1, '', 'E404 Not Found')
+  await writeFile(path.join(h.cwd, '.changeset/ledger.yaml'), '{}\n')
+  await writeFile(path.join(h.cwd, 'packages/repoctl/CHANGELOG.md'), '# repoctl\n\n## 1.0.0\n\n- Updated dependency.\n\n## 0.9.0\n\n- Previous release.\n')
+  await expect(releaseCi(h.options)).rejects.toThrow(`--source-sha ${source}`)
+  expect(h.calls.some(call => call.command === 'pnpm')).toBe(false)
+})

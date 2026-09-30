@@ -1,6 +1,6 @@
 import type { ReleaseCiOptions } from '@icebreakers/monorepo'
 import { spawnSync } from 'node:child_process'
-import { readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import { Worker } from 'node:worker_threads'
 import { releaseCi } from '@icebreakers/monorepo'
@@ -90,6 +90,11 @@ it('uses native pnpm results and blocks a second intent until the original relea
 
 it('recovers only versions introduced by the original source; dry-run does not install or upload', async () => {
   const h = await fixture()
+  await mkdir(path.join(h.cwd, 'packages/create-demo'))
+  await writeFile(path.join(h.cwd, 'packages/create-demo/package.json'), JSON.stringify({ name: 'create-demo', version: '0.1.0' }))
+  h.git('add', '.')
+  h.git('-c', 'commit.gpgsign=false', 'commit', '-m', 'add dependent')
+  await writeFile(path.join(h.cwd, 'packages/create-demo/package.json'), JSON.stringify({ name: 'create-demo', version: '0.1.1' }))
   await writeFile(path.join(h.cwd, 'packages/repoctl/package.json'), JSON.stringify({ name: 'repoctl', version: '1.0.1' }))
   await writeFile(path.join(h.cwd, 'packages/repoctl/CHANGELOG.md'), '# repoctl\n\n## 1.0.1\n\n- Original release.\n')
   await writeFile(path.join(h.cwd, '.changeset/ledger.yaml'), 'repoctl@1.0.1:\n  dir: packages/repoctl\n  intents: [original]\n')
@@ -112,7 +117,7 @@ it('recovers only versions introduced by the original source; dry-run does not i
   }) as NonNullable<ReleaseCiOptions['spawn']>
   const github = { ensurePullRequest: vi.fn(), ensureRelease: vi.fn(), ensureTag: vi.fn(), listReleases: vi.fn(async () => []), readReleaseState: vi.fn(async () => undefined), writeReleaseState: vi.fn() }
   const options: ReleaseCiOptions = { cwd: h.cwd, sourceSha: source, mode: 'auto', dryRun: true, github, spawn, env: { ...h.env, GITHUB_REPOSITORY: 'acme/repo', REPO_RELEASE_MODE: 'publish' }, config: { qualityScripts: [] } }
-  await expect(releaseCi(options)).resolves.toEqual([{ name: 'repoctl', version: '1.0.1' }])
+  await expect(releaseCi(options)).resolves.toEqual(expect.arrayContaining([{ name: 'repoctl', version: '1.0.1' }, { name: 'create-demo', version: '0.1.1' }]))
   expect(calls.some(call => call.startsWith('pnpm '))).toBe(false)
   expect(github.writeReleaseState).not.toHaveBeenCalled()
   expect(github.ensureRelease).not.toHaveBeenCalled()

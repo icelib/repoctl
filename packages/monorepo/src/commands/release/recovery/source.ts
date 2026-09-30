@@ -6,13 +6,13 @@ import { resolveCommandConfig } from '../../../core/config'
 import { clearWorkspaceCache } from '../../../core/workspace'
 import { ReleaseCommandError } from '../errors'
 import { runQualityScripts } from '../hooks'
-import { parseLedger, readLedger } from '../intents'
 import { publishLifecycle } from '../lifecycle'
 import { releaseStateKey } from '../lifecycle/key'
 import { resolveGitHub } from '../metadata'
 import { getPublishCandidates } from '../publish'
 import { packageKey } from '../publish/state'
 import { capture, getReleaseEnv, hasPendingIntents, run } from '../shared'
+import { readSourceCandidates } from './candidates'
 
 /** Run current tooling against the original source, never today's package contents. */
 export async function recoverSource(options: ReleaseCiOptions, source: string) {
@@ -35,12 +35,8 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
     let recovery: ReleaseCiOptions = { ...options, cwd, branch: 'main', env }
     run('git', ['checkout', '--detach', source], recovery)
     clearWorkspaceCache()
-    const ledger = await readLedger(cwd)
-    const previous = capture('git', ['ls-tree', `${source}^`, '--', '.changeset/ledger.yaml'], recovery)
-      ? parseLedger(capture('git', ['show', `${source}^:.changeset/ledger.yaml`], recovery))
-      : {}
     const workspaceCandidates = await getPublishCandidates(cwd)
-    const candidates = workspaceCandidates.filter(pkg => ledger[packageKey(pkg)] && !previous[packageKey(pkg)])
+    const candidates = await readSourceCandidates(recovery, source)
     if (!candidates.length) {
       throw new ReleaseCommandError('Source commit introduces no prepared release versions')
     }

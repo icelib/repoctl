@@ -1,9 +1,13 @@
 import type { PublishedPackage, ReleaseCiOptions } from '../types'
+import { readFile } from 'node:fs/promises'
+import path from 'pathe'
+import { getWorkspacePackages } from '../../../core/workspace'
 import { ReleaseCommandError } from '../errors'
 import { readLedger } from '../intents'
 import { findVersionCommit } from '../lifecycle/identity'
 import { releaseStateKey } from '../lifecycle/key'
 import { inspectRegistry } from '../lifecycle/registry'
+import { readVersionSection } from '../notes/model'
 import { getPublishCandidates } from '../publish'
 import { packageKey } from '../publish/state'
 import { getReleaseEnv } from '../shared'
@@ -11,11 +15,27 @@ import { getReleaseEnv } from '../shared'
 /** A prepared version belongs to its original source, even before npm accepts it. */
 export async function assertPreviousReleaseComplete(options: ReleaseCiOptions, distTag = 'latest') {
   const ledger = await readLedger(options.cwd)
-  if (!Object.keys(ledger).length) {
-    return
-  }
   const candidates = await getPublishCandidates(options.cwd)
-  const prepared = candidates.filter(pkg => ledger[packageKey(pkg)])
+  const workspace = await getWorkspacePackages(options.cwd)
+  const prepared: PublishedPackage[] = []
+  for (const pkg of candidates) {
+    if (ledger[packageKey(pkg)]) {
+      prepared.push(pkg)
+      continue
+    }
+    const directory = workspace.find(item => item.manifest.name === pkg.name)!.rootDir
+    try {
+      const changelog = await readFile(path.join(directory, 'CHANGELOG.md'), 'utf8')
+      if (readVersionSection(changelog, pkg.version)?.previousVersion) {
+        prepared.push(pkg)
+      }
+    }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error
+      }
+    }
+  }
   if (!prepared.length) {
     return
   }
