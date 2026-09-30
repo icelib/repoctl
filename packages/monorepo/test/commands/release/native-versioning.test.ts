@@ -27,6 +27,7 @@ async function fixture() {
   await writeFile(path.join(cwd, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\npmOnFail: error\nversioning:\n  changelog:\n    storage: repository\n')
   await writeFile(path.join(cwd, '.changeset/ledger.yaml'), '{}\n')
   git('init', '-b', 'main')
+  git('remote', 'add', 'origin', 'https://github.com/acme/repo.git')
   git('add', '.')
   git('-c', 'commit.gpgsign=false', 'commit', '-m', 'initial')
   return { cwd, env, git }
@@ -111,6 +112,8 @@ it('recovers only versions introduced by the original source; dry-run does not i
   const spawn = ((command: string, args: string[], options: Parameters<typeof spawnSync>[2]) => {
     calls.push(`${command} ${args.join(' ')}`)
     if (command === 'npm') {
+      const remote = spawnSync('git', ['remote', 'get-url', 'origin'], { ...options, encoding: 'utf8' })
+      expect(remote.stdout.trim()).toBe('https://github.com/acme/repo.git')
       return { status: 1, stdout: '', stderr: 'E404 Not Found' }
     }
     return spawnSync(command, args, options)
