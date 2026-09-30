@@ -1,5 +1,15 @@
 # @icebreakers/monorepo-templates
 
+## 2.1.0
+
+### Minor Changes
+
+- 新增中英双语 Nimbus 文档模板，作为 Docs Site 的默认选择；保留 VitePress，补齐 Astro/MDX 校验与模板分发。
+
+### Patch Changes
+
+- Upgrade the VitePress template to 2.0.0-alpha.20 and preserve Mermaid diagrams through public Markdown and theme APIs. Generate valid FAQ structured data without homepage hydration mismatches. Remove source-only workspace dependencies and acceptance jobs from generated projects so the packaged documentation template installs independently.
+
 ## 2.0.7
 
 ### Patch Changes
