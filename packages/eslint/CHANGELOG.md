@@ -1,5 +1,11 @@
 # @icebreakers/eslint-config
 
+## 8.0.6
+
+### Patch Changes
+
+- chore(deps): update dependency @eslint-react/eslint-plugin to ^5.23.1 (#924)
+
 ## 8.0.5
 
 ### Patch Changes

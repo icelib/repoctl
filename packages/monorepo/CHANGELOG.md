@@ -1,5 +1,19 @@
 # @icebreakers/monorepo
 
+## 5.5.10
+
+### Patch Changes
+
+- Preserve the repository origin URL in isolated release recovery checkouts so historical builds, tests, and package provenance retain the original repository identity.
+
+- Preserve the signed GitHub workflow identity for npm provenance while recovering packages and release metadata from their original source commit.
+
+- 修复 none intent 误触发空版本 PR 和阻断发布的问题，按 pnpm 实际发布结果准备版本，并支持从原始提交恢复整批发布。
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.6
+  - @icebreakers/monorepo-templates@2.0.7
+
 ## 5.5.9
 
 ### Patch Changes
