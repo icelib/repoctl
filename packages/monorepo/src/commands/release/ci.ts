@@ -1,6 +1,6 @@
 import type { ReleaseCiOptions, ReleaseMode } from './types'
 import { logger } from '../../core/logger'
-import { buildReleaseNoteDocument, readPendingIntentCommits, readWorkspaceVersions, renderReleasePullRequest } from './body'
+import { buildReleaseNoteDocument, readPendingIntentCommits, renderReleasePullRequest } from './body'
 import { ReleaseCommandError } from './errors'
 import { runAfterPublishHooks, runQualityScripts, runReleaseHooks } from './hooks'
 import { publishLifecycle } from './lifecycle'
@@ -8,8 +8,9 @@ import { publishMetadata, resolveGitHub, resolveReleaseLocale } from './metadata
 import { releasePrerelease } from './prerelease'
 import { publishWithRetry } from './publish'
 import { reconcileRelease } from './reconcile'
+import { recoverSource } from './recovery/source'
 import { capture, clearPublishSummary, getReleaseEnv, hasPendingIntents, readPublishSummary, resolveBranch, run } from './shared'
-import { assertStablePublish, prepareStable, publishStable } from './stable'
+import { assertStablePublish, prepareStableReleases, publishStable } from './stable'
 import { readReleaseTriggerContext, shouldRunRelease } from './trigger'
 import { prereleaseBranches } from './types'
 
@@ -21,21 +22,13 @@ async function createReleasePullRequest(options: ReleaseCiOptions) {
     throw new ReleaseCommandError(`repo release stable prepare is only allowed on main, got ${branch}`)
   }
 
-  const previousVersions = await readWorkspaceVersions(options.cwd)
   const sourceCommits = await readPendingIntentCommits(options)
-  const hasChanges = await prepareStable(options)
-  if (!hasChanges) {
+  const github = resolveGitHub(options)
+  const releases = await prepareStableReleases({ ...options, github })
+  if (!releases.length) {
     return false
   }
 
-  run('git', ['config', 'user.name', 'github-actions[bot]'], options)
-  run('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], options)
-  run('git', ['checkout', '-B', releaseBranch], options)
-  run('git', ['add', '-A'], options)
-  run('git', ['commit', '-m', 'chore(release): version packages'], options)
-  run('git', ['push', '--force', 'origin', `HEAD:${releaseBranch}`], options)
-
-  const github = resolveGitHub(options)
   const releaseEnv = getReleaseEnv(options)
   const metadata = {
     locale: resolveReleaseLocale(options),
@@ -43,10 +36,30 @@ async function createReleasePullRequest(options: ReleaseCiOptions) {
     ...(releaseEnv['GITHUB_REPOSITORY'] ? { repository: releaseEnv['GITHUB_REPOSITORY'] } : {}),
     ...(releaseEnv['GITHUB_SERVER_URL'] ? { serverUrl: releaseEnv['GITHUB_SERVER_URL'] } : {}),
   }
-  let noteDocument = await buildReleaseNoteDocument(options.cwd, previousVersions, metadata)
+  const names = new Set(releases.map(release => release.name))
+  const previousVersions = new Map(releases.filter(release => release.currentVersion !== release.newVersion)
+    .map(release => [release.name, release.currentVersion]))
+  let noteDocument = await buildReleaseNoteDocument(options.cwd, previousVersions, metadata, names)
+  for (const release of releases) {
+    const pkg = noteDocument.packages.find(pkg => pkg.name === release.name && pkg.version === release.newVersion)
+    if (!pkg || !noteDocument.entries.some(entry => entry.packageName === pkg.name)) {
+      throw new ReleaseCommandError(`Missing release notes for ${release.name}@${release.newVersion}; no PR pushed`)
+    }
+    if (release.currentVersion === release.newVersion) {
+      delete pkg.previousVersion
+      delete pkg.previousNpmUrl
+    }
+  }
   if (github.enrichReleaseNote) {
     noteDocument = await github.enrichReleaseNote(noteDocument)
   }
+  run('git', ['config', 'user.name', 'github-actions[bot]'], options)
+  run('git', ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'], options)
+  run('git', ['checkout', '-B', releaseBranch], options)
+  run('git', ['add', '-A'], options)
+  run('git', ['commit', '-m', 'chore(release): version packages'], options)
+  run('git', ['push', '--force', 'origin', `HEAD:${releaseBranch}`], options)
+
   await github.ensurePullRequest({
     head: releaseBranch,
     base: 'main',
@@ -94,7 +107,9 @@ async function recoverUnpublished(options: ReleaseCiOptions) {
 }
 
 function resolveMode(options: ReleaseCiOptions): ReleaseMode {
-  const requested = options.mode || getReleaseEnv(options)['REPO_RELEASE_MODE']?.trim() as ReleaseMode | undefined
+  const requested = options.mode && options.mode !== 'auto'
+    ? options.mode
+    : getReleaseEnv(options)['REPO_RELEASE_MODE']?.trim() as ReleaseMode | undefined
   if (requested && requested !== 'auto') {
     return requested
   }
@@ -116,6 +131,10 @@ async function publishStableCi(options: ReleaseCiOptions) {
 
 export async function releaseCi(options: ReleaseCiOptions) {
   const mode = resolveMode(options)
+  const source = options.sourceSha ?? getReleaseEnv(options)['REPO_RELEASE_RECOVERY_SOURCE_SHA']?.trim()
+  if (source) {
+    return recoverSource({ ...options, mode }, source)
+  }
   if (mode === 'prepare') {
     await createReleasePullRequest(options)
     return

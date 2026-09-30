@@ -1,23 +1,33 @@
-import type { ReleaseOptions } from './types'
+import type { ReleaseCiOptions, ReleaseOptions } from './types'
 import { ReleaseCommandError } from './errors'
 import { runQualityScripts, runReleaseHooks } from './hooks'
+import { assertPreviousReleaseComplete } from './preparation/guard'
+import { applyVersions } from './preparation/result'
 import { getPublishCandidates, publishWithRetry } from './publish'
-import { assertStableLaneAssignments, clearPublishSummary, hasGitChanges, hasPendingIntents, readPublishSummary, resolveBranch, run } from './shared'
+import { assertStableLaneAssignments, clearPublishSummary, hasGitChanges, hasPendingIntents, readPublishSummary, resolveBranch } from './shared'
 
-export async function prepareStable(options: ReleaseOptions) {
+export async function prepareStableReleases(options: ReleaseCiOptions) {
   const branch = resolveBranch(options)
   if (branch !== 'main') {
     throw new ReleaseCommandError(`repo release stable prepare is only allowed on main, got ${branch}`)
   }
   await assertStableLaneAssignments(options)
   if (!await hasPendingIntents(options.cwd)) {
-    return false
+    return []
   }
+  await assertPreviousReleaseComplete(options)
   runReleaseHooks('beforeVersion', options)
   await runQualityScripts(options)
-  run('pnpm', ['version', '-r', '--no-git-checks'], options)
+  const releases = await applyVersions(options)
   runReleaseHooks('afterVersion', options)
-  return hasGitChanges(options)
+  if (releases.length && !hasGitChanges(options)) {
+    throw new ReleaseCommandError('pnpm reported releases without file changes')
+  }
+  return releases
+}
+
+export async function prepareStable(options: ReleaseOptions) {
+  return (await prepareStableReleases(options)).length > 0
 }
 
 export async function assertStablePublish(options: ReleaseOptions, quality = true) {

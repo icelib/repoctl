@@ -49,6 +49,8 @@ export async function writePendingIntent(cwd: string, name = 'pending-change') {
 }
 
 export function createSpawnMock(options: {
+  versionedPackages?: Array<{ name: string, version: string }>
+  versionOutput?: string
   diffStatus?: number
   publishedPackages?: Array<{ name: string, version: string }>
   statuses?: Record<string, number>
@@ -68,13 +70,17 @@ export function createSpawnMock(options: {
     sequenceIndexes.set(commandLine, sequenceIndex + 1)
 
     if (command === 'pnpm' && args[0] === 'version' && spawnOptions?.cwd) {
-      for (const pkg of options.publishedPackages ?? []) {
+      const applied = []
+      for (const pkg of options.versionedPackages ?? options.publishedPackages ?? []) {
         const filename = path.join(spawnOptions.cwd, 'packages', 'repoctl', 'package.json')
         const manifest = JSON.parse(readFileSync(filename, 'utf8'))
         if (manifest.name === pkg.name) {
+          applied.push({ name: pkg.name, currentVersion: manifest.version, newVersion: pkg.version })
           writeFileSync(filename, JSON.stringify({ ...manifest, version: pkg.version }))
+          writeFileSync(path.join(spawnOptions.cwd, 'packages/repoctl/CHANGELOG.md'), `# repoctl\n\n## ${pkg.version}\n\n### Patch Changes\n\n- Release change.\n`)
         }
       }
+      return { status: options.statuses?.[commandLine] ?? 0, stdout: options.versionOutput ?? JSON.stringify(applied) }
     }
     if (command === 'pnpm' && args[0] === 'publish' && spawnOptions?.cwd) {
       writeFileSync(path.join(spawnOptions.cwd, 'pnpm-publish-summary.json'), JSON.stringify({

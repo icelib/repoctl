@@ -1,11 +1,12 @@
 import type { PublishedPackage, ReleaseOptions } from './types'
 import { spawnSync } from 'node:child_process'
-import { access, readdir, readFile, rm } from 'node:fs/promises'
+import { access, readFile, rm } from 'node:fs/promises'
 import process from 'node:process'
 import path from 'pathe'
 import YAML from 'yaml'
 import { getWorkspaceData } from '../../core/workspace'
 import { ReleaseCommandError } from './errors'
+import { readPendingIntents } from './intents'
 
 export function getReleaseEnv(options: ReleaseOptions) {
   return options.env ?? process.env
@@ -51,13 +52,7 @@ export function hasGitChanges(options: ReleaseOptions) {
 }
 
 export async function hasPendingIntents(cwd: string) {
-  try {
-    const entries = await readdir(path.join(cwd, '.changeset'), { withFileTypes: true })
-    return entries.some(entry => entry.isFile() && entry.name.endsWith('.md') && entry.name !== 'README.md')
-  }
-  catch {
-    return false
-  }
+  return (await readPendingIntents(cwd)).length > 0
 }
 
 export function resolveBranch(options: ReleaseOptions) {

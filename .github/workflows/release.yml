@@ -35,6 +35,10 @@ on:
         required: false
         default: false
         type: boolean
+      source-sha:
+        description: Original main commit to recover (publish modes only)
+        required: false
+        type: string
 
 env:
   HUSKY: 0
@@ -107,6 +111,7 @@ jobs:
           REPO_RELEASE_PACKAGE: ${{ inputs.package }}
           REPO_RELEASE_VERSION: ${{ inputs.version }}
           REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
+          REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
         run: pnpm exec repo release ci
 
       - name: Preserve npm publish progress

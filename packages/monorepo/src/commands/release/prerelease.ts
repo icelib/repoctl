@@ -1,6 +1,7 @@
 import type { ReleaseOptions } from './types'
 import { ReleaseCommandError } from './errors'
 import { runQualityScripts, runReleaseHooks } from './hooks'
+import { applyVersions } from './preparation/result'
 import { getPublishCandidates, publishWithRetry } from './publish'
 import { assertLaneAssignments, clearPublishSummary, hasGitChanges, hasPendingIntents, readPublishSummary, resolveBranch, run, runLane } from './shared'
 import { prereleaseBranches } from './types'
@@ -21,10 +22,13 @@ export async function releasePrerelease(options: ReleaseOptions, publish?: () =>
 
   runReleaseHooks('beforeVersion', options)
   await runQualityScripts(options)
-  run('pnpm', ['version', '-r', '--no-git-checks'], options)
+  const releases = await applyVersions(options)
   runReleaseHooks('afterVersion', options)
-  if (!hasGitChanges(options)) {
+  if (!releases.length) {
     return
+  }
+  if (!hasGitChanges(options)) {
+    throw new ReleaseCommandError('pnpm reported releases without file changes')
   }
 
   run('git', ['add', '-A'], options)
