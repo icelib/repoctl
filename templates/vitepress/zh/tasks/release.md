@@ -86,6 +86,8 @@ repo release ci --mode prepare
 
 受管 Release 工作流为 `publish` 和 `publish-unpublished` 提供相同的 `source-sha` 输入。当前工具会在独立目录检出原提交，按照其锁文件安装、构建和验证，恢复该提交 manifest 或 ledger 新增的整批版本，包括依赖传播升级的包。package/version 输入只校验是否属于该批发布，不拆分原发布批次。SHA 必须属于 `origin/main` 历史。dry-run 只检查源码与远端状态，不安装、不上传、不运行 hook、不写检查点。后续变更保留到下一版本；恢复过程中不修改版本号。
 
+恢复保留 GitHub 工作流环境，供可信发布和 provenance 使用：签名身份对应运行工作流的提交；独立检出的源码、发布检查点、Git tag 和 Release 目标则对应 `source-sha`。不要通过覆盖 `GITHUB_SHA` 恢复旧源码，npm 会拒绝与工作流签名身份不一致的 provenance。
+
 ## 下一步
 
 阅读[发包与变更日志](/zh/learn/monorepo/publish)，再查看[报告与输出](/zh/tasks/reports)了解 CI 产物。

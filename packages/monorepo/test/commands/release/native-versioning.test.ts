@@ -114,12 +114,17 @@ it('recovers only versions introduced by the original source; dry-run does not i
     if (command === 'npm') {
       const remote = spawnSync('git', ['remote', 'get-url', 'origin'], { ...options, encoding: 'utf8' })
       expect(remote.stdout.trim()).toBe('https://github.com/acme/repo.git')
+      expect(options?.env?.['GITHUB_SHA']).toBe(h.git('rev-parse', 'HEAD'))
+      expect(options?.env?.['GITHUB_REF_NAME']).toBe('main')
+      expect(options?.env?.['REPO_RELEASE_SOURCE_SHA']).toBe(source)
+      const checkout = spawnSync('git', ['rev-parse', 'HEAD'], { ...options, encoding: 'utf8' })
+      expect(checkout.stdout.trim()).toBe(source)
       return { status: 1, stdout: '', stderr: 'E404 Not Found' }
     }
     return spawnSync(command, args, options)
   }) as NonNullable<ReleaseCiOptions['spawn']>
   const github = { ensurePullRequest: vi.fn(), ensureRelease: vi.fn(), ensureTag: vi.fn(), listReleases: vi.fn(async () => []), readReleaseState: vi.fn(async () => undefined), writeReleaseState: vi.fn() }
-  const options: ReleaseCiOptions = { cwd: h.cwd, sourceSha: source, mode: 'auto', dryRun: true, github, spawn, env: { ...h.env, GITHUB_REPOSITORY: 'acme/repo', REPO_RELEASE_MODE: 'publish' }, config: { qualityScripts: [] } }
+  const options: ReleaseCiOptions = { cwd: h.cwd, sourceSha: source, mode: 'auto', dryRun: true, github, spawn, env: { ...h.env, GITHUB_SHA: h.git('rev-parse', 'HEAD'), GITHUB_REF_NAME: 'main', GITHUB_REPOSITORY: 'acme/repo', REPO_RELEASE_MODE: 'publish' }, config: { qualityScripts: [] } }
   await expect(releaseCi(options)).resolves.toEqual(expect.arrayContaining([{ name: 'repoctl', version: '1.0.1' }, { name: 'create-demo', version: '0.1.1' }]))
   expect(calls.some(call => call.startsWith('pnpm '))).toBe(false)
   expect(github.writeReleaseState).not.toHaveBeenCalled()
