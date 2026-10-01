@@ -102,11 +102,11 @@
     "only-allow": "^1.2.2",
     "playwright": "^1.63.0",
     "repoctl": "workspace:*",
-    "stylelint": "^17.15.0",
+    "stylelint": "^17.16.0",
     "tailwindcss": "^4.3.3",
     "tsd": "^0.33.0",
     "tsdown": "0.23.0",
-    "turbo": "^2.11.5",
+    "turbo": "^2.11.6",
     "typescript": "^6.0.3",
     "vitest": "~5.0.3",
     "yaml": "^2.9.1"
