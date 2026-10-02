@@ -134,6 +134,30 @@ Usage:
 - --include-root: include the workspace root package
 - --pattern <glob>: add custom workspace globs; repeatable
 
+## workspace graph / why / impact
+
+Purpose: inspect read-only manifest dependency relationships using one stable graph model.
+Usage:
+
+- npx repoctl workspace graph --json --redact
+- npx repoctl workspace graph --mermaid
+- npx repoctl workspace graph --package @acme/shared --type dependencies
+- npx repoctl workspace why @acme/web @acme/shared --json
+- npx repoctl workspace impact @acme/shared --direct --json
+
+Private packages are included by default; use `--exclude-private` or `--include-root` to adjust discovery.
+`--type` can be repeated with dependencies, devDependencies, peerDependencies or optionalDependencies.
+Graph package filters retain the selected nodes and their direct incoming/outgoing relationships.
+Why returns one deterministic shortest path; impact returns reverse reachability and minimum distances.
+Names must be unambiguous; `./packages/name` explicitly selects a directory. Cycles are safe.
+Workspace aliases/ranges and local paths resolve internally; ordinary semver/npm aliases only connect
+when the local version matches. This does not resolve lockfiles, catalogs, registry tags or source imports.
+Edges distinguish workspace/local references from semver candidates through `resolution`.
+Catalogs and unsupported specifiers with local candidates retain `unresolved_specifier` diagnostics;
+inspect diagnostics before treating the graph as complete or computing affected checks.
+JSON has schema version 1, stable directory IDs and unresolved/ambiguous reference diagnostics.
+Mermaid uses the same graph. Queries do not write files; JSON and Mermaid flags are mutually exclusive.
+
 ## tooling init (alias: tg init)
 
 Purpose: generate tooling config files plus matching devDependencies.

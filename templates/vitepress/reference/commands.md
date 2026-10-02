@@ -99,6 +99,29 @@ repo upgrade -s
 
 Use it to sync standard assets and scripts. `--core` skips GitHub-related assets. `--no-overwrite` preserves changed files.
 
+## Workspace Dependencies
+
+```bash
+repo workspace graph
+repo workspace graph --json --redact
+repo workspace graph --mermaid
+repo workspace graph --package @acme/shared --type dependencies
+repo workspace why @acme/web @acme/shared --json
+repo workspace impact @acme/shared --direct --json
+```
+
+These read-only queries share a manifest dependency graph. Private apps are included by default; `--exclude-private` excludes them and `--include-root` adds the root package. Edges point from a consumer to its dependency. `--type` accepts `dependencies`, `devDependencies`, `peerDependencies`, or `optionalDependencies` and can be repeated. With no type filter, all four fields are included.
+
+`graph --package <name-or-directory>` shows the selected packages and their direct incoming/outgoing relationships; repeat it to select several packages. `why <from> <to>` returns one deterministic shortest dependency path, including both endpoints; no path is a successful query with `found: false`. `impact <package>` returns direct and transitive consumers with minimum distance and one path per consumer. `--direct` limits it to immediate consumers. Cycles are safe and the target itself is excluded from its impact result.
+
+Selectors accept exact package names or workspace-relative directories such as `./packages/shared`. Duplicate names produce diagnostics, and queries using an ambiguous name fail; use an explicit directory to disambiguate. Unnamed packages remain queryable by directory. Missing, ambiguous, invalid, and version-incompatible forced local references are included in `diagnostics` instead of becoming guessed edges.
+
+The graph understands workspace ranges, workspace aliases (`workspace:@acme/shared@^1`), relative workspace paths, and local `link:`/`file:` directories. Every edge records `resolution`: `workspace` and `local` are explicit local references, while `semver` marks a matching local candidate for an ordinary range or `npm:` alias. These are manifest relationships, not proof of what a lockfile installed: registry tags, catalogs, remote URLs and source imports are not resolved. Catalog references and unsupported specifiers with a same-name local candidate produce `unresolved_specifier` diagnostics. Consumers must inspect diagnostics before treating the graph as complete; affected checks can fall back conservatively. Filtering private/root packages can also leave forced references unresolved.
+
+JSON uses schema version `1`, directory-based node IDs and stable sorting; field names and diagnostic codes do not change with `--lang`. Mermaid uses the same nodes and edges, including isolated packages. Queries write only to stdout, so shell redirection can save an export. `--json` and `--mermaid` are mutually exclusive.
+
+Programmatic users can call `getWorkspaceGraph(cwd, options)`, `filterWorkspaceGraph(graph, options)`, `whyWorkspaceDependency(graph, from, to, options)` and `getWorkspaceImpact(graph, package, options)`. Discovery refreshes its cache for each graph read. Query APIs accept the same public graph model without exposing pnpm implementation types.
+
 ## Grouped Commands
 
 ```bash
