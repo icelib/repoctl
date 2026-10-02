@@ -127,6 +127,7 @@
     "@types/validate-npm-package-name": "^4.0.2",
     "ci-info": "^4.4.0",
     "fdir": "^6.5.0",
+    "knip": "6.39.0",
     "micromatch": "^4.0.8"
   },
   "publishConfig": {

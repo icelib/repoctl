@@ -28,6 +28,9 @@ Usage:
 
 ## check
 
+Explicit unused-code/dependency analysis is available through `repo check knip`.
+See [Optional Knip checks](./knip.md) before enabling native analysis or saving a baseline.
+
 Purpose: run recommended local checks.
 Usage:
 
