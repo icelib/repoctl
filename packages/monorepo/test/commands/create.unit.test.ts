@@ -1,5 +1,6 @@
 import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadedConfigFixture } from '../helpers/config'
 
 interface TemplateMapSubset {
   custom: TemplateDefinition
@@ -78,7 +79,7 @@ beforeEach(async () => {
 
   vi.doMock('@/core/config', () => ({
     resolveCommandConfig: resolveCommandConfigMock,
-    loadMonorepoConfigDetails: async () => ({ file: '/repo/repoctl.config.mjs', rawLayers: [], config: { commands: { create: await resolveCommandConfigMock() } } }),
+    loadMonorepoConfigDetails: async () => loadedConfigFixture({ commands: { create: await resolveCommandConfigMock() } }),
   }))
 
   vi.doMock('@/core/logger', () => ({

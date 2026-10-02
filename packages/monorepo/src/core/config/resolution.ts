@@ -1,9 +1,10 @@
 import type { MonorepoConfig } from '../../types'
+import type { ConfigSourceLayer, ConfigValueSource } from '../../types/presets'
 import { chinaMirrorsEnvs } from '../../commands/mirror/sources'
-import { appendConfigPath } from './paths'
+import { mergeConfigValues } from './merge'
 import { assertMonorepoConfig, ConfigValidationError } from './validation'
 import { commandSchemas } from './validation/commands'
-import { isRecord, validateSchema } from './validation/schema'
+import { validateSchema } from './validation/schema'
 
 export type ConfigCommand = keyof NonNullable<MonorepoConfig['commands']>
 export type CommandConfig<Name extends ConfigCommand> = NonNullable<NonNullable<MonorepoConfig['commands']>[Name]>
@@ -14,6 +15,8 @@ export interface ResolvedCommandConfig<Name extends ConfigCommand = ConfigComman
   values: CommandConfig<Name>
   /** Dot paths relative to the command block; arrays are replaced as a whole. */
   origins: Record<string, ConfigOrigin>
+  /** Precise preset/project identity, while origins keeps its existing public union. */
+  sources: Record<string, ConfigValueSource>
 }
 
 const defaults = {
@@ -29,7 +32,7 @@ const defaults = {
 } satisfies { [Name in ConfigCommand]: CommandConfig<Name> }
 
 /** Shared by inspection and execution. Undefined never masks a project/default value. */
-export function resolveCommandValues<Name extends ConfigCommand>(name: Name, project: CommandConfig<Name> = {} as CommandConfig<Name>, overrides: CommandConfigOverrides<Name> = {}, options: { entry?: 'api' | 'cli' } = {}): ResolvedCommandConfig<Name> {
+export function resolveCommandValues<Name extends ConfigCommand>(name: Name, project: CommandConfig<Name> = {} as CommandConfig<Name>, overrides: CommandConfigOverrides<Name> = {}, options: { entry?: 'api' | 'cli', layers?: ConfigSourceLayer[] } = {}): ResolvedCommandConfig<Name> {
   const schema = Object.hasOwn(commandSchemas, name) ? commandSchemas[name] : undefined
   if (!schema) {
     throw new ConfigValidationError([{ id: 'config.invalid-value', path: 'command', actualType: typeof name, expected: Object.keys(commandSchemas).join(' | '), suggestion: 'Select a supported command context.' }])
@@ -40,55 +43,20 @@ export function resolveCommandValues<Name extends ConfigCommand>(name: Name, pro
   if (diagnostics.length) {
     throw new ConfigValidationError(diagnostics)
   }
-  const values: Record<string, unknown> = {}
-  const origins: Record<string, ConfigOrigin> = {}
-  function clearOrigins(field: string) {
-    for (const path of Object.keys(origins)) {
-      if (path === field || path.startsWith(`${field}.`)) {
-        delete origins[path]
-      }
-    }
-  }
-  function merge(target: Record<string, unknown>, input: object, source: ConfigOrigin, prefix = '') {
-    for (const [key, value] of Object.entries(input)) {
-      if (value === undefined) {
-        continue
-      }
-      const field = appendConfigPath(prefix, key)
-      if (isRecord(value)) {
-        const mergingObject = Object.hasOwn(target, key) && isRecord(target[key])
-        if (!mergingObject) {
-          clearOrigins(field)
-        }
-        else if (Object.keys(value).length) {
-          delete origins[field]
-        }
-        const child = mergingObject ? target[key] as Record<string, unknown> : {}
-        Object.defineProperty(target, key, { value: child, enumerable: true, configurable: true, writable: true })
-        merge(child, value, source, field)
-        if (!Object.keys(child).length) {
-          origins[field] = source
-        }
-      }
-      else {
-        clearOrigins(field)
-        Object.defineProperty(target, key, { value: Array.isArray(value) ? [...value] : value, enumerable: true, configurable: true, writable: true })
-        origins[field] = source
-      }
-    }
-  }
-  merge(values, defaults[name], 'default')
-  if (name === 'init' && options.entry === 'cli') {
-    merge(values, { preset: 'standard' }, 'default')
-  }
-  merge(values, project, 'project')
-  merge(values, overrides, 'cli')
+  const { values, sources } = mergeConfigValues([
+    { source: { kind: 'default' }, values: defaults[name] },
+    ...(name === 'init' && options.entry === 'cli' ? [{ source: { kind: 'default' as const }, values: { preset: 'standard' } }] : []),
+    ...(options.layers ? options.layers.map(layer => ({ source: layer.source, values: layer.config.commands?.[name] ?? {} })) : [{ source: { kind: 'project' as const }, values: project }]),
+    { source: { kind: 'cli' }, values: overrides },
+  ])
+  const origins = Object.fromEntries(Object.entries(sources).map(([field, source]) => [field, source.kind === 'preset' ? 'project' : source.kind])) as Record<string, ConfigOrigin>
   if (name === 'create' && values['type'] === undefined) {
     values['type'] = values['defaultTemplate']
     origins['type'] = origins['defaultTemplate']!
+    sources['type'] = sources['defaultTemplate']!
   }
   assertMonorepoConfig({ commands: { [name]: values } })
-  return { command: name, values: values as CommandConfig<Name>, origins }
+  return { command: name, values: values as CommandConfig<Name>, origins, sources }
 }
 
 /** Separate the config contract from command-only controls such as cwd, apply and signals. */

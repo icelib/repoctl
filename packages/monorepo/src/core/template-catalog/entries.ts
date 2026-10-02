@@ -3,6 +3,7 @@ import { isTemplateCategory, templateChoices } from '@icebreakers/monorepo-templ
 import path from 'pathe'
 import { localize } from '../../i18n'
 import { appendConfigPath } from '../config/paths'
+import { presetTemplateDeclarations } from '../presets/templates'
 import { normalizeTemplateRemoteSource, normalizeTemplateSourceRequest, sourceRequestKey, templateSourcePath } from '../template-source/request'
 
 export function record(value: unknown): Record<string, unknown> | undefined {
@@ -69,15 +70,19 @@ export function resolveCatalogEntries(context: TemplateCatalogContext, diagnosti
   if (createConfig.templateMap !== undefined && !extra) {
     diagnostics.push({ id: 'template-definition', status: 'fail', configFile, configPath: 'commands.create.templateMap', detail: localize('templateMap must be an object.', 'templateMap 必须是对象。') })
   }
-  for (const [key, value] of Object.entries(extra ?? {})) {
-    const configPath = appendConfigPath('commands.create.templateMap', key)
+  const declarations = [
+    ...presetTemplateDeclarations(context.presetLayers ?? []),
+    ...Object.entries(extra ?? {}).map(([key, value]) => ({ key, value, configFile, configPath: appendConfigPath('commands.create.templateMap', key), preset: undefined })),
+  ]
+  for (const { key, value, configFile, configPath, preset } of declarations) {
     const normalized = definition(value)
     if (!key.trim() || key !== key.trim() || !normalized) {
       entries.delete(key)
       diagnostics.push({ id: 'template-definition', status: 'fail', template: key, configFile, configPath, detail: localize('Invalid template key or definition; source and target must be non-empty paths and metadata must use supported values.', '模板 key 或定义无效；source 和 target 必须是非空路径，元数据必须使用受支持的值。') })
       continue
     }
-    const builtin = entries.get(key)
+    const previous = entries.get(key)
+    const builtin = templateChoices.find(choice => choice.key === key)
     entries.set(key, {
       ...(builtin ?? { key, label: key }),
       ...normalized,
@@ -86,9 +91,10 @@ export function resolveCatalogEntries(context: TemplateCatalogContext, diagnosti
       overridesBuiltin: Boolean(builtin),
       configFile,
       configPath,
+      ...(preset ? { preset } : {}),
     })
-    if (builtin) {
-      diagnostics.push({ id: 'template-override', status: 'warn', template: key, configFile, configPath, detail: localize(`${key} overrides the built-in template (${builtin.source}).`, `${key} 覆盖内置模板（${builtin.source}）。`) })
+    if (previous) {
+      diagnostics.push({ id: 'template-override', status: 'warn', template: key, configFile, configPath, detail: localize(`${key} overrides ${previous.preset ? `${previous.preset.packageName}@${previous.preset.version}` : 'the built-in template'} (${previous.source}).`, `${key} 覆盖${previous.preset ? `${previous.preset.packageName}@${previous.preset.version}` : '内置模板'}（${previous.source}）。`) })
     }
   }
   return entries

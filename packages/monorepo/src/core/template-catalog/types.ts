@@ -1,5 +1,6 @@
 import type { TemplateChoice, TemplateDefinition, TemplateRemoteSource } from '@icebreakers/monorepo-templates'
 import type { CreateChoiceOption, CreateCommandConfig } from '../../types'
+import type { OrganizationPresetLayer, OrganizationPresetReference } from '../../types/presets'
 import type { ConfigDiagnostic } from '../config/validation'
 
 export type CreateTemplateDefinition = TemplateDefinition & Partial<Pick<TemplateChoice, 'label' | 'category' | 'description'>>
@@ -7,6 +8,8 @@ export type CreateTemplateDefinition = TemplateDefinition & Partial<Pick<Templat
 export interface TemplateCatalogEntry extends TemplateChoice {
   sourceDir: string
   remote?: TemplateRemoteSource
+  /** Present for a template declared by an installed organization preset. */
+  preset?: OrganizationPresetReference
   origin: 'builtin' | 'custom'
   overridesBuiltin: boolean
   configFile: string | null
@@ -46,6 +49,7 @@ export interface TemplateCatalogContext {
   templatesDir: string
   createConfig: CreateCommandConfig
   rawCreateConfigs?: CreateCommandConfig[]
+  presetLayers?: OrganizationPresetLayer[]
   /** Failed configuration loading blocks every entry instead of restoring built-ins. */
   diagnostics?: TemplateCatalogDiagnostic[]
 }

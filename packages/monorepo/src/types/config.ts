@@ -10,6 +10,7 @@ import type { CliOpts } from './cli'
 import type { ToolingConfig } from './config/tooling'
 import type { DependenciesCommandConfig } from './dependencies'
 import type { DoctorCommandConfig } from './doctor'
+import type { OrganizationPresetReference } from './presets'
 import type { ReleaseCommandConfig } from './release'
 
 export interface AiCommandConfig {
@@ -179,6 +180,8 @@ export interface MirrorCommandConfig {
  * 项目级配置入口，按命令划分可插拔的配置块。
  */
 export interface MonorepoConfig {
+  /** Installed JSON-only organization packages, pinned to exact versions. */
+  presets?: OrganizationPresetReference[]
   /** Offline admission of direct third-party declarations, also checked by doctor. */
   dependencyPolicy?: DependencyAdmissionConfig
   /** Internal manifest dependency policies, also checked by doctor when configured. */
