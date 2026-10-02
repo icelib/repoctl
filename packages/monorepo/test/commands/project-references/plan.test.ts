@@ -1,0 +1,90 @@
+import fs from 'node:fs/promises'
+import path from 'node:path'
+import { expect, it } from 'vitest'
+// eslint-disable-next-line antfu/no-import-dist
+import { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from '../../../dist/index.mjs'
+import { bytes, fixture, project, settings, write } from './fixtures'
+
+it('previews without writes and synchronizes only discovered projects, idempotently', async (t) => {
+  const root = await fixture(t)
+  await write(root, 'packages/js/package.json', { name: '@fixture/js', private: true })
+  const files = ['tsconfig.json', 'packages/app/tsconfig.json', 'packages/lib/tsconfig.json']
+  const before = await bytes(root, files)
+  const plan = await planProjectReferences(root)
+  expect(plan.action).toBe('update')
+  expect(plan.projects).toEqual(['packages/app/tsconfig.json', 'packages/lib/tsconfig.json'])
+  expect(plan.operations.map(item => item.path)).toEqual(['.repoctl/typescript-references.json', 'tsconfig.json'])
+  expect(plan.operations.find(item => item.path === 'tsconfig.json')?.diff).toContain('./packages/lib/tsconfig.json')
+  expect((await checkProjectReferences(root)).ok).toBe(false)
+  expect(await bytes(root, files)).toEqual(before)
+  await expect(fs.stat(path.join(root, '.repoctl'))).rejects.toThrow()
+  await applyProjectReferencesPlan(JSON.parse(JSON.stringify(plan)))
+  expect((await planProjectReferences(root)).action).toBe('unchanged')
+  expect((await checkProjectReferences(root)).ok).toBe(true)
+  expect((await applyProjectReferencesPlan(plan)).changed).toEqual([])
+  expect((await syncProjectReferences(root)).changed).toEqual([])
+  expect(await fs.readFile(path.join(root, 'tsconfig.json'), 'utf8')).toContain('// Keep this solution comment.')
+  expect(await bytes(root, files.slice(1))).toEqual(before.slice(1))
+})
+
+it('discovers new and moved packages and removes only owned references to deleted packages', async (t) => {
+  const root = await fixture(t)
+  await syncProjectReferences(root)
+  await project(root, 'new')
+  await fs.rename(path.join(root, 'packages/app'), path.join(root, 'packages/moved'))
+  await fs.rm(path.join(root, 'packages/lib'), { recursive: true })
+  const plan = await planProjectReferences(root)
+  expect(plan.diagnostics).toEqual([])
+  expect(plan.projects).toEqual(['packages/moved/tsconfig.json', 'packages/new/tsconfig.json'])
+  await applyProjectReferencesPlan(plan)
+  const content = await fs.readFile(path.join(root, 'tsconfig.json'), 'utf8')
+  expect(content).toContain('./packages/moved/tsconfig.json')
+  expect(content).not.toContain('packages/lib')
+  expect(content).not.toContain('packages/app')
+  expect((await planProjectReferences(root)).action).toBe('unchanged')
+})
+
+it('preserves manual references and supports multiple configs, exclusions and explicit compilation edges', async (t) => {
+  const root = await fixture(t)
+  await project(root, 'lib', 'tsconfig.browser.json')
+  await write(root, 'manual/tsconfig.json', { extends: '../base.json', files: ['index.ts'] })
+  await write(root, 'manual/index.ts', 'export {}\n')
+  await write(root, 'tsconfig.json', '\uFEFF{\r\n  "files": [],\r\n  "references": [/* manual reference */ { "path": "./manual" }]\r\n}\r\n')
+  await settings(root, { enabled: true, projects: ['packages/*/tsconfig*.json'], exclude: ['packages/lib/tsconfig.browser.json'], relations: [{ source: 'packages/app/tsconfig.json', target: 'packages/lib/tsconfig.json' }] })
+  await syncProjectReferences(root)
+  const rootConfig = await fs.readFile(path.join(root, 'tsconfig.json'), 'utf8')
+  expect(rootConfig.startsWith('\uFEFF')).toBe(true)
+  expect(rootConfig.replaceAll('\r\n', '')).not.toContain('\n')
+  expect(rootConfig).toContain('manual reference')
+  expect(rootConfig).toContain('"./manual"')
+  const state = JSON.parse(await fs.readFile(path.join(root, '.repoctl/typescript-references.json'), 'utf8'))
+  expect(state.configs['tsconfig.json']).not.toContain('./manual')
+  expect(state.configs['packages/app/tsconfig.json']).toEqual(['../lib/tsconfig.json'])
+  await settings(root, { enabled: true, projects: ['packages/lib/tsconfig*.json'] })
+  await syncProjectReferences(root)
+  expect((await planProjectReferences(root)).projects).toHaveLength(2)
+  expect(JSON.parse(await fs.readFile(path.join(root, 'packages/app/tsconfig.json'), 'utf8')).references).toEqual([])
+})
+
+it('does not adopt an existing reference and never converts npm dependencies into compilation edges', async (t) => {
+  const root = await fixture(t)
+  await write(root, 'tsconfig.json', { files: [], references: [{ path: './packages/lib/' }] })
+  await write(root, 'packages/app/package.json', { name: '@fixture/app', private: true, dependencies: { '@fixture/lib': 'workspace:*' } })
+  await syncProjectReferences(root)
+  const state = JSON.parse(await fs.readFile(path.join(root, '.repoctl/typescript-references.json'), 'utf8'))
+  expect(state.configs['tsconfig.json']).toEqual(['./packages/app/tsconfig.json'])
+  expect(state.configs['packages/app/tsconfig.json']).toBeUndefined()
+  await settings(root, { enabled: true, projects: [] })
+  await syncProjectReferences(root)
+  expect(JSON.parse(await fs.readFile(path.join(root, 'tsconfig.json'), 'utf8')).references).toEqual([{ path: './packages/lib/' }])
+})
+
+it('checks an existing graph without opt-in and refuses to synchronize it', async (t) => {
+  const root = await fixture(t, false)
+  await write(root, 'tsconfig.json', { files: [], references: [{ path: './packages/missing' }] })
+  const report = await checkProjectReferences(root)
+  expect(report.ok).toBe(false)
+  expect(report.plan.diagnostics).toContainEqual(expect.objectContaining({ code: 'missing', path: 'packages/missing/tsconfig.json' }))
+  expect(report.plan.operations).toEqual([])
+  await expect(syncProjectReferences(root)).rejects.toThrow('Enable')
+})
