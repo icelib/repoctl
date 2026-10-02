@@ -28,7 +28,7 @@ function invoke(root: string, lang = 'en', markdown = false, env: NodeJS.Process
   const result = spawnSync(process.execPath, [cli, '--lang', lang, 'doctor', markdown ? '--markdown' : '--json'], {
     cwd: path.join(root, 'packages/demo'),
     encoding: 'utf8',
-    env: { ...process.env, NODE_ENV: 'production', TEST: undefined, CONSOLA_LEVEL: '3', npm_config_user_agent: 'pnpm/12.8.1 npm/? node/v24', npm_execpath: '/fixture/pnpm.cjs', ...env },
+    env: { ...process.env, CI: 'true', NODE_ENV: 'production', TEST: undefined, CONSOLA_LEVEL: '3', npm_config_user_agent: 'pnpm/12.8.1 npm/? node/v24', npm_execpath: '/fixture/pnpm.cjs', ...env },
     timeout: 30000,
   })
   if (result.error || !result.stdout) {
@@ -68,7 +68,7 @@ describe('built doctor runtime and installation diagnostics', () => {
     const root = await fixture()
     const before = await contents(root)
     const result = report(root)
-    expect(result.workspaceDir).toBe(await realpath(root))
+    expect(path.normalize(result.workspaceDir)).toBe(path.normalize(await realpath(root)))
     expect(result).toMatchObject({ packageCount: 1, cwd: expect.any(String), summary: expect.any(Object) })
     for (const id of ['node-version', 'node-version-files', 'package-manager', 'pnpm-version', 'lockfile-sync', 'installation-state']) {
       expect(check(result, id).status).toBe('pass')
