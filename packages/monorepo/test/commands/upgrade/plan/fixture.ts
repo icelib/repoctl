@@ -30,6 +30,9 @@ export async function fixture() {
   git('config', 'user.name', 'Fixture')
   git('config', 'user.email', 'fixture@example.invalid')
   git('config', 'core.hooksPath', path.join(root, 'no-hooks'))
+  // Read-only snapshots must not race the commit's detached Git maintenance.
+  git('config', 'maintenance.auto', 'false')
+  git('config', 'gc.auto', '0')
   git('remote', 'add', 'origin', 'https://github.com/fixture/repository.git')
   git('add', '.')
   git('-c', 'commit.gpgsign=false', 'commit', '-qm', 'fixture')

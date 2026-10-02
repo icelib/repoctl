@@ -2,6 +2,7 @@ import type { WorkspaceArtifactPlan } from '../../../types/artifact'
 import { constants } from 'node:fs'
 import { access, readFile, realpath } from 'node:fs/promises'
 import { createRequire } from 'node:module'
+import { delimiter } from 'node:path'
 import process from 'node:process'
 import path from 'pathe'
 import { satisfies, valid } from 'semver'
@@ -11,7 +12,7 @@ import { fileHash, fingerprint } from './tree'
 
 async function executable(name: string) {
   const suffixes = process.platform === 'win32' ? ['.exe', '.cmd', '.bat', ''] : ['']
-  for (const directory of (process.env['PATH'] ?? '').split(path.delimiter)) {
+  for (const directory of (process.env['PATH'] ?? '').split(delimiter)) {
     for (const suffix of suffixes) {
       const filename = path.resolve(directory || '.', `${name}${suffix}`)
       try {
