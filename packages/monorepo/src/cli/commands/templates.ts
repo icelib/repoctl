@@ -6,6 +6,7 @@ import pc from 'picocolors'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import fs from '../../utils/fs'
+import { registerTemplateInstanceCommands } from './template-instances'
 
 interface TemplatesCliOptions {
   json?: boolean
@@ -141,7 +142,7 @@ async function emitTemplateOutput(content: string, options: TemplatesCliOptions)
 }
 
 export function registerTemplatesCommands(program: Command) {
-  program.command('templates')
+  const templates = program.command('templates')
     .alias('tpl')
     .description(localize('List the built-in templates', '列出可用的内置模板'))
     .argument('[key]', localize('Show details for a template key', '查看指定模板详情'))
@@ -227,4 +228,5 @@ export function registerTemplatesCommands(program: Command) {
         logger.info(localize('Next: run `repo new <name> --template <key>`.', '下一步：运行 `repo new <name> --template <key>`。'))
       }
     })
+  registerTemplateInstanceCommands(templates)
 }
