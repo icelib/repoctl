@@ -6,6 +6,7 @@ import path from 'pathe'
 import { logger } from '../../../core/logger'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
+import { registerCacheAnalysis } from './cache'
 import { createCheckPlanOutput, redactCheckOutput } from './output'
 
 interface CheckCliOptions {
@@ -50,7 +51,7 @@ async function emitCheckPlan(plan: RecommendedCheckPlan | AffectedCheckPlan, opt
 }
 
 export function registerCheckCommand(program: Command, cwd: string) {
-  program.command('check')
+  const check = program.command('check')
     .description(localize('Run the recommended local verification', '执行推荐的本地校验'))
     .option('--full', localize('Run full verification', '执行完整校验'))
     .option('--staged', localize('Run staged-file verification', '仅执行 staged 相关校验'))
@@ -141,4 +142,5 @@ export function registerCheckCommand(program: Command, cwd: string) {
       await runRecommendedCheck(options)
       logger.success(localize('Checks finished.', '检查完成。'))
     })
+  registerCacheAnalysis(check, cwd)
 }
