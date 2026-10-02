@@ -221,6 +221,12 @@ execution: workspace root/outside paths, symbolic-link targets or parent paths,
 linked root manifests, and unselected nested workspaces are rejected. Dependency
 references from consuming packages are not rewritten by this command.
 
+## env check
+
+Use `repo env check [tasks...]` to compare static source/example variable names with Turbo hash, passthrough and inferred declarations. Default task: `build`; private packages are included. `--json` and `--markdown` show source locations without values or snippets; `--strict` fails warnings and `--no-framework-inference` disables dependency-based prefix assumptions. The command is always read-only and does not run tasks or load actual dotenv values.
+
+Root/package JSONC configuration, array replacement, `$TURBO_EXTENDS$`, wildcard exclusions and environment-file input coverage are resolved explicitly. Configure `commands.env` task/include/exclude options and reasoned `suppressions` with rule/package/task/variable/path selectors. Dynamic reads and unsupported source syntax remain visible; unused exceptions warn. Static task reachability, aliases, shadowed globals, template expressions, generated code and cross-package source imports are not resolved. Never suggest placing every discovered variable in `globalEnv`; review task-local hash declarations and intentional passthrough separately.
+
 ## env info (alias: e i)
 
 Purpose: print environment details for debugging and automation.

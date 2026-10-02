@@ -88,6 +88,7 @@
   },
   "dependencies": {
     "@arethetypeswrong/core": "0.18.5",
+    "@babel/parser": "^7.29.8",
     "@icebreakers/commitlint-config": "workspace:*",
     "@icebreakers/eslint-config": "workspace:*",
     "@icebreakers/monorepo-templates": "workspace:*",
@@ -108,6 +109,7 @@
     "json5": "^2.2.3",
     "klaw": "^4.1.0",
     "lint-staged": "^17.6.0",
+    "micromatch": "^4.0.8",
     "p-queue": "^9.3.3",
     "pathe": "^2.0.3",
     "picocolors": "^1.1.1",
@@ -126,8 +128,7 @@
     "@types/semver": "catalog:",
     "@types/validate-npm-package-name": "^4.0.2",
     "ci-info": "^4.4.0",
-    "fdir": "^6.5.0",
-    "micromatch": "^4.0.8"
+    "fdir": "^6.5.0"
   },
   "publishConfig": {
     "access": "public",

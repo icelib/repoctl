@@ -452,6 +452,9 @@ importers:
       '@arethetypeswrong/core':
         specifier: 0.18.5
         version: 0.18.5
+      '@babel/parser':
+        specifier: ^7.29.8
+        version: 7.29.8
       '@commitlint/cli':
         specifier: 'catalog:'
         version: 21.2.3(@types/node@26.6.3)(typescript@6.0.3)
@@ -518,6 +521,9 @@ importers:
       lint-staged:
         specifier: ^17.6.0
         version: 17.6.0
+      micromatch:
+        specifier: ^4.0.8
+        version: 4.0.8
       p-queue:
         specifier: ^9.3.3
         version: 9.3.3
@@ -576,9 +582,6 @@ importers:
       fdir:
         specifier: ^6.5.0
         version: 6.5.0(picomatch@4.0.7)
-      micromatch:
-        specifier: ^4.0.8
-        version: 4.0.8
 
   packages/monorepo-templates:
     dependencies:
