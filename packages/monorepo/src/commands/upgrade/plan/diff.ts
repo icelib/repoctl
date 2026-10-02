@@ -1,6 +1,6 @@
 import { TextDecoder } from 'node:util'
 
-function decode(content: Uint8Array | null) {
+export function decodeText(content: Uint8Array | null) {
   if (content?.includes(0)) {
     return null
   }
@@ -14,8 +14,8 @@ function decode(content: Uint8Array | null) {
 
 /** One unified hunk, retaining shared context without a quadratic text-diff algorithm. */
 export function fileDiff(filename: string, before: Uint8Array | null, after: Uint8Array | null) {
-  const left = decode(before)
-  const right = decode(after)
+  const left = decodeText(before)
+  const right = decodeText(after)
   if (left === null || right === null) {
     return { binary: true, diff: null }
   }

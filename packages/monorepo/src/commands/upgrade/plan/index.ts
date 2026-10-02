@@ -17,8 +17,9 @@ export async function planUpgrade(options: UpgradeOptions = {}): Promise<Upgrade
     }
     const context = await createContext(options)
     plan = context.plan
-    await planAssets(context)
+    const baseline = await planAssets(context)
     await planVersioningMigration(context)
+    await baseline.finalize()
     plan.files.sort((a, b) => a.path.localeCompare(b.path))
     plan.inputs.sort((a, b) => `${a.area}:${a.path}`.localeCompare(`${b.area}:${b.path}`))
     plan.status = plan.blockers.length ? 'blocked' : 'ready'

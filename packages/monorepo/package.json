@@ -107,6 +107,7 @@
     "json5": "^2.2.3",
     "klaw": "^4.1.0",
     "lint-staged": "^17.6.0",
+    "node-diff3": "~3.1.2",
     "p-queue": "^9.3.3",
     "pathe": "^2.0.3",
     "picocolors": "^1.1.1",

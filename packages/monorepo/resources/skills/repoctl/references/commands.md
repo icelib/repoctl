@@ -77,6 +77,8 @@ Usage:
 
 Preview the complete operation with `repo upgrade --dry-run`, `--json` or `--markdown`; these modes never write or prepare missing assets. Save JSON and review every add/modify/delete/skip/conflict before `repo upgrade --apply <plan.json>`. Plans contain exact bytes and input hashes, including semantic merges and legacy prerelease metadata migration. Application rejects stale inputs, keeps migration groups together and rolls back recoverable failures. Retained `.repoctl-upgrade-*.bak` originals support manual recovery after interruption or a concurrent edit. `--no-overwrite` protects existing assets and legacy metadata; custom release workflows still require `--overwrite-release`. Public APIs: `planUpgrade`, `formatUpgradePlan`, `applyUpgradePlan`, and `upgradeMonorepo({ dryRun: true })`.
 
+Root assets use old-upstream/local/new-upstream three-way merging. Commit `.repoctl/baselines/root/` to preserve the upstream records across clones; record updates are reviewed in each file's `baseline` plan entry and applied atomically with that file. Independent changes merge automatically, while conflicting files and their baselines stay unchanged. Local deletion is never undone. API results expose unresolved `conflicts`; CLI preview and apply exit with code 1 when conflicts remain. Saved plans are reviewed write payloads; their hashes detect stale inputs and inconsistent content, not authorship. Generated app/package directories are outside this feature.
+
 Purpose: sync repo assets and scripts into the workspace.
 Usage:
 
@@ -88,12 +90,15 @@ Usage:
 - --core: sync core config only (skip GitHub assets)
 - --outDir <dir>: write to another directory
 - --skip-overwrite: never overwrite existing files
+- --overwrite: explicitly replace differing managed assets and adopt the new upstream baseline
 - --overwrite-release: explicitly replace an unmarked custom release workflow
 
-For the first migration of an existing project, bootstrap with
-`pnpm dlx repoctl@latest upgrade --yes`. Managed and official legacy release
-workflows are migrated automatically; unmarked custom workflows are preserved
-unless `--overwrite-release` is supplied.
+For the first migration of an existing project, preview with
+`pnpm dlx repoctl@latest upgrade --json`. A differing asset without a historical
+baseline remains a `baseline-missing` conflict, including a legacy release
+workflow. Review an explicit `--overwrite --json` plan before applying it;
+`--yes` alone does not resolve conflicts. Unmarked custom release workflows
+remain protected unless `--overwrite-release` is supplied.
 
 ## release ci
 
