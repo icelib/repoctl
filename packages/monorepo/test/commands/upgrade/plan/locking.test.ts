@@ -17,7 +17,7 @@ it('rejects a second apply until the first finishes rollback, including the fina
     const rm = fs.rm
     let injected = false
     fs.rm = async (filename, ...args) => {
-      if (!injected && filename.startsWith(path.join(root, ${JSON.stringify(baseline)}) + '.repoctl-upgrade-') && filename.endsWith('.tmp')) {
+      if (!injected && path.resolve(filename).startsWith(path.resolve(root, ${JSON.stringify(baseline)}) + '.repoctl-upgrade-') && filename.endsWith('.tmp')) {
         injected = true
         entered()
         await resume
@@ -56,7 +56,7 @@ it('does not remove a replacement lock directory after releasing its own lock', 
     const unlink = fs.unlink
     fs.unlink = async filename => {
       await unlink(filename)
-      if (filename === path.join(root, '.repoctl/upgrade.lock')) {
+      if (path.resolve(filename) === path.resolve(root, '.repoctl/upgrade.lock')) {
         await fs.rename(path.join(root, '.repoctl'), path.join(root, '.repoctl.retained'))
         await fs.mkdir(path.join(root, '.repoctl'))
       }
@@ -64,4 +64,5 @@ it('does not remove a replacement lock directory after releasing its own lock', 
   `)
   expect(output).toBe('applied')
   expect((await lstat(path.join(h.cwd, '.repoctl'))).isDirectory()).toBe(true)
+  expect((await lstat(path.join(h.cwd, '.repoctl.retained'))).isDirectory()).toBe(true)
 })
