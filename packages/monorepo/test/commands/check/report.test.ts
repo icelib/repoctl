@@ -1,3 +1,4 @@
+import { once } from 'node:events'
 import { readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
@@ -104,7 +105,7 @@ describe('built check execution reports', () => {
     try {
       await waitForOutput(running.child, 'SCRIPT_READY')
       running.child.kill('SIGTERM')
-      const result = await running.result
+      const result = await running.waitForExit()
       expect(result.code).toBe(143)
       const report = JSON.parse(await readFile(path.join(cwd, 'result.json'), 'utf8'))
       expect(report.status).toBe('interrupted')
@@ -114,10 +115,40 @@ describe('built check execution reports', () => {
       expect(() => process.kill(pid, 0)).toThrow()
     }
     finally {
-      if (running.child.exitCode === null) {
-        running.child.kill('SIGTERM')
-      }
-      await running.result
+      const pid = Number(await readFile(path.join(cwd, 'child.pid'), 'utf8').catch(() => '0'))
+      await running.stop(Number.isInteger(pid) && pid > 1 ? [pid] : [])
     }
+  })
+
+  it.skipIf(process.platform === 'win32')('cleans up a detached fixture child retaining output pipes without hiding a readiness failure', async () => {
+    const cwd = await createFixture({ lint: 'node slow.cjs' })
+    const worker = 'require("fs").writeFileSync("child.pid", String(process.pid)); process.on("SIGTERM", () => {}); console.log("STARTED"); setInterval(() => {}, 1000)'
+    await writeFile(path.join(cwd, 'slow.cjs'), `require('node:child_process').spawn(process.execPath, ['-e', ${JSON.stringify(worker)}], {detached: true, stdio: 'inherit'}); setInterval(() => {}, 1000)`)
+    const running = startCli(cwd, ['--full', '--report', 'result.json'])
+    let pid = 0
+    try {
+      await waitForOutput(running.child, 'STARTED')
+      pid = Number(await readFile(path.join(cwd, 'child.pid'), 'utf8'))
+      const listeners = running.child.stdout.listenerCount('data')
+      await expect(waitForOutput(running.child, 'MISSING_READY', 20)).rejects.toThrow('Missing output: MISSING_READY')
+      expect(running.child.stdout.listenerCount('data')).toBe(listeners)
+      const exited = once(running.child, 'exit')
+      running.child.kill('SIGTERM')
+      await exited
+      await expect(running.waitForExit(20)).rejects.toThrow('CLI did not close:')
+    }
+    finally {
+      await running.stop(pid > 1 ? [pid] : [])
+    }
+    await expect.poll(() => {
+      try {
+        process.kill(pid, 0)
+        return true
+      }
+      catch {
+        return false
+      }
+    }).toBe(false)
+    expect((await running.result).code).toBe(143)
   })
 })
