@@ -1,113 +1,14 @@
 import { realpath } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'pathe'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import fs from '@/utils/fs'
+import { createTempWorkspace, recordInstallation } from './helpers'
 
-async function createTempWorkspace(prefix: string) {
-  return fs.mkdtemp(path.join(tmpdir(), prefix))
-}
+vi.mock('@/utils/pnpm-runtime', () => ({
+  inspectPnpmRuntime: async () => ({ state: 'observed', version: '12.8.1', source: 'test' }),
+}))
 
 describe('runDoctor', () => {
-  it('reports the managed release contract', async () => {
-    const workspaceDir = await createTempWorkspace('monorepo-doctor-release-')
-    await fs.ensureDir(path.join(workspaceDir, '.github/workflows'))
-    await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), [
-      'packages:',
-      '  - packages/*',
-      'versioning:',
-      '  fixed:',
-      '    - [repoctl]',
-      '  changelog:',
-      '    storage: repository',
-    ].join('\n'))
-    await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
-      name: 'release-workspace',
-      devDependencies: { repoctl: '^5.1.0' },
-    })
-    await fs.writeFile(path.join(workspaceDir, '.github/workflows/release.yml'), '# repoctl-managed: release/v2\nname: Release\n')
-
-    const { runDoctor } = await import('@/commands/doctor')
-    const report = await runDoctor(workspaceDir)
-
-    expect(report.checks.find(check => check.id === 'release-workflow')?.status).toBe('pass')
-    expect(report.checks.find(check => check.id === 'release-cli-version')?.status).toBe('pass')
-    expect(report.checks.find(check => check.id === 'release-versioning-config')?.status).toBe('pass')
-
-    await fs.remove(workspaceDir)
-  })
-
-  it('reports workspace protocol CLI versions without crashing', async () => {
-    const workspaceDir = await createTempWorkspace('monorepo-doctor-workspace-version-')
-    await fs.ensureDir(path.join(workspaceDir, '.github/workflows'))
-    await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
-    await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
-      name: 'release-workspace',
-      devDependencies: { repoctl: 'workspace:*' },
-    })
-    await fs.writeFile(path.join(workspaceDir, '.github/workflows/release.yml'), '# repoctl-managed: release/v2\nname: Release\n')
-
-    const { runDoctor } = await import('@/commands/doctor')
-    const report = await runDoctor(workspaceDir)
-
-    expect(report.checks.find(check => check.id === 'release-cli-version')).toMatchObject({
-      status: 'warn',
-      detail: 'repoctl workspace:* does not guarantee release ci support.',
-    })
-
-    await fs.remove(workspaceDir)
-  })
-
-  it('accepts independent versioning without fixed groups', async () => {
-    const workspaceDir = await createTempWorkspace('monorepo-doctor-independent-versioning-')
-    await fs.ensureDir(path.join(workspaceDir, '.github/workflows'))
-    await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), [
-      'packages:',
-      '  - packages/*',
-      'versioning:',
-      '  changelog:',
-      '    storage: repository',
-    ].join('\n'))
-    await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
-      name: 'release-workspace',
-      devDependencies: { repoctl: '^5.1.0' },
-    })
-    await fs.writeFile(path.join(workspaceDir, '.github/workflows/release.yml'), '# repoctl-managed: release/v2\nname: Release\n')
-
-    const { runDoctor } = await import('@/commands/doctor')
-    const report = await runDoctor(workspaceDir)
-
-    expect(report.checks.find(check => check.id === 'release-versioning-config')?.status).toBe('pass')
-
-    await fs.remove(workspaceDir)
-  })
-
-  it('warns when fixed groups are malformed', async () => {
-    const workspaceDir = await createTempWorkspace('monorepo-doctor-invalid-fixed-')
-    await fs.ensureDir(path.join(workspaceDir, '.github/workflows'))
-    await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), [
-      'packages:',
-      '  - packages/*',
-      'versioning:',
-      '  fixed:',
-      '    - []',
-      '  changelog:',
-      '    storage: repository',
-    ].join('\n'))
-    await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
-      name: 'release-workspace',
-      devDependencies: { repoctl: '^5.1.0' },
-    })
-    await fs.writeFile(path.join(workspaceDir, '.github/workflows/release.yml'), '# repoctl-managed: release/v2\nname: Release\n')
-
-    const { runDoctor } = await import('@/commands/doctor')
-    const report = await runDoctor(workspaceDir)
-
-    expect(report.checks.find(check => check.id === 'release-versioning-config')?.status).toBe('warn')
-
-    await fs.remove(workspaceDir)
-  })
-
   it('reports a healthy workspace with the recommended quick scripts', async () => {
     const workspaceDir = await createTempWorkspace('monorepo-doctor-pass-')
     const pkgDir = path.join(workspaceDir, 'packages/demo')
@@ -136,6 +37,7 @@ describe('runDoctor', () => {
     await fs.writeFile(path.join(workspaceDir, '.husky/pre-commit'), 'pnpm exec lint-staged\n')
     await fs.writeFile(path.join(workspaceDir, 'lint-staged.config.js'), 'export default {}\n')
 
+    await recordInstallation(workspaceDir)
     const { runDoctor } = await import('@/commands/doctor')
     const report = await runDoctor(pkgDir)
     const normalizedWorkspaceDir = await realpath(workspaceDir)
@@ -143,7 +45,7 @@ describe('runDoctor', () => {
     expect(report.workspaceDir).toBe(normalizedWorkspaceDir)
     expect(report.packageCount).toBe(1)
     expect(report.summary).toEqual({
-      pass: 10,
+      pass: 15,
       warn: 0,
       fail: 0,
     })
@@ -182,11 +84,12 @@ describe('runDoctor', () => {
     await fs.writeFile(path.join(workspaceDir, '.husky/pre-commit'), 'pnpm exec lint-staged\n')
     await fs.writeFile(path.join(workspaceDir, 'lint-staged.config.js'), 'export default {}\n')
 
+    await recordInstallation(workspaceDir)
     const { runDoctor } = await import('@/commands/doctor')
     const report = await runDoctor(pkgDir)
 
     expect(report.summary).toEqual({
-      pass: 10,
+      pass: 15,
       warn: 0,
       fail: 0,
     })
@@ -246,8 +149,8 @@ describe('runDoctor', () => {
     const report = await runDoctor(workspaceDir)
 
     expect(report.summary).toEqual({
-      pass: 5,
-      warn: 2,
+      pass: 6,
+      warn: 6,
       fail: 3,
     })
     expect(report.checks.find(check => check.id === 'node-version')?.status).toBe('fail')

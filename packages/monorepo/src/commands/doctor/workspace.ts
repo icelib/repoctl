@@ -1,6 +1,4 @@
 import type { DoctorCheck, DoctorContext } from './types'
-import process from 'node:process'
-import { satisfies } from 'semver'
 import { localize } from '../../i18n'
 import { createCheck, isWorkspacePatternCovered } from './helpers'
 
@@ -13,7 +11,6 @@ export function collectWorkspaceChecks(context: DoctorContext) {
     hasHuskyPreCommit,
     hasLintStagedConfig,
     packageCount,
-    packageJson,
     workspaceDir,
     workspacePackageDirs,
     workspacePatterns,
@@ -48,33 +45,6 @@ export function collectWorkspaceChecks(context: DoctorContext) {
           fix: localize('Run repo init --yes or switch to the workspace root.', '运行 repo init --yes，或切换到 workspace 根目录。'),
         }),
   ]
-
-  const nodeRange = packageJson.engines?.node
-  if (nodeRange) {
-    checks.push(satisfies(process.version, nodeRange)
-      ? createCheck({
-          id: 'node-version',
-          title: localize('Node version', 'Node 版本'),
-          status: 'pass',
-          detail: localize(`Node ${process.version} satisfies ${nodeRange}.`, `当前 Node 版本 ${process.version} 满足要求 ${nodeRange}。`),
-        })
-      : createCheck({
-          id: 'node-version',
-          title: localize('Node version', 'Node 版本'),
-          status: 'fail',
-          detail: localize(`Node ${process.version} does not satisfy ${nodeRange}.`, `当前 Node 版本 ${process.version} 不满足要求 ${nodeRange}。`),
-          fix: localize('Switch to a version allowed by package.json engines.node before continuing.', '继续之前，请切换到 package.json engines.node 允许的版本。'),
-        }))
-  }
-  else {
-    checks.push(createCheck({
-      id: 'node-version',
-      title: localize('Node version', 'Node 版本'),
-      status: 'warn',
-      detail: localize('The root package.json does not declare engines.node.', '根 package.json 未声明 engines.node。'),
-      fix: localize('Declare package.json engines.node to keep runtimes consistent.', '请声明 package.json engines.node 以保持运行时一致。'),
-    }))
-  }
 
   if (hasLegacyMonorepoConfig) {
     checks.push(createCheck({

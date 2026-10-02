@@ -1,7 +1,6 @@
 import type { RecommendedCheckPlan } from './check'
 import type { ConfigInspection } from './config'
 import type { DoctorReport } from './doctor'
-import { execFileSync } from 'node:child_process'
 import os from 'node:os'
 import process from 'node:process'
 import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
@@ -9,6 +8,7 @@ import path from 'pathe'
 import { getRepoctlConfigCandidates } from '../core/config'
 import { getWorkspacePackageSummaries } from '../core/workspace'
 import fs from '../utils/fs'
+import { inspectPnpmRuntime } from '../utils/pnpm-runtime'
 import { resolveRecommendedCheckPlan } from './check'
 import { inspectMonorepoConfig } from './config'
 import { runDoctor } from './doctor'
@@ -71,18 +71,6 @@ export interface EnvPaths {
   }
 }
 
-function readPnpmVersion() {
-  try {
-    return execFileSync('pnpm', ['--version'], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim()
-  }
-  catch {
-    return undefined
-  }
-}
-
 async function createEnvPathEntry(workspaceDir: string, targetPath: string): Promise<EnvPathEntry> {
   return {
     path: targetPath,
@@ -97,7 +85,8 @@ export async function collectEnvInfo(cwd: string): Promise<EnvInfo> {
   const pkgJson = await fs.pathExists(packageJsonPath)
     ? await fs.readJson<PackageJsonLike>(packageJsonPath)
     : {}
-  const pnpmVersion = readPnpmVersion()
+  const runtime = await inspectPnpmRuntime()
+  const pnpmVersion = runtime.state === 'observed' ? runtime.version : undefined
 
   return {
     cwd: workspace.cwd,
