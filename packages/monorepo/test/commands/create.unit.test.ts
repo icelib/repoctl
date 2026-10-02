@@ -107,6 +107,11 @@ beforeEach(async () => {
 
   vi.doMock('@icebreakers/monorepo-templates', () => ({
     scaffoldTemplate: scaffoldTemplateMock,
+    instanceRelativePath: vi.fn(() => 'demo'),
+    createTemplateInstanceTarget: ensureDirMock,
+    prepareTemplateInstanceSource: vi.fn(async () => ({ snapshot: { schemaVersion: 1, files: [] } })),
+    snapshotDigest: vi.fn(() => 'unchanged'),
+    recordGeneratedTemplateInstance: vi.fn(async () => {}),
     isTemplateCategory: (value: string) => ['app', 'docs', 'library', 'service', 'tool'].includes(value),
     suggestTemplateKey: vi.fn((key: string) => key === 'unknown-template' ? undefined : 'tsdown'),
     templateChoices: [

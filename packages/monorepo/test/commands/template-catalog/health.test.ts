@@ -18,7 +18,7 @@ describe('built template catalog health', () => {
     }
     const before = await snapshot(cwd)
     const report = await repo.checkTemplates({ cwd })
-    expect(report.summary).toEqual({ pass: 38, warn: 0, fail: 0 })
+    expect(report.summary).toEqual({ pass: 42, warn: 0, fail: 0 })
     expect(report.templates).toEqual(catalog.entries)
     const checked = await cli(cwd, ['templates', '--check', '--json'])
     expect(checked.exitCode).toBe(0)

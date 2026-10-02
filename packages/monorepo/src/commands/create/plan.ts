@@ -1,6 +1,7 @@
 import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
 import type { TemplateCatalogEntry } from '../../core/template-catalog'
 import type { templateMap } from '../../core/template-catalog/definitions'
+import type { ResolvedTemplateSource } from '../../core/template-source'
 import process from 'node:process'
 import { suggestTemplateKey } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
@@ -8,12 +9,17 @@ import fs from '@/utils/fs'
 import { resolveCommandValues } from '../../core/config/resolution'
 import { createTemplateCatalog } from '../../core/template-catalog'
 import { loadTemplateCatalogContext } from '../../core/template-catalog/config'
+import { resolveRemoteTemplateSource } from '../../core/template-source'
 
 export { getCreateChoices, getTemplateMap, templateMap } from '../../core/template-catalog/definitions'
 
 export type CreateNewProjectType = keyof typeof templateMap
 
 export interface CreateNewProjectOptions {
+  /** For remote sources, use only an exact verified cache entry. */
+  offline?: boolean
+  /** Asset cache directory; relative paths use cwd. */
+  cacheDir?: string
   /**
    * 目标项目名。
    * 未提供时使用模板映射中的 `target`。
@@ -53,6 +59,7 @@ export interface CreateNewProjectPlan {
   packageName: string
   templateDefinition: TemplateDefinition
   templateInfo: TemplateCatalogEntry
+  sourceResolution?: ResolvedTemplateSource
 }
 
 /**
@@ -67,13 +74,13 @@ function formatUnknownTemplateError(template: string, availableTemplates: string
   return `未知模板：${template}。${suggestionText}可用模板：${availableTemplates.join(', ')}`
 }
 
-export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOptions): Promise<CreateNewProjectPlan> {
+async function resolvePlan(options: CreateNewProjectOptions | undefined, download: boolean): Promise<CreateNewProjectPlan> {
   const cwd = options?.cwd ?? process.cwd()
   const context = await loadTemplateCatalogContext({ cwd })
   const createConfig = context.createConfig
   const catalog = createTemplateCatalog(context)
 
-  const effective = resolveCommandValues('create', createConfig, { renameJson: options?.renameJson, name: options?.name, type: options?.type }).values
+  const effective = resolveCommandValues('create', createConfig, { renameJson: options?.renameJson, name: options?.name, type: options?.type, offline: options?.offline, cacheDir: options?.cacheDir }).values
   const renameJson = effective.renameJson!
   const rawName = effective.name
   const name = typeof rawName === 'string' ? rawName.trim() : undefined
@@ -89,8 +96,16 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
     throw new Error(formatUnknownTemplateError(requestedTemplateName, catalog.entries.map(entry => entry.key).sort()))
   }
   const template = templateInfo.key
-  const templateDefinition = { source: templateInfo.source, target: templateInfo.target }
-  const sourceDir = templateInfo.sourceDir
+  const templateDefinition = { source: templateInfo.source, target: templateInfo.target, ...(templateInfo.remote ? { remote: templateInfo.remote } : {}) }
+  const cacheDir = effective.cacheDir
+  const sourceResolution = templateInfo.remote
+    ? await resolveRemoteTemplateSource(templateInfo.remote, templateInfo.source, {
+        cwd,
+        offline: !download || (effective.offline ?? false),
+        ...(cacheDir ? { cacheDir } : {}),
+      })
+    : undefined
+  const sourceDir = sourceResolution?.sourceDir ?? templateInfo.sourceDir
   const targetName = name && name.length > 0 ? name : templateDefinition.target
   const targetDir = path.join(cwd, targetName)
   const sourceJsonPath = path.resolve(sourceDir, 'package.json')
@@ -113,5 +128,16 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
     packageName,
     templateDefinition,
     templateInfo,
+    ...(sourceResolution ? { sourceResolution } : {}),
   }
+}
+
+/** Read-only creation preview; fetch remote assets explicitly before planning. */
+export function resolveCreateNewProjectPlan(options?: CreateNewProjectOptions) {
+  return resolvePlan(options, false)
+}
+
+/** Internal creation path may acquire verified remote assets before any target writes. */
+export function resolveCreationPlan(options?: CreateNewProjectOptions) {
+  return resolvePlan(options, true)
 }

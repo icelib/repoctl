@@ -1,4 +1,4 @@
-import type { TemplateChoice, TemplateDefinition } from '@icebreakers/monorepo-templates'
+import type { TemplateChoice, TemplateDefinition, TemplateRemoteSource } from '@icebreakers/monorepo-templates'
 import type { CreateChoiceOption, CreateCommandConfig } from '../../types'
 import type { ConfigDiagnostic } from '../config/validation'
 
@@ -6,6 +6,7 @@ export type CreateTemplateDefinition = TemplateDefinition & Partial<Pick<Templat
 
 export interface TemplateCatalogEntry extends TemplateChoice {
   sourceDir: string
+  remote?: TemplateRemoteSource
   origin: 'builtin' | 'custom'
   overridesBuiltin: boolean
   configFile: string | null

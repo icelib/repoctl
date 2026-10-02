@@ -19,8 +19,9 @@ export interface ResolvedCommandConfig<Name extends ConfigCommand = ConfigComman
 const defaults = {
   ai: { baseDir: 'agentic/prompts', force: false, format: 'md' },
   clean: { autoConfirm: false, dryRun: false, ignorePackages: [], includePrivate: true },
-  create: { renameJson: false, defaultTemplate: 'tsdown' },
+  create: { offline: false, renameJson: false, defaultTemplate: 'tsdown' },
   deps: { groups: [] },
+  doctor: {},
   init: { skipReadme: false, skipPkgJson: false, skipChangeset: false, skipIssueTemplateConfig: false, tooling: [], force: false },
   mirror: { env: chinaMirrorsEnvs },
   release: { qualityScripts: ['build', 'lint', 'test'], hooks: { verify: [], beforeVersion: [], afterVersion: [], beforePublish: [], afterPublish: [] } },

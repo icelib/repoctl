@@ -9,6 +9,7 @@ import type { CleanCommandConfig } from './clean'
 import type { CliOpts } from './cli'
 import type { ToolingConfig } from './config/tooling'
 import type { DependenciesCommandConfig } from './dependencies'
+import type { DoctorCommandConfig } from './doctor'
 import type { ReleaseCommandConfig } from './release'
 
 export interface AiCommandConfig {
@@ -194,6 +195,7 @@ export interface MonorepoConfig {
     create?: CreateCommandConfig
     clean?: CleanCommandConfig
     deps?: DependenciesCommandConfig
+    doctor?: DoctorCommandConfig
     upgrade?: UpgradeCommandConfig
     init?: InitCommandConfig
     mirror?: MirrorCommandConfig
@@ -211,4 +213,5 @@ export type { CleanCommandConfig } from './clean'
 
 export type * from './config/tooling'
 
+export type { DoctorCommandConfig, DoctorOptions, DoctorSuppression } from './doctor'
 export type { ReleaseAfterPublishHookConfig, ReleaseCommandConfig } from './release'

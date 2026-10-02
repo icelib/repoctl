@@ -3,6 +3,7 @@ import { isTemplateCategory, templateChoices } from '@icebreakers/monorepo-templ
 import path from 'pathe'
 import { localize } from '../../i18n'
 import { appendConfigPath } from '../config/paths'
+import { normalizeTemplateRemoteSource, normalizeTemplateSourceRequest, sourceRequestKey, templateSourcePath } from '../template-source/request'
 
 export function record(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : undefined
@@ -19,9 +20,20 @@ function definition(value: unknown): CreateTemplateDefinition | undefined {
   if (data['category'] !== undefined && (typeof data['category'] !== 'string' || !isTemplateCategory(data['category']))) {
     return undefined
   }
+  let remote: CreateTemplateDefinition['remote']
+  if (data['remote'] !== undefined) {
+    try {
+      remote = normalizeTemplateRemoteSource(data['remote'])
+      templateSourcePath(data['source'] as string)
+    }
+    catch {
+      return undefined
+    }
+  }
   return {
     source: data['source'] as string,
     target: data['target'] as string,
+    ...(remote ? { remote } : {}),
     ...(typeof data['label'] === 'string' ? { label: data['label'] } : {}),
     ...(typeof data['description'] === 'string' ? { description: data['description'] } : {}),
     ...(typeof data['category'] === 'string' && isTemplateCategory(data['category']) ? { category: data['category'] } : {}),
@@ -69,7 +81,7 @@ export function resolveCatalogEntries(context: TemplateCatalogContext, diagnosti
     entries.set(key, {
       ...(builtin ?? { key, label: key }),
       ...normalized,
-      sourceDir: path.resolve(templatesDir, normalized.source),
+      sourceDir: normalized.remote ? `remote:${sourceRequestKey(normalizeTemplateSourceRequest(normalized.remote, normalized.source))}` : path.resolve(templatesDir, normalized.source),
       origin: 'custom',
       overridesBuiltin: Boolean(builtin),
       configFile,

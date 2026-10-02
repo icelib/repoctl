@@ -135,14 +135,22 @@ export { checkDependencyAdmission } from './deps/admission'
 export type { AdmissionDeclaration, DependencyAdmissionConfig, DependencyAdmissionException, DependencyAdmissionFinding, DependencyAdmissionOptions, DependencyAdmissionReport, DependencyAdmissionRule } from './deps/admission'
 export { checkPeerDependencies } from './deps/peers'
 export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport } from './deps/peers'
-export { checkPackages } from './package-check'
+export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
 
+export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
+export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+
 export { createReleasePlan } from './release/plan'
 
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
+export * from './template-drift'
+
+export * from './template-instances'
+export { planTemplateValidation, validateTemplate } from './template-validation'
+export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
 export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
 
 export type { PlaywrightCapabilityOptions, PlaywrightInteraction, StorybookArgs, StorybookCapabilityOptions, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'

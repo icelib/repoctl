@@ -132,7 +132,7 @@ export function registerConfigCommands(program: Command, cwd: string) {
     .option('--markdown', localize('Output Markdown', '输出 Markdown，方便粘贴到 issue 或 PR'))
     .option('--out <file>', localize('Write output to a file', '把当前输出写入文件'))
     .option('--redact', localize('Redact cwd, configDir, and home paths', '脱敏 cwd/configDir/home 绝对路径后再输出'))
-    .option('--command <context>', localize('Explain effective ai/clean/create/deps/init/mirror/release/upgrade values', '解释 ai/clean/create/deps/init/mirror/release/upgrade 的最终配置'))
+    .option('--command <context>', localize('Explain effective ai/clean/create/deps/doctor/init/mirror/release/upgrade values', '解释 ai/clean/create/deps/doctor/init/mirror/release/upgrade 的最终配置'))
     .option('--set <field=JSON>', localize('Preview a config override; repeatable', '预览配置覆盖，可重复使用'), (value: string, previous: string[]) => [...previous, value], [])
     .action(async (opts: ConfigInspectCliOptions) => {
       try {

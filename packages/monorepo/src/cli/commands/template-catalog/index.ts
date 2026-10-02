@@ -5,7 +5,10 @@ import { logger } from '../../../core/logger'
 import { resolveTemplateCatalog } from '../../../core/template-catalog'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
+import { registerTemplateInstanceCommands } from '../template-instances'
+import { registerTemplateFetch } from './fetch'
 import { formatTemplateDetail, formatTemplateHealthReport, formatTemplateMarkdownDetail, formatTemplateMarkdownTable, formatTemplateTable } from './format'
+import { registerTemplateValidation } from './validate'
 
 interface TemplatesCliOptions {
   json?: boolean
@@ -32,7 +35,7 @@ async function emitTemplateOutput(content: string, options: TemplatesCliOptions)
 }
 
 export function registerTemplatesCommands(program: Command) {
-  program.command('templates')
+  const templates = program.command('templates')
     .alias('tpl')
     .description(localize('List built-in and configured templates', '列出内置与自定义模板'))
     .argument('[key]', localize('Show details for a template key', '查看指定模板详情'))
@@ -123,4 +126,7 @@ export function registerTemplatesCommands(program: Command) {
         logger.info(localize('Next: run `repo new <name> --template <key>`.', '下一步：运行 `repo new <name> --template <key>`。'))
       }
     })
+  registerTemplateValidation(templates)
+  registerTemplateFetch(templates)
+  registerTemplateInstanceCommands(templates)
 }

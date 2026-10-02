@@ -7,7 +7,7 @@ Rule:
 - Load `repoctl.config.*`; rename legacy `monorepo.config.*`, which is no longer loaded.
 - Validate repoctl-owned fields before command side effects with `repo config validate --json`.
 - Native tooling passthrough and callbacks keep their extension boundary. Config modules are trusted executable project code.
-- Use `repo config inspect --command ai --set 'format="json"' --json` for shared defaults/project/CLI provenance. Contexts: ai, clean, create, deps, init, mirror, release, upgrade. Runtime selection is explained by each command's plan.
+- Use `repo config inspect --command ai --set 'format="json"' --json` for shared defaults/project/CLI provenance. Contexts: ai, clean, create, deps, doctor, init, mirror, release, upgrade. Runtime selection is explained by each command's plan.
 - Reports redact env values and native tool payloads by default; `--redact` additionally hides local paths. For programmatic safe reports use `explainMonorepoConfig` or `validateConfigFile`; runtime config APIs retain callbacks and should not be serialized for sharing.
 - Replace the old ignored `tooling.lintStaged.monorepoCommand` field with `repoCommand`.
 
@@ -67,6 +67,25 @@ Key areas:
 - upgrade: overwrite behavior and extra targets
 - init: skip steps for README/package.json/pnpm change intent setup
 - mirror: add or override env mirrors
+
+## `commands.doctor`
+
+```ts
+export default defineMonorepoConfig({
+  commands: {
+    doctor: {
+      rules: ['root-scripts', 'commit-hooks'],
+      suppressions: [{
+        id: 'commit-hooks',
+        reason: 'CI validates commits while the hooks migration is scheduled',
+        expires: '2026-12-31',
+      }],
+    },
+  },
+})
+```
+
+Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs `id` and a nonempty `reason`; optional `path` matches an exact workspace-relative finding path. Optional `expires` is an inclusive UTC date (`YYYY-MM-DD`). JSON retains the original finding status, `suppression`, `rawSummary`, and every waiver with its matched count. Only active waivers are excluded from effective `summary` and strict exit status; expired and unmatched waivers remain visible.
 
 ## TypeScript project references
 

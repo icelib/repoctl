@@ -38,19 +38,20 @@ function minimumDependencyVersion(range: string | undefined) {
   }
 }
 
-export async function collectReleaseChecks(workspaceDir: string, pkgJson: PackageJsonLike) {
+export async function collectReleaseChecks(workspaceDir: string, pkgJson: PackageJsonLike, selected?: ReadonlySet<string>) {
+  const includes = (id: string) => !selected || selected.has(id)
   const workflowPath = path.join(workspaceDir, '.github/workflows/release.yml')
   const [hasWorkflow, hasPreState, hasChangesetConfig] = await Promise.all([
-    fs.pathExists(workflowPath),
-    fs.pathExists(path.join(workspaceDir, '.changeset/pre.json')),
-    fs.pathExists(path.join(workspaceDir, '.changeset/config.json')),
+    ['release-workflow', 'release-cli-version', 'release-versioning-config'].some(includes) && fs.pathExists(workflowPath),
+    includes('release-prerelease-state') && fs.pathExists(path.join(workspaceDir, '.changeset/pre.json')),
+    includes('release-changeset-config') && fs.pathExists(path.join(workspaceDir, '.changeset/config.json')),
   ])
   if (!hasWorkflow && !hasPreState && !hasChangesetConfig) {
     return []
   }
 
   const checks: DoctorCheck[] = []
-  const workflowStatus = await classifyReleaseWorkflow(workspaceDir)
+  const workflowStatus = includes('release-workflow') ? await classifyReleaseWorkflow(workspaceDir) : 'missing'
   if (workflowStatus === 'managed') {
     checks.push(check('release-workflow', 'release workflow', 'pass', localize(`The release workflow is managed by ${releaseWorkflowMarker}.`, `release workflow 已由 ${releaseWorkflowMarker} 管理。`)))
   }
@@ -92,7 +93,7 @@ export async function collectReleaseChecks(workspaceDir: string, pkgJson: Packag
     ))
   }
 
-  if (hasWorkflow) {
+  if (hasWorkflow && includes('release-cli-version')) {
     const packageVersion = pkgJson.devDependencies?.['repoctl'] ?? pkgJson.dependencies?.['repoctl']
     const parsed = minimumDependencyVersion(packageVersion)
     if (!parsed || !gte(parsed, releaseCiMinimumVersion)) {
@@ -107,7 +108,8 @@ export async function collectReleaseChecks(workspaceDir: string, pkgJson: Packag
     else {
       checks.push(check('release-cli-version', 'release CLI version', 'pass', localize(`repoctl ${packageVersion} supports release ci.`, `repoctl 版本 ${packageVersion} 支持 release ci。`)))
     }
-
+  }
+  if (hasWorkflow && includes('release-versioning-config')) {
     try {
       const workspace = YAML.parse(await readFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'utf8')) as { versioning?: { fixed?: unknown, changelog?: { storage?: string } } }
       const hasValidFixed = hasValidFixedGroups(workspace.versioning?.fixed)
