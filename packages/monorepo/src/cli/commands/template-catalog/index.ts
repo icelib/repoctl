@@ -5,6 +5,7 @@ import { logger } from '../../../core/logger'
 import { resolveTemplateCatalog } from '../../../core/template-catalog'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
+import { registerTemplateInstanceCommands } from '../template-instances'
 import { formatTemplateDetail, formatTemplateHealthReport, formatTemplateMarkdownDetail, formatTemplateMarkdownTable, formatTemplateTable } from './format'
 import { registerTemplateValidation } from './validate'
 
@@ -124,5 +125,6 @@ export function registerTemplatesCommands(program: Command) {
         logger.info(localize('Next: run `repo new <name> --template <key>`.', '下一步：运行 `repo new <name> --template <key>`。'))
       }
     })
+  registerTemplateInstanceCommands(templates)
   registerTemplateValidation(templates)
 }
