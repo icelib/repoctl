@@ -195,6 +195,10 @@ Usage:
 - Built-in tooling targets: commitlint, eslint, stylelint, lint-staged, tsconfig, vitest
 - Generated files also update root package.json devDependencies
 
+## tooling devcontainer
+
+Preview an optional root Dev Container with `repo tooling devcontainer --json --out ../plan.json`, review it, then apply with `repo tooling devcontainer --apply ../plan.json`. Preview and application never start Docker or install dependencies. Existing custom configuration blocks application and stays unchanged; a fully applied plan replays without writes. Root engines.node and an exact pnpm packageManager are required. `--node-version` selects an exact compatible Node image version. Start the container explicitly with the Dev Containers extension or CLI. Its setup enables Corepack, checks the exact pnpm version and installs with a frozen lockfile when present. The non-root node user and an external pnpm store volume are configured; customize forwardPorts for the app. Do not add a business package for this preset.
+
 ## workspace clean (alias: ws clean)
 
 Remove explicitly selected workspace package directories. Nothing is preselected.

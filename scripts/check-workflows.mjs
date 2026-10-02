@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
+import { checkDevContainerWorkflow } from './devcontainer/workflow.mjs'
 
 const rootDir = path.dirname(
   fileURLToPath(new URL('../package.json', import.meta.url)),
@@ -204,4 +205,5 @@ checkReleaseWorkflow()
 checkCiWorkflow()
 checkReleaseIntentWorkflow()
 checkAutomaticReleaseIntentWorkflow()
+checkDevContainerWorkflow(rootDir)
 console.log('CI/CD workflow contracts are valid.')

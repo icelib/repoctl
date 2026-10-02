@@ -52,6 +52,7 @@ export const routeSections = [
     items: [
       item('', 'Reference overview', '参考总览'),
       item('commands', 'Command reference', '命令参考'),
+      item('devcontainer', 'Dev Container preset', 'Dev Container 预设'),
       item('config', 'Configuration', '配置文件'),
       item('dependencies', 'Dependency consistency', '依赖版本一致性'),
       item('knip', 'Unused code and dependencies', '闲置代码与依赖检查'),

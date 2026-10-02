@@ -166,6 +166,8 @@ Programmatic users can call `getWorkspaceGraph(cwd, options)`, `filterWorkspaceG
 
 ## Grouped Commands
 
+For an optional root development environment, see the [Dev Container preset](./devcontainer.md): `repo tooling devcontainer --json --out ../plan.json`, then `repo tooling devcontainer --apply ../plan.json` after review.
+
 ```bash
 repo ws ls
 repo ws ls --json --out reports/workspaces.json

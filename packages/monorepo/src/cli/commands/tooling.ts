@@ -4,6 +4,7 @@ import { initToolingTargets } from '../../commands/init/tooling/types'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import { normalizeToolingTargets } from '../utils'
+import { registerDevContainerCommand } from './tooling/devcontainer'
 import { registerProjectReferencesCommands } from './tooling/references'
 
 interface ToolingInitCommandOptions {
@@ -14,6 +15,7 @@ interface ToolingInitCommandOptions {
 export function registerToolingCommands(program: Command, cwd: string) {
   const toolingCommand = program.command('tooling').alias('tg').description(localize('Tooling configuration commands', '工程化配置命令'))
   registerProjectReferencesCommands(toolingCommand, cwd)
+  registerDevContainerCommand(toolingCommand, cwd)
 
   toolingCommand.command('init')
     .description(localize(`Generate tooling configuration (${initToolingTargets.join(', ')})`, `生成 tooling 配置（可选值：${initToolingTargets.join(', ')}）`))
