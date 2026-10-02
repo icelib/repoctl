@@ -11,14 +11,18 @@ Use this task when a change is ready to version and publish. Keep the release pl
 ## Smallest command
 
 ```bash
-repo release --dry-run
+repo release plan --markdown
 ```
 
-Review the package groups, versions, changelog entries, and publish commands. Run the same command without `--dry-run` only after the plan is approved.
+Review current and planned versions, direct intents, native dependency/fixed-group reasons, lanes, private packages, publish candidates, and release-note previews. Use `repo release plan --json` for the versioned machine interface (`schemaVersion: 1`); status is `ready`, `empty`, or `blocked`. Blocked plans exit with code 1 and stable blocker IDs.
+
+The plan delegates version decisions to pnpm recursive dry-run (tested with pnpm 12.8.1). It never consumes intents, changes manifests/changelogs/ledger/Git state, installs or activates pnpm, runs version/release/pnpmfile hooks, or writes to registries. Install a supported pnpm version explicitly if it is unavailable. Hooks that would change preparation inputs are intentionally excluded; rerun the plan after making those changes explicitly.
+
+After review, use the separate preparation entry `repo release ci --mode=prepare`. Preview already prepared publication or recovery with `repo release ci --mode=publish --dry-run`. A version plan describes pending intents and does not check registry authentication or prove that publishing can succeed.
 
 ## Expected result
 
-The release report names the packages that will change, the version decisions, and each subprocess that will run. A successful release also completes the configured post-publish hooks.
+JSON and Markdown describe the same native version decisions. Notes use the existing release renderer and exclude already consumed intent entries. Private packages may change version but are marked as non-publish candidates. The public `createReleasePlan({ cwd })` API returns the same report without writing it to disk.
 
 ## Common branches
 

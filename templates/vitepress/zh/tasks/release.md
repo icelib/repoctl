@@ -11,14 +11,18 @@
 ## 最小命令
 
 ```bash
-repo release --dry-run
+repo release plan --markdown
 ```
 
-检查包组、版本、变更日志和发布命令。计划确认后，再去掉 `--dry-run` 执行发布。
+检查当前/目标版本、直接 intent、pnpm 原生依赖传播及固定组原因、lane、私有包、发布候选和发布说明预览。机器读取使用 `repo release plan --json`，结构版本为 `schemaVersion: 1`，状态为 `ready`、`empty` 或 `blocked`。阻断时退出码为 1，并提供稳定的 blocker ID。
+
+版本决策委托给 pnpm 递归 dry-run（已验证 pnpm 12.8.1）。计划不消费 intents，不修改 manifest、changelog、ledger 或 Git 状态，不安装或激活 pnpm，不执行版本、发布或 pnpmfile hooks，也不写入 registry。未安装支持的 pnpm 时请先显式安装。可能改写准备输入的 hooks 不会执行；需要这些改动时先显式完成，再重新生成计划。
+
+审查完成后使用独立入口 `repo release ci --mode=prepare` 准备版本。已有版本的发布或恢复预览使用 `repo release ci --mode=publish --dry-run`。版本计划描述待消费 intents，不检查 registry 认证，也不代表发布一定成功。
 
 ## 预期结果
 
-发布报告会列出将要变化的包、版本决策和每个子进程。发布成功后，还会执行配置好的 post-publish hooks。
+JSON 与 Markdown 表达相同的原生版本决策。说明条目复用已有发布 renderer，并排除已消费的 intent 条目。私有包可以升级版本，但标记为非发布候选。公共 `createReleasePlan({ cwd })` API 返回同一报告，不自行写入文件。
 
 ## 常见分支
 

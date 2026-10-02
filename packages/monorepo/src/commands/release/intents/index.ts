@@ -8,6 +8,12 @@ import { ReleaseCommandError } from '../errors'
 export interface LedgerEntry { dir?: string, intents: string[] }
 export type ReleaseLedger = Record<string, LedgerEntry>
 
+export function isIntentConsumed(ledger: ReleaseLedger, intentId: string, name: string, dir: string, lane?: string) {
+  return Object.entries(ledger).some(([key, entry]) => (entry.dir ? entry.dir.replace(/^\.\//, '') === dir : key.slice(0, key.lastIndexOf('@')) === name)
+    && entry.intents.includes(intentId)
+    && ((lane && lane !== 'main') || !semver.prerelease(key.slice(key.lastIndexOf('@') + 1))))
+}
+
 export function parseLedger(content: string): ReleaseLedger {
   const ledger: unknown = YAML.parse(content) ?? {}
   if (!ledger || typeof ledger !== 'object' || Array.isArray(ledger)) {
@@ -57,7 +63,7 @@ export function parseIntent(content: string, filename: string) {
 }
 
 /** Only unconsumed release requests count; declines and resurrected prose do not. */
-export async function readPendingIntents(cwd: string) {
+export async function readPendingIntents(cwd: string, options: { includeRoot?: boolean } = {}) {
   let files
   try {
     files = await readdir(path.join(cwd, '.changeset'), { withFileTypes: true })
@@ -71,7 +77,7 @@ export async function readPendingIntents(cwd: string) {
   const root = await realpath(cwd)
   const ledger = await readLedger(cwd)
   const config = YAML.parse(await readFile(path.join(cwd, 'pnpm-workspace.yaml'), 'utf8')) as { versioning?: { lanes?: Record<string, string> } }
-  const workspace = await getWorkspacePackages(cwd, { ignorePrivatePackage: false })
+  const workspace = await getWorkspacePackages(cwd, { ignorePrivatePackage: false, ignoreRootPackage: !options.includeRoot })
   const pending: string[] = []
   for (const file of files.sort((a, b) => a.name.localeCompare(b.name))) {
     if (!file.isFile() || !file.name.endsWith('.md') || file.name.toLowerCase() === 'readme.md') {
@@ -85,15 +91,13 @@ export async function readPendingIntents(cwd: string) {
         continue
       }
       const pkg = workspace.find(item => item.manifest.name === reference
-        || path.relative(root, item.rootDir) === reference.replace(/^\.\//, ''))
+        || (path.relative(root, item.rootDir) || '.') === (reference.replace(/^\.\//, '') || '.'))
       if (!pkg) {
         throw new ReleaseCommandError(`Unknown package ${reference} in ${filename}`)
       }
-      const dir = path.relative(root, pkg.rootDir)
+      const dir = path.relative(root, pkg.rootDir) || '.'
       const lane = config.versioning?.lanes?.[pkg.manifest.name ?? ''] ?? config.versioning?.lanes?.[dir]
-      const consumed = Object.entries(ledger).some(([key, entry]) => (entry.dir ? entry.dir.replace(/^\.\//, '') === dir : key.slice(0, key.lastIndexOf('@')) === pkg.manifest.name)
-        && entry.intents.includes(file.name.slice(0, -3))
-        && ((lane && lane !== 'main') || !semver.prerelease(key.slice(key.lastIndexOf('@') + 1))))
+      const consumed = isIntentConsumed(ledger, file.name.slice(0, -3), pkg.manifest.name ?? '', dir, lane)
       active ||= !consumed
     }
     if (active) {
