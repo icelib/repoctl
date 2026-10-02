@@ -76,3 +76,11 @@ export default defineMonorepoConfig({
 只替换计划中的清单，保留无关字段及其他依赖分区；重复应用同一计划不会再次写入。工具先准备替换内容与原始备份，写入失败会回滚已完成的替换。若并发修改导致无法安全回滚，错误中会列出保留的 `.repoctl-deps-*.bak` 备份。进程中断后，检查清单旁的这些备份，按需恢复原文，清除遗留 `.tmp` 文件，再重新生成计划。随后可用 doctor 和 pnpm 安装步骤验证工作区。
 
 `repoctl` 导出 `checkDependencies(cwd)`、`planDependencyFix(cwd, options)`、`applyDependencyFixPlan(cwd, plan)`，以及对应的报告、配置和计划类型。
+
+## Peer 兼容性
+
+`repoctl deps peers --json` 比较每个工作区的 peer 承诺与显式 `devDependencies` 测试声明，包含 private 包和根包。必需 peer 没有测试声明时失败；optional peer 缺省时跳过，已声明测试版本时仍正常检查，不修改 pnpm 的自动安装或 strict-peer 策略。
+
+报告区分 `declared_range`、`declared_version`、`lockfile_version` 和 `workspace_version` 证据。测试声明完全包含于 peer 范围时仅判定声明兼容；部分重叠保持 `unknown`，直到可靠的 pnpm 锁定版本或内部工作区版本提供明确结果。过期/不支持的锁文件及未知协议不会被当成通过。支持默认/命名 catalog、同源 npm alias、workspace 别名、预发布和复合范围；不把自动安装的 peer 当作显式测试声明。
+
+JSON 包含稳定规则码、包和路径、peer 与测试声明、解析后的范围/版本、optional 状态及 workspace 中的 pnpm 策略值。单个测试或锁定版本不能证明全部支持范围；锁文件证据也不验证实际安装状态。检查不安装、不写文件，不替代现有发布 workspace 协议规则。失败返回非零；`--strict` 还会在 unknown 时失败。公开 API 为 `checkPeerDependencies(cwd)`。
