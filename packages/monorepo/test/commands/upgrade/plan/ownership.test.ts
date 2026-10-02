@@ -53,7 +53,7 @@ it('preserves a replacement empty directory during failed preparation cleanup', 
   const output = await instrument(plan, `
     const open = fs.open
     fs.open = async (filename, ...args) => {
-      if (filename === path.join(root, ${JSON.stringify(`${baseline}.repoctl-upgrade-${transactionId}.tmp`)})) {
+      if (path.resolve(filename) === path.resolve(root, ${JSON.stringify(`${baseline}.repoctl-upgrade-${transactionId}.tmp`)})) {
         const directory = path.dirname(filename)
         await fs.rename(directory, directory + '.retained')
         await fs.mkdir(directory)
