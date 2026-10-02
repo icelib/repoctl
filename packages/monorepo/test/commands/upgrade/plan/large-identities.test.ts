@@ -12,6 +12,7 @@ function identities(field: 'dev' | 'ino', tracked: string) {
     const identify = (stat, options) => {
       const value = replaced ? 9007199254740993n : 9007199254740992n
       Object.defineProperty(stat, '${field}', { value: options?.bigint ? value : Number(value) })
+      Object.defineProperty(stat, '${field === 'dev' ? 'ino' : 'dev'}', { value: options?.bigint ? 7n : 7 })
       return stat
     }
     const lstat = fs.lstat
