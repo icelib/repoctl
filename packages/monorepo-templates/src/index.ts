@@ -29,6 +29,17 @@ export const templateMap = templateSourceMap
 export { areTemplateAssetsPrepared, ensureTemplateAssetsPrepared, prepareAssets }
 export { getWorkspacePackageManager }
 export { scaffoldTemplate, scaffoldWorkspace }
+export * from './instances'
+export {
+  createTemplateCopyFilter,
+  isGitignoreFile,
+  runCommand,
+  shouldSkipTemplatePath,
+  toPublishGitignorePath,
+  toWorkspaceAssetPath,
+  toWorkspaceGitignorePath,
+}
+export type { GetTemplateChoicesOptions, SuggestTemplateKeyOptions, TemplateCategory, TemplateChoice, TemplateDefinition }
 export {
   getTemplateChoice,
   getTemplateChoices,
@@ -41,16 +52,6 @@ export {
   suggestTemplateKey,
   templateCategories,
 } from './templates'
-export {
-  createTemplateCopyFilter,
-  isGitignoreFile,
-  runCommand,
-  shouldSkipTemplatePath,
-  toPublishGitignorePath,
-  toWorkspaceAssetPath,
-  toWorkspaceGitignorePath,
-}
-export type { GetTemplateChoicesOptions, SuggestTemplateKeyOptions, TemplateCategory, TemplateChoice, TemplateDefinition }
 export { execaCommand } from './utils/command'
 export { default as checkbox } from '@inquirer/checkbox'
 export { default as input } from '@inquirer/input'
