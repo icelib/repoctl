@@ -21,6 +21,23 @@ async function removeOwnedLock(lockPath: string, token: string) {
   }
 }
 
+async function removeOwnedTemporary(filename: string, owner: { dev: number, ino: number } | undefined) {
+  if (!owner) {
+    return
+  }
+  try {
+    const stat = await fs.lstat(filename)
+    if (stat.isFile() && stat.dev === owner.dev && stat.ino === owner.ino) {
+      await fs.rm(filename)
+    }
+  }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error
+    }
+  }
+}
+
 export async function loadTemplateInstanceRegistry(workspaceDir: string): Promise<TemplateInstanceRegistry> {
   const file = await safeInstancePath(workspaceDir, templateRegistryPath)
   return await exists(file) ? parseRegistry(await fs.readFile(file, 'utf8')) : { schemaVersion: 1, instances: [] }
@@ -58,6 +75,7 @@ export async function mutateTemplateRegistry<T>(
   }
   const written: string[] = []
   const temporary = `${file}.${randomUUID()}.tmp`
+  let temporaryOwner: { dev: number, ino: number } | undefined
   const lockToken = `${process.pid}:${randomUUID()}\n`
   let committed = false
   try {
@@ -90,14 +108,21 @@ export async function mutateTemplateRegistry<T>(
         await handle.close()
       }
     }
-    await fs.writeFile(temporary, `${JSON.stringify(registry, null, 2)}\n`, { flag: 'wx' })
+    const handle = await fs.open(temporary, 'wx')
+    try {
+      temporaryOwner = await handle.stat()
+      await handle.writeFile(`${JSON.stringify(registry, null, 2)}\n`)
+    }
+    finally {
+      await handle.close()
+    }
     await fs.rename(temporary, file)
     committed = true
     return result
   }
   finally {
     try {
-      await fs.rm(temporary, { force: true })
+      await removeOwnedTemporary(temporary, temporaryOwner)
       if (!committed) {
         await Promise.all(written.map(target => fs.rm(target, { force: true })))
       }

@@ -102,3 +102,31 @@ it('rejects overlapping targets in a manually modified registry on every read', 
   await expect(listTemplateInstances(f.cwd)).rejects.toThrow('Overlapping')
   await expect(planTemplateLink(f.options)).rejects.toThrow('Overlapping')
 })
+
+it('preserves a registry temporary-file collision owned by another operation', async (t) => {
+  const f = await fixture(t)
+  const plan = await planTemplateLink(f.options)
+  const before = await contents(path.join(f.cwd, f.target))
+  const open = fs.open.bind(fs)
+  let collision: string | undefined
+  const spy = vi.spyOn(fs, 'open').mockImplementation(async (...args) => {
+    const filename = String(args[0])
+    if (!collision && filename.replaceAll('\\', '/').includes('/.repoctl/template-instances.json.') && filename.endsWith('.tmp')) {
+      collision = filename
+      await fs.writeFile(filename, 'Existing file owned by another operation\n', { flag: 'wx' })
+    }
+    return open(...args)
+  })
+  try {
+    await expect(applyTemplateLinkPlan(plan)).rejects.toThrow('EEXIST')
+  }
+  finally {
+    spy.mockRestore()
+  }
+  expect(collision).toBeDefined()
+  expect(await fs.readFile(collision!, 'utf8')).toBe('Existing file owned by another operation\n')
+  expect(await listTemplateInstances(f.cwd)).toEqual([])
+  expect(await contents(path.join(f.cwd, f.target))).toEqual(before)
+  await fs.unlink(collision!)
+  expect(await contents(path.join(f.cwd, '.repoctl'))).toEqual({})
+})
