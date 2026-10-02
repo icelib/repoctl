@@ -16,7 +16,9 @@ export async function discoverCleanWorkspace(cwd: string) {
   const packages = await findWorkspacePackages(workspaceDir, manifest?.packages ? { patterns: manifest.packages } : {})
   return {
     workspaceDir,
-    packages: packages.filter(pkg => path.resolve(pkg.rootDir) !== workspaceDir),
+    packages: packages
+      .map(pkg => ({ ...pkg, rootDir: path.resolve(pkg.rootDir) }))
+      .filter(pkg => pkg.rootDir !== workspaceDir),
   }
 }
 
