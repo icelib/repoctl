@@ -1,15 +1,18 @@
 import type { UpgradeApplyOptions, UpgradeApplyResult, UpgradePlan } from '../../../types/upgrade'
+import type { OwnedDirectory } from './transaction/state'
 import { findWorkspacePackages } from '@pnpm/workspace.find-packages'
 import path from 'pathe'
 import { assetsDir } from '../../../constants'
+import { withOperationLock } from '../../../core/operation-lock'
 import { clearWorkspaceCache } from '../../../core/workspace'
 import { upgradeOperations } from '../baseline/apply'
 import { canonicalDirectory, hash, readOptional } from '../plan/files'
 import { writeUpgradeTransaction } from './transaction'
+import { cleanDirectories, ensureParent } from './transaction/state'
 import { actionable, validateUpgradePlan } from './validate'
 
 /** Apply reviewed bytes only after all plan preconditions have been checked. */
-export async function applyUpgradePlan(cwd: string, plan: UpgradePlan, options: UpgradeApplyOptions = {}): Promise<UpgradeApplyResult> {
+async function applyLocked(cwd: string, plan: UpgradePlan, options: UpgradeApplyOptions): Promise<UpgradeApplyResult> {
   validateUpgradePlan(plan)
   if (await canonicalDirectory(path.resolve(cwd)) !== plan.cwd || await canonicalDirectory(plan.rootDir) !== plan.rootDir
     || await canonicalDirectory(assetsDir) !== plan.assetDir) {
@@ -73,4 +76,20 @@ export async function applyUpgradePlan(cwd: string, plan: UpgradePlan, options: 
     clearWorkspaceCache()
   }
   return { status: 'applied', changed: files.map(file => file.path), ...report }
+}
+
+/** Hold the same lock through preconditions, no-op detection, writes and recovery. */
+export async function applyUpgradePlan(cwd: string, plan: UpgradePlan, options: UpgradeApplyOptions = {}): Promise<UpgradeApplyResult> {
+  validateUpgradePlan(plan)
+  if (await canonicalDirectory(path.resolve(cwd)) !== plan.cwd || await canonicalDirectory(plan.rootDir) !== plan.rootDir || await canonicalDirectory(assetsDir) !== plan.assetDir) {
+    throw new Error('Upgrade plan belongs to another directory or asset installation.')
+  }
+  const directories: OwnedDirectory[] = []
+  try {
+    await ensureParent(plan.rootDir, directories)
+    return await withOperationLock(plan.rootDir, 'upgrade', () => applyLocked(cwd, plan, options))
+  }
+  finally {
+    await cleanDirectories(directories)
+  }
 }
