@@ -55,6 +55,7 @@ export async function planAssets(context: UpgradeContext) {
         }
         else if (filename === '.github/workflows/release.yml') {
           after = Buffer.from(renderReleaseBranchesWorkflow(source.toString(), context.releaseConfig?.branches))
+          upstream = after
           reason = context.releaseConfig?.branches ? 'release-branch-mapping' : 'managed-asset'
         }
         else if (filename === 'package.json') {
