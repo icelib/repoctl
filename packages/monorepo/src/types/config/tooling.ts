@@ -6,6 +6,7 @@ import type {
 import type { StylelintConfig as IcebreakerStylelintConfigOptions } from '@icebreakers/stylelint-config'
 import type { Configuration as LintStagedConfiguration } from 'lint-staged'
 import type { ViteUserConfig } from 'vitest/config'
+import type { PublicApiConfig } from '../../commands/api-report/types'
 
 /**
  * `tooling.commitlint` 配置块。
@@ -224,6 +225,8 @@ export interface HuskyToolingConfig {
  * 每个字段分别映射到对应的配置工厂与验证命令。
  */
 export interface ToolingConfig {
+  /** Explicit public declaration entrypoints and reviewed API baselines. */
+  apiReports?: PublicApiConfig
   commitlint?: CommitlintToolingConfig
   eslint?: EslintToolingConfig
   stylelint?: StylelintToolingConfig

@@ -63,7 +63,7 @@ async function rollback(root: string, staged: StagedFile[]) {
   return recovery
 }
 
-export async function writeUpgradeTransaction(root: string, files: UpgradeFilePlan[]) {
+export async function writeUpgradeTransaction(root: string, files: UpgradeFilePlan[], verify?: () => Promise<void>) {
   const id = randomUUID()
   const staged: StagedFile[] = []
   const directories: OwnedDirectory[] = []
@@ -92,6 +92,7 @@ export async function writeUpgradeTransaction(root: string, files: UpgradeFilePl
         await stageOwnedFile(root, item.temporary, Buffer.from(file.content, 'base64'), metadata?.mode)
       }
     }
+    await verify?.()
     for (const item of staged) {
       const current = await readOptional(root, item.file.path)
       if ((current === null ? null : hash(current)) !== item.file.beforeHash) {
@@ -117,6 +118,7 @@ export async function writeUpgradeTransaction(root: string, files: UpgradeFilePl
         }
       }
     }
+    await verify?.()
   }
   catch (error) {
     const recovery = await rollback(root, staged)

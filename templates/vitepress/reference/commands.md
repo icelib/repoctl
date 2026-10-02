@@ -183,3 +183,7 @@ repo skills sync --codex
 - [Add checks to CI](/tasks/ci)
 - [Troubleshoot](/tasks/troubleshooting)
 - [Command Aliases](./aliases.md)
+
+### Public API baselines
+
+`repoctl package api check [--package <selectors...>] [--json]` compares built public declarations with explicitly configured API Extractor reports. Set `tooling.apiReports` with package-relative declaration entries and workspace-relative `.api.md` baselines; install a local stable `@microsoft/api-extractor >=7.52.12 <8` and build first. `package api update --json` only previews; review its output, then pass it to `package api update --apply <plan.json>`. Updates revalidate inputs and use guarded transactions. Signature diffs and pending change intents are advisory; no complete SemVer inference or release is performed.

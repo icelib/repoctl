@@ -121,6 +121,7 @@
     "yaml": "catalog:"
   },
   "devDependencies": {
+    "@microsoft/api-extractor": "7.52.12",
     "@types/cross-spawn": "^6.0.6",
     "@types/klaw": "^3.0.8",
     "@types/micromatch": "^4.0.10",

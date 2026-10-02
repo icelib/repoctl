@@ -319,3 +319,7 @@ Usage:
 ## Affected CI matrix
 
 `repo check --affected --matrix` previews a versioned GitHub Actions matrix without running checks. `--shards N` deterministically groups workspaces into at most 1–256 jobs. Reuse base/head, filters and global inputs from affected mode. Pass only `matrix` to Actions `fromJSON`, gate strategy expansion with `hasWork`, and execute each row's non-skipped executable/args arrays in order from the checkout root. Each job builds dependencies itself. Full fallbacks stay in one job and retain diagnostics. No workflow is changed or triggered; only explicit `--out` writes a report.
+
+### Public API baselines
+
+Use `repoctl package api check --json` after building opted-in `tooling.apiReports` library declarations. Local API Extractor >=7.52.12 <8 is required. `package api update --json` produces a read-only plan; explicitly review it before `package api update --apply <plan.json>`. Preserve existing baselines on check, report failures, review change intents, and never claim API signature differences determine complete SemVer compatibility. Baseline paths are workspace-relative; entries/tsconfig are package-relative.

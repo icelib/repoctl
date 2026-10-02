@@ -230,3 +230,7 @@ repo skills sync --codex
 - [把校验加入 CI](/zh/tasks/ci)
 - [报告与自动化输出](/zh/tasks/reports)
 - [命令别名](./aliases.md)
+
+### 公共 API 基线
+
+`repoctl package api check [--package <selectors...>] [--json]` 比较已构建公开声明与显式配置的 API Extractor 报告。通过 `tooling.apiReports` 声明相对包目录的声明入口和相对工作区的 `.api.md` 基线，先安装本地稳定版 `@microsoft/api-extractor >=7.52.12 <8` 并构建。`package api update --json` 只预览；审核后使用 `package api update --apply <plan.json>` 更新。执行重新验证输入并使用文件事务，保留冲突与恢复提示。签名 diff 和未消费 change intents 仅作建议，不自动推断完整 SemVer 或发布。
