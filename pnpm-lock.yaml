@@ -518,6 +518,9 @@ importers:
       lint-staged:
         specifier: ^17.6.0
         version: 17.6.0
+      node-diff3:
+        specifier: ~3.1.2
+        version: 3.1.2
       p-queue:
         specifier: ^9.3.3
         version: 9.3.3
@@ -8543,6 +8546,10 @@ packages:
 
   nlcst-to-string@4.0.0:
     resolution: {integrity: sha512-YKLBCcUYKAg0FNlOBT6aI91qFmSiFKiluk655WzPF+DDMA02qIyy8uiRqI8QXtcFpEvll12LpL5MXqEmAZ+dcA==}
+
+  node-diff3@3.1.2:
+    resolution: {integrity: sha512-wUd9TWy059I8mZdH6G3LPNlAEfxDvXtn/RcyFrbqL3v34WlDxn+Mh4HDhOwWuaMk/ROVepe5tTpnGHbve6Db2g==}
+    engines: {node: '>14'}
 
   node-fetch-native@1.6.7:
     resolution: {integrity: sha512-g9yhqoedzIUm0nTnTqAQvueMPVOuIY16bqgAJJC8XOOubYFNwz6IER9qs0Gq2Xd0+CecCKFjtdDTMA4u4xG06Q==}
@@ -19535,6 +19542,8 @@ snapshots:
   nlcst-to-string@4.0.0:
     dependencies:
       '@types/nlcst': 2.0.3
+
+  node-diff3@3.1.2: {}
 
   node-fetch-native@1.6.7: {}
 
