@@ -7,6 +7,7 @@ it('keeps source browser acceptance tooling out of generated workspaces', () => 
       'test:packaged-create': 'node scripts/smoke-packaged-create.mjs',
       'test:packaged-doctor': 'node scripts/smoke-packaged-doctor.mjs',
       'test:packaged-react': 'node scripts/react/index.mjs',
+      'test:packaged-next': 'node scripts/next/index.mjs',
       'test': 'vitest run',
     },
     devDependencies: { playwright: '^1.62.1', vitest: '~5.0.2' },
@@ -14,6 +15,7 @@ it('keeps source browser acceptance tooling out of generated workspaces', () => 
   expect(manifest.scripts['test:packaged-create']).toBeUndefined()
   expect(manifest.scripts['test:packaged-doctor']).toBeUndefined()
   expect(manifest.scripts['test:packaged-react']).toBeUndefined()
+  expect(manifest.scripts['test:packaged-next']).toBeUndefined()
   expect(manifest.scripts.test).toBe('vitest run')
   expect(manifest.devDependencies).toEqual({ vitest: '~5.0.2' })
 })

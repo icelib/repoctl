@@ -10,6 +10,7 @@ repoctl templates are maintained by `@icebreakers/monorepo-templates`. The CLI, 
 | `vue-lib`     | library  | `packages/vue-lib` | Vue 3 component library                |
 | `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono app                       |
 | `react-vite`  | app      | `apps/react-vite`  | React + Vite + TypeScript SPA          |
+| `next`        | app      | `apps/next`        | Next.js App Router and TypeScript SSR  |
 | `hono-server` | service  | `apps/server`      | Hono API service                       |
 | `vitepress`   | docs     | `apps/website`     | VitePress docs site                    |
 | `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro, default bilingual docs |
@@ -158,3 +159,23 @@ The check validates duplicate sources and targets, existing source directories, 
 - [Adopt an existing workspace](/tasks/adopt-existing)
 - [Add checks to CI](/tasks/ci)
 - [Configuration](./config.md)
+
+## Next.js App Router
+
+```sh
+pnpm create repoctl@latest my-workspace -- --yes --templates next,tsdown
+cd my-workspace
+corepack enable
+pnpm install
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm --dir apps/next start
+```
+
+For an existing workspace, use `repo new portal --template next`; the **Web App** picker also offers Next.js. The starter uses Next 16.3.8, TypeScript, a server page, a client counter and `GET /api/health`. It does not include authentication, databases or hosting integration. Its App Router layout follows the same-version [official scaffold](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+`typecheck` runs `next typegen` followed by `tsc --noEmit`; lint remains a separate ESLint and Stylelint task. The package's Turbo configuration caches `.next/**` excluding `.next/cache/**`, includes all authored application inputs, and keeps server tasks and route type generation uncached. Generated `.next`, `next-env.d.ts`, build info and independent lockfiles are excluded from shipped templates.
+
+Use a `workspace:*` dependency and the public package name for internal libraries with compiled JavaScript/declaration exports. Inherited `^build` builds those dependencies first. For a library that intentionally exports TypeScript source, add its name to Next's [`transpilePackages`](https://nextjs.org/docs/app/api-reference/config/next-config-js/transpilePackages); it still needs compatible exports and server/client boundaries. Do not import another package's private source by relative path. The packaged acceptance test verifies both kinds of library against a production build, then checks server-rendered HTML, client interaction, mobile layout and the health endpoint in a headless browser.

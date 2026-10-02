@@ -82,3 +82,9 @@ pnpm --filter @icebreakers/mock lint:styles:formatting
 `templates/nimbus` is the default template for new documentation sites. The source repository's `dev:docs` profile continues to run the existing VitePress website.
 
 Run `pnpm --filter @icebreakers/nimbus-template dev` to work on the starter. After building packages, `pnpm test:packaged-nimbus` packs the local CLI dependency closure, installs it into a temporary workspace outside this checkout, generates both documentation templates, and verifies their builds, language routing, agent endpoints, draft exclusion and Turbo cache invalidation. It installs real dependencies without linking back to source workspaces. `NIMBUS_SMOKE_REGISTRY` can select a registry mirror for this check; `NIMBUS_SMOKE_KEEP=1` retains its printed temporary directory for diagnosis.
+
+## Next.js template acceptance
+
+`templates/next` follows the TypeScript App Router scaffold from `create-next-app@16.3.8`. Run `pnpm --filter @icebreakers/next-template dev` to work on the starter. After the normal build/lint/type gates, `pnpm test:packaged-next` packs the real local CLI dependency closure, exercises both bootstrap and `repo new` in a temporary workspace, and verifies compiled and source-exporting internal libraries in a production Next build.
+
+The headless check launches Next's production `start` command, checks HTML, hydrated controls, mobile width, browser errors and `/api/health`, then closes only its own browser/context/server. `NEXT_SMOKE_SCREENSHOT` saves an optional screenshot; `NEXT_SMOKE_KEEP=1` preserves the printed temporary workspace. Run packaged checks serially with source asset/build and development scenario tasks so their sync operations do not race.

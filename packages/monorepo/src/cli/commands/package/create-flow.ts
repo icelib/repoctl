@@ -179,6 +179,7 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
           choices: [
             { name: 'Vue + Hono', value: 'vue-hono', description: localize('Full-stack Vue application', 'Vue 前后端一体应用') },
             { name: 'React + Vite', value: 'react-vite', description: localize('React and TypeScript SPA', 'React 和 TypeScript 单页应用') },
+            { name: 'Next.js App Router', value: 'next', description: localize('React server rendering and route handlers', 'React 服务端渲染与路由接口') },
           ],
           default: 'vue-hono',
         })

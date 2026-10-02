@@ -63,4 +63,12 @@ export const templateChoices = [
     category: 'docs',
     description: '默认文档模板：Nimbus + Astro，中英双语与 AI 文档入口',
   },
+  {
+    key: 'next',
+    label: 'Next.js App Router 应用',
+    source: 'next',
+    target: 'apps/next',
+    category: 'app',
+    description: 'Next.js + TypeScript SSR 应用，包含客户端交互、健康接口与工作区库集成',
+  },
 ]

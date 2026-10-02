@@ -16,6 +16,7 @@ export const templateMap = {
   'vue-lib': { source: 'vue-lib', target: 'packages/vue-lib' },
   'hono-server': { source: 'server', target: 'apps/server' },
   'react-vite': { source: 'react-vite', target: 'apps/react-vite' },
+  'next': { source: 'next', target: 'apps/next' },
   'vue-hono': { source: 'client', target: 'apps/client' },
   'vitepress': { source: 'vitepress', target: 'apps/website' },
   'cli': { source: 'cli', target: 'apps/cli' },

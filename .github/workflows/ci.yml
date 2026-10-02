@@ -30,6 +30,7 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
       - name: Check out code
@@ -101,6 +102,10 @@ jobs:
       - name: Check packaged React application
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-react
+
+      - name: Check packaged Next.js application
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-next
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1

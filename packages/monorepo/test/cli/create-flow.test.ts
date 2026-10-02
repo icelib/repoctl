@@ -35,12 +35,12 @@ describe('runCreateFlow', () => {
     })
   })
 
-  it('selects React from the web-app intent without changing the Vue default', async () => {
+  it.each(['react-vite', 'next'])('selects %s from the web-app intent without changing the Vue default', async (template) => {
     setTty(true)
-    selectMock.mockResolvedValueOnce('web-app').mockResolvedValueOnce('react-vite')
+    selectMock.mockResolvedValueOnce('web-app').mockResolvedValueOnce(template)
     const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
     await runCreateFlow('/repo', 'portal')
-    expect(createNewProjectMock).toHaveBeenCalledWith({ name: 'apps/portal', cwd: '/repo', type: 'react-vite' })
+    expect(createNewProjectMock).toHaveBeenCalledWith({ name: 'apps/portal', cwd: '/repo', type: template })
     expect(selectMock).toHaveBeenLastCalledWith(expect.objectContaining({ default: 'vue-hono' }))
   })
 
