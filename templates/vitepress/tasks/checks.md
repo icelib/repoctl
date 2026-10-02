@@ -127,3 +127,29 @@ The public `getWorkspaceTaskCatalog(cwd, options)` and `locateWorkspace(cwd, que
 Manifest findings reuse the existing doctor JSON, Markdown, `--strict`, and `--redact` output. Each finding includes a stable `id`, workspace-relative `path`, and `field`. Rules cover missing/invalid/duplicate names, invalid versions and dependency sections, missing/ambiguous workspace targets, self-dependencies, and duplicate/conflicting declarations. Normal peer/dev and peer/runtime pairs are retained; peer compatibility is a separate check. An optional dependency overriding a regular dependency is a warning, since npm permits this explicitly.
 
 Unpublished applications should declare `private: true`. Public package license, repository, repository.directory and publishConfig recommendations are warnings, not mandatory publishing policy; strict mode also fails on warnings. repository.directory is compared against the workspace root, so a workspace embedded in another repository or a separately hosted package requires manual review. Values from invalid JSON and registry credentials are never included in these findings. Doctor neither executes package scripts nor changes manifests. Actual tarball contents and type consumption remain separate package delivery checks.
+
+## Internal dependency boundaries
+
+`repo workspace boundaries --json` inspects the shared manifest graph, including root and private packages. Configure `boundaries` in repoctl.config; configured policies also appear in `repo doctor` JSON/Markdown and its existing CI exit policy. The standalone command exits 1 on failures; `--strict` includes warnings. It never runs tasks, scans source imports, changes dependencies or enforces third-party admission.
+
+```ts
+export default {
+  boundaries: {
+    tags: { shared: { paths: ['packages/**'] }, app: { paths: ['apps/**'] } },
+    rules: [
+      { id: 'shared-layer', from: { tags: ['shared'] }, allow: [{ tags: ['shared'] }] },
+      { id: 'public-packages', from: { private: false }, allow: [{ private: false }] },
+    ],
+    cycles: { dependencyTypes: ['dependencies', 'optionalDependencies'], severity: 'fail' },
+    exceptions: [
+      { rule: 'shared-layer', source: 'packages/adapter', target: 'apps/web', type: 'peerDependencies', reason: 'Temporary adapter during migration' },
+    ],
+  },
+}
+```
+
+Selectors combine fields with AND and values within one field with OR. `packages` means exact names; `paths` supports exact workspace directories (root is `.`) or `directory/**` for descendants. `./**` includes the entire workspace. Other glob syntax is rejected. Tags are named selectors, cannot reference other tags, and may overlap. A rule's `allow` array is a union; an empty array denies all internal dependencies. Every matching rule applies. Boundary rules include all four dependency fields by default, while cycle detection defaults to dependencies and optionalDependencies only. Configure dependencyTypes to include dev or peer edges; `cycles: false` disables cycles. Semver edges mean possible local relationships, not lockfile installation proof.
+
+Reports contain stable rule IDs, the violated manifest field, endpoints and exact edges. Each cyclic strongly connected component produces one deterministic closed representative chain and its full member list, rather than enumerating every cycle. A cycle exception removes only the exact typed edge; remaining cycles are still checked. Reasons and waived edges remain visible. Unknown fields/tags, invalid paths, duplicate IDs and missing exception reasons fail validation. Unmatched selector alternatives and unused exceptions warn; incomplete internal graph resolution fails so missing relationships are not reported as healthy.
+
+The public `checkWorkspaceBoundaries(cwd, { config? })` returns schemaVersion 1 with findings, exceptions and summary. Explicit API config replaces project configuration for that call. Relative IDs and rule IDs do not change with output language. Put the CLI or `repo doctor --strict` into an existing pnpm CI script; repoctl adds no separate task runner.

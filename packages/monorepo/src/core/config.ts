@@ -10,6 +10,8 @@ export interface LoadedMonorepoConfig {
   /** Canonical absolute dependency paths with normalized separators for comparisons. */
   files: string[]
   config: MonorepoConfig
+  /** Original C12 layers before default merging removes null values; not CLI output. */
+  rawLayers: MonorepoConfig[]
 }
 
 /**
@@ -54,6 +56,7 @@ async function loadConfigInternal(cwd: string, refresh = false): Promise<LoadedM
       : (configFile && fs.existsSync(configFile) ? await realpath(configFile) : null),
     files: [...new Set(files)],
     config: config ?? {},
+    rawLayers: (layers ?? []).map(layer => layer.config ?? {}),
   }
 }
 
