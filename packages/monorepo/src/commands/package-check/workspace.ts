@@ -1,4 +1,5 @@
 import type { WorkspacePackageWithJsonPath } from '../../types'
+import type { DependencyReference } from './dependencies'
 import type { PackageCheckOptions, PackageCheckResult, PackedManifest } from './types'
 import path from 'node:path'
 import { getWorkspaceData } from '../../core/workspace'
@@ -30,12 +31,17 @@ export async function selectPackages(options: PackageCheckOptions, timeout: numb
   const selectedDirs = new Set(selected.map(pkg => pkg.rootDir))
   const closure = new Map(selected.map(pkg => [pkg.rootDir, pkg]))
   const byName = new Map(packages.filter(pkg => pkg.manifest.name).map(pkg => [pkg.manifest.name!, pkg]))
+  // Workspace discovery uses portable slashes; local references use native paths.
+  const byDirectory = new Map(packages.map(pkg => [path.resolve(pkg.rootDir), pkg]))
+  const resolveDependency = (reference: DependencyReference) => reference.directory
+    ? byDirectory.get(path.resolve(reference.directory))
+    : byName.get(reference.name)
   function visit(pkg: WorkspacePackageWithJsonPath) {
     if (pkg.manifest.private && !options.includePrivate) {
       return
     }
     for (const reference of dependencyReferences(pkg.manifest as PackedManifest, pkg.rootDir)) {
-      const dependency = reference.directory ? packages.find(candidate => candidate.rootDir === reference.directory) : byName.get(reference.name)
+      const dependency = resolveDependency(reference)
       if (dependency && !closure.has(dependency.rootDir)) {
         closure.set(dependency.rootDir, dependency)
         visit(dependency)
@@ -51,7 +57,7 @@ export async function selectPackages(options: PackageCheckOptions, timeout: numb
     }
     buildClosure.set(pkg.rootDir, pkg)
     for (const reference of dependencyReferences(pkg.manifest as PackedManifest, pkg.rootDir, true)) {
-      const dependency = reference.directory ? packages.find(candidate => candidate.rootDir === reference.directory) : byName.get(reference.name)
+      const dependency = resolveDependency(reference)
       if (dependency) {
         visitBuild(dependency)
       }
@@ -70,7 +76,7 @@ export async function selectPackages(options: PackageCheckOptions, timeout: numb
   }))
   for (const [index, pkg] of candidates.entries()) {
     for (const reference of dependencyReferences(pkg.manifest as PackedManifest, pkg.rootDir)) {
-      const local = reference.directory ? packages.find(candidate => candidate.rootDir === reference.directory) : byName.get(reference.name)
+      const local = resolveDependency(reference)
       if (!local && (reference.protocol === 'workspace' || reference.protocol === 'link')) {
         results[index]!.diagnostics.push({ source: 'repoctl', code: 'UNRESOLVED_WORKSPACE_DEPENDENCY', severity: 'error', file: `package.json:${reference.field}.${reference.alias}`, message: `Cannot resolve local dependency ${reference.alias} (${reference.range}) to a workspace package.` })
       }

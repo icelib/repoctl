@@ -50,13 +50,13 @@ it('does not pack stale artifacts when a build in a bracketed directory fails', 
   await expect(access(path.join(directory, 'PACK_RAN'))).rejects.toThrow()
 }, 60_000)
 
-it('delegates private development build prerequisites and their ordering to pnpm', async () => {
+it.each(['workspace:*', 'workspace:../build-tool', 'file:../build-tool', 'link:../build-tool'])('delegates private development build prerequisites (%s) and their ordering to pnpm', async (spec) => {
   const cwd = await workspace()
   const prerequisite = await addPackage(cwd, 'build-tool', { name: 'fixture-build-tool', private: true }, {})
   const selected = await addPackage(cwd, 'library', {
     name: 'fixture-library',
     exports: './dist/index.mjs',
-    devDependencies: { 'fixture-build-tool': 'workspace:*' },
+    devDependencies: { 'fixture-build-tool': spec },
   }, { 'dist/index.mjs': 'export const value = 1' })
   const buildFile = path.join(selected, 'build.cjs')
   await writeFile(buildFile, `require('node:fs').accessSync('../build-tool/built-marker');\n${await readFile(buildFile, 'utf8')}`)
