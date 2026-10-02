@@ -97,7 +97,7 @@ describe('upgradeMonorepo overwrite logic', () => {
     await fs.remove(root)
   })
 
-  it.skipIf(CI.isCI)('prompts when contents differ and rewrites selected files', async () => {
+  it.skipIf(CI.isCI)('preserves local-only edits to a baselined file without asking to overwrite them', async () => {
     const { root, outDir } = await createTempOutDir('monorepo-upgrade-rewrite-')
     const targetFile = path.join(outDir, 'Dockerfile')
     const checkboxMock = vi.fn(async (options: { choices?: Array<{ value: string }> }) => {
@@ -114,8 +114,6 @@ describe('upgradeMonorepo overwrite logic', () => {
         checkbox: checkboxMock,
       }
     })
-    const { assetsDir } = await import('@/constants')
-    const reference = await fs.readFile(path.join(assetsDir, 'Dockerfile'), 'utf8')
     const { upgradeMonorepo } = await import('@/commands/upgrade')
 
     await upgradeMonorepo({ outDir })
@@ -129,12 +127,12 @@ describe('upgradeMonorepo overwrite logic', () => {
       value: true,
     })
     await upgradeMonorepo({ outDir })
-    expect(checkboxMock).toHaveBeenCalledTimes(1)
+    expect(checkboxMock).not.toHaveBeenCalled()
     const rewritten = await fs.readFile(targetFile, 'utf8')
-    expect(rewritten).toBe(reference)
+    expect(rewritten).toBe('# drifted\n')
 
     await upgradeMonorepo({ outDir })
-    expect(checkboxMock).toHaveBeenCalledTimes(1)
+    expect(checkboxMock).not.toHaveBeenCalled()
 
     await fs.remove(root)
   })
