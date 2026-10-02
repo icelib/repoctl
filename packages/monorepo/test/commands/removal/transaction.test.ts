@@ -1,17 +1,18 @@
-import { access, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
+import { access, lstat, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'pathe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { applyWorkspaceRemovalPlan } from '@/commands/workspace/remove/apply'
 import { planWorkspaceRemoval } from '@/commands/workspace/remove/plan'
 import { fixture, snapshot } from './fixture'
 
-const hooks = vi.hoisted(() => ({ rename: vi.fn(), rm: vi.fn() }))
+const hooks = vi.hoisted(() => ({ rename: vi.fn(), rm: vi.fn(), unlink: vi.fn() }))
 vi.mock('node:fs/promises', async original => ({ ...await original<typeof import('node:fs/promises')>(), ...hooks }))
 const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
 
 function resetHooks() {
   hooks.rename.mockReset().mockImplementation(actual.rename)
   hooks.rm.mockReset().mockImplementation(actual.rm)
+  hooks.unlink.mockReset().mockImplementation(actual.unlink)
 }
 beforeEach(resetHooks)
 afterEach(resetHooks)
@@ -141,6 +142,22 @@ describe('workspace removal transaction recovery', () => {
     }
     expect(await readFile(path.join(h.workspace, 'packages/old/index.js'), 'utf8')).toBe('concurrent target edit')
     await expect(access(path.join(h.workspace, '.repoctl/workspace-remove.lock'))).rejects.toThrow()
+  })
+
+  it('preserves a replacement lock directory after releasing its own lock', async () => {
+    const h = await withConsumers()
+    const plan = await planWorkspaceRemoval(h.workspace, { target: 'old', removeReferences: true })
+    const directory = path.join(h.workspace, '.repoctl')
+    hooks.unlink.mockImplementation(async (filename: string) => {
+      await actual.unlink(filename)
+      if (filename === path.join(directory, 'workspace-remove.lock')) {
+        await actual.rename(directory, `${directory}.retained`)
+        await mkdir(directory)
+      }
+    })
+    expect(await applyWorkspaceRemovalPlan(h.workspace, plan)).toMatchObject({ status: 'applied' })
+    expect((await lstat(directory)).isDirectory()).toBe(true)
+    expect((await lstat(`${directory}.retained`)).isDirectory()).toBe(true)
   })
 
   it('reports applied with cleanupPending when only post-commit quarantine cleanup fails', async () => {
