@@ -6,6 +6,7 @@ import { mockProgram } from './helpers'
 
 afterEach(async () => {
   await vi.resetModules()
+  vi.restoreAllMocks()
   vi.resetAllMocks()
 })
 
@@ -44,9 +45,11 @@ describe('commander program doctor output', () => {
     process.exitCode = undefined
 
     const { default: program } = await import('@/cli/program')
+    const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
     await program.parseAsync(['node', 'repo', 'doctor', '--json'])
 
-    expect(logMock).toHaveBeenCalledWith(expect.stringContaining('"summary"'))
+    expect(JSON.parse(String(stdout.mock.calls[0]?.[0]))).toMatchObject({ summary: { fail: 1 } })
+    expect(logMock).not.toHaveBeenCalled()
     expect(errorMock).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
 
