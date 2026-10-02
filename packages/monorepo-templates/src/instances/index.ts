@@ -1,0 +1,8 @@
+export { createTemplateInstanceTarget, listTemplateInstances, prepareGeneratedTemplateInstance, rebuildTemplateInstanceBaseline, recordGeneratedTemplateInstance, relocateTemplateInstance, templateInstanceId } from './operations'
+export { instanceRelativePath, safeInstancePath, templateBaselineDirectory, templateRegistryPath } from './paths'
+export { generationParameters, isExactTemplateVersion } from './schema'
+export { captureTemplateSnapshot, compareTemplateSnapshots, snapshotDigest, writeTemplateSnapshot } from './snapshot'
+export { prepareTemplateInstanceSource, readTemplatePackageVersion } from './source'
+export { canVerifyTemplateInstance, loadTemplateBaseline, loadTemplateInstanceRegistry, registerTemplateInstances } from './store'
+export type { GeneratedTemplateInstanceOptions, PreparedTemplateSource, TemplateFileDifference, TemplateGenerationParameters, TemplateGenerationProfile, TemplateInstance, TemplateInstanceBaseline, TemplateInstanceDraft, TemplateInstanceInfo, TemplateInstanceRegistry, TemplateInstanceSource, TemplateSnapshot, TemplateSnapshotFile } from './types'
+export { recordWorkspaceTemplateInstances } from './workspace'

@@ -158,3 +158,35 @@ The check validates duplicate sources and targets, existing source directories, 
 - [Adopt an existing workspace](/tasks/adopt-existing)
 - [Add checks to CI](/tasks/ci)
 - [Configuration](./config.md)
+
+## Instance origins and historical association
+
+Successful `repo new` and `create-repoctl` runs register each generated instance in `.repoctl/template-instances.json`. Keep this file and `.repoctl/template-baselines/` in version control. Records contain the stable template key, actual template package version, source digest, generation profile, and only the supported `packageName` / `renameJson` inputs. Local custom sources use immutable content digests without claiming a published upstream version. Root managed assets have separate ownership and are not registered as project instances.
+
+```sh
+repo templates instances --json
+repo templates instances packages/shared-utils --json
+```
+
+An available baseline has two layers: the original delivered template and the output after repoctl transformations. Content-addressed snapshots preserve file bytes, executable flags, and empty directories, permitting offline reconstruction even after the old package is unavailable. Generated caches and dependencies are excluded using the template copy rules. Snapshots are template data, not executable migration scripts. Git metadata is captured only as part of a newly generated output; historical linking does not infer old Git identity from the current machine.
+
+For an existing project, select its historical template package version explicitly. `--source-dir` is an already extracted `@icebreakers/monorepo-templates` package directory, including its `package.json` and `templates/` directory. The package name and exact version are checked; no historical JavaScript or lifecycle scripts run, and links escaping the package are rejected. The installed package is usable when its exact version matches; retained baselines also support repeated offline associations.
+
+```sh
+repo templates link packages/shared-utils --template tsdown --source-version 2.1.0 --source-dir ../historical-templates --package-name shared-utils --json
+# After inspecting the added, modified and deleted paths:
+repo templates link packages/shared-utils --template tsdown --source-version 2.1.0 --source-dir ../historical-templates --package-name shared-utils --apply --json
+```
+
+The default `repo-new-v1` profile rewrites package name/version and workspace-relative configuration. Use `--rename-json` for historical `package.mock.json` output. Projects originally copied by `create-repoctl` use `--profile workspace-copy-v1`, which preserves template package names and does not accept rewrite parameters. Linking saves metadata and template-derived snapshots only; business files are never used as the historical baseline or rewritten.
+
+If the exact source cannot be recovered, the preview reports `unverified` and explains that reliable upgrades and upstream comparison are unavailable. `--unverified --apply` explicitly records that limitation. Floating tags such as `latest`, version ranges, conflicting registrations, and stale API plans are rejected. Querying and previewing do not create a registry. Repeated identical association preserves existing metadata without meaningless diffs. An unverified association can later be explicitly linked again with its exact source; the preview reports `verify` and shows differences before the baseline is recorded.
+
+```sh
+repo templates rebuild-baseline packages/shared-utils --destination ../isolated-rendered-baseline
+repo templates rebuild-baseline packages/shared-utils --destination ../isolated-original-template --original
+```
+
+The destination must not exist. Missing or corrupted retained snapshots are reported as `unavailable`, never as healthy. Deleted or renamed instance paths appear as `missing`; creation refuses to reuse their registered paths. `repo templates relocate <instance-id> <new-relative-path>` previews an explicit path association; `--apply` updates metadata only after the old path is missing and the destination exactly matches the retained rendered baseline. A changed destination cannot be automatically proven to be the same instance and is rejected.
+
+Metadata writes use a lock and atomic registry replacement. Failed registration never reports completed creation; generated files remain at the concrete recovery path in the error so they can be inspected and explicitly associated. A stale lock identifies its path: confirm that its writer has stopped before removing it. Failed metadata commits remove their temporary snapshots and leave the prior registry intact.

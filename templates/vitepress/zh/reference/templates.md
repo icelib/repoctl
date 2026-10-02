@@ -189,3 +189,35 @@ repo templates --check --json
 - [把校验加入 CI](/zh/tasks/ci)
 - [配置文件](./config.md)
 - [模板资产治理](/zh/reference/template-assets)
+
+## 实例来源登记与历史关联
+
+`repo new` 和 `create-repoctl` 成功后会把每个生成实例登记到 `.repoctl/template-instances.json`。请把该文件与 `.repoctl/template-baselines/` 一起纳入版本控制。记录包含稳定模板标识、实际模板包版本、源内容摘要、生成配置，以及白名单内的 `packageName` / `renameJson` 参数。自定义本地来源使用不可变内容摘要，不会声称拥有已发布的上游版本。根工程受管资产有独立所有权，不会登记为项目实例。
+
+```sh
+repo templates instances --json
+repo templates instances packages/shared-utils --json
+```
+
+可用基线分为两层：原始分发模板，以及经过 repoctl 处理后的生成输出。快照按内容摘要保存文件字节、可执行标记与空目录，即使旧包不再可用，也能离线重建。生成缓存与依赖目录按模板复制规则排除。快照是数据，不会作为迁移脚本执行。Git 元数据仅随新生成文件的初始输出保存；历史关联不会根据当前机器推断旧项目的 Git 身份。
+
+关联存量项目时必须显式指定历史模板包版本。`--source-dir` 指向已解压的 `@icebreakers/monorepo-templates` 包目录，需包含 `package.json` 和 `templates/`。命令核对包名与精确版本，不执行历史 JavaScript 或安装脚本，并拒绝不安全链接与路径逃逸。已安装包的版本相符时可直接使用；已经登记的可靠基线也支持离线重复关联。
+
+```sh
+repo templates link packages/shared-utils --template tsdown --source-version 2.1.0 --source-dir ../historical-templates --package-name shared-utils --json
+# 核对新增、修改和删除的文件路径后：
+repo templates link packages/shared-utils --template tsdown --source-version 2.1.0 --source-dir ../historical-templates --package-name shared-utils --apply --json
+```
+
+默认的 `repo-new-v1` 配置会改写包名、版本及相对根配置引用。历史输出为 `package.mock.json` 时加上 `--rename-json`。此前由 `create-repoctl` 直接复制的项目应选择 `--profile workspace-copy-v1`；它保留模板包名，不接受包信息改写参数。关联仅保存元数据与从模板重建的快照，不会把现有业务文件冒充历史基线，也不会改写业务文件。
+
+无法恢复精确来源时，预览会报告 `unverified`，并说明不能可靠升级或比较上游版本。只有显式传入 `--unverified --apply` 才会登记这种关联。浮动标签（如 `latest`）、版本范围、冲突登记和过期 API 计划都会被拒绝。查询和预览不会创建登记文件；重复相同关联也不会产生无意义 diff。之后取得精确来源时，可以再次显式关联原未验证记录；预览会报告 `verify` 并先展示差异，再登记可靠基线。
+
+```sh
+repo templates rebuild-baseline packages/shared-utils --destination ../isolated-rendered-baseline
+repo templates rebuild-baseline packages/shared-utils --destination ../isolated-original-template --original
+```
+
+重建目标目录必须尚不存在。快照丢失或损坏时报告 `unavailable`，不会显示为健康。实例目录被删除或改名后先报告 `missing`，新建命令会拒绝复用其已登记路径。`repo templates relocate <实例ID> <新相对路径>` 预览显式路径关联；只有旧路径已不存在、目标内容与留存的生成基线完全一致，`--apply` 才会更新登记路径。目标已发生业务修改时无法可靠证明它就是原实例，会明确拒绝自动关联。
+
+登记采用锁与原子替换。登记失败不会宣称创建已完整成功，生成文件会保留在错误消息给出的具体恢复位置，供核对后显式关联。遇到残留锁时，先确认对应写入进程已停止，再移除提示路径下的锁。元数据提交失败会清理本次临时快照并保留原登记内容。
