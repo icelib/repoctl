@@ -63,8 +63,7 @@ async function rollback(root: string, staged: StagedFile[]) {
   return recovery
 }
 
-export async function writeUpgradeTransaction(root: string, files: UpgradeFilePlan[]) {
-  const id = randomUUID()
+export async function writeUpgradeTransaction(root: string, files: UpgradeFilePlan[], id: string = randomUUID()) {
   const staged: StagedFile[] = []
   const directories: OwnedDirectory[] = []
   try {
