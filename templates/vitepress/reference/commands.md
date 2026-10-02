@@ -79,7 +79,7 @@ repo package check --filter '@scope/*' --strict
 repo package check --filter my-library --keep-temp --json
 ```
 
-Build the selected workspace packages and their dependencies in dependency order, then validate real `pnpm pack` tarballs with publint 0.3.25 and ATTW 0.18.5. Build failure prevents all packing. Private packages are reported as skipped unless `--include-private` is supplied. Repeat `--filter` to combine pnpm selectors; `--build-script` changes the default `build` script. Packages without that script are treated as already authored artifacts.
+Build the selected workspace packages and their dependencies in dependency order, then validate real `pnpm pack` tarballs with publint 0.3.25 and ATTW 0.18.5. Build failure prevents all packing. Local development prerequisites are included in the build; private prerequisites can build without being packed or checked. Private packages are reported as skipped unless `--include-private` is supplied. Repeat `--filter` to combine pnpm selectors; `--build-script` changes the default `build` script. Packages without that script are treated as already authored artifacts.
 
 Independent temporary consumers install the tarballs and their local runtime dependency tarballs, then exercise declared Node ESM/CJS entrypoints and TypeScript NodeNext consumption. TypeScript consumption uses ATTW's pinned TypeScript 5.6.1-rc. Undeclared module formats are not required. Browser-only and non-JavaScript asset exports receive manifest/type analysis rather than Node execution; JavaScript bins receive syntax checks, without invoking application commands. Installation can contact the registry, while dependency install scripts are disabled. Workspace build and pack lifecycle scripts run normally.
 

@@ -5,6 +5,13 @@ import { getWorkspaceData } from '../../core/workspace'
 import { dependencyReferences } from './dependencies'
 import { execute, failureMessage } from './process'
 
+export function packageBuildSelector(workspaceDir: string, directory: string) {
+  // pnpm treats backslashes as separators. Character classes preserve literal
+  // metacharacters; escaping a final dot avoids the ... dependency operator.
+  const literal = path.relative(workspaceDir, directory).split(path.sep).join('/').replace(/[*?[\]{}!()+@]/gu, character => `[${character}]`).replace(/\.$/u, '[.]')
+  return `./${literal}`
+}
+
 export async function selectPackages(options: PackageCheckOptions, timeout: number) {
   const { packages, workspaceDir } = await getWorkspaceData(options.cwd, { ignorePrivatePackage: false })
   let selected = packages
@@ -37,6 +44,20 @@ export async function selectPackages(options: PackageCheckOptions, timeout: numb
   }
   selected.forEach(visit)
   const candidates = [...closure.values()].sort((a, b) => a.rootDir.localeCompare(b.rootDir))
+  const buildClosure = new Map<string, WorkspacePackageWithJsonPath>()
+  function visitBuild(pkg: WorkspacePackageWithJsonPath) {
+    if (buildClosure.has(pkg.rootDir)) {
+      return
+    }
+    buildClosure.set(pkg.rootDir, pkg)
+    for (const reference of dependencyReferences(pkg.manifest as PackedManifest, pkg.rootDir, true)) {
+      const dependency = reference.directory ? packages.find(candidate => candidate.rootDir === reference.directory) : byName.get(reference.name)
+      if (dependency) {
+        visitBuild(dependency)
+      }
+    }
+  }
+  candidates.filter(pkg => options.includePrivate || !pkg.manifest.private).forEach(visitBuild)
   const results = candidates.map((pkg): PackageCheckResult => ({
     name: pkg.manifest.name ?? path.relative(workspaceDir, pkg.rootDir),
     directory: pkg.rootDir,
@@ -55,5 +76,5 @@ export async function selectPackages(options: PackageCheckOptions, timeout: numb
       }
     }
   }
-  return { workspaceDir, candidates, results }
+  return { workspaceDir, candidates, results, buildDirectories: [...buildClosure.keys()].sort() }
 }

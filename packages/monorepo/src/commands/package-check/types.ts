@@ -71,6 +71,7 @@ export interface PackedManifest {
   exports?: unknown
   bin?: string | Record<string, string>
   dependencies?: Record<string, string>
+  devDependencies?: Record<string, string>
   optionalDependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
 }

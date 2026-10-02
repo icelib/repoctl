@@ -7,7 +7,7 @@ import { analyzeTarball, packageCheckTools } from './analyze'
 import { consumeTarball } from './consumer'
 import { consumerEntries } from './entries'
 import { execute, failureMessage } from './process'
-import { selectPackages } from './workspace'
+import { packageBuildSelector, selectPackages } from './workspace'
 
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './types'
 
@@ -20,14 +20,14 @@ export async function checkPackages(options: PackageCheckOptions): Promise<Packa
   if (!Number.isFinite(timeout) || timeout <= 0 || (!options.buildScript?.trim() && options.buildScript !== undefined)) {
     throw new Error('Provide a positive timeoutMs and a nonempty buildScript.')
   }
-  const { workspaceDir, results } = await selectPackages(options, timeout)
+  const { workspaceDir, results, buildDirectories } = await selectPackages(options, timeout)
   const report: PackageCheckReport = { schemaVersion: 1, workspaceDir, status: 'passed', packages: results, retained: false, tools: { ...packageCheckTools } }
   const active = results.filter(result => result.status !== 'skipped')
   if (!active.length) {
     return report
   }
-  const selectors = active.flatMap(result => ['--filter', `./${path.relative(workspaceDir, result.directory).replaceAll('\\', '/')}...`])
-  report.build = await execute('pnpm', [...selectors, '--recursive', '--if-present', 'run', options.buildScript ?? 'build'], workspaceDir, timeout)
+  const selectors = buildDirectories.flatMap(directory => ['--filter', packageBuildSelector(workspaceDir, directory)])
+  report.build = await execute('pnpm', [...selectors, '--recursive', '--fail-if-no-match', '--if-present', 'run', options.buildScript ?? 'build'], workspaceDir, timeout)
   if (report.build.exitCode !== 0) {
     report.status = 'failed'
     for (const result of active) {

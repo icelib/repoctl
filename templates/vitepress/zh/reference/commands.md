@@ -99,7 +99,7 @@ repo package check --filter '@scope/*' --strict
 repo package check --filter my-library --keep-temp --json
 ```
 
-按依赖顺序构建选中的 workspace 包及其依赖，再使用 publint 0.3.25 和 ATTW 0.18.5 校验实际 `pnpm pack` tarball。构建失败后不再打包。private 包默认明确标记为跳过，传入 `--include-private` 可包含它们。可重复 `--filter` 合并 pnpm 选择器；`--build-script` 可替换默认 `build` 脚本，没有该脚本的包按已经准备好的发布文件处理。
+按依赖顺序构建选中的 workspace 包及其依赖，再使用 publint 0.3.25 和 ATTW 0.18.5 校验实际 `pnpm pack` tarball。构建失败后不再打包。本地开发依赖也纳入构建，private 构建依赖可以只构建、不打包或校验。private 包默认明确标记为跳过，传入 `--include-private` 可包含它们。可重复 `--filter` 合并 pnpm 选择器；`--build-script` 可替换默认 `build` 脚本，没有该脚本的包按已经准备好的发布文件处理。
 
 临时消费者独立安装 tarball 和本地运行时依赖的 tarball，执行包声明支持的 Node ESM/CJS 入口及 TypeScript NodeNext 消费检查。类型消费使用 ATTW 固定的 TypeScript 5.6.1-rc。未声明支持的模块格式不强制通过；仅供浏览器使用的入口及非 JavaScript 资源接受清单/类型分析，不执行 Node import；JavaScript bin 做语法检查，不调用应用命令。安装可能访问 registry，依赖安装脚本默认禁用；workspace 构建与 pack 生命周期脚本正常执行。
 

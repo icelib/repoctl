@@ -15,9 +15,10 @@ function namedSpec(spec: string) {
   return match ? { name: match[1]!, range: match[2]! } : undefined
 }
 
-export function dependencyReferences(manifest: PackedManifest, directory: string): DependencyReference[] {
+export function dependencyReferences(manifest: PackedManifest, directory: string, includeDev = false): DependencyReference[] {
   const references: DependencyReference[] = []
-  for (const field of ['dependencies', 'optionalDependencies', 'peerDependencies'] as const) {
+  const fields = ['dependencies', 'optionalDependencies', 'peerDependencies', ...includeDev ? ['devDependencies'] as const : []] as const
+  for (const field of fields) {
     for (const [alias, spec] of Object.entries(manifest[field] ?? {})) {
       let reference: DependencyReference = { alias, name: alias, range: spec, field, protocol: 'registry' }
       if (spec.startsWith('npm:')) {
