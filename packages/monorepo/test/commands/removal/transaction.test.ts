@@ -110,6 +110,39 @@ describe('workspace removal transaction recovery', () => {
     expect(await readFile(path.join(h.workspace, 'package.json'), 'utf8')).toBe(plan.files[0]!.before)
   })
 
+  it('rejects an identical concurrent plan until verification and rollback finish', async () => {
+    const h = await withConsumers()
+    const plan = await planWorkspaceRemoval(h.workspace, { target: 'old', removeReferences: true })
+    const paused = Promise.withResolvers<void>()
+    const resume = Promise.withResolvers<void>()
+    let recovery = ''
+    hooks.rename.mockImplementation(async (source: string, target: string) => {
+      await actual.rename(source, target)
+      if (source === path.join(h.workspace, 'packages/old')) {
+        recovery = target
+      }
+      if (source.endsWith('.tmp') && target === path.join(h.workspace, 'packages/keep/package.json')) {
+        paused.resolve()
+        await resume.promise
+      }
+    })
+    const first = applyWorkspaceRemovalPlan(h.workspace, plan).catch((error: Error) => error)
+    await paused.promise
+    try {
+      await expect(applyWorkspaceRemovalPlan(h.workspace, plan)).rejects.toThrow('locked')
+      await writeFile(path.join(recovery, 'index.js'), 'concurrent target edit')
+    }
+    finally {
+      resume.resolve()
+    }
+    expect(await first).toHaveProperty('message', expect.stringContaining('before the removal committed'))
+    for (const file of plan.files) {
+      expect(await readFile(path.join(h.workspace, file.path), 'utf8')).toBe(file.before)
+    }
+    expect(await readFile(path.join(h.workspace, 'packages/old/index.js'), 'utf8')).toBe('concurrent target edit')
+    await expect(access(path.join(h.workspace, '.repoctl/workspace-remove.lock'))).rejects.toThrow()
+  })
+
   it('reports applied with cleanupPending when only post-commit quarantine cleanup fails', async () => {
     const h = await withConsumers()
     const plan = await planWorkspaceRemoval(h.workspace, { target: 'old', removeReferences: true })

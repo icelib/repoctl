@@ -24,6 +24,8 @@ The review scan inspects Git-tracked text files outside the selected package, us
 
 Application regenerates the plan and rejects drift in manifests, workspace membership, Git HEAD, reviewed text, directory entries, file content, modification times, or link destinations. JSON plans include absolute paths and manifest contents; review them locally before sharing.
 
+The workspace operation lock `.repoctl/workspace-remove.lock` covers replay checks, validation, writing, verification, rollback and cleanup. An overlapping removal fails as locked, including an identical plan. After a crash, verify that no writer is active and recover retained originals before manually removing the lock.
+
 The transaction stages manifest replacements and moves the selected directory into a unique `node_modules/.cache/repoctl/removals/` operation directory. Recovery ancestors must be real directories. A cross-device move fails safely; no copy/delete fallback is attempted. Before commit, failures restore changed manifests and the directory when doing so is safe. Concurrent edits and a newly created target directory are preserved; the error reports retained original paths for manual recovery. After commit, cleanup failure returns `status: "applied"` with `cleanupPending` paths instead of claiming rollback. Inspect those exact paths before removing them; do not clear the shared cache indiscriminately.
 
 The lockfile is never edited by this command. Finish explicitly with the repository's declared pnpm version:
