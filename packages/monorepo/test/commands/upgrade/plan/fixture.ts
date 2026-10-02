@@ -27,6 +27,9 @@ export async function fixture() {
   await write('unrelated.txt', 'keep exactly\n')
   const git = (...args: string[]) => spawnSync('git', args, { cwd, encoding: 'utf8' })
   git('init', '-q')
+  // Keep background Git maintenance from racing the read-only filesystem assertions.
+  git('config', 'maintenance.auto', 'false')
+  git('config', 'gc.auto', '0')
   git('config', 'user.name', 'Fixture')
   git('config', 'user.email', 'fixture@example.invalid')
   git('config', 'core.hooksPath', path.join(root, 'no-hooks'))
