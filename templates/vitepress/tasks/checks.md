@@ -82,3 +82,19 @@ JSON schema version `1` records the mode, directory, start/end timestamps, durat
 Reports capture root script or verification stage results, not the internals of Turbo or lint-staged. In staged mode, configured typechecks run inside pre-commit; the separate staged-typecheck stage has no explicit file arguments and is reported as skipped. Reports do not collect environment values or child output. `--redact` replaces workspace and home path prefixes, including those in command arguments.
 
 The programmatic `runCheckWithReport({ cwd, full: true, signal })` API returns the same report without exiting the caller. An optional `AbortSignal` cancels the active command.
+
+## Find available workspace tasks
+
+`repo workspace tasks` lists actual package scripts, including root tasks and private applications. A package without scripts is shown explicitly. Search text matches names, paths, descriptions and task names literally; `--script` requires an exact script name. Neither discovery nor location runs scripts or writes files.
+
+```bash
+repo workspace tasks client
+repo workspace tasks --script test --json
+repo workspace tasks --no-private --no-root
+repo workspace locate @scope/client
+repo workspace locate client --json
+```
+
+`locate` accepts an absolute directory path (including directory symlinks) as an exact query; an absolute path that is not a workspace root never falls back to text search. Other queries prefer an exact package name or workspace-relative path, then search names, paths and descriptions. Relative paths and `.` refer to the workspace root even when invoked from a child package. A unique match prints only its absolute path. Missing or ambiguous matches exit with code 1; ambiguity lists candidates instead of choosing one. `--interactive` enables a choice only in a TTY, with the prompt on stderr; JSON and CI always report candidates. Quote the resulting path when passing it to a shell command.
+
+The public `getWorkspaceTaskCatalog(cwd, options)` and `locateWorkspace(cwd, query)` APIs return `schemaVersion: 1` data. The catalog includes stable exclusion reasons and each task's existing script plus a pnpm executable/argument array (`--dir`, directory, `run`, task). Callers may explicitly execute that array to preserve pnpm and Turbo behavior; searching never launches it.
