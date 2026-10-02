@@ -143,7 +143,8 @@ export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseSta
 export { createReleasePlan } from './release/plan'
 
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
-export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
+export * from './template-instances'
 
+export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
 export type { PlaywrightInteraction, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
