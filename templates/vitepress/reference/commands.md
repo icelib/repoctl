@@ -175,3 +175,7 @@ repo skills sync --codex
 - [Add checks to CI](/tasks/ci)
 - [Troubleshoot](/tasks/troubleshooting)
 - [Command Aliases](./aliases.md)
+
+## `repo tooling references`
+
+`check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
