@@ -19,7 +19,8 @@
         "tsconfig*.json",
         "*.config.{js,ts,mjs,mts}",
         "public/**",
-        "nimbus.json"
+        "nimbus.json",
+        "index.html"
       ],
       "outputs": [
         "dist/**",

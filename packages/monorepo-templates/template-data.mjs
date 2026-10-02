@@ -24,6 +24,14 @@ export const templateChoices = [
     description: 'Vue 3 + Hono 的前后端一体应用模板',
   },
   {
+    key: 'react-vite',
+    label: 'React Vite 应用',
+    source: 'react-vite',
+    target: 'apps/react-vite',
+    category: 'app',
+    description: 'React + Vite + TypeScript 单页应用，包含交互测试与共享工程规范',
+  },
+  {
     key: 'hono-server',
     label: 'hono 模板',
     source: 'server',

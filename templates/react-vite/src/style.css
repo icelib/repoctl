@@ -1,0 +1,95 @@
+:root {
+  font-family: system-ui, sans-serif;
+  font-synthesis: none;
+  color: #203834;
+  background: #f5f4ee;
+  text-rendering: optimizelegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+}
+
+main {
+  max-width: 760px;
+  padding: clamp(32px, 10vw, 96px) 24px;
+  margin: 0 auto;
+}
+
+.eyebrow,
+.footnote {
+  font-size: 14px;
+  color: #53655f;
+}
+
+h1 {
+  max-width: 600px;
+  margin: 24px 0;
+  font-size: clamp(40px, 8vw, 72px);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+}
+
+.intro {
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.counter {
+  padding: 28px;
+  margin: 40px 0 28px;
+  background: #fffefa;
+  border: 1px solid #c9d3ca;
+  border-radius: 12px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+output {
+  display: block;
+  margin: 16px 0;
+  font-size: 64px;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+button {
+  min-height: 44px;
+  padding: 10px 20px;
+  font: inherit;
+  color: #fff;
+  cursor: pointer;
+  background: #245e50;
+  border: 1px solid #245e50;
+  border-radius: 6px;
+}
+
+button.secondary {
+  color: #245e50;
+  background: transparent;
+}
+
+button:focus-visible {
+  outline: 3px solid #ba5a20;
+  outline-offset: 4px;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

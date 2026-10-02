@@ -3,8 +3,8 @@ import { mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { createWorkspace, json, run } from '../packaged-template/workspace.mjs'
 import { checkCache, checkDrafts, checkOutput, checkValidation } from './output.mjs'
-import { createWorkspace, json, run } from './workspace.mjs'
 
 const tempRoot = mkdtempSync(path.join(tmpdir(), 'repoctl-packaged-nimbus-'))
 console.log(`Nimbus regression workspace: ${tempRoot}`)

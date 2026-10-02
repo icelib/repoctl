@@ -66,7 +66,7 @@ pnpm exec repo init
 pnpm exec repo doctor
 ```
 
-模板 key：`vue-hono`（Vue/全栈）、`hono-server`（API）、`tsdown`（TypeScript 库）、`vue-lib`（Vue 组件）、`nimbus`（默认文档）、`vitepress`（Vue 文档）、`cli`。不传 `--templates` 则创建空工作区，再用 `pnpm exec repo new <name> --template <key>`。
+模板 key：`vue-hono`（Vue/全栈）、`react-vite`（React 单页应用）、`hono-server`（API）、`tsdown`（TypeScript 库）、`vue-lib`（Vue 组件）、`nimbus`（默认文档）、`vitepress`（Vue 文档）、`cli`。不传 `--templates` 则创建空工作区，再用 `pnpm exec repo new <name> --template <key>`。
 
 ## 国际化
 

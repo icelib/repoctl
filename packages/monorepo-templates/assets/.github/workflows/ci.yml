@@ -48,12 +48,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check tracked build artifacts
-        run: pnpm check:no-tracked-build-artifacts
-
-      - name: Check CI/CD workflow contracts
-        run: pnpm check:workflows
-
       - name: Security Audit
         run: pnpm audit --audit-level=moderate
         continue-on-error: true

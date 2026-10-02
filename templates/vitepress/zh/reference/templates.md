@@ -6,15 +6,16 @@ repoctl 的模板由 `@icebreakers/monorepo-templates` 维护。CLI、脚手架�
 
 ## 内置模板
 
-| Key           | Category | 默认目录           | 适合场景                         |
-| ------------- | -------- | ------------------ | -------------------------------- |
-| `tsdown`      | library  | `packages/tsdown`  | TypeScript 库包                  |
-| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 组件库                     |
-| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono 前后端一体应用      |
-| `hono-server` | service  | `apps/server`      | Hono API 服务                    |
-| `vitepress`   | docs     | `apps/website`     | VitePress 文档站                 |
-| `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro，默认中英双语文档 |
-| `cli`         | tool     | `apps/cli`         | TypeScript 命令行工具            |
+| Key           | Category | 默认目录           | 适合场景                           |
+| ------------- | -------- | ------------------ | ---------------------------------- |
+| `tsdown`      | library  | `packages/tsdown`  | TypeScript 库包                    |
+| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 组件库                       |
+| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono 前后端一体应用        |
+| `react-vite`  | app      | `apps/react-vite`  | React + Vite + TypeScript 单页应用 |
+| `hono-server` | service  | `apps/server`      | Hono API 服务                      |
+| `vitepress`   | docs     | `apps/website`     | VitePress 文档站                   |
+| `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro，默认中英双语文档   |
+| `cli`         | tool     | `apps/cli`         | TypeScript 命令行工具              |
 
 Nimbus 是新建文档站点（`Docs Site`）的默认模板，提供英文 `/`、中文 `/zh/`、搜索和 AI 文档入口。VitePress 仍可显式选择，两者分别生成到 `apps/docs` 和 `apps/website`，可以同时使用。通用创建命令仍默认使用 `tsdown`；项目名称 `docs` 不会隐式改变模板。非交互调用请显式指定 `--template nimbus`。
 
@@ -71,6 +72,7 @@ repo new ui --template vue-lib
 
 ```bash
 repo new web --template vue-hono
+repo new dashboard --template react-vite
 repo new api --template hono-server
 ```
 
@@ -79,6 +81,24 @@ repo new api --template hono-server
 - 运行时环境变量和部署平台约束。
 - `dev`、`build`、`typecheck` 脚本是否接入根任务。
 - 是否需要在 CI 里加入 E2E 或集成测试。
+
+### React 应用
+
+```bash
+pnpm create repoctl@latest my-workspace -- --yes --templates react-vite,tsdown
+cd my-workspace
+corepack enable
+pnpm install
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm --dir apps/react-vite preview
+```
+
+已有工作区可运行 `repo new dashboard --template react-vite`。交互式 **Web App** 会提供 React + Vite 与 Vue + Hono 选择。目标目录已存在时创建会失败，不会覆盖；先传 `--dry-run` 可检查创建计划。
+
+模板包含支持键盘操作的计数器、React Testing Library/Vitest 测试、共享 ESLint/Stylelint 配置和 TypeScript 项目引用，不默认绑定路由、状态管理、后端或 CSS 框架。消费本地库时将其声明为 `workspace:*` 依赖，通过包名导入，再由根目录 `pnpm build` 按依赖顺序构建其 `dist` 公开产物；不要直接导入库源码路径。`preview` 使用正式构建产物。
 
 ### Cloudflare Worker 类型
 

@@ -18,7 +18,7 @@ npm create repoctl@latest my-app -- --yes --templates vue-hono
 npx create-repoctl@latest my-app --yes --templates vue-hono
 ```
 
-模板 key：`vue-hono`、`hono-server`、`tsdown`、`vue-lib`、`nimbus`、`vitepress`、`cli`。创建完成后运行：
+模板 key：`vue-hono`、`react-vite`、`hono-server`、`tsdown`、`vue-lib`、`nimbus`、`vitepress`、`cli`。创建完成后运行：
 
 ```bash
 cd <project>

@@ -1,97 +1,8 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'pathe'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-
-const inputMock = vi.fn(async () => 'demo')
-const selectMock = vi.fn(async () => 'library')
-const createNewProjectMock = vi.fn(async () => {})
-const resolveCreateNewProjectPlanMock = vi.fn(async () => ({
-  cwd: '/repo',
-  requestedTemplate: 'tsdown',
-  template: 'tsdown',
-  usedFallback: false,
-  sourceDir: '/repo/templates/tsdown',
-  targetName: 'packages/demo',
-  targetDir: '/repo/packages/demo',
-  targetExists: false,
-  renameJson: false,
-  hasPackageJson: true,
-  packageJsonFileName: 'package.json',
-  packageName: 'demo',
-  templateDefinition: { source: 'tsdown', target: 'packages/tsdown' },
-}))
-const getCreateChoicesMock = vi.fn(() => [])
-const resolveCommandConfigMock = vi.fn(async () => ({}))
-const logMock = vi.fn()
-const infoMock = vi.fn()
-const errorMock = vi.fn()
-const successMock = vi.fn()
-
-function setTty(value: boolean) {
-  Object.defineProperty(process.stdin, 'isTTY', {
-    configurable: true,
-    value,
-  })
-  Object.defineProperty(process.stdout, 'isTTY', {
-    configurable: true,
-    value,
-  })
-}
-
-beforeEach(async () => {
-  await vi.resetModules()
-  inputMock.mockReset()
-  selectMock.mockReset()
-  createNewProjectMock.mockReset()
-  resolveCreateNewProjectPlanMock.mockClear()
-  getCreateChoicesMock.mockReset()
-  resolveCommandConfigMock.mockReset()
-  logMock.mockClear()
-  infoMock.mockClear()
-  errorMock.mockClear()
-  successMock.mockClear()
-
-  inputMock.mockResolvedValue('demo')
-  getCreateChoicesMock.mockReturnValue([])
-  resolveCommandConfigMock.mockResolvedValue({})
-
-  vi.doMock('@icebreakers/monorepo-templates', async () => {
-    const actual = await vi.importActual<typeof import('@icebreakers/monorepo-templates')>('@icebreakers/monorepo-templates')
-    return {
-      ...actual,
-      input: inputMock,
-      select: selectMock,
-    }
-  })
-
-  vi.doMock('@/commands', async () => {
-    const actual = await vi.importActual<typeof import('@/commands')>('@/commands')
-    return {
-      ...actual,
-      createNewProject: createNewProjectMock,
-      getCreateChoices: getCreateChoicesMock,
-      resolveCreateNewProjectPlan: resolveCreateNewProjectPlanMock,
-    }
-  })
-
-  vi.doMock('@/core/config', () => ({
-    resolveCommandConfig: resolveCommandConfigMock,
-  }))
-
-  vi.doMock('@/core/logger', () => ({
-    logger: {
-      log: logMock,
-      info: infoMock,
-      error: errorMock,
-      success: successMock,
-    },
-  }))
-})
-
-afterEach(() => {
-  vi.clearAllMocks()
-})
+import { describe, expect, it } from 'vitest'
+import { createNewProjectMock, errorMock, infoMock, inputMock, logMock, resolveCommandConfigMock, resolveCreateNewProjectPlanMock, selectMock, setTty, successMock } from './create-flow/fixtures'
 
 describe('runCreateFlow', () => {
   it('uses intent flow for library creation by default', async () => {
@@ -112,7 +23,7 @@ describe('runCreateFlow', () => {
 
   it('maps web-app intent to apps directory', async () => {
     setTty(true)
-    selectMock.mockResolvedValueOnce('web-app')
+    selectMock.mockResolvedValueOnce('web-app').mockResolvedValueOnce('vue-hono')
 
     const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
     await runCreateFlow('/repo', 'portal')
@@ -122,6 +33,15 @@ describe('runCreateFlow', () => {
       cwd: '/repo',
       type: 'vue-hono',
     })
+  })
+
+  it('selects React from the web-app intent without changing the Vue default', async () => {
+    setTty(true)
+    selectMock.mockResolvedValueOnce('web-app').mockResolvedValueOnce('react-vite')
+    const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
+    await runCreateFlow('/repo', 'portal')
+    expect(createNewProjectMock).toHaveBeenCalledWith({ name: 'apps/portal', cwd: '/repo', type: 'react-vite' })
+    expect(selectMock).toHaveBeenLastCalledWith(expect.objectContaining({ default: 'vue-hono' }))
   })
 
   it('keeps explicit nested paths unchanged in intent flow', async () => {

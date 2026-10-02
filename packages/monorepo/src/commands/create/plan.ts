@@ -15,6 +15,7 @@ export const templateMap = {
   'tsdown': { source: 'tsdown', target: 'packages/tsdown' },
   'vue-lib': { source: 'vue-lib', target: 'packages/vue-lib' },
   'hono-server': { source: 'server', target: 'apps/server' },
+  'react-vite': { source: 'react-vite', target: 'apps/react-vite' },
   'vue-hono': { source: 'client', target: 'apps/client' },
   'vitepress': { source: 'vitepress', target: 'apps/website' },
   'cli': { source: 'cli', target: 'apps/cli' },

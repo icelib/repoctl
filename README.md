@@ -67,7 +67,7 @@ pnpm exec repo init
 pnpm exec repo doctor
 ```
 
-Template keys: `vue-hono` (Vue/full-stack), `hono-server` (API), `tsdown` (TypeScript library), `vue-lib` (Vue components), `nimbus` (default docs), `vitepress` (Vue docs), `cli`. Omit `--templates` for an empty workspace, then `pnpm exec repo new <name> --template <key>`.
+Template keys: `vue-hono` (Vue/full-stack), `react-vite` (React SPA), `hono-server` (API), `tsdown` (TypeScript library), `vue-lib` (Vue components), `nimbus` (default docs), `vitepress` (Vue docs), `cli`. Omit `--templates` for an empty workspace, then `pnpm exec repo new <name> --template <key>`.
 
 ## Internationalization
 

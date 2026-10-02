@@ -25,7 +25,7 @@ export const createIntentChoices: CreateIntentChoice[] = [
   {
     value: 'web-app',
     name: 'Web App',
-    description: localize('Create a full-stack web application', '创建一个前后端一体的 Web 应用'),
+    description: localize('Create a Vue or React web application', '创建 Vue 或 React Web 应用'),
     defaultTemplate: 'vue-hono',
   },
   {
