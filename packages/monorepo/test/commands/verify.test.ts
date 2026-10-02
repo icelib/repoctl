@@ -15,7 +15,7 @@ describe('verify commands', () => {
     const execFileMock = vi.fn((command: string, args: string[]) => {
       expect(command).toBe('git')
       if (args[0] === 'diff') {
-        return 'packages/monorepo/src/index.ts\npackage.json\n'
+        return 'packages/monorepo/src/index.ts\0package.json\0'
       }
       throw new Error(`unexpected git args: ${args.join(' ')}`)
     })
@@ -44,7 +44,7 @@ describe('verify commands', () => {
     const execFileMock = vi.fn((command: string, args: string[]) => {
       expect(command).toBe('git')
       if (args[0] === 'diff') {
-        return 'packages/monorepo/src/index.ts\n'
+        return 'packages/monorepo/src/index.ts\0'
       }
       throw new Error(`unexpected git args: ${args.join(' ')}`)
     })

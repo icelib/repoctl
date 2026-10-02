@@ -1,5 +1,7 @@
-import type { spawnSync, SpawnSyncOptions } from 'node:child_process'
+import type { SpawnSyncOptions } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import process from 'node:process'
+import crossSpawn from 'cross-spawn'
 
 export function runPnpmCommand(
   cwd: string,
@@ -12,7 +14,9 @@ export function runPnpmCommand(
     cwd,
     stdio: 'inherit',
   }
-  const result = spawn('pnpm', args, options)
+  // pnpm can be a .cmd/Corepack shim on Windows. Keep injected runners intact.
+  const run = spawn === spawnSync ? crossSpawn.sync : spawn
+  const result = run('pnpm', args, options)
   if (result.status !== 0) {
     process.exit(result.status ?? 1)
   }

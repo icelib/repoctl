@@ -81,6 +81,12 @@ repo verify staged-typecheck packages/ui/src/button.ts templates/client/src/App.
 | 变更范围任务 | 按 workspace 改动范围补跑 `build`、`test`、`tsd` |
 | 失败处理     | 任一任务失败时停止并返回失败状态                 |
 
+工作区默认从 `pnpm-workspace.yaml` 动态发现，包含 private 应用，遵循排除 glob；嵌套包按最长目录匹配，根包不会重复作为子包运行。每个包仅执行已有的 `build`、`test`、`tsd` 脚本。
+
+删除文件仍会触发原所属包；文件跨包重命名时检查旧、新两个目录。根配置变化、已删除且无法归属的包清单会补跑根级 `build`、`test`、`tsd`。这是按文件归属选择，不会扩展反向依赖闭包。首次推送的 ref 与空树比较，删除 ref 不增加包级任务。
+
+程序化 API 的 `workspaces` 参数继续支持覆盖自动发现，目录相对于 `cwd`，传入空数组也会生效；无需由调用方手动按目录深度排序。
+
 如果 CI 想要更明确地复现整仓校验，可以使用：
 
 ```bash

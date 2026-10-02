@@ -16,8 +16,9 @@ export interface PrePushVerifyOptions extends VerifyCommandOptions {
    */
   stdinText?: string
   /**
-   * 参与变更归属计算的 workspace 列表。
-   * @default 内置 `defaultWorkspaceOrder`
+   * 参与变更归属计算的 workspace 目录列表，相对于 cwd。
+   * 显式提供（含空数组）时覆盖自动发现，按最长目录优先匹配。
+   * @default 从 pnpm-workspace.yaml 发现，包含 private 包并排除根包
    */
   workspaces?: string[]
   /**
