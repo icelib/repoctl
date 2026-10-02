@@ -63,3 +63,18 @@ repo check --staged --markdown --redact --out reports/check-plan.md
 ```
 
 JSON field names and command IDs do not change with `--lang`; only human-readable descriptions do.
+
+## Execution Reports
+
+```bash
+repo check --full --report reports/check-result.json --redact
+repo check --full --report reports/check-result.md --report-format markdown
+```
+
+`--report <file>` runs checks and writes the result separately from live terminal logs. It cannot be combined with `--dry-run`, `--json`, `--markdown`, or `--out`, which continue to produce plans only. The default report format is JSON.
+
+JSON schema version `1` records the mode, directory, start/end timestamps, duration in milliseconds, exit code, and each task's executable and argument array. Stable statuses are `success`, `failed`, `skipped`, and `interrupted`. Failed commands stop the sequence; later tasks retain null timestamps/exit codes and a skip reason. The CLI keeps the failing exit code and saves the report on SIGINT/SIGTERM where the operating system allows graceful handling. SIGKILL, abrupt power loss, and an unwritable report destination cannot guarantee a saved report.
+
+Reports capture root script or verification stage results, not the internals of Turbo or lint-staged. In staged mode, configured typechecks run inside pre-commit; the separate staged-typecheck stage has no explicit file arguments and is reported as skipped. Reports do not collect environment values or child output. `--redact` replaces workspace and home path prefixes, including those in command arguments.
+
+The programmatic `runCheckWithReport({ cwd, full: true, signal })` API returns the same report without exiting the caller. An optional `AbortSignal` cancels the active command.

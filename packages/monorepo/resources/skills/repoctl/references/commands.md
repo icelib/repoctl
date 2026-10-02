@@ -36,12 +36,19 @@ Usage:
 - npx repoctl check --full
 - npx repoctl check --dry-run
 - npx repoctl check --json --out reports/check-plan.json
+- npx repoctl check --full --report reports/check-result.json --redact
+- npx repoctl check --full --report reports/check-result.md --report-format markdown
   Notes:
 - default mode runs the lightweight local verification flow
 - `--staged` adds staged typecheck routing
-- `--full` maps to the heavier pre-push verification flow
+- `--full` runs the existing root lint, typecheck, test and build scripts
 - `--dry-run` previews the verification route without running checks
 - `--json` and `--out <file>` emit the same plan for automation and imply dry-run
+- `--report <file>` executes checks and writes versioned results separately from live logs;
+  `--report-format` accepts `json` (default) or `markdown`. It cannot be combined with preview flags.
+- Reports preserve failures, skipped tasks and graceful signal interruptions, with timestamps,
+  duration, exit code and actual command arguments. `--redact` replaces cwd/home prefixes.
+  Environment values and child output are not persisted. Abrupt termination cannot guarantee a report.
 
 ## doctor
 

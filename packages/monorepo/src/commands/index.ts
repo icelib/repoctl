@@ -122,4 +122,7 @@ export {
   verifyStagedTypecheck,
 }
 
+export { runCheckWithReport } from './check/execute'
+
+export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus, CheckExecutionTask } from './check/types'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
