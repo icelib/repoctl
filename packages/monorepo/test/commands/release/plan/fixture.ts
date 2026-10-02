@@ -3,15 +3,19 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import crossSpawn from 'cross-spawn'
+import { startRegistry } from './registry'
 
 export async function fixture() {
   const cwd = await realpath(await mkdtemp(path.join(tmpdir(), 'repo-release-plan-')))
   const root = JSON.parse(await readFile(new URL('../../../../../../package.json', import.meta.url), 'utf8'))
+  const registry = await startRegistry()
+  const env = { ...process.env, npm_config_registry: registry }
   async function write(filename: string, content: string) {
     await mkdir(path.dirname(path.join(cwd, filename)), { recursive: true })
     await writeFile(path.join(cwd, filename), content)
   }
   await write('package.json', JSON.stringify({ private: true, packageManager: root.packageManager }))
+  await write('.npmrc', `registry=${registry}\nfetch-retries=0\n`)
   await write('pnpm-workspace.yaml', 'packages:\n  - packages/*\nversioning:\n  fixed:\n    - [a, b]\n  changelog:\n    storage: repository\n')
   await write('repoctl.config.mjs', 'export default {commands:{release:{hooks:{beforeVersion:["node hook.cjs"]}}}}')
   await write('hook.cjs', 'require("fs").writeFileSync("HOOK_RAN", "unexpected")')
@@ -39,7 +43,7 @@ export async function fixture() {
   git('config', 'core.hooksPath', path.join(cwd, 'no-hooks'))
   git('add', '.')
   git('-c', 'commit.gpgsign=false', 'commit', '-qm', 'fixture')
-  return { cwd, write, git }
+  return { cwd, write, git, env }
 }
 
 export async function snapshot(cwd: string): Promise<Record<string, string>> {
@@ -62,10 +66,10 @@ export async function snapshot(cwd: string): Promise<Record<string, string>> {
   return result
 }
 
-export function cli(cwd: string, args: string[]) {
+export function cli(cwd: string, args: string[], env: NodeJS.ProcessEnv) {
   return crossSpawn.sync(process.execPath, [path.resolve(import.meta.dirname, '../../../../bin/repo.js'), 'release', 'plan', ...args], {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, NODE_ENV: 'production' },
+    env: { ...env, NODE_ENV: 'production' },
   })
 }
