@@ -3,6 +3,7 @@ import { findWorkspacePackages } from '@pnpm/workspace.find-packages'
 import path from 'pathe'
 import { assetsDir } from '../../../constants'
 import { clearWorkspaceCache } from '../../../core/workspace'
+import { upgradeOperations } from '../baseline/apply'
 import { canonicalDirectory, hash, readOptional } from '../plan/files'
 import { writeUpgradeTransaction } from './transaction'
 import { actionable, validateUpgradePlan } from './validate'
@@ -24,6 +25,9 @@ export async function applyUpgradePlan(cwd: string, plan: UpgradePlan, options: 
     }
   }
   const conflicts: string[] = []
+  const unresolved = plan.files.filter(file => file.status === 'conflict').map(file => file.path)
+  const report = unresolved.length ? { conflicts: unresolved } : {}
+  const files = upgradeOperations(plan.files.filter(file => selected.has(file.path)))
   let pending = 0
   let applied = 0
   for (const input of plan.inputs) {
@@ -31,7 +35,7 @@ export async function applyUpgradePlan(cwd: string, plan: UpgradePlan, options: 
     const current = await readOptional(root, input.area === 'config' ? path.basename(input.path) : input.path)
     const currentHash = current === null ? null : hash(current)
     const relative = input.area === 'config' ? path.relative(plan.rootDir, input.path) : input.path
-    const file = input.area !== 'asset' ? plan.files.find(item => item.path === relative && selected.has(item.path)) : undefined
+    const file = input.area !== 'asset' ? files.find(item => item.path === relative) : undefined
     if (currentHash === input.hash) {
       if (file && input.area === 'target') {
         pending++
@@ -60,14 +64,13 @@ export async function applyUpgradePlan(cwd: string, plan: UpgradePlan, options: 
     throw new Error('Upgrade plan is partially applied; restore retained backups or review a new plan.')
   }
   if (!pending) {
-    return { status: 'unchanged', changed: [] }
+    return { status: 'unchanged', changed: [], ...report }
   }
-  const files = plan.files.filter(file => selected.has(file.path))
   try {
     await writeUpgradeTransaction(plan.rootDir, files)
   }
   finally {
     clearWorkspaceCache()
   }
-  return { status: 'applied', changed: files.map(file => file.path) }
+  return { status: 'applied', changed: files.map(file => file.path), ...report }
 }

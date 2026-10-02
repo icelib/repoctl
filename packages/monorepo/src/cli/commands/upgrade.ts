@@ -16,7 +16,7 @@ export function registerUpgradeCommand(parent: Command, cwd: string, alias?: str
     .option('--outDir <dir>', localize('Output directory', '输出目录'))
     .option('-s,--skip-overwrite', localize('Preserve existing files', '保留已存在文件'))
     .option('-y, --yes', localize('Approve changed managed assets', '接受受管资产变更'))
-    .option('--overwrite', localize('Approve changed managed assets', '接受受管资产变更'))
+    .option('--overwrite', localize('Explicitly replace differing managed assets and adopt upstream baselines', '显式替换有差异的受管资产并登记上游基线'))
     .option('--no-overwrite', localize('Preserve existing assets and legacy metadata', '保留既有资产和旧版迁移元数据'))
     .option('--overwrite-release', localize('Replace a custom release workflow', '替换自定义 release workflow'))
     .option('--dry-run', localize('Preview every change without writes or asset preparation', '预览全部变更，不写文件或准备资产'))
@@ -31,13 +31,19 @@ export function registerUpgradeCommand(parent: Command, cwd: string, alias?: str
         const plan = JSON.parse(await readFile(options.apply, 'utf8')) as UpgradePlan
         const result = await applyUpgradePlan(cwd, plan)
         process.stdout.write(`${options.json ? JSON.stringify(result, null, 2) : `${result.status}: ${result.changed.join(', ')}`}\n`)
+        if (result.conflicts?.length) {
+          if (!options.json) {
+            process.stdout.write(`conflicts: ${result.conflicts.join(', ')}\n`)
+          }
+          process.exitCode = 1
+        }
         return
       }
       const normalized = { ...options, cwd, ...(options.overwrite === false ? { noOverwrite: true } : {}) }
       if (options.dryRun || options.json || options.markdown) {
         const plan = await planUpgrade(normalized)
         process.stdout.write(`${options.json ? JSON.stringify(plan, null, 2) : formatUpgradePlan(plan, options.markdown ? 'markdown' : 'text')}\n`)
-        if (plan.status === 'blocked') {
+        if (plan.status === 'blocked' || plan.files.some(file => file.status === 'conflict')) {
           process.exitCode = 1
         }
         return

@@ -1,4 +1,4 @@
-import type { UpgradeApplyResult, UpgradePlan } from 'repoctl'
+import type { UpgradeApplyResult, UpgradeBaselineChange, UpgradeMergeDetails, UpgradePlan } from 'repoctl'
 import { applyUpgradePlan, formatUpgradePlan, planUpgrade, upgradeMonorepo } from 'repoctl'
 import { expectType } from 'tsd'
 
@@ -7,3 +7,7 @@ expectType<Promise<UpgradePlan>>(upgradeMonorepo({ cwd: '/workspace', dryRun: tr
 declare const plan: UpgradePlan
 expectType<Promise<UpgradeApplyResult>>(applyUpgradePlan('/workspace', plan))
 expectType<string>(formatUpgradePlan(plan))
+expectType<UpgradeBaselineChange | undefined>(plan.files[0]!.baseline)
+expectType<UpgradeMergeDetails | undefined>(plan.files[0]!.merge)
+declare const result: UpgradeApplyResult
+expectType<string[] | undefined>(result.conflicts)
