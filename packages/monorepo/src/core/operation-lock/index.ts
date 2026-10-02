@@ -13,10 +13,10 @@ export async function withOperationLock<T>(root: string, name: 'typescript-refer
       throw new Error(`Unsafe operation lock directory: ${directory}`)
     }
   }
-  let createdDirectory = false
+  let createdDirectory: Awaited<ReturnType<typeof lstat>> | undefined
   try {
     await mkdir(directory)
-    createdDirectory = true
+    createdDirectory = await lstat(directory)
   }
   catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
@@ -63,7 +63,14 @@ export async function withOperationLock<T>(root: string, name: 'typescript-refer
     failures.push(new Error(`Operation lock cleanup needs attention; preserve ${lockFile}.`, { cause: error }))
   }
   if (createdDirectory) {
-    await rmdir(directory).catch(() => {})
+    try {
+      await validateDirectory()
+      const current = await lstat(directory)
+      if (current.ino === createdDirectory.ino && current.dev === createdDirectory.dev) {
+        await rmdir(directory)
+      }
+    }
+    catch {}
   }
   if (failures.length > 1) {
     throw new AggregateError(failures, `Operation failed and lock cleanup needs attention; preserve ${lockFile}.`)
