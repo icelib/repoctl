@@ -91,6 +91,22 @@ repo new docs --template nimbus --json --out plans/docs.json
 - `--json` 输出结构化创建计划，隐含 `--dry-run`。
 - 显式传入的 `--template` 会先校验，拼错时会失败并提示相近 key。
 
+## `repo package check`
+
+```bash
+repo package check
+repo package check --filter '@scope/*' --strict
+repo package check --filter my-library --keep-temp --json
+```
+
+按依赖顺序构建选中的 workspace 包及其依赖，再使用 publint 0.3.25 和 ATTW 0.18.5 校验实际 `pnpm pack` tarball。构建失败后不再打包。private 包默认明确标记为跳过，传入 `--include-private` 可包含它们。可重复 `--filter` 合并 pnpm 选择器；`--build-script` 可替换默认 `build` 脚本，没有该脚本的包按已经准备好的发布文件处理。
+
+临时消费者独立安装 tarball 和本地运行时依赖的 tarball，执行包声明支持的 Node ESM/CJS 入口及 TypeScript NodeNext 消费检查。类型消费使用 ATTW 固定的 TypeScript 5.6.1-rc。未声明支持的模块格式不强制通过；仅供浏览器使用的入口及非 JavaScript 资源接受清单/类型分析，不执行 Node import；JavaScript bin 做语法检查，不调用应用命令。安装可能访问 registry，依赖安装脚本默认禁用；workspace 构建与 pack 生命周期脚本正常执行。
+
+JSON 包含每个包的文件清单、稳定的诊断来源/代码、上游原始细节及子进程参数数组。`--strict` 将 warning 视为失败。`--keep-temp` 保留 tarball、消费者清单和命令工作目录，方便复现；未启用时，失败后也会清理临时文件。命令不会发布包、修改版本或写入发布状态。
+
+接入发布门禁时，可以添加 `"package:check": "repoctl package check --strict"` 脚本，再把 `package:check` 加入 `commands.release.hooks.verify`。不要从 build/prepack 脚本调用本命令，以免循环执行。
+
 ## `repo check`
 
 ```bash
