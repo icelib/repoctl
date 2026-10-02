@@ -44,11 +44,11 @@ export function desiredUpgradeState(entry: TemplateUpgradeEntry | null, before: 
   if (!entry) {
     return null
   }
-  // Windows exposes read-only state, but does not implement POSIX executable or group bits.
+  // libuv reports 0666/0444 for Windows files AND directories, reflecting read-only state.
   if (process.platform === 'win32') {
     const normalized = entry.kind === 'file' ? { ...entry, executable: false } : entry
     const now = Date.now()
-    return { entry: normalized, mode: before?.mode ?? (entry.kind === 'directory' ? 0o777 : 0o666), atimeMs: now, mtimeMs: now }
+    return { entry: normalized, mode: before?.mode ?? 0o666, atimeMs: now, mtimeMs: now }
   }
   let mode = before?.mode ?? ((entry.kind === 'directory' || entry.executable ? 0o755 : 0o644) & ~process.umask())
   if (entry.kind === 'file' && before?.entry.kind === 'file' && entry.executable !== before.entry.executable) {
