@@ -236,3 +236,7 @@ repo skills sync --codex
 - [把校验加入 CI](/zh/tasks/ci)
 - [报告与自动化输出](/zh/tasks/reports)
 - [命令别名](./aliases.md)
+
+## `repo tooling references`
+
+`check --json` 无需启用即可检查已有引用；`plan` 和 `sync --dry-run` 只读输出稳定 JSON。显式配置 `tooling.projectReferences.enabled: true` 后，使用 `sync` 或 `apply <plan.json>` 同步受管引用。保留手工引用及 TypeScript/Vue 原有验证入口；不兼容编译选项、循环、缺失目标和过期计划会阻止应用。[配置参考](./config#typescript-project-references)说明了发现规则、显式编译关系、归属和恢复方式。
