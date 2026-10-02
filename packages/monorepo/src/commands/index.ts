@@ -140,6 +140,7 @@ export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
 export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
+export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
 
 export { createReleasePlan } from './release/plan'

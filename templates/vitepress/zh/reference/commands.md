@@ -247,3 +247,7 @@ repo skills sync --codex
 - [命令别名](./aliases.md)
 
 Doctor 修复在输入校验、应用、验证、回滚和清理期间持有 `.repoctl/doctor-fix.lock`，防止并发写入使成功修复被另一事务回退。进程异常退出后，先确认没有活动写入者并处理保留备份，再手动移除锁。
+
+## `repo tooling references`
+
+`check --json` 无需启用即可检查已有引用；`plan` 和 `sync --dry-run` 只读输出稳定 JSON。显式配置 `tooling.projectReferences.enabled: true` 后，使用 `sync` 或 `apply <plan.json>` 同步受管引用。保留手工引用及 TypeScript/Vue 原有验证入口；不兼容编译选项、循环、缺失目标和过期计划会阻止应用。[配置参考](./config#typescript-project-references)说明了发现规则、显式编译关系、归属和恢复方式。
