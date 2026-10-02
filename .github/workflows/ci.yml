@@ -15,11 +15,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     name: Build and Test
-    # Windows Node 22 serializes typechecking; leave time for tests and cache upload.
-    timeout-minutes: ${{ matrix.os == 'windows-latest' && matrix.node-version == 22 && 25 || 15 }}
+    # Leave both Windows versions time for packaged checks and cache upload.
+    timeout-minutes: ${{ matrix.os == 'windows-latest' && 25 || 15 }}
     strategy:
       fail-fast: false
       matrix:
