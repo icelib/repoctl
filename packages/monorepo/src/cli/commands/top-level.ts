@@ -20,6 +20,8 @@ interface CheckCliOptions {
   markdown?: boolean
   out?: string
   redact?: boolean
+  report?: string
+  reportFormat?: string
 }
 
 interface InitCliOptions {
@@ -123,12 +125,29 @@ export function registerTopLevelCommands(program: Command, cwd: string) {
     .option('--markdown', localize('Output the check plan as Markdown; implies --dry-run', '以 Markdown 输出校验计划，隐含 --dry-run'))
     .option('--out <file>', localize('Write the check plan to a file; implies --dry-run', '把校验计划写入文件，隐含 --dry-run'))
     .option('--redact', localize('Redact cwd and home paths', '脱敏 cwd/home 绝对路径后再输出'))
+    .option('--report <file>', localize('Run checks and write an execution report to a separate file', '执行检查并把实际结果写入独立报告文件'))
+    .option('--report-format <format>', localize('Execution report format: json or markdown', '执行报告格式：json / markdown'))
     .action(async (opts: CheckCliOptions) => {
       const options = {
         cwd,
         ...(opts.full !== undefined ? { full: opts.full } : {}),
         ...(opts.staged !== undefined ? { staged: opts.staged } : {}),
         ...(opts.editFile !== undefined ? { editFile: opts.editFile } : {}),
+      }
+      if (opts.reportFormat && !opts.report) {
+        throw new Error('--report-format requires --report <file>')
+      }
+      if (opts.report) {
+        if (opts.dryRun || opts.json || opts.markdown || opts.out) {
+          throw new Error('--report cannot be combined with preview options: --dry-run, --json, --markdown, --out')
+        }
+        const format = opts.reportFormat ?? 'json'
+        if (format !== 'json' && format !== 'markdown') {
+          throw new Error('--report-format must be json or markdown')
+        }
+        const { emitCheckExecutionReport } = await import('./check/execute')
+        await emitCheckExecutionReport(options, opts.report, format, opts.redact)
+        return
       }
       const { resolveRecommendedCheckPlan, runRecommendedCheck } = await import('@/commands')
       if (opts.dryRun || opts.json || opts.markdown || opts.out) {

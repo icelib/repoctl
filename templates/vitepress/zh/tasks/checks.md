@@ -110,3 +110,18 @@ repo check --edit-file .git/COMMIT_EDITMSG
 | 推送前完整检查     | `repo check --full`                               |
 | CI 门禁            | `repo doctor --strict` 后接 `repo check --full`   |
 | 只生成计划         | `repo check --json --out reports/check-plan.json` |
+
+## 7. 实际执行报告
+
+```bash
+repo check --full --report reports/check-result.json --redact
+repo check --full --report reports/check-result.md --report-format markdown
+```
+
+`--report <file>` 会执行检查，把结果写入独立文件，终端继续显示实时日志。不能与 `--dry-run`、`--json`、`--markdown`、`--out` 混用；这四个已有选项仍然只生成计划。执行报告默认使用 JSON。
+
+JSON 的 `schemaVersion` 为 `1`，包含模式、目录、开始与结束时间、毫秒耗时、退出码，以及逐项的实际 executable 和 args。状态固定为 `success`、`failed`、`skipped`、`interrupted`，不随语言变化。失败后停止后续任务，未执行任务的时间和退出码保留 null，并记录跳过原因。CLI 保留失败退出码；操作系统允许正常处理 SIGINT/SIGTERM 时，中断也会落盘。SIGKILL、断电或报告目录不可写时无法保证保存。
+
+报告记录根脚本或 verify 阶段，不展开 Turbo、lint-staged 内部任务。staged 模式的类型检查由 pre-commit 中的 lint-staged 配置执行，单独的 staged-typecheck 没有显式文件参数，会标记为 skipped。报告不收集环境变量值和子进程输出；`--redact` 会替换目录及命令参数中的 workspace/home 路径前缀。
+
+程序化 API `runCheckWithReport({ cwd, full: true, signal })` 返回同样的报告，不退出调用方进程；可传入 `AbortSignal` 取消正在执行的命令。
