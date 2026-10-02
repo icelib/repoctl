@@ -36,7 +36,7 @@ it('holds the API update lock through no-op detection and rollback of a failed n
     const rm = fs.rm
     let injected = false
     fs.rm = async (filename, ...args) => {
-      if (!injected && filename.startsWith(path.join(root, 'etc/sdk.api.md') + '.repoctl-upgrade-') && filename.endsWith('.tmp')) {
+      if (!injected && path.resolve(filename).startsWith(path.resolve(root, 'etc/sdk.api.md') + '.repoctl-upgrade-') && filename.endsWith('.tmp')) {
         injected = true
         enter()
         await resume
@@ -75,7 +75,7 @@ it('retains a concurrent edited baseline and its recovery path after apply failu
     const rm = fs.rm
     let injected = false
     fs.rm = async (filename, ...args) => {
-      if (!injected && filename.startsWith(path.join(root, 'etc/sdk.api.md') + '.repoctl-upgrade-') && filename.endsWith('.tmp')) {
+      if (!injected && path.resolve(filename).startsWith(path.resolve(root, 'etc/sdk.api.md') + '.repoctl-upgrade-') && filename.endsWith('.tmp')) {
         injected = true
         await fs.writeFile(path.join(root, 'etc/sdk.api.md'), 'Concurrent business edit')
         throw new Error('Injected apply failure')
@@ -99,7 +99,7 @@ it('revalidates compiler inputs after staging before any baseline becomes visibl
     let injected = false
     fs.open = async (filename, ...args) => {
       const handle = await open(filename, ...args)
-      if (!injected && filename.startsWith(path.join(root, 'etc/sdk.api.md') + '.repoctl-upgrade-') && filename.endsWith('.tmp')) {
+      if (!injected && path.resolve(filename).startsWith(path.resolve(root, 'etc/sdk.api.md') + '.repoctl-upgrade-') && filename.endsWith('.tmp')) {
         injected = true
         await fs.appendFile(path.join(root, 'packages/sdk/dist/index.d.ts'), '\\n// modified after analysis\\n')
       }
