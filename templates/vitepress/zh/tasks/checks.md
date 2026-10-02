@@ -202,3 +202,24 @@ export default {
 报告包含稳定规则 ID、manifest 字段、端点和具体边。每个存在环的强连通分量只报告一条稳定的闭合代表路径和完整成员列表，不枚举所有环。cycle 豁免只排除指定依赖类型的精确边，其余环仍检查；报告保留理由和已豁免的边。未知字段/tag、错误路径、重复 ID 或无理由豁免视为错误。无人匹配的选择器选项、失效豁免发出警告；内部依赖图无法完整解析时失败，不把未知关系判为健康。
 
 公开 API `checkWorkspaceBoundaries(cwd, { config? })` 返回 schemaVersion 1、findings、exceptions 和 summary，显式 config 仅替换本次调用的项目配置。相对目录和规则 ID 不随输出语言变化。可把本命令或 `repo doctor --strict` 加入现有 pnpm CI 脚本，不增加任务执行层。
+
+## 包负责人和 CODEOWNERS
+
+在 `repoctl.config.ts` 中使用精确包名或工作区相对路径声明负责人：
+
+```ts
+export default {
+  codeowners: { owners: { '@acme/web': ['@acme/frontend'], 'libraries/sdk': ['@maintainer'] } },
+}
+```
+
+`repoctl workspace owners [workspace] --json` 显示公有/私有包、负责人、配置来源和缺失归属。支持 GitHub 用户、团队及邮箱；本地只做文本校验，真实成员身份、访问和 review 权限由 GitHub 管理。
+
+```sh
+repoctl workspace owners --file .github/CODEOWNERS --dry-run
+repoctl workspace owners --file .github/CODEOWNERS --sync
+```
+
+必须显式选择工作区根目录下的 `.github/CODEOWNERS`、`CODEOWNERS` 或 `docs/CODEOWNERS`。根包可以通过 `.` 或根包名配置，其 `*` 默认规则先于更具体的子包规则生成。默认只读预览；即使同时传入 `--sync`，`--dry-run` 仍不写入。受管块外的规则、注释及顺序逐字保留。GitHub 使用最后匹配规则，后续可能覆盖包目录或子路径的规则（含无 owner 规则）会得到诊断；更高优先级的 CODEOWNERS 文件也会提示。无法安全表达的目录字符和非法映射会阻止同步。
+
+公开 `planCodeowners()` / `applyCodeownersPlan()` 提供前后内容和 diff；应用时重新校验配置、工作区发现和文件内容，过期计划会被拒绝。单文件原子替换、拒绝符号链接和硬链接目标，重跑不产生额外变更。不发送消息、不请求 review、不修改权限或分支保护。
