@@ -53,7 +53,7 @@ repo doctor --rules root-scripts --fix --out plans/doctor-fix.json
 repo doctor --apply plans/doctor-fix.json --json
 ```
 
-`--rules` selects exact stable check IDs before execution; unknown IDs fail and list the available rules. The CLI replaces `commands.doctor.rules`; omitted rules run all checks, while an explicit empty config array runs none. Shared discovery and rule prerequisites still run. `manifest-health` is an aggregate over the static manifest checks.
+`--rules` selects exact stable check IDs before execution; unknown IDs fail and list the available rules. The CLI replaces `commands.doctor.rules`; omitted rules run all checks, while an explicit empty config array runs none. Shared discovery and rule prerequisites still run. `manifest-health` is an aggregate over the static manifest checks. Workspace boundaries and dependency admission use stable `boundary-*` / `admission-*` IDs; selecting only `boundary-policy` or `admission-policy` preserves the actual aggregate failure status, and prerequisite configuration failures remain visible. Custom policy names appear only in diagnostic details.
 
 Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs `id` and a nonempty `reason`; optional `path` matches an exact workspace-relative finding path. Optional `expires` is an inclusive UTC date (`YYYY-MM-DD`). JSON retains the original finding status, `suppression`, `rawSummary`, and every waiver with its matched count. Only active waivers are excluded from effective `summary` and strict exit status; expired and unmatched waivers remain visible.
 

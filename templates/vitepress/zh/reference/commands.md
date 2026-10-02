@@ -64,7 +64,7 @@ repo doctor --rules root-scripts --fix --out plans/doctor-fix.json
 repo doctor --apply plans/doctor-fix.json --json
 ```
 
-`--rules` 在执行前选择精确、稳定的检查 ID；未知 ID 会失败并列出可用规则。CLI 会替换 `commands.doctor.rules`；省略规则时执行全部检查，配置中显式空数组表示不执行检查。共享的文件发现和规则前置读取仍会执行。`manifest-health` 是静态清单检查的汇总规则。
+`--rules` 在执行前选择精确、稳定的检查 ID；未知 ID 会失败并列出可用规则。CLI 会替换 `commands.doctor.rules`；省略规则时执行全部检查，配置中显式空数组表示不执行检查。共享的文件发现和规则前置读取仍会执行。`manifest-health` 是静态清单检查的汇总规则。架构边界与第三方依赖准入同样使用稳定的 `boundary-*` / `admission-*` ID；单选 `boundary-policy` 或 `admission-policy` 时汇总仍保留实际失败状态，必要的配置失败不会被过滤。自定义策略名只出现在诊断详情中。
 
 在 `commands.doctor.suppressions` 配置有理由的抑制。每项必须提供 `id` 与非空 `reason`，可选 `path` 精确匹配 workspace 相对文件路径。可选 `expires` 使用 UTC 日期 `YYYY-MM-DD`，到期当天仍有效。JSON 保留原始发现的状态、`suppression`、`rawSummary`，以及全部抑制记录及命中数量。仅有效抑制从 `summary` 和 strict 退出码中排除；过期与未命中的记录仍会展示。
 
