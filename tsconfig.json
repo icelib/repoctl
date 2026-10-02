@@ -63,6 +63,9 @@
     },
     {
       "path": "./templates/vue-lib"
+    },
+    {
+      "path": "./templates/react-vite"
     }
   ],
   "files": []

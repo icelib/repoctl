@@ -173,6 +173,17 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
         })
       }
 
+      if (intent === 'web-app') {
+        type = await select({
+          message: localize('Select an application template', '请选择应用模板'),
+          choices: [
+            { name: 'Vue + Hono', value: 'vue-hono', description: localize('Full-stack Vue application', 'Vue 前后端一体应用') },
+            { name: 'React + Vite', value: 'react-vite', description: localize('React and TypeScript SPA', 'React 和 TypeScript 单页应用') },
+          ],
+          default: 'vue-hono',
+        })
+      }
+
       const createOptions = {
         name: normalizeNameForTemplate(packageName, type, templates),
         cwd,

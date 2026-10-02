@@ -1,5 +1,7 @@
 import YAML from 'yaml'
 
+const sourceScriptNames = new Set(['tooling:build', 'check:no-tracked-build-artifacts', 'check:workflows', 'test:dev-scenarios', 'test:worker-types'])
+
 export function sanitizePublishedManifestContent(content: string) {
   const manifest = JSON.parse(content) as { scripts?: Record<string, string>, devDependencies?: Record<string, string> }
   // Generated configs import repoctl/tooling, which owns the shared config dependencies.
@@ -13,14 +15,22 @@ export function sanitizePublishedManifestContent(content: string) {
   }
   if (manifest.scripts) {
     for (const name of Object.keys(manifest.scripts)) {
-      if (name.startsWith('dev:') || name === 'test:dev-scenarios' || name === 'test:worker-types' || name === 'test:packaged-create' || name === 'test:packaged-doctor' || name === 'test:packaged-nimbus') {
+      if (name.startsWith('dev:') || sourceScriptNames.has(name) || name.startsWith('test:packaged-')) {
         delete manifest.scripts[name]
       }
     }
     // Source profiles reference packages and scripts that consumers do not receive.
     manifest.scripts['dev'] = 'turbo run dev --concurrency=20'
+    if (manifest.scripts['lint']) {
+      manifest.scripts['lint'] = manifest.scripts['lint'].replace(/^pnpm run tooling:build && /u, '')
+    }
     if (manifest.scripts['test']) {
       manifest.scripts['test'] = manifest.scripts['test'].replace(' && pnpm test:dev-scenarios', '')
+    }
+    for (const name of ['test', 'test:dev']) {
+      if (manifest.scripts[name]) {
+        manifest.scripts[name] = manifest.scripts[name].replace('pnpm check:no-tracked-build-artifacts && ', '')
+      }
     }
   }
   return `${JSON.stringify(manifest, null, 2)}\n`

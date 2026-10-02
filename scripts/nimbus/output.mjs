@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { run } from './workspace.mjs'
+import { run } from '../packaged-template/workspace.mjs'
 
 const pages = ['', 'get-started/', 'writing/', 'zh/', 'zh/get-started/', 'zh/writing/']
 

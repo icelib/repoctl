@@ -9,6 +9,7 @@ repoctl templates are maintained by `@icebreakers/monorepo-templates`. The CLI, 
 | `tsdown`      | library  | `packages/tsdown`  | TypeScript library                     |
 | `vue-lib`     | library  | `packages/vue-lib` | Vue 3 component library                |
 | `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono app                       |
+| `react-vite`  | app      | `apps/react-vite`  | React + Vite + TypeScript SPA          |
 | `hono-server` | service  | `apps/server`      | Hono API service                       |
 | `vitepress`   | docs     | `apps/website`     | VitePress docs site                    |
 | `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro, default bilingual docs |
@@ -69,6 +70,7 @@ Check first:
 
 ```bash
 repo new web --template vue-hono
+repo new dashboard --template react-vite
 repo new api --template hono-server
 ```
 
@@ -77,6 +79,24 @@ Check first:
 - Runtime environment variables and deployment constraints.
 - `dev`, `build`, and `typecheck` scripts are part of root tasks.
 - CI needs integration or E2E tests.
+
+### React application
+
+```bash
+pnpm create repoctl@latest my-workspace -- --yes --templates react-vite,tsdown
+cd my-workspace
+corepack enable
+pnpm install
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm --dir apps/react-vite preview
+```
+
+For an existing workspace, run `repo new dashboard --template react-vite`. The interactive **Web App** goal also offers React + Vite alongside Vue + Hono. Creation refuses an existing target directory; use `--dry-run` to inspect the plan first.
+
+The template includes a keyboard-accessible counter, React Testing Library with Vitest, shared ESLint/Stylelint helpers, and TypeScript project references. It does not choose a router, state manager, backend, or CSS framework. Add a local library as a `workspace:*` dependency, import its package name, and let root `pnpm build` build its exported `dist` output before the app. Do not import library source paths. `preview` serves the production build, not the development server.
 
 ### Cloudflare Worker types
 

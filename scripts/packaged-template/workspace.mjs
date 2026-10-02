@@ -6,7 +6,7 @@ import process from 'node:process'
 import YAML from 'yaml'
 
 export const repoRoot = path.resolve(import.meta.dirname, '../..')
-export const registry = process.env.NIMBUS_SMOKE_REGISTRY ?? 'https://registry.npmjs.org'
+export const registry = process.env.REPOCTL_SMOKE_REGISTRY ?? process.env.NIMBUS_SMOKE_REGISTRY ?? 'https://registry.npmjs.org'
 
 export function run(command, args, cwd) {
   try {
@@ -59,7 +59,7 @@ function packDependencies(packDir) {
   return overrides
 }
 
-export function createWorkspace(tempRoot) {
+export function createWorkspace(tempRoot, templateKeys = ['nimbus', 'vitepress']) {
   const packDir = path.join(tempRoot, 'packs')
   const bootstrap = path.join(tempRoot, 'bootstrap')
   mkdirSync(packDir)
@@ -68,7 +68,7 @@ export function createWorkspace(tempRoot) {
   const overrides = packDependencies(packDir)
   const packageManager = json(path.join(repoRoot, 'package.json')).packageManager
   writeJson(path.join(bootstrap, 'package.json'), {
-    name: 'nimbus-bootstrap',
+    name: 'repoctl-template-bootstrap',
     private: true,
     packageManager,
     dependencies: { 'create-repoctl': overrides['create-repoctl'] },
@@ -83,7 +83,7 @@ export function createWorkspace(tempRoot) {
 
   const workspace = path.join(tempRoot, 'workspace')
   const cli = path.join(bootstrap, 'node_modules/create-repoctl/bin/create-repoctl.js')
-  run(process.execPath, [cli, workspace, '--yes', '--templates', 'nimbus,vitepress'], bootstrap)
+  run(process.execPath, [cli, workspace, '--yes', '--templates', templateKeys.join(',')], bootstrap)
   const workspaceFile = path.join(workspace, 'pnpm-workspace.yaml')
   const manifest = YAML.parse(readFileSync(workspaceFile, 'utf8'))
   manifest.overrides = { ...manifest.overrides, ...overrides }
