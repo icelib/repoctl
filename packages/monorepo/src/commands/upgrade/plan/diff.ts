@@ -5,7 +5,7 @@ export function decodeText(content: Uint8Array | null) {
     return null
   }
   try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(content ?? new Uint8Array())
+    return new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(content ?? new Uint8Array())
   }
   catch {
     return null
