@@ -10,6 +10,23 @@ export function isExactTemplateVersion(value: string) {
   return exactVersionPattern.test(value)
 }
 
+export function normalizeTemplateExclusions(values: string[]) {
+  if (!Array.isArray(values) || values.some(value => typeof value !== 'string')) {
+    throw new Error('Template exclusions must be relative file or directory paths.')
+  }
+  const result: string[] = []
+  for (const input of values.map(value => value.endsWith('/**') ? value.slice(0, -3) : value).sort()) {
+    portableRelativePath(input)
+    if (/[*?[\]{}]/u.test(input)) {
+      throw new Error('Template exclusions support exact files or directories, not arbitrary glob patterns.')
+    }
+    if (!result.some(parent => input === parent || input.startsWith(`${parent}/`))) {
+      result.push(input)
+    }
+  }
+  return result
+}
+
 function onlyFields(value: object, fields: string[]) {
   if (!value || typeof value !== 'object' || Object.keys(value).some(key => !fields.includes(key))) {
     throw new Error('Unsupported fields in template instance metadata; arbitrary user data is not stored.')
@@ -29,7 +46,7 @@ export function generationParameters(input: TemplateGenerationParameters = {}): 
 }
 
 export function validateInstance(instance: TemplateInstance) {
-  onlyFields(instance, ['id', 'target', 'template', 'provenance', 'source', 'generator', 'parameters', 'baseline'])
+  onlyFields(instance, ['id', 'target', 'template', 'provenance', 'source', 'generator', 'parameters', 'baseline', 'excludedPaths'])
   onlyFields(instance.generator, ['profile', 'version'])
   onlyFields(instance.parameters, ['packageName', 'renameJson'])
   onlyFields(instance.source, ['kind', 'templatePath', 'packageName', 'version', 'digest'])
@@ -45,6 +62,9 @@ export function validateInstance(instance: TemplateInstance) {
     throw new Error('Template instances cannot own metadata paths.')
   }
   generationParameters(instance.parameters)
+  if (instance.excludedPaths !== undefined && JSON.stringify(normalizeTemplateExclusions(instance.excludedPaths)) !== JSON.stringify(instance.excludedPaths)) {
+    throw new Error('Template exclusions must use sorted, canonical non-overlapping paths.')
+  }
   const source = instance.source
   portableRelativePath(source.templatePath)
   if (!['package', 'snapshot'].includes(source.kind)

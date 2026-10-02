@@ -221,3 +221,39 @@ repo templates rebuild-baseline packages/shared-utils --destination ../isolated-
 重建目标目录必须尚不存在。快照丢失或损坏时报告 `unavailable`，不会显示为健康。实例目录被删除或改名后先报告 `missing`，新建命令会拒绝复用其已登记路径。`repo templates relocate <实例ID> <新相对路径>` 预览显式路径关联；只有旧路径已不存在、目标内容与留存的生成基线完全一致，`--apply` 才会更新登记路径。目标已发生业务修改时无法可靠证明它就是原实例，会明确拒绝自动关联。
 
 登记采用锁与原子替换。登记失败不会宣称创建已完整成功，生成文件会保留在错误消息给出的具体恢复位置，供核对后显式关联。遇到残留锁时，先确认对应写入进程已停止，再移除提示路径下的锁。元数据提交失败会清理本次临时快照并保留原登记内容。
+
+## 升级单个模板实例
+
+使用已登记实例 ID 或目标路径选择实例，并指定目标模板包的精确版本。默认预览只读，只有 `--apply` 才会修改文件。`--source-dir` 将已解压包作为数据读取，不运行包内脚本；省略时，当前安装的模板包必须匹配请求版本。旧来源使用留存快照重建，因此无需继续安装旧包。
+
+```sh
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --json
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --apply --json
+```
+
+计划比较旧生成基线、实例当前文件和新模板生成结果。仅模板改动会更新，仅业务改动会保留，互不重叠的文本改动会合并。首次生成时的包名与 Git 元数据会保留。成功后，基线前进到纯粹的新模板输出，业务定制不会混入上游基线。重复同一版本可离线使用留存快照，不会再次改写；同一版本下的来源内容发生变化会被拒绝。
+
+重叠文本修改、二进制冲突、新增文件碰撞及文件/目录类型替换会阻断整个实例。预览给出冲突路径与文本片段，不向业务文件写入冲突标记。处理相关本地修改后重新预览，或显式将这些路径交由业务自行维护。文本合并保留 BOM、CRLF 与末尾换行；三份输入合计超过 1 MiB 的冲突文件需要手动处理。支持的平台会应用 POSIX 可执行标记；Windows 保留原生只读权限，不模拟可执行位。
+
+```sh
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --exclude README.md src/custom --json
+# 核对后应用相同选择：
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --exclude README.md src/custom --apply --json
+```
+
+排除路径相对于实例目录，应用后持久保存到实例记录。选择目录会排除全部后代；`src/custom/**` 等价于选择该目录。不支持任意 glob，也不接受路径逃逸。排除内容不会被读取或写入升级计划。业务自行添加的文件与目录不进入候选扫描，包括大文件及无关软链接。后续升级会累计已有排除项，目前没有自动恢复受管的命令。
+
+用户删除的文件和目录保持删除，已删除目录下新增的上游后代也不会重新生成。上游删除文件时，仅本地未改动的文件会被移除；已经过业务修改则报告冲突。上游移除的目录会保守保留，避免删除其中的业务文件或缓存。历史基线缺失或未验证时停止升级。根受管资产、根依赖策略和其他已登记实例不属于本次操作；所选实例模板清单内的依赖修改作为普通文件差异处理。
+
+### 恢复中断的升级
+
+写入前，repoctl 会在 `.repoctl/template-upgrades/<实例ID>.json` 记录本次操作的文件状态与实例元数据。文件变更和元数据替换使用同一登记锁。普通失败会在释放锁前恢复本次操作；遇到并发业务编辑会保留新内容，未完成的恢复记录会阻止再次升级。
+
+```sh
+repo templates recover-upgrade packages/shared-utils --json
+repo templates recover-upgrade packages/shared-utils --apply --json
+```
+
+恢复预览只读。应用恢复时，只有每个受影响路径仍与记录的变更前或变更后状态一致，才会恢复文件与旧来源版本；冲突的业务编辑须先另行保存并处理。恢复不会重放失败的升级。进程异常退出可能留下 `.repoctl/template-instances.lock`；核实记录中的进程已经停止后，再移除该锁并应用恢复。元数据已提交但恢复记录清理失败时，错误会明确说明升级已应用，此时恢复命令仍会撤销记录中的这次升级。
+
+恢复记录仅包含本次实际修改文件的本地前后内容，操作成功或恢复完成后会自动删除。请作为本地备份处理，将 `.repoctl/template-upgrades/` 排除在版本控制之外，并继续跟踪实例登记与模板基线。JSON 预览也包含受管候选文件内容，应按对应文件的敏感程度保存。即使是预览模式，显式传入 `--out <文件>` 仍会写出报告。

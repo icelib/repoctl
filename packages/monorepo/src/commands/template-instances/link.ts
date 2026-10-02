@@ -69,6 +69,7 @@ async function prepareLink(input: TemplateLinkOptions) {
         generator: { profile: options.profile!, version },
         parameters: options.parameters!,
         baseline: originalDigest && renderedDigest ? { status: 'available', original: originalDigest, rendered: renderedDigest } : { status: 'unverified', reason: 'source-unavailable' },
+        ...(existing?.excludedPaths ? { excludedPaths: existing.excludedPaths } : {}),
       },
       snapshots: baseline && originalDigest && renderedDigest ? { [originalDigest]: baseline.original.snapshot, [renderedDigest]: baseline.rendered } : {},
     }
