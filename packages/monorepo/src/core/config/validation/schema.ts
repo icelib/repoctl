@@ -1,3 +1,5 @@
+import { appendConfigPath } from '../paths'
+
 export interface ConfigDiagnostic {
   id: 'config.unknown-field' | 'config.invalid-type' | 'config.invalid-value' | 'config.conflict' | 'config.load-failed'
   path: string
@@ -68,11 +70,11 @@ export function validateSchema(value: unknown, schema: Schema, path: string, dia
   }
   for (const key of schema.required ?? []) {
     if (value[key] === undefined) {
-      diagnostics.push({ id: 'config.invalid-value', path: `${path}.${key}`, actualType: 'undefined', expected: schema.fields![key]!.expected, suggestion: 'Provide this required field.' })
+      diagnostics.push({ id: 'config.invalid-value', path: appendConfigPath(path, key), actualType: 'undefined', expected: schema.fields![key]!.expected, suggestion: 'Provide this required field.' })
     }
   }
   for (const [key, item] of Object.entries(value)) {
-    const childPath = path ? `${path}.${key}` : key
+    const childPath = appendConfigPath(path, key)
     const child = schema.fields && Object.hasOwn(schema.fields, key) ? schema.fields[key] : schema.values
     if (child) {
       validateSchema(item, child, childPath, diagnostics, parents)

@@ -64,7 +64,7 @@ describe('built template catalog discovery', () => {
     const catalog = await repo.resolveTemplateCatalog({ cwd })
     expect(catalog.entries.find(entry => entry.key === 'legacy')).toMatchObject({ source: 'legacy', target: 'legacy', origin: 'custom' })
     expect(catalog.entries.find(entry => entry.key === 'tsdown')).toMatchObject({ source: 'replacement', origin: 'custom', overridesBuiltin: true })
-    expect(catalog.diagnostics).toEqual([expect.objectContaining({ id: 'template-override', status: 'warn', template: 'tsdown', configFile: expect.stringContaining('repoctl.config.mjs'), configPath: 'commands.create.templateMap["tsdown"]' })])
+    expect(catalog.diagnostics).toEqual([expect.objectContaining({ id: 'template-override', status: 'warn', template: 'tsdown', configFile: expect.stringContaining('repoctl.config.mjs'), configPath: 'commands.create.templateMap.tsdown' })])
     const detail = await cli(cwd, ['templates', 'tsdown', '--markdown'])
     expect(detail.stdout).toContain('| Overrides built-in | true |')
     await repo.createNewProject({ cwd, type: 'tsdown' })
