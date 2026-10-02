@@ -76,3 +76,11 @@ Plans contain exact before/after values, file hashes and hashes of all discovere
 Only planned manifests are replaced; unrelated fields and dependency sections are retained. An already-applied plan is a no-op. Replacements are staged with original backups and failures roll back completed replacements. If rollback cannot safely overwrite a concurrent edit, the error lists retained `.repoctl-deps-*.bak` files. After a process interruption, inspect those backups beside each manifest, restore originals as needed, remove leftover `.tmp` files, and regenerate the plan. Doctor and pnpm installation can then validate the resulting workspace.
 
 Public APIs are `checkDependencies(cwd)`, `planDependencyFix(cwd, options)` and `applyDependencyFixPlan(cwd, plan)`, exported from `repoctl` with their report, configuration and plan types.
+
+## Peer compatibility
+
+Run `repoctl deps peers --json` to compare each workspace peer promise with its explicit `devDependencies` test declaration. Private packages and the root are included. Required peers without a test declaration fail; absent optional peers are skipped. An optional peer with a test declaration is checked normally. This does not alter pnpm auto-install or strict-peer policies.
+
+The report distinguishes `declared_range`, `declared_version`, `lockfile_version`, and `workspace_version` evidence. A declared range fully contained in the peer range is compatible as a declaration; partial overlap remains `unknown` until an exact supported pnpm lockfile version or workspace version establishes a result. Stale/unsupported lockfiles and unknown protocols are never treated as passed. Named/default catalogs, same-source npm aliases, internal workspace aliases, prereleases and compound semver ranges are supported. Missing development peers are not silently replaced by auto-installed peers.
+
+JSON includes stable codes, package/path, peer and test declarations, resolved ranges/version, optional status, and pnpm policy values from workspace configuration. A single tested or locked version does not establish compatibility across the whole advertised range; lockfile evidence does not verify installed state. No installs or writes occur, and release workspace-protocol rules remain separate. Failures exit nonzero; `--strict` also fails on unknown results. The public API is `checkPeerDependencies(cwd)`.
