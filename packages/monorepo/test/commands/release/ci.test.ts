@@ -47,7 +47,7 @@ describe('release behavior', () => {
       spawn: spawn as never,
     })
 
-    expect(calls).toContainEqual({ command: 'pnpm', args: ['version', '-r', '--no-git-checks', '--json'] })
+    expect(calls).toContainEqual({ command: 'pnpm', args: ['version', '-r', '--workspace-packages', 'packages/repoctl', '--no-git-checks', '--json'] })
     expect(github.ensurePullRequest).toHaveBeenCalledOnce()
   })
 
@@ -123,7 +123,7 @@ describe('release behavior', () => {
       { command: 'pnpm', args: ['run', 'build'] },
       { command: 'pnpm', args: ['run', 'lint'] },
       { command: 'pnpm', args: ['run', 'test'] },
-      { command: 'pnpm', args: ['version', '-r', '--no-git-checks', '--json'] },
+      { command: 'pnpm', args: ['version', '-r', '--workspace-packages', 'packages/repoctl', '--no-git-checks', '--json'] },
       { command: 'git', args: ['diff', '--quiet', '--exit-code'] },
       { command: 'git', args: ['config', 'user.name', 'github-actions[bot]'] },
       { command: 'git', args: ['config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com'] },

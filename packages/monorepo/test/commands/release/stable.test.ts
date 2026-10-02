@@ -46,7 +46,7 @@ describe('release behavior', () => {
       { command: 'pnpm', args: ['run', 'build'] },
       { command: 'pnpm', args: ['run', 'lint'] },
       { command: 'pnpm', args: ['run', 'test'] },
-      { command: 'pnpm', args: ['version', '-r', '--no-git-checks', '--json'] },
+      { command: 'pnpm', args: ['version', '-r', '--workspace-packages', 'packages/repoctl', '--no-git-checks', '--json'] },
       { command: 'git', args: ['diff', '--quiet', '--exit-code'] },
     ])
   })

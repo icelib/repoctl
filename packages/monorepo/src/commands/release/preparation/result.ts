@@ -1,5 +1,7 @@
 import type { ReleaseOptions } from '../types'
+import path from 'pathe'
 import semver from 'semver'
+import { getWorkspaceData } from '../../../core/workspace'
 import { readWorkspaceVersions } from '../body'
 import { ReleaseCommandError } from '../errors'
 import { capture } from '../shared'
@@ -10,9 +12,23 @@ export interface AppliedRelease {
   newVersion: string
 }
 
+async function getPublishableWorkspacePatterns(cwd: string) {
+  const { workspaceDir, packages } = await getWorkspaceData(cwd)
+  return packages
+    .map(pkg => path.relative(workspaceDir, pkg.rootDir))
+    .filter(Boolean)
+}
+
 export async function applyVersions(options: ReleaseOptions): Promise<AppliedRelease[]> {
   const before = await readWorkspaceVersions(options.cwd)
-  const output = capture('pnpm', ['version', '-r', '--no-git-checks', '--json'], options)
+  const workspacePatterns = await getPublishableWorkspacePatterns(options.cwd)
+  const output = capture('pnpm', [
+    'version',
+    '-r',
+    ...workspacePatterns.flatMap(pattern => ['--workspace-packages', pattern]),
+    '--no-git-checks',
+    '--json',
+  ], options)
   let data: unknown
   try {
     data = JSON.parse(output)
