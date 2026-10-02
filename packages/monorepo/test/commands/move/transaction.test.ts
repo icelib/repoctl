@@ -1,16 +1,17 @@
-import { access, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
+import { access, lstat, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'pathe'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { applyWorkspaceMovePlan } from '@/commands/workspace/move/apply'
 import { planWorkspaceMove } from '@/commands/workspace/move/plan'
 import { fixture, snapshot } from './fixture'
 
-const hooks = vi.hoisted(() => ({ rename: vi.fn(), rm: vi.fn() }))
+const hooks = vi.hoisted(() => ({ rename: vi.fn(), rm: vi.fn(), unlink: vi.fn() }))
 vi.mock('node:fs/promises', async original => ({ ...await original<typeof import('node:fs/promises')>(), ...hooks }))
 const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
 function resetHooks() {
   hooks.rename.mockReset().mockImplementation(actual.rename)
   hooks.rm.mockReset().mockImplementation(actual.rm)
+  hooks.unlink.mockReset().mockImplementation(actual.unlink)
 }
 beforeEach(resetHooks)
 afterEach(resetHooks)
@@ -121,4 +122,20 @@ it('locks replay checks until an earlier rename has finished verification and ro
   expect(await readFile(path.join(h.workspace, 'packages/old/package.json'), 'utf8')).toBe(plan.files[0]!.before)
   expect(await readFile(path.join(h.workspace, 'docs/guide.md'), 'utf8')).toBe('concurrent documentation\n')
   await expect(access(path.join(h.workspace, '.repoctl/workspace-move.lock'))).rejects.toThrow()
+})
+
+it('preserves a replacement lock directory after releasing its own lock', async () => {
+  const h = await fixture()
+  const plan = await planWorkspaceMove(h.workspace, { target: 'old', name: 'new' })
+  const directory = path.join(h.workspace, '.repoctl')
+  hooks.unlink.mockImplementation(async (filename: string) => {
+    await actual.unlink(filename)
+    if (filename === path.join(directory, 'workspace-move.lock')) {
+      await actual.rename(directory, `${directory}.retained`)
+      await mkdir(directory)
+    }
+  })
+  expect(await applyWorkspaceMovePlan(h.workspace, plan)).toMatchObject({ status: 'applied' })
+  expect((await lstat(directory)).isDirectory()).toBe(true)
+  expect((await lstat(`${directory}.retained`)).isDirectory()).toBe(true)
 })
