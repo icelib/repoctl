@@ -3,6 +3,7 @@ import type { Schema } from './schema'
 import { array, boolean, object, opaque, positive, record, string, strings, union } from './schema'
 
 export const toolingSchema = object({
+  projectReferences: object({ enabled: boolean, root: string, projects: strings, exclude: strings, relations: array(object({ source: string, target: string }, ['source', 'target'])) }),
   commitlint: opaque,
   eslint: opaque,
   stylelint: opaque,

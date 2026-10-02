@@ -11,6 +11,21 @@ export interface UpgradeOptions extends CliOpts {
 
 export type UpgradeFileStatus = 'add' | 'modify' | 'delete' | 'identical' | 'skip' | 'conflict'
 
+/** A reviewed, transactional change to one root asset's upstream baseline. */
+export interface UpgradeBaselineChange {
+  path: string
+  beforeHash: string | null
+  afterHash: string | null
+  content: string | null
+}
+
+export interface UpgradeMergeDetails {
+  baseHash: string | null
+  localHash: string | null
+  upstreamHash: string | null
+  conflicts: { baseStart: number, baseEnd: number, base: string, local: string, upstream: string }[]
+}
+
 export interface UpgradeFilePlan {
   path: string
   status: UpgradeFileStatus
@@ -27,6 +42,9 @@ export interface UpgradeFilePlan {
   group: string | null
   /** The legacy interactive command can approve these changes without a prompt. */
   automatic: boolean
+  /** Present only when this reviewed selection also changes its baseline. */
+  baseline?: UpgradeBaselineChange
+  merge?: UpgradeMergeDetails
 }
 
 export interface UpgradeInput {
@@ -56,4 +74,6 @@ export interface UpgradeApplyOptions {
 export interface UpgradeApplyResult {
   status: 'applied' | 'unchanged'
   changed: string[]
+  /** Unresolved files are never written or recorded as successfully upgraded. */
+  conflicts?: string[]
 }
