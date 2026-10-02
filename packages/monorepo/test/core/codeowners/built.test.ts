@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { applyCodeownersPlan, inspectWorkspaceOwners, planCodeowners } from '@icebreakers/monorepo'
+import { applyCodeownersPlan, inspectWorkspaceOwners, loadMonorepoConfigDetails, planCodeowners } from '@icebreakers/monorepo'
 import { afterEach, expect, it, vi } from 'vitest'
 
 const roots: string[] = []
@@ -117,6 +117,10 @@ it('tracks imported config files and changes to higher-priority CODEOWNERS candi
   await writeFile(path.join(cwd, 'repoctl.config.mjs'), 'import owners from "./owners.mjs"; export default { codeowners: { owners } }')
   const plan = await planCodeowners({ cwd, file: 'CODEOWNERS' })
   expect(plan.inputs['owners.mjs']).toEqual(expect.any(String))
+  const loaded = await loadMonorepoConfigDetails(cwd, { refresh: true })
+  expect(loaded.files).toHaveLength(2)
+  expect(new Set(loaded.files).size).toBe(loaded.files.length)
+  expect(loaded.files.every(file => !file.includes('\\'))).toBe(true)
   expect(plan.inputs['.github/CODEOWNERS']).toBeNull()
   await writeFile(path.join(cwd, 'owners.mjs'), 'export default { "@fixture/client": ["@second"], "libraries/sdk": ["@maintainer"] }')
   await expect(applyCodeownersPlan(plan)).rejects.toThrow('changed')
