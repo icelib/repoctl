@@ -18,7 +18,8 @@ permissions:
 jobs:
   build:
     name: Build and Test
-    timeout-minutes: 15
+    # Windows Node 22 serializes typechecking; leave time for tests and cache upload.
+    timeout-minutes: ${{ matrix.os == 'windows-latest' && matrix.node-version == 22 && 25 || 15 }}
     strategy:
       fail-fast: false
       matrix:
