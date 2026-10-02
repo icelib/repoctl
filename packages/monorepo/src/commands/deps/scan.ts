@@ -38,14 +38,14 @@ export async function scanDependencies(cwd: string, options: { policy?: boolean 
     const relative = path.relative(workspaceDir, candidate)
     contents.set(relative, await readInput(workspaceDir, relative))
   }
-  const loaded = await loadMonorepoConfigDetails(workspaceDir, { refresh: true })
-  for (const file of loaded.files) {
+  const loaded = options.policy === false ? undefined : await loadMonorepoConfigDetails(workspaceDir, { refresh: true })
+  for (const file of loaded?.files ?? []) {
     const relative = path.relative(workspaceDir, file)
     if (!contents.has(relative)) {
       contents.set(relative, await readInput(workspaceDir, relative))
     }
   }
-  const policy = options.policy === false ? [] : validatePolicy(loaded.config.commands?.deps ?? {})
+  const policy = loaded ? validatePolicy(loaded.config.commands?.deps ?? {}) : []
   const occurrences: DependencyOccurrence[] = []
   const manifests = [...new Set(['package.json', ...packages.map(pkg => path.relative(workspaceDir, path.join(pkg.rootDir, 'package.json')))])].sort()
   for (const relative of manifests) {
