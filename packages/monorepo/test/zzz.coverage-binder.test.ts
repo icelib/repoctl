@@ -99,12 +99,16 @@ describe('coverage binder', () => {
       }
     })
     vi.doMock('@/core/config', () => ({
-      resolveCommandConfig: vi.fn(async () => ({
-        renameJson: true,
-        name: 'my-app',
-        templatesDir: './templates',
-        templateMap: { custom: 'custom/path' },
-        defaultTemplate: 'custom',
+      loadMonorepoConfigDetails: vi.fn(async () => ({
+        file: '/repo/repoctl.config.mjs',
+        rawLayers: [],
+        config: { commands: { create: {
+          renameJson: true,
+          name: 'my-app',
+          templatesDir: './templates',
+          templateMap: { custom: 'custom/path' },
+          defaultTemplate: 'custom',
+        } } },
       })),
     }))
     const successMock = vi.fn()

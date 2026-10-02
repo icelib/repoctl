@@ -21,6 +21,19 @@ describe('runCreateFlow', () => {
     })
   })
 
+  it('offers custom templates from the shared catalog and preserves choice metadata', async () => {
+    setTty(true)
+    resolveCommandConfigMock.mockResolvedValueOnce({
+      templateMap: { internal: { source: 'service', target: 'apps/internal', category: 'service', description: 'Internal API' } },
+      choices: [{ value: 'internal', name: 'Company service', description: 'Company API' }],
+    })
+    selectMock.mockResolvedValueOnce('internal')
+    const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
+    await runCreateFlow('/repo', 'service')
+    expect(selectMock).toHaveBeenCalledWith(expect.objectContaining({ choices: [{ value: 'internal', name: 'Company service', description: 'Company API' }] }))
+    expect(createNewProjectMock).toHaveBeenCalledWith({ cwd: '/repo', name: 'apps/service', type: 'internal' })
+  })
+
   it('maps web-app intent to apps directory', async () => {
     setTty(true)
     selectMock.mockResolvedValueOnce('web-app').mockResolvedValueOnce('vue-hono')
