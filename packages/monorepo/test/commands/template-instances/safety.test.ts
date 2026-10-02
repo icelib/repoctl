@@ -31,7 +31,7 @@ it('refuses a metadata symlink without writing outside the workspace or touching
 it('leaves an explicit recoverable generated project when registration is locked', async (t) => {
   const f = await fixture(t)
   await write(f.cwd, '.repoctl/template-instances.lock', 'unknown writer\n')
-  await expect(createNewProject({ cwd: f.cwd, name: 'packages/recover' })).rejects.toThrow(`Registry recovery path: ${path.join(f.cwd, '.repoctl/template-instances.json')}`)
+  await expect(createNewProject({ cwd: f.cwd, name: 'packages/recover' })).rejects.toThrow(`Registry recovery path: ${path.join(f.cwd, '.repoctl/template-instances.json').replaceAll('\\', '/')}`)
   expect(JSON.parse(await fs.readFile(path.join(f.cwd, 'packages/recover/package.json'), 'utf8')).name).toBe('recover')
   expect(await listTemplateInstances(f.cwd)).toEqual([])
   expect(await fs.readFile(path.join(f.cwd, '.repoctl/template-instances.lock'), 'utf8')).toBe('unknown writer\n')
