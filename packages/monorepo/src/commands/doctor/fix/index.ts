@@ -5,6 +5,7 @@ import { isDeepStrictEqual } from 'node:util'
 import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
 import path from 'pathe'
 import { stageFileTransaction } from '../../../core/file-transaction'
+import { withOperationLock } from '../../../core/operation-lock'
 import { record, safeFile } from '../../deps/files'
 import { runDoctor } from '../index'
 import { readDoctorManifest } from './files'
@@ -45,8 +46,7 @@ function validatePlan(value: unknown, workspaceDir: string): DoctorFixOperation[
   })
 }
 
-export async function applyDoctorFixPlan(cwd: string, plan: DoctorFixPlan): Promise<DoctorFixResult> {
-  const workspaceDir = await root(cwd)
+async function applyLocked(workspaceDir: string, plan: DoctorFixPlan): Promise<DoctorFixResult> {
   const operations = validatePlan(plan, workspaceDir)
   const updates: Array<{ path: string, original: string, content: string }> = []
   for (const operation of operations) {
@@ -77,4 +77,9 @@ export async function applyDoctorFixPlan(cwd: string, plan: DoctorFixPlan): Prom
     throw new Error(`Doctor fixes were applied; review and remove retained recovery files: ${leftovers.join(', ')}`)
   }
   return { status: updates.length ? 'applied' : 'unchanged', changed: updates.map(update => update.path), verification }
+}
+
+export async function applyDoctorFixPlan(cwd: string, plan: DoctorFixPlan): Promise<DoctorFixResult> {
+  const workspaceDir = await root(cwd)
+  return withOperationLock(workspaceDir, 'doctor-fix', () => applyLocked(workspaceDir, plan))
 }

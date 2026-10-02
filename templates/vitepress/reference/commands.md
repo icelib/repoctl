@@ -174,3 +174,5 @@ repo skills sync --codex
 - [Add checks to CI](/tasks/ci)
 - [Troubleshoot](/tasks/troubleshooting)
 - [Command Aliases](./aliases.md)
+
+Doctor fix application holds `.repoctl/doctor-fix.lock` from input validation through verification, rollback and cleanup, preventing overlapping writers from undoing a successful fix. After a crash, verify no writer remains and reconcile any retained backups before manually removing the lock.

@@ -324,3 +324,5 @@ Usage:
 ## Affected CI matrix
 
 `repo check --affected --matrix` previews a versioned GitHub Actions matrix without running checks. `--shards N` deterministically groups workspaces into at most 1–256 jobs. Reuse base/head, filters and global inputs from affected mode. Pass only `matrix` to Actions `fromJSON`, gate strategy expansion with `hasWork`, and execute each row's non-skipped executable/args arrays in order from the checkout root. Each job builds dependencies itself. Full fallbacks stay in one job and retain diagnostics. No workflow is changed or triggered; only explicit `--out` writes a report.
+
+Doctor fix application holds `.repoctl/doctor-fix.lock` through validation, verification, rollback and cleanup. After a crash, confirm no writer remains and reconcile backups before manually removing the lock.

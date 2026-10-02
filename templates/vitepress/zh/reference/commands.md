@@ -221,3 +221,5 @@ repo skills sync --codex
 - [把校验加入 CI](/zh/tasks/ci)
 - [报告与自动化输出](/zh/tasks/reports)
 - [命令别名](./aliases.md)
+
+Doctor 修复在输入校验、应用、验证、回滚和清理期间持有 `.repoctl/doctor-fix.lock`，防止并发写入使成功修复被另一事务回退。进程异常退出后，先确认没有活动写入者并处理保留备份，再手动移除锁。
