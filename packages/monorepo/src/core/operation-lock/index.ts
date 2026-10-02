@@ -1,3 +1,4 @@
+import type { BigIntStats } from 'node:fs'
 import { randomUUID } from 'node:crypto'
 import { lstat, mkdir, open, readFile, realpath, rmdir, unlink } from 'node:fs/promises'
 import path from 'pathe'
@@ -13,10 +14,11 @@ export async function withOperationLock<T>(root: string, name: 'typescript-refer
       throw new Error(`Unsafe operation lock directory: ${directory}`)
     }
   }
-  let createdDirectory: Awaited<ReturnType<typeof lstat>> | undefined
+  // File IDs can exceed Number.MAX_SAFE_INTEGER, particularly on Windows.
+  let createdDirectory: BigIntStats | undefined
   try {
     await mkdir(directory)
-    createdDirectory = await lstat(directory)
+    createdDirectory = await lstat(directory, { bigint: true })
   }
   catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
@@ -24,7 +26,7 @@ export async function withOperationLock<T>(root: string, name: 'typescript-refer
     }
   }
   let handle: Awaited<ReturnType<typeof open>> | undefined
-  let identity: Awaited<ReturnType<typeof lstat>> | undefined
+  let identity: BigIntStats | undefined
   let written = false
   const token = `${randomUUID()}\n`
   const failures: unknown[] = []
@@ -40,7 +42,7 @@ export async function withOperationLock<T>(root: string, name: 'typescript-refer
       }
       throw error
     }
-    identity = await handle.stat()
+    identity = await handle.stat({ bigint: true })
     await handle.writeFile(token)
     written = true
     result = await run()
@@ -52,8 +54,8 @@ export async function withOperationLock<T>(root: string, name: 'typescript-refer
     await handle?.close()
     if (identity) {
       await validateDirectory()
-      const current = await lstat(filename)
-      if (!current.isFile() || current.isSymbolicLink() || current.nlink !== 1 || current.ino !== identity.ino || current.dev !== identity.dev || (written && await readFile(filename, 'utf8') !== token)) {
+      const current = await lstat(filename, { bigint: true })
+      if (!current.isFile() || current.isSymbolicLink() || current.nlink !== 1n || current.ino !== identity.ino || current.dev !== identity.dev || (written && await readFile(filename, 'utf8') !== token)) {
         throw new Error('Operation lock ownership changed')
       }
       await unlink(filename)
@@ -65,7 +67,7 @@ export async function withOperationLock<T>(root: string, name: 'typescript-refer
   if (createdDirectory) {
     try {
       await validateDirectory()
-      const current = await lstat(directory)
+      const current = await lstat(directory, { bigint: true })
       if (current.ino === createdDirectory.ino && current.dev === createdDirectory.dev) {
         await rmdir(directory)
       }
