@@ -122,6 +122,8 @@ export {
   verifyStagedTypecheck,
 }
 
+export { resolveAffectedCheckPlan } from './check/affected'
+export type { AffectedCheckCommand, AffectedCheckOptions, AffectedCheckPlan, AffectedCheckSettings, AffectedFallback, AffectedFile, AffectedGitRange, AffectedPackage } from './check/affected'
 export { runCheckWithReport } from './check/execute'
 
 export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus, CheckExecutionTask } from './check/types'

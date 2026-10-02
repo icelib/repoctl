@@ -68,6 +68,25 @@ repo check --staged --markdown --redact --out reports/check-plan.md
 
 JSON field names and command IDs do not change with `--lang`; only human-readable descriptions do.
 
+## Affected Checks
+
+```bash
+repo check --affected --base origin/main --head HEAD --json
+repo check --affected --base HEAD~1 --filter @acme/web --dry-run
+repo check --affected --global-input 'shared-config/**'
+repo check --affected --base origin/main --report reports/affected.json
+```
+
+Affected mode selects changed workspace packages and their direct/transitive consumers, including private apps. JSON schema version `1` records the Git range, file ownership, dependency paths, fallback reasons, package selection and skipped tasks. Repeatable `--filter` accepts exact names or workspace-relative directories and intersects the affected set. Empty intersections and missing scripts are explained; they never execute unfiltered recursive commands.
+
+The default range is the merge base of `origin/main` and `HEAD`, through `HEAD`, plus staged, unstaged and untracked files. `--head` must resolve to the current checkout. Missing refs, shallow/incomplete history, a non-current head, unavailable Git or a workspace nested below the Git root explicitly fall back to full checks. Unsafe workspace discovery fails instead of returning an empty plan. Deleted files and both sides of renames retain their owners; package manifest changes, including new/deleted packages, trigger full checks because dependencies may have changed.
+
+Default global inputs cover root package/workspace/lock/Turbo files, TypeScript/lint/test/commit configs, `.npmrc`, `.pnpmfile.*`, Node version files, `.github/**`, `.husky/**`, `scripts/**` and `patches/**`. Turbo `globalDependencies` and repeatable `--global-input` globs are additive. Unknown unowned files trigger full checks. Root Markdown, `docs/**` and license/notice documents are ignored unless a global rule matches; files inside a workspace remain package inputs. An unreadable Turbo config or unresolved graph diagnostics (including catalogs) also trigger full fallback when there are changes. Inspect `globalInputs` and `fallback` in JSON for the exact rules and reasons.
+
+Execution follows `build → lint → typecheck → tsd → test`, skipping unavailable scripts. pnpm recursive commands receive the exact planned filters and handle dependency ordering. Build also includes dependencies outside the affected/filter set, recorded in `prerequisiteTargets`, so tests can use built artifacts. Full fallback uses each existing root script; when a root script is absent, it uses that script across all selected packages. Explicit filters limit checks even during fallback; build prerequisites may still lie outside them. Root scripts are responsible for their own Turbo/pnpm delegation.
+
+`--json`, `--markdown`, `--dry-run` and `--out` remain previews. `--report` executes the same model and embeds it as `affectedPlan`. `--affected` cannot combine with `--full`, `--staged` or `--edit-file`; base/head/filter/global-input options require affected mode. Programmatic callers use `resolveAffectedCheckPlan({ cwd, base, head, filters, globalInputs })` or `runCheckWithReport({ cwd, affected: true, ... })`.
+
 ## Execution Reports
 
 ```bash

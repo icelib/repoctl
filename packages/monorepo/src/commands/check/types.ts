@@ -1,4 +1,5 @@
 import type { RecommendedCheckMode, RecommendedCheckOptions } from '../check'
+import type { AffectedCheckPlan, AffectedCheckSettings } from './affected/types'
 
 export type CheckExecutionStatus = 'success' | 'failed' | 'skipped' | 'interrupted'
 
@@ -21,16 +22,18 @@ export interface CheckExecutionTask {
 export interface CheckExecutionReport {
   schemaVersion: 1
   cwd: string
-  mode: RecommendedCheckMode
+  mode: RecommendedCheckMode | 'affected'
   status: Exclude<CheckExecutionStatus, 'skipped'>
   startedAt: string
   endedAt: string
   durationMs: number
   exitCode: number
   tasks: CheckExecutionTask[]
+  affectedPlan?: AffectedCheckPlan
 }
 
-export interface CheckExecutionOptions extends Omit<RecommendedCheckOptions, 'spawn'> {
+export interface CheckExecutionOptions extends Omit<RecommendedCheckOptions, 'spawn'>, AffectedCheckSettings {
+  affected?: boolean
   /** Abort stops the active child and leaves remaining tasks skipped. */
   signal?: AbortSignal
 }

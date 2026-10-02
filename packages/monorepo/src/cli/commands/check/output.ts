@@ -1,6 +1,10 @@
 import type { RecommendedCheckPlan } from '../../../commands/check'
+import type { AffectedCheckPlan } from '../../../commands/check/affected'
 import os from 'node:os'
 import { localize } from '../../../i18n'
+import { formatAffectedCheckPlan } from './affected'
+
+type CheckPlan = RecommendedCheckPlan | AffectedCheckPlan
 
 interface CheckOutputOptions {
   json?: boolean
@@ -72,7 +76,7 @@ function redactCheckPlanValue(value: unknown, replacements: Array<[string, strin
   return value
 }
 
-function redactCheckPlan(plan: RecommendedCheckPlan): RecommendedCheckPlan {
+function redactCheckPlan(plan: CheckPlan): CheckPlan {
   const candidates: Array<[string, string]> = [
     [plan.cwd, '<cwd>'],
     [os.homedir(), '<home>'],
@@ -81,13 +85,16 @@ function redactCheckPlan(plan: RecommendedCheckPlan): RecommendedCheckPlan {
     .filter(([search], index, entries) => search.length > 0 && entries.findIndex(([value]) => value === search) === index)
     .sort(([left], [right]) => right.length - left.length)
 
-  return redactCheckPlanValue(plan, replacements) as RecommendedCheckPlan
+  return redactCheckPlanValue(plan, replacements) as CheckPlan
 }
 
-export function createCheckPlanOutput(plan: RecommendedCheckPlan, opts: CheckOutputOptions) {
+export function createCheckPlanOutput(plan: CheckPlan, opts: CheckOutputOptions) {
   const outputPlan = opts.redact ? redactCheckPlan(plan) : plan
   if (opts.json) {
     return JSON.stringify(outputPlan, null, 2)
+  }
+  if (outputPlan.mode === 'affected') {
+    return formatAffectedCheckPlan(outputPlan, opts.markdown)
   }
   if (opts.markdown) {
     return formatCheckPlanMarkdown(outputPlan)

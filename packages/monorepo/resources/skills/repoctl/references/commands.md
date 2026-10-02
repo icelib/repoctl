@@ -34,12 +34,22 @@ Usage:
 - npx repoctl check
 - npx repoctl check --staged
 - npx repoctl check --full
+- npx repoctl check --affected --base origin/main --head HEAD --json
+- npx repoctl check --affected --filter @acme/web --report reports/affected.json
 - npx repoctl check --dry-run
 - npx repoctl check --json --out reports/check-plan.json
 - npx repoctl check --full --report reports/check-result.json --redact
 - npx repoctl check --full --report reports/check-result.md --report-format markdown
   Notes:
 - default mode runs the lightweight local verification flow
+- `--affected` selects changed packages and consumers, using merge-base plus the current working tree.
+  Missing history, manifest/global input changes and unresolved graph diagnostics explicitly fall back
+  to full checks. `--filter` intersects exact names/directories; `--global-input` adds globs.
+  Both flags are repeatable. Execution uses build, lint, typecheck, tsd, test order; build includes
+  dependency prerequisites and pnpm controls package ordering. Plans explain files, paths and skips.
+  Existing preview flags remain read-only; reports embed the same model as `affectedPlan`.
+  Affected mode cannot combine with full, staged or edit-file. Root scripts implement full fallback
+  where available; explicit filters limit fallback checks too. See tasks/checks for global input rules.
 - `--staged` adds staged typecheck routing
 - `--full` runs the existing root lint, typecheck, test and build scripts
 - `--dry-run` previews the verification route without running checks

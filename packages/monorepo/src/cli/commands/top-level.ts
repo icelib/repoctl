@@ -1,5 +1,4 @@
 import type { Command } from '@icebreakers/monorepo-templates'
-import type { RecommendedCheckPlan } from '../../commands/check'
 import type { DoctorReport } from '../../commands/doctor'
 import type { CliOpts } from '../../types'
 import process from 'node:process'
@@ -8,21 +7,8 @@ import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import fs from '../../utils/fs'
 import { normalizeCliOpts } from '../utils'
-import { createCheckPlanOutput } from './check/output'
+import { registerCheckCommand } from './check'
 import { createDoctorReportOutput, createInteractiveDoctorReportOutput, hasDoctorBlockingIssues } from './doctor/output'
-
-interface CheckCliOptions {
-  full?: boolean
-  staged?: boolean
-  editFile?: string
-  dryRun?: boolean
-  json?: boolean
-  markdown?: boolean
-  out?: string
-  redact?: boolean
-  report?: string
-  reportFormat?: string
-}
 
 interface InitCliOptions {
   force?: boolean
@@ -50,19 +36,6 @@ async function emitDoctorReport(report: DoctorReport, opts: DoctorCliOptions, cw
   const content = opts.json || opts.markdown || opts.out
     ? createDoctorReportOutput(report, opts)
     : createInteractiveDoctorReportOutput(report, opts)
-
-  if (!opts.out) {
-    logger.log(content)
-    return
-  }
-
-  const outFile = path.resolve(cwd, opts.out)
-  await fs.outputFile(outFile, `${content}\n`, 'utf8')
-  logger.success(localize(`Wrote ${path.relative(cwd, outFile)}`, `已写入 ${path.relative(cwd, outFile)}`))
-}
-
-async function emitCheckPlan(plan: RecommendedCheckPlan, opts: CheckCliOptions, cwd: string) {
-  const content = createCheckPlanOutput(plan, opts)
 
   if (!opts.out) {
     logger.log(content)
@@ -115,53 +88,7 @@ export function registerTopLevelCommands(program: Command, cwd: string) {
       logger.info(localize('Next: run `pnpm install` and start the new workspace package.', '下一步：运行 `pnpm install`，然后启动新 workspace 包。'))
     })
 
-  program.command('check')
-    .description(localize('Run the recommended local verification', '执行推荐的本地校验'))
-    .option('--full', localize('Run full verification', '执行完整校验'))
-    .option('--staged', localize('Run staged-file verification', '仅执行 staged 相关校验'))
-    .option('--edit-file <file>', localize('Validate a commit message file', '执行 commit message 校验'))
-    .option('--dry-run', localize('Preview checks without running them', '预览将要执行的校验，不实际运行'))
-    .option('--json', localize('Output the check plan as JSON; implies --dry-run', '以 JSON 输出校验计划，隐含 --dry-run'))
-    .option('--markdown', localize('Output the check plan as Markdown; implies --dry-run', '以 Markdown 输出校验计划，隐含 --dry-run'))
-    .option('--out <file>', localize('Write the check plan to a file; implies --dry-run', '把校验计划写入文件，隐含 --dry-run'))
-    .option('--redact', localize('Redact cwd and home paths', '脱敏 cwd/home 绝对路径后再输出'))
-    .option('--report <file>', localize('Run checks and write an execution report to a separate file', '执行检查并把实际结果写入独立报告文件'))
-    .option('--report-format <format>', localize('Execution report format: json or markdown', '执行报告格式：json / markdown'))
-    .action(async (opts: CheckCliOptions) => {
-      const options = {
-        cwd,
-        ...(opts.full !== undefined ? { full: opts.full } : {}),
-        ...(opts.staged !== undefined ? { staged: opts.staged } : {}),
-        ...(opts.editFile !== undefined ? { editFile: opts.editFile } : {}),
-      }
-      if (opts.reportFormat && !opts.report) {
-        throw new Error('--report-format requires --report <file>')
-      }
-      if (opts.report) {
-        if (opts.dryRun || opts.json || opts.markdown || opts.out) {
-          throw new Error('--report cannot be combined with preview options: --dry-run, --json, --markdown, --out')
-        }
-        const format = opts.reportFormat ?? 'json'
-        if (format !== 'json' && format !== 'markdown') {
-          throw new Error('--report-format must be json or markdown')
-        }
-        const { emitCheckExecutionReport } = await import('./check/execute')
-        await emitCheckExecutionReport(options, opts.report, format, opts.redact)
-        return
-      }
-      const { resolveRecommendedCheckPlan, runRecommendedCheck } = await import('@/commands')
-      if (opts.dryRun || opts.json || opts.markdown || opts.out) {
-        if (opts.full) {
-          const { resolveFullWorkspaceCheckPlan } = await import('@/commands')
-          await emitCheckPlan(await resolveFullWorkspaceCheckPlan(cwd), opts, cwd)
-          return
-        }
-        await emitCheckPlan(resolveRecommendedCheckPlan(options), opts, cwd)
-        return
-      }
-      await runRecommendedCheck(options)
-      logger.success(localize('Checks finished.', '检查完成。'))
-    })
+  registerCheckCommand(program, cwd)
 
   program.command('doctor')
     .description(localize('Diagnose whether the current repository is ready to use', '诊断当前仓库是否适合直接开始使用'))
