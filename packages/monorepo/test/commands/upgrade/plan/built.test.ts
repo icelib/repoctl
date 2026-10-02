@@ -72,14 +72,14 @@ describe('built upgrade plans', () => {
   it('marks binary diffs explicitly and applies saved CLI plans with the workspace alias', async () => {
     const h = await fixture()
     await h.write('.editorconfig', Buffer.from([0, 255, 1, 2]))
-    const plan = await planUpgrade({ cwd: h.cwd, targets: ['.editorconfig'] })
+    const plan = await planUpgrade({ cwd: h.cwd, targets: ['.editorconfig'], overwrite: true })
     expect(plan.files[0]).toMatchObject({ binary: true, diff: null, status: 'modify' })
     expect(formatUpgradePlan(plan)).toContain('Binary file')
     const filename = path.join(h.root, 'reviewed.json')
     await writeFile(filename, JSON.stringify(plan))
     const result = cli(h.cwd, ['--apply', filename, '--json'], ['workspace', 'up'])
     expect(result.status, result.stderr).toBe(0)
-    expect(JSON.parse(result.stdout)).toEqual({ status: 'applied', changed: ['.editorconfig'] })
+    expect(JSON.parse(result.stdout)).toEqual({ status: 'applied', changed: ['.editorconfig', plan.files[0]!.baseline!.path] })
   })
 
   it('previews a missing output directory and retains unknown prerelease state', async () => {
@@ -129,7 +129,7 @@ describe('built upgrade plans', () => {
   it('explains omitted large-text diffs and exposes both public CLI help routes', async () => {
     const h = await fixture()
     await h.write('.editorconfig', 'x'.repeat(300000))
-    const plan = await planUpgrade({ cwd: h.cwd, targets: ['.editorconfig'] })
+    const plan = await planUpgrade({ cwd: h.cwd, targets: ['.editorconfig'], overwrite: true })
     expect(plan.files[0]).toMatchObject({ binary: false, diff: null })
     expect(formatUpgradePlan(plan)).toContain('exceeds the display limit')
     for (const command of [['upgrade'], ['workspace', 'up']]) {
