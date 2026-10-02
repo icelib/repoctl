@@ -323,3 +323,8 @@ Usage:
 ## `repo tooling references`
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config.md#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
+
+## Maintenance
+
+- `repo maintenance upgrade --base <full-sha> --head <full-sha> --out <external-empty-directory>` prepares a root-asset upgrade report and validated patch in a disposable clean checkout, only when the locked root repoctl version changes. Conflicts/failed checks block PR publication.
+- `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` exports an opt-in two-job recipe without overwriting files. Use only the trusted default branch; keep project execution in the read-only job and acquire the GitHub App write token only after immutable artifact, SHA, path, mode and hash verification. App permissions must include contents, pull requests and workflows write.
