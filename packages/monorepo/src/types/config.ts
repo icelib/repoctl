@@ -2,6 +2,7 @@ import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
 import type { AgenticTemplateFormat } from '../commands/ai'
 import type { CreateNewProjectOptions } from '../commands/create'
 import type { DependencyAdmissionConfig } from '../commands/deps/admission/types'
+import type { InstallSecurityExpectations } from '../commands/doctor/security/types'
 import type { InitPreset, InitToolingTarget } from '../commands/init'
 import type { CodeownersConfig } from '../core/codeowners/types'
 import type { WorkspaceBoundariesConfig } from '../core/workspace-boundaries/types'
@@ -184,6 +185,8 @@ export interface MonorepoConfig {
   boundaries?: WorkspaceBoundariesConfig
   /** Exact workspace names or relative paths mapped to GitHub owners. */
   codeowners?: CodeownersConfig
+  /** Optional installation policy expectations; pnpm remains the installer. */
+  installationSecurity?: InstallSecurityExpectations
   /**
    * 按命令分类的可选配置。
    * 各字段默认均为 `undefined`，命令执行时会按各自逻辑回退到内置默认值。

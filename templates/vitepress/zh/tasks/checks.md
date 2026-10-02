@@ -223,3 +223,4 @@ repoctl workspace owners --file .github/CODEOWNERS --sync
 必须显式选择工作区根目录下的 `.github/CODEOWNERS`、`CODEOWNERS` 或 `docs/CODEOWNERS`。根包可以通过 `.` 或根包名配置，其 `*` 默认规则先于更具体的子包规则生成。默认只读预览；即使同时传入 `--sync`，`--dry-run` 仍不写入。受管块外的规则、注释及顺序逐字保留。GitHub 使用最后匹配规则，后续可能覆盖包目录或子路径的规则（含无 owner 规则）会得到诊断；更高优先级的 CODEOWNERS 文件也会提示。无法安全表达的目录字符和非法映射会阻止同步。
 
 公开 `planCodeowners()` / `applyCodeownersPlan()` 提供前后内容和 diff；应用时重新校验配置、工作区发现和文件内容，过期计划会被拒绝。单文件原子替换、拒绝符号链接和硬链接目标，重跑不产生额外变更。不发送消息、不请求 review、不修改权限或分支保护。
+安装策略：参见 [pnpm 安装安全](../reference/install-security.md)，检查版本冷却、信任降级和构建批准，并预览可选策略。

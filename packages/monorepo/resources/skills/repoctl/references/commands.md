@@ -309,3 +309,7 @@ Usage:
 ## Affected CI matrix
 
 `repo check --affected --matrix` previews a versioned GitHub Actions matrix without running checks. `--shards N` deterministically groups workspaces into at most 1–256 jobs. Reuse base/head, filters and global inputs from affected mode. Pass only `matrix` to Actions `fromJSON`, gate strategy expansion with `hasWork`, and execute each row's non-skipped executable/args arrays in order from the checkout root. Each job builds dependencies itself. Full fallbacks stay in one job and retain diagnostics. No workflow is changed or triggered; only explicit `--out` writes a report.
+
+### Installation security
+
+Use `repo doctor security --json` for a read-only, version-aware pnpm policy report. `--expectations policy.json --strict` checks organization requirements. `--preset balanced` previews only absent supported keys; save the JSON and explicitly use `--apply plan.json` after review. Preserve explicit policies, including release age zero and build approvals. Do not run lifecycle scripts or approve dependencies as part of inspection. Unknown versions/configuration are reported, not treated as safe.

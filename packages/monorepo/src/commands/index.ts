@@ -137,6 +137,10 @@ export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport }
 export { checkPackages } from './package-check'
 
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
+export { inspectInstallSecurity } from './doctor/security'
+export type { InstallBuildDecision, InstallPolicyKey, InstallSecurityExpectations, InstallSecurityOptions, InstallSecurityPresetPlan, InstallSecurityReport, InstallSecuritySetting } from './doctor/security'
+export { applyInstallSecurityPreset, planInstallSecurityPreset } from './doctor/security/preset'
+
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
 export { createReleasePlan } from './release/plan'
 
