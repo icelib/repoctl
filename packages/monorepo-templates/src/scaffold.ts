@@ -1,7 +1,10 @@
+import type { PreparedTemplateSource } from './instances/types'
 import type { TemplateChoice } from './types'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { templateChoices } from '../template-data.mjs'
+import { prepareTemplateInstanceSource } from './instances/source'
+import { recordWorkspaceTemplateInstances } from './instances/workspace'
 import { assetsDir as defaultAssetsDir, templatesDir as defaultTemplatesDir } from './paths'
 import { ensureTemplateAssetsPrepared } from './runtime-assets'
 import { toWorkspaceAssetPath, toWorkspaceGitignorePath } from './utils/gitignore'
@@ -37,6 +40,8 @@ export interface ScaffoldWorkspaceOptions {
   includeAssets?: boolean
   targetMode?: TargetMode
   force?: boolean
+  /** Runs caller-owned root transformations before any successful instance registration. */
+  afterScaffold?: () => Promise<void>
 }
 
 async function isEmptyDir(dir: string) {
@@ -179,18 +184,23 @@ export async function scaffoldWorkspace(options: ScaffoldWorkspaceOptions) {
   }
 
   if (!templateKeys.length) {
+    await options.afterScaffold?.()
     return
   }
 
   const selections = new Set(templateKeys)
+  const originals = new Map<string, PreparedTemplateSource>()
   for (const template of templateChoices as TemplateChoice[]) {
     if (!selections.has(template.key)) {
       continue
     }
     const from = path.join(templatesDir, template.source)
     const to = path.join(targetDir, template.target)
+    originals.set(template.key, await prepareTemplateInstanceSource(from))
     await scaffoldTemplate({ sourceDir: from, targetDir: to })
   }
+  await options.afterScaffold?.()
+  await recordWorkspaceTemplateInstances(targetDir, templateKeys, templatesDir, originals)
 }
 
 export type { TargetMode }
