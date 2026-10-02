@@ -7,6 +7,7 @@ import { freshConfigLoading } from './config/refresh'
 
 export interface LoadedMonorepoConfig {
   file: string | null
+  /** Canonical absolute dependency paths with normalized separators for comparisons. */
   files: string[]
   config: MonorepoConfig
 }
@@ -45,13 +46,13 @@ async function loadConfigInternal(cwd: string, refresh = false): Promise<LoadedM
     : undefined
   const files = await Promise.all([...new Set([configFile, ...(layers ?? []).map(layer => layer.configFile), ...dependencies])]
     .filter((file): file is string => Boolean(file && fs.existsSync(file)))
-    .map(file => realpath(file)))
+    .map(async file => path.normalize(await realpath(file))))
 
   return {
     file: matchedConfigFile
       ? await realpath(matchedConfigFile)
       : (configFile && fs.existsSync(configFile) ? await realpath(configFile) : null),
-    files,
+    files: [...new Set(files)],
     config: config ?? {},
   }
 }
