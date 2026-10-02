@@ -3,6 +3,7 @@ import type { DependencyFixPlan, DependencySection } from '../../types/dependenc
 import { readFile } from 'node:fs/promises'
 import process from 'node:process'
 import { localize } from '../../i18n'
+import { registerDependencyAdmission } from './deps/admission'
 import { registerPeerChecks } from './deps/peers'
 
 function output(value: unknown) {
@@ -12,6 +13,7 @@ function output(value: unknown) {
 export function registerDepsCommands(program: Command, cwd: string) {
   const deps = program.command('deps').description(localize('Inspect dependency declarations and review explicit fixes', '检查依赖声明并审阅显式修复'))
   registerPeerChecks(deps, cwd)
+  registerDependencyAdmission(deps, cwd)
   deps.command('check')
     .description(localize('Check dependency consistency without writing or accessing registries', '只读检查依赖版本一致性，不访问 registry'))
     .option('--json', localize('Output the dependency report as JSON', '以 JSON 输出依赖报告'))
