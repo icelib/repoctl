@@ -6,6 +6,7 @@ import path from 'pathe'
 import fs from '@/utils/fs'
 import { templatesDir as defaultTemplatesDir } from '../../constants'
 import { resolveCommandConfig } from '../../core/config'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { localize } from '../../i18n'
 
 /**
@@ -118,10 +119,11 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
   const cwd = options?.cwd ?? process.cwd()
   const createConfig = await resolveCommandConfig('create', cwd)
 
-  const renameJson = options?.renameJson ?? createConfig?.renameJson ?? false
-  const rawName = options?.name ?? createConfig?.name
+  const effective = resolveCommandValues('create', createConfig, { renameJson: options?.renameJson, name: options?.name, type: options?.type }).values
+  const renameJson = effective.renameJson!
+  const rawName = effective.name
   const name = typeof rawName === 'string' ? rawName.trim() : undefined
-  const requestedTemplate = options?.type ?? createConfig?.type ?? createConfig?.defaultTemplate ?? defaultTemplate
+  const requestedTemplate = effective.type ?? effective.defaultTemplate ?? defaultTemplate
 
   const templateDefinitions = getTemplateMap(createConfig?.templateMap)
   const templatesRoot = createConfig?.templatesDir

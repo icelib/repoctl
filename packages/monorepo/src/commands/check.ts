@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import process from 'node:process'
+import { loadMonorepoConfig } from '../core/config'
 import { localize } from '../i18n'
 import fs from '../utils/fs'
 import { verifyCommitMsg, verifyPreCommit, verifyStagedTypecheck } from './verify'
@@ -131,6 +132,7 @@ export async function resolveFullWorkspaceCheckPlan(cwd: string): Promise<Recomm
 }
 
 export async function runFullWorkspaceCheck(cwd: string, spawn: typeof spawnSync = spawnSync) {
+  await loadMonorepoConfig(cwd)
   const plan = await resolveFullWorkspaceCheckPlan(cwd)
 
   for (const command of plan.commands) {

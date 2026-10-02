@@ -1,11 +1,13 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import process from 'node:process'
 import path from 'pathe'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 afterEach(async () => {
   await vi.resetModules()
   vi.resetAllMocks()
+  vi.restoreAllMocks()
 })
 
 function mockProgram() {
@@ -39,6 +41,7 @@ function createInspection() {
 
 describe('commander program config command', () => {
   it('prints config inspection as json', async () => {
+    const write = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
     const inspectMock = vi.fn(async () => createInspection())
 
     mockProgram()
@@ -58,7 +61,7 @@ describe('commander program config command', () => {
     await program.parseAsync(['node', 'repo', 'config', 'inspect', '--json'])
 
     expect(inspectMock).toHaveBeenCalledWith(expect.any(String))
-    expect(logMock).toHaveBeenCalledWith(expect.stringContaining('"autoConfirm": true'))
+    expect(write).toHaveBeenCalledWith(expect.stringContaining('"autoConfirm": true'))
   })
 
   it('writes config inspection to a file', async () => {

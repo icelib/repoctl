@@ -69,9 +69,19 @@ export default defineMonorepoConfig({
 repo config inspect
 repo cfg i --json --out reports/config.json
 repo cfg i --markdown --redact --out reports/config.md
+repo config validate --json
+repo config inspect --command ai --set 'format="json"' --set 'force=false' --json
 ```
 
-`--redact` 适合把报告发到 issue、PR 或外部协作渠道。
+配置加载会在 CLI 执行，以及读取配置的 API 写入文件之前检查 repoctl 自有字段。未知字段、错误类型、非法枚举和冲突的覆盖策略会返回稳定规则 ID 与字段路径；可选字段请省略，不要填 `null`。ESLint、Stylelint、Commitlint、Vitest 原生透传、插件函数和 lint-staged 回调保留原有扩展边界，C12 配置工厂、继承配置和环境层继续可用。
+
+`config validate` 只读检查，失败退出码为 1。JSON 包含 `schemaVersion`、`valid`、`file` 和 `diagnostics`，诊断字段为 `id`、`path`、`actualType`、`expected`、`suggestion`。加载失败使用 `config.load-failed`，不输出配置代码抛出的任意内容。配置文件仍是受信任的 JavaScript，加载时会求值；本命令不会隔离配置代码自身的行为。
+
+`inspect --command` 支持 `ai`、`clean`、`create`、`deps`、`init`、`mirror`、`release`、`upgrade`，与命令执行复用同一个选项解析器。新增 `effective.values` 与逐字段 `effective.origins`，来源固定为 `default`、`project`、`cli`。重复传入 `--set 字段路径=JSON` 可只读预览配置覆盖；数组整体替换，显式 `false` 和空数组会保留。此处解释命令配置，实际发现的文件、选中的包和 `--all` 等运行参数请查看对应命令计划。
+
+配置 CLI 报告默认隐藏环境变量映射、脚本内容、工具原生配置及敏感键；`--redact` 额外替换 cwd、配置目录和 home 路径。程序化报告使用 `explainMonorepoConfig`、`validateConfigFile`。`loadMonorepoConfigDetails` 与原有 `inspectMonorepoConfig` 为需要回调的代码保留运行时对象，请勿直接序列化这些原始对象作为排障报告。
+
+旧版生成配置中的 `tooling.lintStaged.monorepoCommand` 应改为 `tooling.lintStaged.repoCommand`；旧字段此前被忽略，现在会明确报错。
 
 ## 配置的定位
 
@@ -107,3 +117,5 @@ repo cfg i --markdown --redact --out reports/config.md
 
 工作区之外的目录、符号链接目标或父路径、链接的根 package.json，以及
 会连带删除未选嵌套包的目标会在写入前被拒绝。此命令不修改消费者的依赖声明。
+
+`init` 检查上下文对应顶层 CLI，默认预设为 `standard`，项目配置和显式 CLI 选项依次覆盖默认值。公开 `init()` API 与 `workspace init` 保留仅初始化元数据的默认行为。来源路径中，动态键名内的点与反斜杠使用反斜杠转义。执行前会校验所有 repoctl 自有配置块，包括与当前命令无关的配置。

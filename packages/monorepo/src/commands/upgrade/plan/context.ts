@@ -4,6 +4,7 @@ import process from 'node:process'
 import path from 'pathe'
 import { assetsDir } from '../../../constants'
 import { getRepoctlConfigCandidates, loadMonorepoConfigDetails } from '../../../core/config'
+import { resolveCommandValues, selectCommandOverrides } from '../../../core/config/resolution'
 import { getAssetTargets } from '../targets'
 import { fileDiff } from './diff'
 import { canonicalDirectory, hash, readOptional, relativeFile } from './files'
@@ -12,10 +13,10 @@ export async function createContext(opts: UpgradeOptions) {
   const cwd = await canonicalDirectory(path.resolve(opts.cwd ?? process.cwd()))
   const loaded = await loadMonorepoConfigDetails(cwd, { refresh: true })
   const config = loaded.config.commands?.upgrade ?? {}
-  const options = { ...config, ...opts, cwd }
+  const options = { ...opts, ...resolveCommandValues('upgrade', config, selectCommandOverrides('upgrade', opts)).values, cwd }
   const rootDir = await canonicalDirectory(path.resolve(cwd, options.outDir ?? ''))
   const base = getAssetTargets(options.core ?? false)
-  const configured = config.targets?.length ? (config.mergeTargets === false ? config.targets : [...base, ...config.targets]) : base
+  const configured = config.targets?.length ? (options.mergeTargets === false ? config.targets : [...base, ...config.targets]) : base
   const targets = [...new Set(opts.targets ?? configured)].map(relativeFile).sort()
   const plan: UpgradePlan = { schemaVersion: 1, cwd, rootDir, assetDir: path.resolve(await canonicalDirectory(assetsDir)), status: 'ready', targets, discovery: null, inputs: [], files: [], blockers: [] }
   const buffers = new Map<string, Buffer | null>()
