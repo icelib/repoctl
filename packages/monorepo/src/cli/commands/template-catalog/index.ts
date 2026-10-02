@@ -17,7 +17,12 @@ interface TemplatesCliOptions {
 
 async function emitTemplateOutput(content: string, options: TemplatesCliOptions) {
   if (!options.out) {
-    logger.log(content)
+    if (options.json) {
+      process.stdout.write(`${content}\n`)
+    }
+    else {
+      logger.log(content)
+    }
     return
   }
 
