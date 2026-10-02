@@ -69,7 +69,7 @@ function printCreatePlan(plan: CreateNewProjectPlan) {
 }
 
 function printCreatePlanJson(plan: CreateNewProjectPlan) {
-  logger.log(JSON.stringify(plan, null, 2))
+  process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`)
 }
 
 function formatCreatePlan(plan: CreateNewProjectPlan) {
@@ -110,7 +110,7 @@ async function emitCreatePlan(plan: CreateNewProjectPlan, options: RunCreateFlow
 function handleCreateFlowError(error: unknown, json = false): RunCreateFlowResult {
   const message = error instanceof Error ? error.message : String(error)
   if (json) {
-    logger.log(JSON.stringify({ error: message }, null, 2))
+    process.stdout.write(`${JSON.stringify({ error: message }, null, 2)}\n`)
   }
   else {
     logger.error(message)
