@@ -323,6 +323,7 @@ Usage:
 ## `repo tooling references`
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config.md#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
+
 ## Build contexts and production directories
 
 Preview `repo workspace prepare <exact-name-or-./directory> --mode prune|deploy --out ../empty-output --json`; save the plan outside the source workspace. Apply only after review with `repo workspace prepare --apply ../plan.json`. Prune uses local Turbo 2 and optional `--docker`; deploy uses exact pinned pnpm 10/11/12 with production dependencies, frozen lockfile, disabled lifecycle/pnpmfile hooks, optional `--offline`/explicit `--legacy`, and an existing built `--entry` or manifest main/single bin. Native version-specific injection and peer behavior remains authoritative. No application, image publishing or cloud deployment is executed.

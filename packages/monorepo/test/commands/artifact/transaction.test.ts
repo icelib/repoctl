@@ -1,6 +1,7 @@
 import type { WorkspaceArtifactPlan } from '@icebreakers/monorepo'
 import { execFile } from 'node:child_process'
 import { chmod, mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
+import { delimiter } from 'node:path'
 import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { promisify } from 'node:util'
@@ -36,7 +37,7 @@ it('restores an empty destination when source inputs change during publication',
     const open = fs.open
     fs.open = async (filename, ...args) => {
       const handle = await open(filename, ...args)
-      if (filename === path.join(output, 'dist/index.js')) {
+      if (path.resolve(filename) === path.resolve(output, 'dist/index.js')) {
         const close = handle.close.bind(handle)
         handle.close = async () => {
           await close()
@@ -60,7 +61,7 @@ it('preserves a concurrent file collision instead of overwriting it', async () =
   const result = await instrument(plan, `
     const open = fs.open
     fs.open = async (filename, ...args) => {
-      if (filename === path.join(output, 'dist/index.js')) {
+      if (path.resolve(filename) === path.resolve(output, 'dist/index.js')) {
         await fs.writeFile(filename, 'concurrent output')
       }
       return open(filename, ...args)
@@ -84,7 +85,7 @@ it('locks identical concurrent plans until the first publication finishes rollba
     const open = fs.open
     fs.open = async (filename, ...args) => {
       const handle = await open(filename, ...args)
-      if (filename === path.join(output, 'dist/index.js')) {
+      if (path.resolve(filename) === path.resolve(output, 'dist/index.js')) {
         const close = handle.close.bind(handle)
         handle.close = async () => {
           await close()
@@ -97,7 +98,7 @@ it('locks identical concurrent plans until the first publication finishes rollba
     }
   `, `
     const first = applyWorkspaceArtifactPlan(root, plan).catch(error => error.message)
-    await paused
+    await Promise.race([paused, first.then(() => { throw new Error('Publication hook did not pause the first operation') })])
     let second
     try { second = await applyWorkspaceArtifactPlan(root, plan) } catch (error) { second = error.message }
     release()
@@ -135,7 +136,7 @@ it('reports native peer failures and leaves the source and destination intact', 
       await applyWorkspaceArtifactPlan(process.argv[2], plan)
     } catch (error) { process.stdout.write(error.message) }
   `
-  const result = await promisify(execFile)(process.execPath, ['--input-type=module', '-e', script, entry, h.root, h.output], { env: { ...process.env, PATH: `${bin}${path.delimiter}${process.env['PATH']}` }, timeout: 30000 })
+  const result = await promisify(execFile)(process.execPath, ['--input-type=module', '-e', script, entry, h.root, h.output], { env: { ...process.env, PATH: `${bin}${delimiter}${process.env['PATH']}` }, timeout: 30000 })
   expect(result.stdout).toContain('exit 7')
   expect(result.stdout).toContain('ERR_PNPM_DEPLOY_AMBIGUOUS_PEER')
   expect(await snapshot(h.root)).toEqual(before)
