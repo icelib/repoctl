@@ -3,6 +3,7 @@ import type { AgenticTemplateFormat } from '../commands/ai'
 import type { CreateNewProjectOptions } from '../commands/create'
 import type { DependencyAdmissionConfig } from '../commands/deps/admission/types'
 import type { InitPreset, InitToolingTarget } from '../commands/init'
+import type { CodeownersConfig } from '../core/codeowners/types'
 import type { WorkspaceBoundariesConfig } from '../core/workspace-boundaries/types'
 import type { CleanCommandConfig } from './clean'
 import type { CliOpts } from './cli'
@@ -182,6 +183,8 @@ export interface MonorepoConfig {
   dependencyPolicy?: DependencyAdmissionConfig
   /** Internal manifest dependency policies, also checked by doctor when configured. */
   boundaries?: WorkspaceBoundariesConfig
+  /** Exact workspace names or relative paths mapped to GitHub owners. */
+  codeowners?: CodeownersConfig
   /**
    * 按命令分类的可选配置。
    * 各字段默认均为 `undefined`，命令执行时会按各自逻辑回退到内置默认值。

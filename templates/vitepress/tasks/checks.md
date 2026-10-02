@@ -153,3 +153,24 @@ Selectors combine fields with AND and values within one field with OR. `packages
 Reports contain stable rule IDs, the violated manifest field, endpoints and exact edges. Each cyclic strongly connected component produces one deterministic closed representative chain and its full member list, rather than enumerating every cycle. A cycle exception removes only the exact typed edge; remaining cycles are still checked. Reasons and waived edges remain visible. Unknown fields/tags, invalid paths, duplicate IDs and missing exception reasons fail validation. Unmatched selector alternatives and unused exceptions warn; incomplete internal graph resolution fails so missing relationships are not reported as healthy.
 
 The public `checkWorkspaceBoundaries(cwd, { config? })` returns schemaVersion 1 with findings, exceptions and summary. Explicit API config replaces project configuration for that call. Relative IDs and rule IDs do not change with output language. Put the CLI or `repo doctor --strict` into an existing pnpm CI script; repoctl adds no separate task runner.
+
+## Workspace ownership and CODEOWNERS
+
+Declare exact package names or workspace-relative paths in `repoctl.config.ts`:
+
+```ts
+export default {
+  codeowners: { owners: { '@acme/web': ['@acme/frontend'], 'libraries/sdk': ['@maintainer'] } },
+}
+```
+
+`repoctl workspace owners [workspace] --json` reports private and public packages, owners, configuration sources, and missing ownership. Owners accept GitHub users, teams, or email addresses. No network calls verify membership; actual access and review permissions remain managed by GitHub.
+
+```sh
+repoctl workspace owners --file .github/CODEOWNERS --dry-run
+repoctl workspace owners --file .github/CODEOWNERS --sync
+```
+
+A file is always explicit: `.github/CODEOWNERS`, `CODEOWNERS`, or `docs/CODEOWNERS`, relative to the workspace root. Map `.` or the root package name to create a `*` default rule before the more specific child package rules. The default is read-only. `--dry-run` also prevents writes with `--sync`. A marked block preserves outside rules/comments byte for byte. The last matching GitHub rule wins: later rules that may shadow generated paths are reported, including ownerless rules. An existing higher-priority CODEOWNERS file is reported. Unsupported literal directory characters and invalid mappings block sync.
+
+The public `planCodeowners()` / `applyCodeownersPlan()` APIs expose before/after content and a diff, revalidate configuration and workspace inputs, and reject stale plans. Writes replace one file atomically, refuse symlink/hardlink targets, and are idempotent. No messages, review requests, permissions, or branch protection are changed.

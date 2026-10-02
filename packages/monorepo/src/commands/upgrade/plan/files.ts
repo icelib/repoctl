@@ -30,7 +30,7 @@ export function relativeFile(relative: string) {
 }
 
 /** Reject linked components and non-files; missing parents are valid planned additions. */
-export async function checkedFile(root: string, relative: string) {
+export async function checkedFile(root: string, relative: string, owned?: { ino: number, dev: number }) {
   relativeFile(relative)
   if (await canonicalDirectory(root) !== root) {
     throw new Error(`Upgrade root changed: ${root}`)
@@ -41,7 +41,8 @@ export async function checkedFile(root: string, relative: string) {
     current = path.join(current, part)
     try {
       const info = await lstat(current)
-      if (info.isSymbolicLink() || (index < parts.length - 1 ? !info.isDirectory() : !info.isFile() || info.nlink !== 1)) {
+      const ownLink = owned && info.ino === owned.ino && info.dev === owned.dev
+      if (info.isSymbolicLink() || (index < parts.length - 1 ? !info.isDirectory() : !info.isFile() || (info.nlink !== 1 && !ownLink))) {
         throw new Error(`Linked or non-file upgrade target: ${relative}`)
       }
     }
@@ -54,8 +55,8 @@ export async function checkedFile(root: string, relative: string) {
   return path.join(root, relative)
 }
 
-export async function readOptional(root: string, relative: string) {
-  const filename = await checkedFile(root, relative)
+export async function readOptional(root: string, relative: string, owned?: { ino: number, dev: number }) {
+  const filename = await checkedFile(root, relative, owned)
   try {
     return await readFile(filename)
   }
