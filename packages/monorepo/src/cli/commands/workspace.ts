@@ -10,6 +10,7 @@ import { normalizeCleanOptions } from '../utils'
 import { registerUpgradeCommand } from './upgrade'
 import { registerWorkspaceBoundaries } from './workspace/boundaries'
 import { registerWorkspaceGraphCommands } from './workspace/graph'
+import { registerWorkspaceMove } from './workspace/move'
 import { registerWorkspaceOwnersCommand } from './workspace/owners'
 import { registerWorkspaceRemoval } from './workspace/remove'
 import { registerWorkspaceTasks } from './workspace/tasks'
@@ -147,6 +148,7 @@ export function registerWorkspaceCommands(program: Command, cwd: string) {
   registerWorkspaceTasks(workspaceCommand, cwd)
   registerUpgradeCommand(workspaceCommand, cwd, 'up')
   registerWorkspaceRemoval(workspaceCommand, cwd)
+  registerWorkspaceMove(workspaceCommand, cwd)
 
   workspaceCommand.command('init')
     .description(localize('Initialize workspace metadata and repository files', '初始化工作区元信息（README、package.json、pnpm intent、issue template）'))

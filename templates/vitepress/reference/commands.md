@@ -1,5 +1,7 @@
 # Command Reference
 
+Use [`repo workspace move`](./move.md) with `--to`, `--name`, or both to preview workspace refactoring. Review the JSON plan and located source tasks, then explicitly apply it with `--apply`.
+
 This page focuses on high-value repoctl commands and options.
 
 ## Main Entry
