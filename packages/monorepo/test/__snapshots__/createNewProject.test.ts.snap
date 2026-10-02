@@ -4,6 +4,7 @@ exports[`createNewProject > assets 1`] = `
 [
   ".agents/skills/repoctl/references/commands.md",
   ".agents/skills/repoctl/references/config.md",
+  ".agents/skills/repoctl/references/dependencies.md",
   ".agents/skills/repoctl/references/templates.md",
   ".agents/skills/repoctl/SKILL.md",
   ".dockerignore",
@@ -250,6 +251,7 @@ exports[`createNewProject > createNewProject demo website case 1`] = `
   "reference/aliases.md",
   "reference/commands.md",
   "reference/config.md",
+  "reference/dependencies.md",
   "reference/execution-model.md",
   "reference/index.md",
   "reference/output.md",
@@ -346,6 +348,7 @@ exports[`createNewProject > createNewProject demo website case 1`] = `
   "zh/reference/aliases.md",
   "zh/reference/commands.md",
   "zh/reference/config.md",
+  "zh/reference/dependencies.md",
   "zh/reference/execution-model.md",
   "zh/reference/index.md",
   "zh/reference/output.md",
@@ -373,6 +376,7 @@ exports[`createNewProject > upgradeMonorepo 1`] = `
 [
   ".agents/skills/repoctl/references/commands.md",
   ".agents/skills/repoctl/references/config.md",
+  ".agents/skills/repoctl/references/dependencies.md",
   ".agents/skills/repoctl/references/templates.md",
   ".agents/skills/repoctl/SKILL.md",
   ".dockerignore",

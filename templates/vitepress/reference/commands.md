@@ -87,6 +87,10 @@ Use it to preview or run the recommended local verification flow. `--staged` is 
 
 ## `repo upgrade`
 
+For third-party dependency declarations, use `repo deps check`, create an explicit
+read-only plan with `repo deps plan`, then apply reviewed JSON with `repo deps apply`.
+See [Dependency consistency](./dependencies.md) for protocols, version groups and recovery.
+
 ```bash
 repo upgrade
 repo upgrade --yes

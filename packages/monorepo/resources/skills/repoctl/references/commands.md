@@ -182,6 +182,8 @@ cleanup side effects.
 Clean configuration is read from the workspace root, including when invoked from
 a package subdirectory.
 
+See also `deps check`, `deps plan` and `deps apply` in [Dependency consistency](./dependencies.md) for version policy and reviewed manifest changes.
+
 ```bash
 pnpm exec repo workspace clean --dry-run
 pnpm exec repo workspace clean --yes --dry-run

@@ -53,6 +53,7 @@ export const routeSections = [
       item('', 'Reference overview', '参考总览'),
       item('commands', 'Command reference', '命令参考'),
       item('config', 'Configuration', '配置文件'),
+      item('dependencies', 'Dependency consistency', '依赖版本一致性'),
       item('execution-model', 'Execution model', '执行模型'),
       item('output', 'Output formats', '输出格式'),
       item('aliases', 'Command aliases', '命令别名'),
