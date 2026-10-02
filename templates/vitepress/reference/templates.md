@@ -179,3 +179,71 @@ For an existing workspace, use `repo new portal --template next`; the **Web App*
 `typecheck` runs `next typegen` followed by `tsc --noEmit`; lint remains a separate ESLint and Stylelint task. The package's Turbo configuration caches `.next/**` excluding `.next/cache/**`, includes all authored application inputs, and keeps server tasks and route type generation uncached. Generated `.next`, `next-env.d.ts`, build info and independent lockfiles are excluded from shipped templates.
 
 Use a `workspace:*` dependency and the public package name for internal libraries with compiled JavaScript/declaration exports. Inherited `^build` builds those dependencies first. For a library that intentionally exports TypeScript source, add its name to Next's [`transpilePackages`](https://nextjs.org/docs/app/api-reference/config/next-config-js/transpilePackages); it still needs compatible exports and server/client boundaries. Do not import another package's private source by relative path. The packaged acceptance test verifies both kinds of library against a production build, then checks server-rendered HTML, client interaction, mobile layout and the health endpoint in a headless browser.
+
+## Instance origins and historical association
+
+Successful `repo new` and `create-repoctl` runs register each generated instance in `.repoctl/template-instances.json`. Keep this file and `.repoctl/template-baselines/` in version control. Records contain the stable template key, actual template package version, source digest, generation profile, and only the supported `packageName` / `renameJson` inputs. Local custom sources use immutable content digests without claiming a published upstream version. Root managed assets have separate ownership and are not registered as project instances.
+
+```sh
+repo templates instances --json
+repo templates instances packages/shared-utils --json
+```
+
+An available baseline has two layers: the original delivered template and the output after repoctl transformations. Content-addressed snapshots preserve file bytes, executable flags, and empty directories, permitting offline reconstruction even after the old package is unavailable. Generated caches and dependencies are excluded using the template copy rules. Snapshots are template data, not executable migration scripts. Git metadata is captured only as part of a newly generated output; historical linking does not infer old Git identity from the current machine.
+
+For an existing project, select its historical template package version explicitly. `--source-dir` is an already extracted `@icebreakers/monorepo-templates` package directory, including its `package.json` and `templates/` directory. The package name and exact version are checked; no historical JavaScript or lifecycle scripts run, and links escaping the package are rejected. The installed package is usable when its exact version matches; retained baselines also support repeated offline associations.
+
+```sh
+repo templates link packages/shared-utils --template tsdown --source-version 2.1.0 --source-dir ../historical-templates --package-name shared-utils --json
+# After inspecting the added, modified and deleted paths:
+repo templates link packages/shared-utils --template tsdown --source-version 2.1.0 --source-dir ../historical-templates --package-name shared-utils --apply --json
+```
+
+The default `repo-new-v1` profile rewrites package name/version and workspace-relative configuration. Use `--rename-json` for historical `package.mock.json` output. Projects originally copied by `create-repoctl` use `--profile workspace-copy-v1`, which preserves template package names and does not accept rewrite parameters. Linking saves metadata and template-derived snapshots only; business files are never used as the historical baseline or rewritten.
+
+If the exact source cannot be recovered, the preview reports `unverified` and explains that reliable upgrades and upstream comparison are unavailable. `--unverified --apply` explicitly records that limitation. Floating tags such as `latest`, version ranges, conflicting registrations, and stale API plans are rejected. Querying and previewing do not create a registry. Repeated identical association preserves existing metadata without meaningless diffs. An unverified association can later be explicitly linked again with its exact source; the preview reports `verify` and shows differences before the baseline is recorded.
+
+```sh
+repo templates rebuild-baseline packages/shared-utils --destination ../isolated-rendered-baseline
+repo templates rebuild-baseline packages/shared-utils --destination ../isolated-original-template --original
+```
+
+The destination must not exist. Missing or corrupted retained snapshots are reported as `unavailable`, never as healthy. Deleted or renamed instance paths appear as `missing`; creation refuses to reuse their registered paths. `repo templates relocate <instance-id> <new-relative-path>` previews an explicit path association; `--apply` updates metadata only after the old path is missing and the destination exactly matches the retained rendered baseline. A changed destination cannot be automatically proven to be the same instance and is rejected.
+
+Metadata writes use a lock and atomic registry replacement. Failed registration never reports completed creation; generated files remain at the concrete recovery path in the error so they can be inspected and explicitly associated. A stale lock identifies its path: confirm that its writer has stopped before removing it. Failed metadata commits remove their temporary snapshots and leave the prior registry intact.
+
+## Upgrade one template instance
+
+Select an instance by its registered ID or target path, and request an exact target package version. Preview is read-only; `--apply` is required to change files. `--source-dir` reads an extracted package as data and runs no package scripts. Without it, the installed template package must match the requested version. The historical source is reconstructed from retained snapshots, so the old package need not remain installed.
+
+```sh
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --json
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --apply --json
+```
+
+The plan compares the old rendered baseline, current instance, and newly rendered template. Template-only edits are adopted, business-only edits are retained, and non-overlapping text edits are merged. The original generated package name and Git metadata are preserved. After success, the retained baseline advances to the new template output, keeping business customizations out of the upstream baseline. Repeating the same version uses retained snapshots offline and makes no further changes; changing source content under an existing version is rejected.
+
+Overlapping text edits, binary conflicts, addition collisions and file/directory replacements block the whole instance. The preview includes conflict paths and text regions; it never inserts conflict markers into business files. Resolve the relevant local edits and preview again, or explicitly transfer those paths to business ownership. Text merges preserve BOMs, CRLF and final-newline behavior; conflicting files whose combined three inputs exceed 1 MiB require manual resolution. POSIX executable flags are applied where supported; Windows retains its native read-only permissions without synthesizing executable bits.
+
+```sh
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --exclude README.md src/custom --json
+# Apply the same selection after review:
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --exclude README.md src/custom --apply --json
+```
+
+Exclusions are paths relative to the instance and persist in its registry record. A directory excludes all descendants; `src/custom/**` is accepted as the same directory selection. Arbitrary globs and escaping paths are rejected. Excluded contents are not read or included in the upgrade plan. Other business-only files and directories are outside the candidate scan, including large files and unrelated links. Exclusions accumulate across upgrades; there is no automatic re-enrollment command.
+
+User-deleted files and directories stay deleted, including new upstream descendants of a deleted directory. Upstream-deleted files are removed only when locally unchanged. A locally edited removal is a conflict. Removed directories are retained conservatively, because they can contain unmanaged business files or caches. Missing or unverified historical baselines stop the upgrade. Root managed assets, root dependency policy and other registered instances are outside this operation; dependency changes inside the selected instance's template manifest are treated as ordinary file changes.
+
+### Recover an interrupted upgrade
+
+Before mutation, repoctl writes `.repoctl/template-upgrades/<instance-id>.json` with the selected operation's file states and registry metadata. File changes and metadata replacement share the instance-registry lock. Ordinary failures restore this operation before releasing the lock. A concurrent business edit is retained, and an incomplete recovery record blocks another upgrade.
+
+```sh
+repo templates recover-upgrade packages/shared-utils --json
+repo templates recover-upgrade packages/shared-utils --apply --json
+```
+
+Recovery preview is read-only. Applying recovery restores recorded files and the previous source version only when each affected path still matches either its before or after state; conflicting business edits must be preserved and resolved first. It does not replay the failed upgrade. A process crash can leave `.repoctl/template-instances.lock`; verify its recorded process has stopped before removing that lock and applying recovery. A failure to clean up after metadata commit explicitly reports that the upgrade was applied; recovery still rolls that recorded operation back.
+
+Recovery records contain local before/after content only for files changed by that upgrade, and are removed on successful completion or recovery. Treat them as local backups and exclude `.repoctl/template-upgrades/` from version control. Keep the registry and template baselines tracked. JSON previews also contain template-managed candidate contents and should be handled accordingly. `--out <file>` explicitly writes a report even in preview mode.
