@@ -1,5 +1,6 @@
 import type { Command } from '@icebreakers/monorepo-templates'
 import type { AgenticTemplateFormat, GenerateAgenticTemplateOptions } from '../../commands/ai'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { localize } from '../../i18n'
 
 interface AiTemplateCommandOptions {
@@ -22,11 +23,12 @@ async function handleAiPromptCreate(cwd: string, opts: AiTemplateCommandOptions)
     import('@/core/config'),
   ])
   const aiConfig = await resolveCommandConfig('ai', cwd)
-  const format = opts.format ?? aiConfig?.format ?? 'md'
-  const force = opts.force ?? aiConfig?.force ?? false
-  const output = opts.output ?? aiConfig?.output
-  const baseDir = opts.dir ?? aiConfig?.baseDir ?? defaultAgenticBaseDir
-  const tasksFile = opts.tasks ?? aiConfig?.tasksFile
+  const resolved = resolveCommandValues('ai', aiConfig, { format: opts.format, force: opts.force, output: opts.output, baseDir: opts.dir, tasksFile: opts.tasks }).values
+  const format = resolved.format!
+  const force = resolved.force!
+  const output = resolved.output
+  const baseDir = resolved.baseDir ?? defaultAgenticBaseDir
+  const tasksFile = resolved.tasksFile
   const templateName = opts.name
 
   const shouldUseTasks = Boolean(tasksFile && !opts.output && !opts.name)

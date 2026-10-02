@@ -3,7 +3,9 @@ import fs from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import { loadConfig } from 'c12'
 import path from 'pathe'
-import { freshConfigLoading } from './config/refresh'
+import { commandConfigDirectory } from './config/context'
+import { validatedConfigLoading } from './config/loading'
+import { assertMonorepoConfig, ConfigValidationError } from './config/validation'
 
 export interface LoadedMonorepoConfig {
   file: string | null
@@ -40,8 +42,18 @@ async function loadConfigInternal(cwd: string, refresh = false): Promise<LoadedM
     defaults: {},
     globalRc: false,
     packageJson: false,
-    ...(refresh ? freshConfigLoading(dependencies) : {}),
+    ...validatedConfigLoading(dependencies, refresh),
+  }).catch((error: unknown) => {
+    if (error instanceof ConfigValidationError) {
+      throw error
+    }
+    // Config modules can throw credentials or arbitrary values. Never serialize their message/cause.
+    throw new ConfigValidationError([{ id: 'config.load-failed', path: '', actualType: 'unknown', expected: 'loadable repoctl configuration', suggestion: 'Check configuration syntax, imports and evaluation in your local editor.' }])
   })
+  for (const layer of layers ?? []) {
+    assertMonorepoConfig(layer.config ?? {})
+  }
+  assertMonorepoConfig(config ?? {})
 
   const matchedConfigFile = configFile && fs.existsSync(configFile)
     ? findConfigFiles(cwd).find(file => path.basename(file).toLowerCase() === path.basename(configFile).toLowerCase())
@@ -121,7 +133,7 @@ export async function resolveCommandConfig<Name extends keyof NonNullable<Monore
   name: Name,
   cwd: string,
 ): Promise<NonNullable<MonorepoConfig['commands']>[Name]> {
-  const config = await loadMonorepoConfig(cwd)
+  const config = await loadMonorepoConfig(await commandConfigDirectory(name, cwd))
   const commands = config.commands ?? {}
   const commandConfig = commands[name]
   return (commandConfig ?? {}) as NonNullable<MonorepoConfig['commands']>[Name]

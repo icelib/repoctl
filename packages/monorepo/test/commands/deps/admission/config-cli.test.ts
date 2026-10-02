@@ -30,14 +30,14 @@ describe('admission configuration and built CLI', () => {
     await writeFile(path.join(h.workspace, 'policy.mjs'), 'export default { rules: [] }')
     expect((await checkDependencyAdmission(h.workspace)).summary.fail).toBe(0)
     await writeFile(path.join(h.workspace, 'policy.mjs'), 'export default null')
-    await expect(checkDependencyAdmission(h.workspace)).rejects.toThrow('Null')
+    await expect(checkDependencyAdmission(h.workspace)).rejects.toMatchObject({ code: 'REPOCTL_CONFIG_INVALID', diagnostics: [{ path: 'dependencyPolicy' }] })
     expect((await runDoctor(h.workspace)).checks.find(item => item.id === 'admission-config')?.status).toBe('fail')
   })
 
-  it('does not require valid dependency version groups when running admission policy', async () => {
+  it('validates every owned config block before running admission policy', async () => {
     const h = await fixture({ 'packages/web': { dependencies: { 'legacy-sdk': '^1' } } })
     await writeFile(path.join(h.workspace, 'repoctl.config.mjs'), `export default ${JSON.stringify({ commands: { deps: { groups: false } }, dependencyPolicy: { rules: [rule()] } })}`)
-    expect((await checkDependencyAdmission(h.workspace)).summary.fail).toBe(1)
+    await expect(checkDependencyAdmission(h.workspace)).rejects.toMatchObject({ code: 'REPOCTL_CONFIG_INVALID', diagnostics: [{ path: 'commands.deps.groups' }] })
   })
 
   it('emits stable JSON across languages, exits on warn only with strict and integrates with doctor', async () => {
