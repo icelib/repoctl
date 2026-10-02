@@ -7,6 +7,7 @@ import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import fs from '../../utils/fs'
 import { normalizeCleanOptions, normalizeCliOpts } from '../utils'
+import { registerWorkspaceGraphCommands } from './workspace/graph'
 
 interface WorkspaceListCliOptions {
   json?: boolean
@@ -133,6 +134,7 @@ async function emitWorkspaceList(result: WorkspacePackageSummaryData, opts: Work
 
 export function registerWorkspaceCommands(program: Command, cwd: string) {
   const workspaceCommand = program.command('workspace').alias('ws').description(localize('Workspace commands', '工作区命令'))
+  registerWorkspaceGraphCommands(workspaceCommand, cwd)
 
   workspaceCommand.command('upgrade')
     .description(localize('Upgrade or synchronize monorepo packages', '升级/同步 monorepo 相关包'))

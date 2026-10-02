@@ -131,6 +131,29 @@ repo upgrade -s
 - `--no-overwrite` / `-s` 保留已有 drifted 文件。
 - `--yes` / `--overwrite` 非交互覆盖 drifted 标准资产。
 
+## 工作区依赖查询
+
+```bash
+repo workspace graph
+repo workspace graph --json --redact
+repo workspace graph --mermaid
+repo workspace graph --package @acme/shared --type dependencies
+repo workspace why @acme/web @acme/shared --json
+repo workspace impact @acme/shared --direct --json
+```
+
+三个命令共用清单级依赖图，全部只读。默认包含 private 应用；`--exclude-private` 排除私有包，`--include-root` 加入根包。边的方向是消费者指向依赖。`--type` 可重复指定 `dependencies`、`devDependencies`、`peerDependencies`、`optionalDependencies`；不指定时包含全部四种关系。
+
+`graph --package <包名或目录>` 显示选中包及其直接入边、出边，可重复选择多个包。`why <from> <to>` 返回从消费者到目标包的一条确定性最短依赖路径，包含两端；没有路径仍是成功查询，JSON 中 `found` 为 `false`。`impact <package>` 返回直接与传递消费者、最小距离及每个消费者的一条路径；`--direct` 只返回直接消费者。查询能处理循环依赖，impact 不把目标自身列为消费者。
+
+选择器接受精确包名或 workspace 相对目录，例如 `./packages/shared`。重复包名会产生诊断；使用有歧义的名称查询会失败，需用显式目录消除歧义。未命名包也可按目录查询。强制本地引用若缺失、歧义、格式无效或版本不兼容，会进入 `diagnostics`，不会猜测依赖边。
+
+解析支持 workspace 版本范围、workspace 别名（如 `workspace:@acme/shared@^1`）、相对 workspace 路径及本地 `link:`/`file:` 目录。每条边记录 `resolution`：`workspace` 和 `local` 表示显式本地引用，`semver` 表示普通版本范围或 `npm:` 别名匹配到的本地候选。这反映清单关系，并不代表 lockfile 的实际安装结果；不解析 registry tag、catalog、远程 URL 或源码 import。catalog 引用以及存在同名本地候选但无法解析的协议会产生 `unresolved_specifier` 诊断。使用方应先检查诊断再判断图是否完整，后续 affected 校验可据此保守回退。排除 private/root 包后，指向它们的强制引用也可能无法解析。
+
+JSON 使用 schema version `1`、目录节点 ID 和稳定排序，字段名及诊断代码不随 `--lang` 改变。Mermaid 与 JSON 共用节点和依赖边，并保留孤立包。查询只输出 stdout，可用 shell 重定向保存；`--json` 与 `--mermaid` 不能组合。
+
+程序化调用可使用 `getWorkspaceGraph(cwd, options)`、`filterWorkspaceGraph(graph, options)`、`whyWorkspaceDependency(graph, from, to, options)` 和 `getWorkspaceImpact(graph, package, options)`。每次读取图时刷新发现缓存，查询函数使用公开图类型，不泄漏 pnpm 内部类型。
+
 ## 分组命令
 
 ```bash

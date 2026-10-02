@@ -27,6 +27,10 @@ export interface WorkspacePackageManifest {
   version?: string
   private?: boolean
   description?: string
+  dependencies?: Record<string, string>
+  devDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
+  optionalDependencies?: Record<string, string>
 }
 
 /**
