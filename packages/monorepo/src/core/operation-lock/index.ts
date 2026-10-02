@@ -4,7 +4,7 @@ import { lstat, mkdir, open, readFile, realpath, rmdir, unlink } from 'node:fs/p
 import path from 'pathe'
 
 /** Serialize validation, mutation, rollback and cleanup, including identical concurrent plans. */
-export async function withOperationLock<T>(root: string, name: 'typescript-references' | 'doctor-fix' | 'workspace-move' | 'workspace-remove' | 'upgrade', run: () => Promise<T>): Promise<T> {
+export async function withOperationLock<T>(root: string, name: 'typescript-references' | 'doctor-fix' | 'workspace-move' | 'workspace-remove' | 'upgrade' | 'generate', run: () => Promise<T>): Promise<T> {
   const lockFile = `.repoctl/${name}.lock`
   const filename = path.join(root, lockFile)
   const directory = path.join(root, '.repoctl')

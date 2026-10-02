@@ -152,6 +152,7 @@ function checkCiWorkflow() {
   assert.ok(commands.includes('pnpm test:packaged-react-lib'))
   assert.ok(commands.includes('pnpm test:packaged-template-validation'))
   assert.ok(commands.includes('pnpm test:packaged-template-sources'))
+  assert.ok(commands.includes('pnpm test:packaged-generators'))
   assertPinnedActions(steps, 'CI')
 }
 
