@@ -176,3 +176,29 @@ repo workspace locate client --json
 清单诊断复用 doctor 的 JSON、Markdown、`--strict` 和 `--redact` 输出，包含稳定的 `id`、相对工作区的 `path` 与字段 `field`。规则覆盖缺少/非法/重复包名、无效版本、依赖分区错误、缺失/歧义 workspace 目标、自依赖及重复/冲突声明。正常 peer/dev 和 peer/runtime 配对保留，peer 兼容检查独立处理。npm 允许 optionalDependencies 覆盖 dependencies，因此该重复仅警告。
 
 不发布的应用应声明 `private: true`。公开包的 license、repository、repository.directory 和 publishConfig 建议只发出警告，不将推荐信息设为强制发布策略；strict 模式也会阻断警告。repository.directory 以 workspace 根目录比较，嵌套于其他 Git 仓库或单独托管的包需要人工核查。非法 JSON 中的值和 registry 凭据不会进入这些诊断。Doctor 不执行包脚本、不修改清单；实际 tarball 内容和类型消费兼容性由包交付检查负责。
+
+## 内部依赖循环与架构边界
+
+`repo workspace boundaries --json` 复用 manifest 依赖图，包含根包与 private 包。在 repoctl.config 中配置 `boundaries` 后，`repo doctor` 的 JSON/Markdown 和既有 CI 退出策略也会检查这些规则。独立命令在 fail 时退出 1，`--strict` 同时阻断 warn。不执行任务、不扫描源码 import、不改依赖、不检查第三方准入。
+
+```ts
+export default {
+  boundaries: {
+    tags: { shared: { paths: ['packages/**'] }, app: { paths: ['apps/**'] } },
+    rules: [
+      { id: 'shared-layer', from: { tags: ['shared'] }, allow: [{ tags: ['shared'] }] },
+      { id: 'public-packages', from: { private: false }, allow: [{ private: false }] },
+    ],
+    cycles: { dependencyTypes: ['dependencies', 'optionalDependencies'], severity: 'fail' },
+    exceptions: [
+      { rule: 'shared-layer', source: 'packages/adapter', target: 'apps/web', type: 'peerDependencies', reason: 'Temporary adapter during migration' },
+    ],
+  },
+}
+```
+
+选择器的不同字段取交集，同一字段的值取并集。`packages` 精确匹配包名；`paths` 只支持精确 workspace 目录（根为 `.`）或 `directory/**` 匹配后代，`./**` 匹配整个 workspace，不支持其他 glob。tag 是可重叠的命名选择器，不能递归引用 tag。规则的 `allow` 数组取并集，空数组明确禁止所有内部依赖，所有匹配的规则都生效。边界规则默认检查四类依赖；循环默认只检查 dependencies 和 optionalDependencies，可通过 dependencyTypes 纳入开发或 peer 边，`cycles: false` 关闭循环检查。semver 边仅表示潜在本地关系，不证明 lockfile 实际安装了本地包。
+
+报告包含稳定规则 ID、manifest 字段、端点和具体边。每个存在环的强连通分量只报告一条稳定的闭合代表路径和完整成员列表，不枚举所有环。cycle 豁免只排除指定依赖类型的精确边，其余环仍检查；报告保留理由和已豁免的边。未知字段/tag、错误路径、重复 ID 或无理由豁免视为错误。无人匹配的选择器选项、失效豁免发出警告；内部依赖图无法完整解析时失败，不把未知关系判为健康。
+
+公开 API `checkWorkspaceBoundaries(cwd, { config? })` 返回 schemaVersion 1、findings、exceptions 和 summary，显式 config 仅替换本次调用的项目配置。相对目录和规则 ID 不随输出语言变化。可把本命令或 `repo doctor --strict` 加入现有 pnpm CI 脚本，不增加任务执行层。

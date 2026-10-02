@@ -8,6 +8,7 @@ import { localize } from '../../i18n'
 import fs from '../../utils/fs'
 import { normalizeCleanOptions } from '../utils'
 import { registerUpgradeCommand } from './upgrade'
+import { registerWorkspaceBoundaries } from './workspace/boundaries'
 import { registerWorkspaceGraphCommands } from './workspace/graph'
 import { registerWorkspaceTasks } from './workspace/tasks'
 
@@ -138,6 +139,7 @@ async function emitWorkspaceList(result: WorkspacePackageSummaryData, opts: Work
 export function registerWorkspaceCommands(program: Command, cwd: string) {
   const workspaceCommand = program.command('workspace').alias('ws').description(localize('Workspace commands', '工作区命令'))
   registerWorkspaceGraphCommands(workspaceCommand, cwd)
+  registerWorkspaceBoundaries(workspaceCommand, cwd)
 
   registerWorkspaceTasks(workspaceCommand, cwd)
   registerUpgradeCommand(workspaceCommand, cwd, 'up')
