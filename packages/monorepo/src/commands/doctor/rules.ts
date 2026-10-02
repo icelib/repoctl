@@ -1,4 +1,5 @@
 import type { DoctorCheck, DoctorContext } from './types'
+import { collectBoundaryChecks } from './boundaries'
 import { collectInstallationChecks } from './installation'
 import { collectManifestChecks } from './manifest'
 import { collectReleaseChecks } from './release'
@@ -46,6 +47,7 @@ const manifestIds = [
 const collectors: DoctorCollector[] = [
   { ids: ['package-json', 'workspace-manifest', 'config-file', 'commit-hooks', 'workspace-patterns', 'workspace-package-coverage'], collect: collectWorkspaceChecks },
   { ids: manifestIds, collect: collectManifestChecks },
+  { ids: ['boundary-rule', 'boundary-cycle', 'boundary-config', 'boundary-selector-unmatched', 'boundary-graph', 'boundary-exception-unused', 'boundary-exceptions', 'boundary-policy'], collect: (context, selected) => collectBoundaryChecks(context.workspaceDir, selected) },
   { ids: ['node-version'], collect: context => [checkNodeVersion(context)] },
   { ids: ['node-version-files'], collect: async context => [await checkNodeVersionFiles(context)] },
   { ids: ['package-manager', 'pnpm-version'], collect: collectPnpmChecks },
