@@ -1,4 +1,5 @@
 import { Buffer } from 'node:buffer'
+import nativePath from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { applyUpgradePlan, planUpgrade } from '@icebreakers/monorepo'
 import path from 'pathe'
@@ -39,7 +40,8 @@ describe('configuration module refresh through built upgrades', () => {
     const file = first.files.find(entry => entry.path === 'package.json')!
     const script = JSON.parse(Buffer.from(file.content!, 'base64').toString()).scripts.verify
     const helperPath = path.join(h.cwd, helper)
-    expect(script).toBe(`before|dynamic-before|${commonjs ? '' : `${pathToFileURL(helperPath).href}|`}${helperPath}|${path.dirname(helperPath)}`)
+    const nativeHelperPath = nativePath.resolve(helperPath)
+    expect(script).toBe(`before|dynamic-before|${commonjs ? '' : `${pathToFileURL(helperPath).href}|`}${nativeHelperPath}|${nativePath.dirname(nativeHelperPath)}`)
     expect(first.inputs.filter(input => input.area === 'config').map(input => input.path)).toEqual(expect.arrayContaining([helperPath, path.join(h.cwd, 'helpers/dynamic.mjs')]))
     expect(await snapshot(h.root)).toEqual(before)
     await h.write(helper, helperSource('after'))

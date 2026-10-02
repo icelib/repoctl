@@ -1,5 +1,6 @@
 import type { Plugin } from 'esbuild'
 import { readFile } from 'node:fs/promises'
+import nativePath from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { build } from 'esbuild'
 import path from 'pathe'
@@ -9,7 +10,7 @@ const preserveModulePaths: Plugin = {
   setup(plugin) {
     plugin.onLoad({ filter: /\.[cm]?[jt]s$/ }, async ({ path: filename }) => {
       const source = (await readFile(filename, 'utf8')).replace(/^#![^\n]*(?:\n|$)/, '')
-      const directory = path.dirname(filename)
+      const directory = nativePath.dirname(filename)
       const prefix = `const __repoctl_filename = ${JSON.stringify(filename)}; const __repoctl_dirname = ${JSON.stringify(directory)}; const __repoctl_url = ${JSON.stringify(pathToFileURL(filename).href)};\n`
       return { contents: prefix + source, loader: /\.[cm]?ts$/.test(filename) ? 'ts' : 'js' }
     })
