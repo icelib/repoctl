@@ -143,3 +143,5 @@ export { createReleasePlan } from './release/plan'
 
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
+export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
+export { planWorkspaceRemoval } from './workspace/remove/plan'
