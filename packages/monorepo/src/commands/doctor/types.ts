@@ -1,3 +1,5 @@
+import type { DoctorManifest } from './manifest/types'
+
 export type DoctorStatus = 'pass' | 'warn' | 'fail'
 
 export interface DoctorCheck {
@@ -6,6 +8,10 @@ export interface DoctorCheck {
   status: DoctorStatus
   detail: string
   fix?: string
+  /** Workspace-relative manifest path, when the rule targets a package. */
+  path?: string
+  /** Stable manifest field name; never translated. */
+  field?: string
 }
 
 export interface DoctorSummary {
@@ -23,7 +29,7 @@ export interface DoctorReport {
 }
 
 export interface DoctorPackageJson {
-  packageManager?: string
+  packageManager?: string | undefined
   engines?: {
     node?: string
   }
@@ -46,4 +52,6 @@ export interface DoctorContext {
   hasHuskyPreCommit: boolean
   hasLintStagedConfig: boolean
   isSourceWorkspace: boolean
+  manifests: DoctorManifest[]
+  workspaceManifestError: boolean
 }

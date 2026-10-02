@@ -103,6 +103,7 @@
     "consola": "^3.4.2",
     "cross-spawn": "^7.0.6",
     "git-url-parse": "^16.1.0",
+    "json5": "^2.2.3",
     "klaw": "^4.1.0",
     "lint-staged": "^17.6.0",
     "p-queue": "^9.3.3",
@@ -110,6 +111,8 @@
     "picocolors": "^1.1.1",
     "semver": "catalog:",
     "simple-git": "^3.36.0",
+    "tinyglobby": "^0.2.17",
+    "validate-npm-package-name": "^7.0.2",
     "vitest": "catalog:",
     "yaml": "catalog:"
   },
@@ -118,6 +121,7 @@
     "@types/klaw": "^3.0.8",
     "@types/micromatch": "^4.0.10",
     "@types/semver": "catalog:",
+    "@types/validate-npm-package-name": "^4.0.2",
     "ci-info": "^4.4.0",
     "fdir": "^6.5.0",
     "micromatch": "^4.0.8"

@@ -39,7 +39,12 @@ function catalogSpecifier(specifier: string, name: string, workspace: Data) {
     return specifier
   }
   const catalog = specifier.slice(8)
-  const values = catalog ? record(record(workspace['catalogs'])?.[catalog]) : record(workspace['catalog'])
+  const named = record(workspace['catalogs'])
+  const isDefault = !catalog || catalog === 'default'
+  const duplicateDefault = workspace['catalog'] != null && named?.['default'] != null
+  const values = isDefault
+    ? duplicateDefault ? undefined : record(workspace['catalog'] ?? named?.['default'])
+    : record(named?.[catalog])
   return values?.[name]
 }
 

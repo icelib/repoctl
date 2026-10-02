@@ -28,4 +28,6 @@ expectType<Promise<CreateNewProjectPlan>>(resolveCreateNewProjectPlan({ cwd: '.'
 expectType<Promise<TemplateHealthReport>>(checkTemplates())
 
 expectType<Promise<DoctorReport>>(runDoctor('.'))
+expectType<string | undefined>((null as unknown as DoctorReport).checks[0]!.path)
+expectType<string | undefined>((null as unknown as DoctorReport).checks[0]!.field)
 expectAssignable<DoctorStatus>('warn')

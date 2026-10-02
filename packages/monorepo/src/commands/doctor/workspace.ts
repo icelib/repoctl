@@ -3,6 +3,7 @@ import { localize } from '../../i18n'
 import { createCheck, isWorkspacePatternCovered } from './helpers'
 
 export function collectWorkspaceChecks(context: DoctorContext) {
+  const rootManifest = context.manifests.find(entry => entry.directory === context.workspaceDir)
   const {
     hasPackageJson,
     hasWorkspaceManifest,
@@ -16,12 +17,12 @@ export function collectWorkspaceChecks(context: DoctorContext) {
     workspacePatterns,
   } = context
   const checks: DoctorCheck[] = [
-    hasPackageJson
+    hasPackageJson || rootManifest
       ? createCheck({
           id: 'package-json',
-          title: 'package.json',
+          title: rootManifest?.path ?? 'package.json',
           status: 'pass',
-          detail: localize(`Found root package.json: ${workspaceDir}/package.json`, `已找到根 package.json：${workspaceDir}/package.json`),
+          detail: localize(`Found root package manifest: ${workspaceDir}/${rootManifest?.path ?? 'package.json'}`, `已找到根包清单：${workspaceDir}/${rootManifest?.path ?? 'package.json'}`),
         })
       : createCheck({
           id: 'package-json',
