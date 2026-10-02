@@ -84,3 +84,7 @@ Run `repoctl deps peers --json` to compare each workspace peer promise with its 
 The report distinguishes `declared_range`, `declared_version`, `lockfile_version`, and `workspace_version` evidence. A declared range fully contained in the peer range is compatible as a declaration; partial overlap remains `unknown` until an exact supported pnpm lockfile version or workspace version establishes a result. Stale/unsupported lockfiles and unknown protocols are never treated as passed. Named/default catalogs, same-source npm aliases, internal workspace aliases, prereleases and compound semver ranges are supported. Missing development peers are not silently replaced by auto-installed peers.
 
 JSON includes stable codes, package/path, peer and test declarations, resolved ranges/version, optional status, and pnpm policy values from workspace configuration. A single tested or locked version does not establish compatibility across the whole advertised range; lockfile evidence does not verify installed state. No installs or writes occur, and release workspace-protocol rules remain separate. Failures exit nonzero; `--strict` also fails on unknown results. The public API is `checkPeerDependencies(cwd)`.
+
+## Third-party admission
+
+Use [dependency admission policies](./dependency-admission) to allow or deny direct third-party dependencies per workspace, review exceptions and compare CI baselines.

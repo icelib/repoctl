@@ -5,6 +5,7 @@
 ## 命令与配置
 
 - [命令参考](./commands.md)
+- [闲置代码与依赖检查](./knip.md)
 - [配置文件](./config.md)
 - [执行模型](./execution-model.md)
 - [输出格式](./output.md)

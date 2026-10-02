@@ -66,3 +66,4 @@ pnpm exec repo check
 - `references/templates.md` for template keys and `repo new` flags.
 - `references/commands.md` for other CLI commands.
 - `references/config.md` for `repoctl.config.ts`.
+- `references/knip.md` for explicit unused-code checks and reviewed baselines.
