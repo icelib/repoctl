@@ -34,12 +34,13 @@ describe('built root asset three-way upgrades', () => {
   it('reports overlapping lines with base/local/upstream content without overwriting or advancing the baseline', async () => {
     const h = await baselineFixture()
     const old = h.upstream.replace('indent_size = 2', 'indent_size = 4')
+    const lineEnding = h.upstream.includes('\r\n') ? '\r\n' : '\n'
     await h.seed('.editorconfig', old, old.replace('indent_size = 4', 'indent_size = 8'))
     const before = await snapshot(h.root)
     const plan = await planUpgrade({ cwd: h.cwd, targets: ['.editorconfig'] })
     expect(plan.files[0]).toMatchObject({ status: 'conflict', reason: 'overlapping-merge-conflict' })
     expect(plan.files[0]?.baseline).toBeUndefined()
-    expect(plan.files[0]?.merge?.conflicts[0]).toMatchObject({ base: 'indent_size = 4\n', local: 'indent_size = 8\n', upstream: 'indent_size = 2\n' })
+    expect(plan.files[0]?.merge?.conflicts[0]).toMatchObject({ base: `indent_size = 4${lineEnding}`, local: `indent_size = 8${lineEnding}`, upstream: `indent_size = 2${lineEnding}` })
     expect(formatUpgradePlan(plan)).toContain('<<<<<<< local')
     expect(await applyUpgradePlan(h.cwd, plan)).toEqual({ status: 'unchanged', changed: [], conflicts: ['.editorconfig'] })
     expect(await snapshot(h.root)).toEqual(before)
