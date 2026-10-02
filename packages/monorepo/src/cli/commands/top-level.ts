@@ -38,7 +38,12 @@ async function emitDoctorReport(report: DoctorReport, opts: DoctorCliOptions, cw
     : createInteractiveDoctorReportOutput(report, opts)
 
   if (!opts.out) {
-    logger.log(content)
+    if (opts.json || opts.markdown) {
+      process.stdout.write(`${content}\n`)
+    }
+    else {
+      logger.log(content)
+    }
     return
   }
 
