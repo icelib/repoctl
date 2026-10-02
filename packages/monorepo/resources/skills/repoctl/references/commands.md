@@ -170,6 +170,19 @@ inspect diagnostics before treating the graph as complete or computing affected 
 JSON has schema version 1, stable directory IDs and unresolved/ambiguous reference diagnostics.
 Mermaid uses the same graph. Queries do not write files; JSON and Mermaid flags are mutually exclusive.
 
+## deps catalog check / plan / apply
+
+Inspect default/named catalog references, missing or unused entries, direct-version bypasses,
+and migration candidates with `repo deps catalog check --json`. Integrity checks cover all catalogs;
+`--catalog <name>` selects the policy for direct declarations and migration candidates.
+
+Preview one dependency section/cohort with
+`repo deps catalog plan <dependency> --section devDependencies --json > catalog-plan.json`,
+review the linked YAML/manifest changes, then run `repo deps catalog apply catalog-plan.json`.
+`--catalog`, `--group` and `--to` choose a named catalog, configured cohort and explicit common
+subrange. Planning never writes; apply rejects stale inputs and preserves peer ranges.
+See [dependency governance](./dependencies.md) for migration boundaries and pnpm verification.
+
 ## tooling init (alias: tg init)
 
 Purpose: generate tooling config files plus matching devDependencies.

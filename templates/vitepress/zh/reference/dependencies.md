@@ -88,3 +88,29 @@ JSON 包含稳定规则码、包和路径、peer 与测试声明、解析后的�
 ## 第三方依赖准入
 
 通过[依赖准入规则](./dependency-admission)按工作区允许或禁止第三方直接依赖，审核例外，并在 CI 中比较已审核基线。
+
+## pnpm catalog 巡检与迁移
+
+```bash
+pnpm exec repo deps catalog check --json
+pnpm exec repo deps catalog check --catalog legacy --json
+pnpm exec repo deps catalog plan typescript --section devDependencies --json > catalog-plan.json
+pnpm exec repo deps catalog plan react --section dependencies --group react18 --catalog react18 --to '^18.3.0' --json
+pnpm exec repo deps catalog apply catalog-plan.json --json
+pnpm install --lockfile-only
+pnpm install --frozen-lockfile
+```
+
+`catalog check` 巡检所有默认与命名 catalog、根包及 private workspace 消费者、缺失 catalog/条目，以及未使用条目。`catalog:` 与 `catalog:default` 等价。默认 catalog 可以位于 `catalog` 或 `catalogs.default`，同时声明两者属于 pnpm 配置错误。`--catalog` 选择直接版本绕过和迁移候选所采用的策略；引用完整性始终检查所有 catalog。直接声明的 peer 范围和显式 ignore 版本组不计为绕过。
+
+带版本结构的 JSON 包含精确清单路径、依赖分区、包名、原始声明、catalog 条目、消费者和稳定规则码。`missing_catalog`、`missing_entry`、`direct_declaration` 会令检查以状态码 1 退出。`unused_entry`、`uncomparable_entry` 是信息提示，未使用条目绝不会被自动删除。简单的 `overrides` 消费者（包括带版本的包选择器）会计入使用情况；嵌套 override 选择器明确报告 `unresolved_selector`，可能被引用的条目标记为 `usage_unknown`，不会误判为无人使用。
+
+迁移复用 `commands.deps.groups` 的依赖一致性版本组，继续区分依赖分区。相同或 semver 等价的声明可以自动提出一个 catalog 条目。兼容但不同的范围会返回 `needs_target`，需要通过 `--to` 提供**每个已选声明的共同子范围**，避免扩大允许版本或引入主版本升级。不兼容版本需要显式分组后选择不同 named catalog，或保留原样。迁移不访问 registry，也不选择最新版本。
+
+仅迁移普通 semver 范围和同源 npm alias；alias 的完整 `npm:source@range` 会保留在 catalog 中。workspace/file/link/Git/URL/tag 和未知声明保持原样。直接 `peerDependencies` 只报告，不能由此命令迁移。已有 catalog 引用保持原样；同一版本组混有其他 catalog 引用时需要明确分组。已有条目永不覆盖，即使显式 `--to` 与条目不同也会拒绝；应选择新 named catalog，或单独审阅影响全部消费者的条目变更。
+
+`catalog plan` 无论是否传 `--dry-run` 都只读。JSON 包含 YAML 与消费者清单的完整 before/after 内容、文件哈希、所有已发现输入哈希和规范化选择。审阅联动差异后再执行 `catalog apply`。YAML 通过 AST 修改以保留无关配置和注释；待编辑 catalog 映射若通过 YAML anchor/alias 共享，会明确拒绝，避免改变其他 alias 消费者。默认和命名 catalog 的已有存放位置保持不变，锁文件仍由显式 pnpm 步骤更新。
+
+应用绑定同一工作区和完整输入集合。过期 YAML、清单/策略变化、新增包、链接文件、部分应用及被篡改的计划内容都会在写入前被拒绝。YAML 与 JSON 复用依赖修复的暂存替换、原始备份和失败回滚。完整应用后的计划和重复迁移均无变化。如果回滚无法安全覆盖并发编辑，错误会列出保留的 `.repoctl-deps-*.bak` 原始备份；核对并恢复文件、清理残留临时文件，再生成新计划。并发编辑会保留。
+
+公共 API 为 `checkCatalogs(cwd, options?)`、`planCatalogMigration(cwd, options)` 和 `applyCatalogMigrationPlan(cwd, plan)`。协议语义参见 [pnpm catalogs](https://pnpm.io/catalogs)，有意版本组策略可参考 [Syncpack](https://syncpack.dev/)。

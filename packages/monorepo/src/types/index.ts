@@ -1,4 +1,5 @@
 export type { RepoctlLocale } from '../i18n/types'
+export * from './catalogs'
 export * from './cli'
 export * from './config'
 export * from './dependencies'
