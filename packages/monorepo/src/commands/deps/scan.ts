@@ -5,6 +5,7 @@ import { findWorkspacePackages } from '@pnpm/workspace.find-packages'
 import path from 'pathe'
 import YAML from 'yaml'
 import { getRepoctlConfigCandidates, resolveCommandConfig } from '../../core/config'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { localize } from '../../i18n'
 import { hash, readInput, record } from './files'
 import { dependencySections, validatePolicy } from './policy'
@@ -38,7 +39,7 @@ export async function scanDependencies(cwd: string, options: { policy?: boolean 
     const relative = path.relative(workspaceDir, candidate)
     contents.set(relative, await readInput(workspaceDir, relative))
   }
-  const policy = options.policy === false ? [] : validatePolicy(await resolveCommandConfig('deps', workspaceDir) ?? {})
+  const policy = options.policy === false ? [] : validatePolicy(resolveCommandValues('deps', await resolveCommandConfig('deps', workspaceDir)).values)
   const occurrences: DependencyOccurrence[] = []
   const manifests = [...new Set(['package.json', ...packages.map(pkg => path.relative(workspaceDir, path.join(pkg.rootDir, 'package.json')))])].sort()
   for (const relative of manifests) {

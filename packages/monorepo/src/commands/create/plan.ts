@@ -6,6 +6,7 @@ import process from 'node:process'
 import { suggestTemplateKey } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import fs from '@/utils/fs'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { createTemplateCatalog } from '../../core/template-catalog'
 import { loadTemplateCatalogContext } from '../../core/template-catalog/config'
 import { resolveRemoteTemplateSource } from '../../core/template-source'
@@ -79,10 +80,11 @@ async function resolvePlan(options: CreateNewProjectOptions | undefined, downloa
   const createConfig = context.createConfig
   const catalog = createTemplateCatalog(context)
 
-  const renameJson = options?.renameJson ?? createConfig?.renameJson ?? false
-  const rawName = options?.name ?? createConfig?.name
+  const effective = resolveCommandValues('create', createConfig, { renameJson: options?.renameJson, name: options?.name, type: options?.type, offline: options?.offline, cacheDir: options?.cacheDir }).values
+  const renameJson = effective.renameJson!
+  const rawName = effective.name
   const name = typeof rawName === 'string' ? rawName.trim() : undefined
-  const requestedTemplate = options?.type ?? createConfig?.type ?? createConfig?.defaultTemplate ?? defaultTemplate
+  const requestedTemplate = effective.type ?? effective.defaultTemplate ?? defaultTemplate
 
   const requestedTemplateName = String(requestedTemplate)
   const invalid = catalog.diagnostics.find(item => item.status === 'fail' && (!item.template || item.template === requestedTemplateName))
@@ -95,11 +97,11 @@ async function resolvePlan(options: CreateNewProjectOptions | undefined, downloa
   }
   const template = templateInfo.key
   const templateDefinition = { source: templateInfo.source, target: templateInfo.target, ...(templateInfo.remote ? { remote: templateInfo.remote } : {}) }
-  const cacheDir = options?.cacheDir ?? createConfig.cacheDir
+  const cacheDir = effective.cacheDir
   const sourceResolution = templateInfo.remote
     ? await resolveRemoteTemplateSource(templateInfo.remote, templateInfo.source, {
         cwd,
-        offline: !download || (options?.offline ?? createConfig.offline ?? false),
+        offline: !download || (effective.offline ?? false),
         ...(cacheDir ? { cacheDir } : {}),
       })
     : undefined

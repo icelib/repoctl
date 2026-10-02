@@ -2,6 +2,7 @@ import type { CreateTemplateDefinition, TemplateCatalogContext, TemplateCatalogD
 import { isTemplateCategory, templateChoices } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import { localize } from '../../i18n'
+import { appendConfigPath } from '../config/paths'
 import { normalizeTemplateRemoteSource, normalizeTemplateSourceRequest, sourceRequestKey, templateSourcePath } from '../template-source/request'
 
 export function record(value: unknown): Record<string, unknown> | undefined {
@@ -56,7 +57,7 @@ export function resolveCatalogEntries(context: TemplateCatalogContext, diagnosti
   for (const raw of context.rawCreateConfigs ?? []) {
     const paths = [
       ...['templatesDir', 'templateMap', 'choices'].filter(field => record(raw)?.[field] === null).map(field => `commands.create.${field}`),
-      ...Object.entries(record(raw?.templateMap) ?? {}).filter(([, value]) => value === null).map(([key]) => `commands.create.templateMap[${JSON.stringify(key)}]`),
+      ...Object.entries(record(raw?.templateMap) ?? {}).filter(([, value]) => value === null).map(([key]) => appendConfigPath('commands.create.templateMap', key)),
     ]
     for (const configPath of paths) {
       if (!diagnostics.some(item => item.configPath === configPath)) {
@@ -69,7 +70,7 @@ export function resolveCatalogEntries(context: TemplateCatalogContext, diagnosti
     diagnostics.push({ id: 'template-definition', status: 'fail', configFile, configPath: 'commands.create.templateMap', detail: localize('templateMap must be an object.', 'templateMap 必须是对象。') })
   }
   for (const [key, value] of Object.entries(extra ?? {})) {
-    const configPath = `commands.create.templateMap[${JSON.stringify(key)}]`
+    const configPath = appendConfigPath('commands.create.templateMap', key)
     const normalized = definition(value)
     if (!key.trim() || key !== key.trim() || !normalized) {
       entries.delete(key)

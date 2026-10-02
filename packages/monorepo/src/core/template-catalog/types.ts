@@ -1,5 +1,6 @@
 import type { TemplateChoice, TemplateDefinition, TemplateRemoteSource } from '@icebreakers/monorepo-templates'
 import type { CreateChoiceOption, CreateCommandConfig } from '../../types'
+import type { ConfigDiagnostic } from '../config/validation'
 
 export type CreateTemplateDefinition = TemplateDefinition & Partial<Pick<TemplateChoice, 'label' | 'category' | 'description'>>
 
@@ -15,12 +16,13 @@ export interface TemplateCatalogEntry extends TemplateChoice {
 }
 
 export interface TemplateCatalogDiagnostic {
-  id: 'template-definition' | 'template-choice' | 'template-override' | 'templates-directory'
+  id: 'template-definition' | 'template-choice' | 'template-override' | 'templates-directory' | ConfigDiagnostic['id']
   status: 'warn' | 'fail'
   detail: string
   configFile: string | null
   configPath: string
   template?: string
+  configDiagnostic?: ConfigDiagnostic
 }
 
 export interface TemplateCatalog {
@@ -44,4 +46,6 @@ export interface TemplateCatalogContext {
   templatesDir: string
   createConfig: CreateCommandConfig
   rawCreateConfigs?: CreateCommandConfig[]
+  /** Failed configuration loading blocks every entry instead of restoring built-ins. */
+  diagnostics?: TemplateCatalogDiagnostic[]
 }
