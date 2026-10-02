@@ -109,6 +109,8 @@ JSON 包含每个包的文件清单、稳定的诊断来源/代码、上游原�
 
 ## `repo check`
 
+需要显式启用闲置代码及依赖分析时，参阅 [`repo check knip`](./knip.md)。
+
 ```bash
 repo check
 repo check --staged
