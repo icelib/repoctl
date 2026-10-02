@@ -43,5 +43,5 @@ export async function snapshot(root: string) {
 }
 
 export function cli(cwd: string, args: string[]) {
-  return execa(process.execPath, [path.resolve(import.meta.dirname, '../../../dist/cli.mjs'), ...args], { cwd, reject: false, env: { FORCE_COLOR: '0', NO_COLOR: '1', NODE_ENV: 'production', CONSOLA_LEVEL: '3', TEST: undefined, VITEST: undefined } })
+  return execa(process.execPath, [path.resolve(import.meta.dirname, '../../../dist/cli.mjs'), ...args], { cwd, reject: false, env: { CI: 'true', FORCE_COLOR: '0', NO_COLOR: '1', NODE_ENV: 'production', CONSOLA_LEVEL: '3', TEST: undefined, VITEST: undefined } })
 }
