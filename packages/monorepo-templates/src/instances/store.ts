@@ -1,4 +1,4 @@
-import type { TemplateInstance, TemplateInstanceDraft, TemplateInstanceRegistry, TemplateSnapshot } from './types'
+import type { TemplateInstance, TemplateInstanceDraft, TemplateInstanceRegistry, TemplateInstanceReplacementHooks, TemplateSnapshot } from './types'
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -59,6 +59,7 @@ export async function loadTemplateBaseline(workspaceDir: string, digest: string)
 export async function mutateTemplateRegistry<T>(
   workspaceDir: string,
   mutate: (registry: TemplateInstanceRegistry) => Promise<{ result: T, snapshots?: Record<string, TemplateSnapshot> }>,
+  hooks?: Pick<TemplateInstanceReplacementHooks, 'rollback' | 'committed'>,
 ): Promise<T> {
   const file = await safeInstancePath(workspaceDir, templateRegistryPath)
   const lockPath = await safeInstancePath(workspaceDir, '.repoctl/template-instances.lock')
@@ -86,6 +87,8 @@ export async function mutateTemplateRegistry<T>(
     registry.instances.sort((a, b) => a.target < b.target ? -1 : a.target > b.target ? 1 : 0)
     parseRegistry(JSON.stringify(registry))
     if (JSON.stringify(registry) === previous) {
+      committed = true
+      await hooks?.committed()
       return result
     }
     for (const [digest, snapshot] of Object.entries(snapshots)) {
@@ -118,7 +121,19 @@ export async function mutateTemplateRegistry<T>(
     }
     await fs.rename(temporary, file)
     committed = true
+    await hooks?.committed()
     return result
+  }
+  catch (error) {
+    if (!committed) {
+      try {
+        await hooks?.rollback()
+      }
+      catch (recoveryError) {
+        throw new AggregateError([error, recoveryError], 'Template registry transaction failed and file recovery needs attention. Preserve the pending recovery record.')
+      }
+    }
+    throw error
   }
   finally {
     try {

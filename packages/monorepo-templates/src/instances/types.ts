@@ -39,6 +39,8 @@ export interface TemplateInstance {
   generator: { profile: TemplateGenerationProfile, version: string }
   parameters: TemplateGenerationParameters
   baseline: TemplateInstanceBaseline
+  /** Explicit instance-relative files or directories excluded from future template upgrades. */
+  excludedPaths?: string[]
 }
 
 export interface TemplateInstanceRegistry {
@@ -70,6 +72,13 @@ export interface GeneratedTemplateInstanceOptions {
 export interface TemplateInstanceDraft {
   instance: TemplateInstance
   snapshots: Record<string, TemplateSnapshot>
+}
+
+/** File-side transaction hooks run while the instance registry lock is held. */
+export interface TemplateInstanceReplacementHooks {
+  apply: () => Promise<void>
+  rollback: () => Promise<void>
+  committed: () => Promise<void>
 }
 
 export interface TemplateFileDifference {

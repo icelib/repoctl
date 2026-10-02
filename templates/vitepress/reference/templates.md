@@ -190,3 +190,39 @@ repo templates rebuild-baseline packages/shared-utils --destination ../isolated-
 The destination must not exist. Missing or corrupted retained snapshots are reported as `unavailable`, never as healthy. Deleted or renamed instance paths appear as `missing`; creation refuses to reuse their registered paths. `repo templates relocate <instance-id> <new-relative-path>` previews an explicit path association; `--apply` updates metadata only after the old path is missing and the destination exactly matches the retained rendered baseline. A changed destination cannot be automatically proven to be the same instance and is rejected.
 
 Metadata writes use a lock and atomic registry replacement. Failed registration never reports completed creation; generated files remain at the concrete recovery path in the error so they can be inspected and explicitly associated. A stale lock identifies its path: confirm that its writer has stopped before removing it. Failed metadata commits remove their temporary snapshots and leave the prior registry intact.
+
+## Upgrade one template instance
+
+Select an instance by its registered ID or target path, and request an exact target package version. Preview is read-only; `--apply` is required to change files. `--source-dir` reads an extracted package as data and runs no package scripts. Without it, the installed template package must match the requested version. The historical source is reconstructed from retained snapshots, so the old package need not remain installed.
+
+```sh
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --json
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --apply --json
+```
+
+The plan compares the old rendered baseline, current instance, and newly rendered template. Template-only edits are adopted, business-only edits are retained, and non-overlapping text edits are merged. The original generated package name and Git metadata are preserved. After success, the retained baseline advances to the new template output, keeping business customizations out of the upstream baseline. Repeating the same version uses retained snapshots offline and makes no further changes; changing source content under an existing version is rejected.
+
+Overlapping text edits, binary conflicts, addition collisions and file/directory replacements block the whole instance. The preview includes conflict paths and text regions; it never inserts conflict markers into business files. Resolve the relevant local edits and preview again, or explicitly transfer those paths to business ownership. Text merges preserve BOMs, CRLF and final-newline behavior; conflicting files whose combined three inputs exceed 1 MiB require manual resolution. POSIX executable flags are applied where supported; Windows retains its native read-only permissions without synthesizing executable bits.
+
+```sh
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --exclude README.md src/custom --json
+# Apply the same selection after review:
+repo templates upgrade packages/shared-utils --source-version 2.2.0 --source-dir ../templates-2.2.0 --exclude README.md src/custom --apply --json
+```
+
+Exclusions are paths relative to the instance and persist in its registry record. A directory excludes all descendants; `src/custom/**` is accepted as the same directory selection. Arbitrary globs and escaping paths are rejected. Excluded contents are not read or included in the upgrade plan. Other business-only files and directories are outside the candidate scan, including large files and unrelated links. Exclusions accumulate across upgrades; there is no automatic re-enrollment command.
+
+User-deleted files and directories stay deleted, including new upstream descendants of a deleted directory. Upstream-deleted files are removed only when locally unchanged. A locally edited removal is a conflict. Removed directories are retained conservatively, because they can contain unmanaged business files or caches. Missing or unverified historical baselines stop the upgrade. Root managed assets, root dependency policy and other registered instances are outside this operation; dependency changes inside the selected instance's template manifest are treated as ordinary file changes.
+
+### Recover an interrupted upgrade
+
+Before mutation, repoctl writes `.repoctl/template-upgrades/<instance-id>.json` with the selected operation's file states and registry metadata. File changes and metadata replacement share the instance-registry lock. Ordinary failures restore this operation before releasing the lock. A concurrent business edit is retained, and an incomplete recovery record blocks another upgrade.
+
+```sh
+repo templates recover-upgrade packages/shared-utils --json
+repo templates recover-upgrade packages/shared-utils --apply --json
+```
+
+Recovery preview is read-only. Applying recovery restores recorded files and the previous source version only when each affected path still matches either its before or after state; conflicting business edits must be preserved and resolved first. It does not replay the failed upgrade. A process crash can leave `.repoctl/template-instances.lock`; verify its recorded process has stopped before removing that lock and applying recovery. A failure to clean up after metadata commit explicitly reports that the upgrade was applied; recovery still rolls that recorded operation back.
+
+Recovery records contain local before/after content only for files changed by that upgrade, and are removed on successful completion or recovery. Treat them as local backups and exclude `.repoctl/template-upgrades/` from version control. Keep the registry and template baselines tracked. JSON previews also contain template-managed candidate contents and should be handled accordingly. `--out <file>` explicitly writes a report even in preview mode.

@@ -1,12 +1,11 @@
 import type { Command } from '@icebreakers/monorepo-templates'
 import type { TemplateLinkOptions } from '../../../commands/template-instances'
-import process from 'node:process'
-import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
+import type { OutputOptions } from './output'
 import path from 'pathe'
 import { localize } from '../../../i18n'
-import fs from '../../../utils/fs'
+import { emitTemplateReport as output, templateWorkspaceRoot as root } from './output'
+import { registerTemplateUpgradeCommands } from './upgrade'
 
-interface OutputOptions { json?: boolean, out?: string }
 interface LinkOptions extends OutputOptions {
   template: string
   sourceVersion: string
@@ -18,21 +17,8 @@ interface LinkOptions extends OutputOptions {
   apply?: boolean
 }
 
-async function root() {
-  return await findWorkspaceDir(process.cwd()) ?? process.cwd()
-}
-
-async function output(value: unknown, options: OutputOptions) {
-  const content = JSON.stringify(value, null, 2)
-  if (options.out) {
-    await fs.outputFile(path.resolve(options.out), `${content}\n`)
-  }
-  else {
-    process.stdout.write(`${content}\n`)
-  }
-}
-
 export function registerTemplateInstanceCommands(templates: Command) {
+  registerTemplateUpgradeCommands(templates)
   templates.command('instances')
     .description(localize('Inspect registered template instances without changing files', '只读查询已登记模板实例'))
     .argument('[target]', localize('Instance ID or workspace-relative target', '实例 ID 或相对工作区路径'))
