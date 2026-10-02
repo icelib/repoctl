@@ -35,9 +35,15 @@ export async function upgradeMonorepo(options: UpgradeOptions): Promise<UpgradeP
   if (plan.status === 'blocked') {
     throw new Error(plan.blockers.map(item => `${item.id}: ${item.path ?? ''} ${item.detail}`).join('\n'))
   }
+  for (const file of plan.files.filter(file => file.status === 'conflict')) {
+    logger.warn(`${file.path}: ${file.reason}. ${file.detail}`)
+  }
   const files = await selectUpgradeFiles(plan)
   const result = await applyUpgradePlan(plan.cwd, plan, { files })
   for (const filename of result.changed) {
     logger.success(path.join(plan.rootDir, filename))
+  }
+  if (result.conflicts?.length) {
+    throw new Error(`Unresolved upgrade conflicts: ${result.conflicts.join(', ')}`)
   }
 }
