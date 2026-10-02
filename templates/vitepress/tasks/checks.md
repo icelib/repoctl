@@ -53,7 +53,11 @@ Use `--dry-run`, `--json`, or `--markdown` to inspect the plan without running i
 
 ## Pre-Push
 
-`repo verify pre-push` is the comprehensive delivery gate. The repository policy builds first, then runs lint, type checks, type-level tests, and test suites against built artifacts.
+`repo verify pre-push` discovers packages from `pnpm-workspace.yaml`, including private applications and respecting excluded patterns. It runs the owning package's available `build`, `test`, and `tsd` scripts for changed files, then always runs root `lint` and `typecheck`. Nested packages use the deepest matching directory; the workspace root is not also run as a child package.
+
+Deleted files still trigger their former package. Moving a file between packages checks both directories. Root configuration changes and removed package manifests without a current owner also trigger root `build`, `test`, and `tsd`. This is file ownership selection, not a reverse dependency closure. A newly pushed ref is compared with the empty tree; deleting a ref adds no package tasks.
+
+Programmatic callers can still pass `workspaces` to override discovery, including an empty array. Entries are directories relative to `cwd`, and their order does not affect ownership.
 
 ## Automation
 
