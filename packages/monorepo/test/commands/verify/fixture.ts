@@ -26,7 +26,7 @@ export async function createFixture(patterns = ['packages/*', 'apps/*', 'domains
       name: `@fixture/${dir.replaceAll('/', '-')}`,
       version: '1.0.0',
       private: options.private ?? false,
-      scripts: Object.fromEntries((options.scripts ?? tasks.slice(0, 3)).map(task => [task, `node ${JSON.stringify(runner)}`])),
+      scripts: Object.fromEntries((options.scripts ?? tasks.slice(0, 3)).map(task => [task, `node ${JSON.stringify(runner)} ${task}`])),
     }))
     await write(`${dir}/src/index.ts`, `export const value = '${dir}'\n`)
   }
@@ -56,11 +56,12 @@ export async function createFixture(patterns = ['packages/*', 'apps/*', 'domains
   await write('package.json', JSON.stringify({
     name: 'fixture',
     private: true,
-    scripts: Object.fromEntries(tasks.map(task => [task, 'node record-task.cjs'])),
+    scripts: Object.fromEntries(tasks.map(task => [task, `node record-task.cjs ${task}`])),
   }))
   await write('pnpm-workspace.yaml', JSON.stringify({ packages: patterns }))
   await write('.gitignore', 'node_modules\nchecks.log\n')
-  await write('record-task.cjs', String.raw`require('node:fs').appendFileSync(process.env.REPOCTL_VERIFY_FIXTURE_LOG, JSON.stringify({ cwd: process.cwd(), task: process.env.npm_lifecycle_event }) + '\n')`)
+  // Explicit arguments avoid Windows case-insensitive lifecycle environment collisions.
+  await write('record-task.cjs', String.raw`require('node:fs').appendFileSync(process.env.REPOCTL_VERIFY_FIXTURE_LOG, JSON.stringify({ cwd: process.cwd(), task: process.argv[2] }) + '\n')`)
   git('init', '-q')
   git('config', 'user.email', 'fixture@example.invalid')
   git('config', 'user.name', 'Fixture')
