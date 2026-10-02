@@ -124,6 +124,10 @@ repo upgrade --no-overwrite
 repo upgrade --core
 repo upgrade -i
 repo upgrade -s
+repo upgrade --dry-run
+repo upgrade --json > upgrade-plan.json
+repo upgrade --markdown
+repo upgrade --apply upgrade-plan.json
 ```
 
 用途：
@@ -133,6 +137,16 @@ repo upgrade -s
 - `-i` 交互式选择。
 - `--no-overwrite` / `-s` 保留已有 drifted 文件。
 - `--yes` / `--overwrite` 非交互覆盖 drifted 标准资产。
+
+`--dry-run`、`--json` 和 `--markdown` 始终只读预览，不写入或弹出交互选择。每个选中资产都有 `add`、`modify`、`delete`、`identical`、`skip` 或 `conflict` 状态及原因。package 脚本与依赖、workspace 设置、AGENTS 章节、gitignore 规则、工具引用和旧版本迁移都进入同一计划。文本和 Markdown 提供逐文件 unified diff；二进制文件、前后内容合计超过 256 KiB 的文本会明确标注，不伪造 diff。
+
+`--apply` 使用已审核 JSON 中的精确内容，应用全部可执行条目。普通升级仍支持交互选择覆盖；非交互且没有 `--yes` 时仅写入已批准的新增文件。所有选择都在首次写入前完成。`--no-overwrite` 和 `-s` 也保护旧版迁移元数据；自定义发布工作流需要显式 `--overwrite-release`，既有 LICENSE 始终保留。预发布 lane 迁移与元数据删除属于不可拆分的选择组；无法识别的预发布状态保留在磁盘上，等待手动迁移。
+
+计划记录目标、资产和本地配置文件的原始 hash。应用在首次替换前核对全部输入，拒绝并发修改或 workspace 包集合变化；完整应用过的计划再次执行不会写入。替换前会创建 `.repoctl-upgrade-*.bak` 原始备份，失败后回滚。如果并发编辑阻止安全回滚，错误会列出保留的原始备份。进程中断后，应核查备份、按需恢复原文件、移除残留 `.tmp` 文件，再生成新计划。无关文件及 Git refs/index 不会被修改。
+
+每次预览都会在内存中重新加载配置入口、继承配置和可静态解析的本地导入，包括使用字符串字面量的动态导入。这些文件也纳入输入校验，模块相对路径保持原有含义。已安装的外部包、计算生成的导入路径、环境变量及任意文件/网络读取不在此模块集合中；这些运行时输入变化后应重新生成计划。可执行配置本身也应避免副作用，才能保持预览只读。
+
+预览不会生成缺失的模板资产。出现 `assets-not-prepared` 时先修复包安装；源码贡献者可以显式运行 `pnpm --filter @icebreakers/monorepo-templates sync:assets`。计划绑定当前工作目录、输出目录和已安装资产的位置。公共 API 为 `planUpgrade(options)`、`formatUpgradePlan(plan, 'text' | 'markdown')`、`applyUpgradePlan(cwd, plan, { files? })` 和 `upgradeMonorepo({ dryRun: true })`；`UpgradePlan` 用 base64 保存精确应用内容。`repo workspace upgrade` 与 `repo ws up` 共用这些选项。
 
 ## 工作区依赖查询
 

@@ -1,12 +1,13 @@
 import type { Command } from '@icebreakers/monorepo-templates'
-import type { CliOpts, WorkspacePackageSummaryData } from '../../types'
+import type { WorkspacePackageSummaryData } from '../../types'
 import os from 'node:os'
 import process from 'node:process'
 import path from 'pathe'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import fs from '../../utils/fs'
-import { normalizeCleanOptions, normalizeCliOpts } from '../utils'
+import { normalizeCleanOptions } from '../utils'
+import { registerUpgradeCommand } from './upgrade'
 import { registerWorkspaceGraphCommands } from './workspace/graph'
 import { registerWorkspaceTasks } from './workspace/tasks'
 
@@ -139,23 +140,7 @@ export function registerWorkspaceCommands(program: Command, cwd: string) {
   registerWorkspaceGraphCommands(workspaceCommand, cwd)
 
   registerWorkspaceTasks(workspaceCommand, cwd)
-
-  workspaceCommand.command('upgrade')
-    .description(localize('Upgrade or synchronize monorepo packages', '升级/同步 monorepo 相关包'))
-    .alias('up')
-    .option('-i,--interactive', localize('Select managed files interactively', '交互式选择受管文件'))
-    .option('-c,--core', localize('Synchronize core configuration without GitHub assets', '仅同步核心配置，跳过 GitHub 相关资产'))
-    .option('--outDir <dir>', localize('Output directory', '输出目录'))
-    .option('-s,--skip-overwrite', localize('Preserve existing files', '保留已存在文件'))
-    .option('-y, --yes', localize('Skip prompts and overwrite drifted managed assets', '跳过交互并覆盖 drifted 标准资产'))
-    .option('--overwrite', localize('Overwrite drifted managed assets', '覆盖 drifted 标准资产'))
-    .option('--no-overwrite', localize('Preserve drifted managed assets', '不覆盖 drifted 标准资产'))
-    .option('--overwrite-release', localize('Overwrite an unmarked custom release workflow', '覆盖未标记的自定义 release workflow'))
-    .action(async (opts: CliOpts) => {
-      const { upgradeMonorepo } = await import('@/commands')
-      await upgradeMonorepo(normalizeCliOpts(cwd, opts))
-      logger.success(localize('Workspace upgrade finished.', 'Workspace 升级完成。'))
-    })
+  registerUpgradeCommand(workspaceCommand, cwd, 'up')
 
   workspaceCommand.command('init')
     .description(localize('Initialize workspace metadata and repository files', '初始化工作区元信息（README、package.json、pnpm intent、issue template）'))

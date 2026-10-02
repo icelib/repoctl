@@ -102,6 +102,7 @@
     "comment-json": "catalog:",
     "consola": "^3.4.2",
     "cross-spawn": "^7.0.6",
+    "esbuild": "catalog:",
     "git-url-parse": "^16.1.0",
     "klaw": "^4.1.0",
     "lint-staged": "^17.6.0",

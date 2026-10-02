@@ -496,6 +496,9 @@ importers:
       cross-spawn:
         specifier: 7.0.6
         version: 7.0.6
+      esbuild:
+        specifier: 0.28.2
+        version: 0.28.2
       eslint:
         specifier: ^9.0.0 || ^10.0.0
         version: 10.11.0(jiti@2.7.0)(supports-color@10.2.2)

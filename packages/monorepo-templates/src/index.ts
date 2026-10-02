@@ -3,7 +3,7 @@ import { assetTargets as rawAssetTargets, getAssetTargets as rawGetAssetTargets 
 import { getWorkspacePackageManager } from './package-manager'
 import { assetsDir, packageDir, skeletonDir, templatesDir } from './paths'
 import { prepareAssets } from './prepare'
-import { ensureTemplateAssetsPrepared } from './runtime-assets'
+import { areTemplateAssetsPrepared, ensureTemplateAssetsPrepared } from './runtime-assets'
 import { scaffoldTemplate, scaffoldWorkspace } from './scaffold'
 import { getTemplateChoices } from './templates'
 import { runCommand } from './utils/command'
@@ -26,7 +26,7 @@ export const templateTargetMap = Object.fromEntries(
 
 export const templateMap = templateSourceMap
 
-export { ensureTemplateAssetsPrepared, prepareAssets }
+export { areTemplateAssetsPrepared, ensureTemplateAssetsPrepared, prepareAssets }
 export { getWorkspacePackageManager }
 export { scaffoldTemplate, scaffoldWorkspace }
 export {

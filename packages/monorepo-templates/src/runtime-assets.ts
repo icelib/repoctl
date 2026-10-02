@@ -33,7 +33,8 @@ async function acquireLock(lockPath: string) {
   }
 }
 
-async function isPrepared() {
+/** Inspect asset readiness without acquiring locks or writing generated files. */
+export async function areTemplateAssetsPrepared() {
   const checks = [
     path.join(assetsDir, 'AGENTS.md'),
     path.join(assetsDir, 'LICENSE'),
@@ -115,7 +116,7 @@ async function isPrepared() {
 async function waitForPrepared() {
   const deadline = Date.now() + lockTimeoutMs
   while (Date.now() < deadline) {
-    if (await isPrepared()) {
+    if (await areTemplateAssetsPrepared()) {
       return true
     }
     await new Promise(resolve => setTimeout(resolve, lockPollIntervalMs))
@@ -124,7 +125,7 @@ async function waitForPrepared() {
 }
 
 async function runEnsure() {
-  if (await isPrepared()) {
+  if (await areTemplateAssetsPrepared()) {
     return
   }
 

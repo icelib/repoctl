@@ -3,9 +3,11 @@ import fs from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import { loadConfig } from 'c12'
 import path from 'pathe'
+import { freshConfigLoading } from './config/refresh'
 
 export interface LoadedMonorepoConfig {
   file: string | null
+  files: string[]
   config: MonorepoConfig
 }
 
@@ -26,24 +28,30 @@ function findConfigFiles(cwd: string) {
 /**
  * 基于 c12 的通用配置加载逻辑，支持多种配置文件格式。
  */
-async function loadConfigInternal(cwd: string): Promise<LoadedMonorepoConfig> {
-  const { config, configFile } = await loadConfig<MonorepoConfig>({
+async function loadConfigInternal(cwd: string, refresh = false): Promise<LoadedMonorepoConfig> {
+  const dependencies = new Set<string>()
+  const { config, configFile, layers } = await loadConfig<MonorepoConfig>({
     name: 'repoctl',
     cwd,
     rcFile: false,
     defaults: {},
     globalRc: false,
     packageJson: false,
+    ...(refresh ? freshConfigLoading(dependencies) : {}),
   })
 
   const matchedConfigFile = configFile && fs.existsSync(configFile)
     ? findConfigFiles(cwd).find(file => path.basename(file).toLowerCase() === path.basename(configFile).toLowerCase())
     : undefined
+  const files = await Promise.all([...new Set([configFile, ...(layers ?? []).map(layer => layer.configFile), ...dependencies])]
+    .filter((file): file is string => Boolean(file && fs.existsSync(file)))
+    .map(file => realpath(file)))
 
   return {
     file: matchedConfigFile
       ? await realpath(matchedConfigFile)
       : (configFile && fs.existsSync(configFile) ? await realpath(configFile) : null),
+    files,
     config: config ?? {},
   }
 }
@@ -76,10 +84,13 @@ export function defineMonorepoConfig(config: MonorepoConfig) {
  * @param cwd 配置文件解析起点
  * @returns 配置文件路径和解析后的配置对象；未找到时 file 为 null、config 为空对象
  */
-export async function loadMonorepoConfigDetails(cwd: string): Promise<LoadedMonorepoConfig> {
+export async function loadMonorepoConfigDetails(cwd: string, options: { refresh?: boolean } = {}): Promise<LoadedMonorepoConfig> {
   const key = path.resolve(cwd)
+  if (options.refresh) {
+    cache.delete(key)
+  }
   if (!cache.has(key)) {
-    cache.set(key, loadConfigInternal(key))
+    cache.set(key, loadConfigInternal(key, options.refresh))
   }
   return cache.get(key)!
 }
