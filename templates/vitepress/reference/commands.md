@@ -104,6 +104,8 @@ To use it as a release gate, add a package script such as `"package:check": "rep
 
 ## `repo check`
 
+For explicitly enabled unused-code and dependency analysis, see [`repo check knip`](./knip.md).
+
 ```bash
 repo check
 repo check --staged

@@ -85,7 +85,10 @@
     "pr:exit": "repo release pre exit",
     "--------": "----------------",
     "test:packaged-nimbus": "node scripts/nimbus/index.mjs",
-    "test:packaged-react": "node scripts/react/index.mjs"
+    "test:packaged-react": "node scripts/react/index.mjs",
+    "test:packaged-react-lib": "node scripts/react-lib/index.mjs",
+    "test:packaged-template-validation": "node scripts/template-validation/index.mjs",
+    "test:packaged-template-sources": "node scripts/template-sources/index.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

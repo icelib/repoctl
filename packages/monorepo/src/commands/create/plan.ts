@@ -1,30 +1,24 @@
 import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
-import type { CreateChoiceOption } from '@/types'
+import type { TemplateCatalogEntry } from '../../core/template-catalog'
+import type { templateMap } from '../../core/template-catalog/definitions'
+import type { ResolvedTemplateSource } from '../../core/template-source'
 import process from 'node:process'
-import { suggestTemplateKey, templateChoices } from '@icebreakers/monorepo-templates'
+import { suggestTemplateKey } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import fs from '@/utils/fs'
-import { templatesDir as defaultTemplatesDir } from '../../constants'
-import { resolveCommandConfig } from '../../core/config'
-import { localize } from '../../i18n'
+import { createTemplateCatalog } from '../../core/template-catalog'
+import { loadTemplateCatalogContext } from '../../core/template-catalog/config'
+import { resolveRemoteTemplateSource } from '../../core/template-source'
 
-/**
- * 内置模板映射表，source 指向 templates 根目录下的来源目录，target 为生成路径。
- */
-export const templateMap = {
-  'tsdown': { source: 'tsdown', target: 'packages/tsdown' },
-  'vue-lib': { source: 'vue-lib', target: 'packages/vue-lib' },
-  'hono-server': { source: 'server', target: 'apps/server' },
-  'react-vite': { source: 'react-vite', target: 'apps/react-vite' },
-  'vue-hono': { source: 'client', target: 'apps/client' },
-  'vitepress': { source: 'vitepress', target: 'apps/website' },
-  'cli': { source: 'cli', target: 'apps/cli' },
-  'nimbus': { source: 'nimbus', target: 'apps/docs' },
-} as const
+export { getCreateChoices, getTemplateMap, templateMap } from '../../core/template-catalog/definitions'
 
 export type CreateNewProjectType = keyof typeof templateMap
 
 export interface CreateNewProjectOptions {
+  /** For remote sources, use only an exact verified cache entry. */
+  offline?: boolean
+  /** Asset cache directory; relative paths use cwd. */
+  cacheDir?: string
   /**
    * 目标项目名。
    * 未提供时使用模板映射中的 `target`。
@@ -63,6 +57,8 @@ export interface CreateNewProjectPlan {
   packageJsonFileName: 'package.json' | 'package.mock.json'
   packageName: string
   templateDefinition: TemplateDefinition
+  templateInfo: TemplateCatalogEntry
+  sourceResolution?: ResolvedTemplateSource
 }
 
 /**
@@ -71,77 +67,43 @@ export interface CreateNewProjectPlan {
  */
 export const defaultTemplate: CreateNewProjectType = 'tsdown'
 
-const baseChoices: CreateChoiceOption[] = templateChoices.map((choice) => {
-  const option: CreateChoiceOption = {
-    name: choice.label,
-    value: choice.key,
-  }
-  if (choice.description) {
-    option.description = choice.description
-  }
-  return option
-})
-
-function normalizeTemplateDefinition(value: string | TemplateDefinition) {
-  if (typeof value === 'string') {
-    return { source: value, target: value }
-  }
-  return value
-}
-
 function formatUnknownTemplateError(template: string, availableTemplates: string[]) {
   const suggestion = suggestTemplateKey(template, { keys: availableTemplates })
   const suggestionText = suggestion ? `你是不是想用 ${suggestion}？ ` : ''
   return `未知模板：${template}。${suggestionText}可用模板：${availableTemplates.join(', ')}`
 }
 
-export function getCreateChoices(choices?: CreateChoiceOption[]) {
-  if (choices?.length) {
-    return choices
-  }
-  return [...baseChoices]
-}
-
-export function getTemplateMap(extra?: Record<string, string | TemplateDefinition>) {
-  const base: Record<string, TemplateDefinition> = Object.fromEntries(
-    Object.entries(templateMap).map(([key, value]) => [key, normalizeTemplateDefinition(value)]),
-  )
-  if (extra && Object.keys(extra).length) {
-    for (const [key, value] of Object.entries(extra)) {
-      base[key] = normalizeTemplateDefinition(value)
-    }
-  }
-  return base
-}
-
-export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOptions): Promise<CreateNewProjectPlan> {
+async function resolvePlan(options: CreateNewProjectOptions | undefined, download: boolean): Promise<CreateNewProjectPlan> {
   const cwd = options?.cwd ?? process.cwd()
-  const createConfig = await resolveCommandConfig('create', cwd)
+  const context = await loadTemplateCatalogContext({ cwd })
+  const createConfig = context.createConfig
+  const catalog = createTemplateCatalog(context)
 
   const renameJson = options?.renameJson ?? createConfig?.renameJson ?? false
   const rawName = options?.name ?? createConfig?.name
   const name = typeof rawName === 'string' ? rawName.trim() : undefined
   const requestedTemplate = options?.type ?? createConfig?.type ?? createConfig?.defaultTemplate ?? defaultTemplate
 
-  const templateDefinitions = getTemplateMap(createConfig?.templateMap)
-  const templatesRoot = createConfig?.templatesDir
-    ? path.resolve(cwd, createConfig.templatesDir)
-    : defaultTemplatesDir
-
   const requestedTemplateName = String(requestedTemplate)
-  const availableTemplates = Object.keys(templateDefinitions).sort()
-  if (!templateDefinitions[requestedTemplateName]) {
-    throw new Error(formatUnknownTemplateError(requestedTemplateName, availableTemplates))
+  const invalid = catalog.diagnostics.find(item => item.status === 'fail' && (!item.template || item.template === requestedTemplateName))
+  if (invalid) {
+    throw new Error(`${invalid.configFile ?? 'repoctl.config'}:${invalid.configPath}: ${invalid.detail}`)
   }
-
-  const template = requestedTemplateName
-  const templateDefinition = templateDefinitions[template]
-
-  if (!templateDefinition) {
-    throw new Error(localize(`Template ${template} was not found; check repoctl.config.ts.`, `未找到名为 ${template} 的模板，请检查 repoctl.config.ts`))
+  const templateInfo = catalog.entries.find(entry => entry.key === requestedTemplateName)
+  if (!templateInfo) {
+    throw new Error(formatUnknownTemplateError(requestedTemplateName, catalog.entries.map(entry => entry.key).sort()))
   }
-
-  const sourceDir = path.join(templatesRoot, templateDefinition.source)
+  const template = templateInfo.key
+  const templateDefinition = { source: templateInfo.source, target: templateInfo.target, ...(templateInfo.remote ? { remote: templateInfo.remote } : {}) }
+  const cacheDir = options?.cacheDir ?? createConfig.cacheDir
+  const sourceResolution = templateInfo.remote
+    ? await resolveRemoteTemplateSource(templateInfo.remote, templateInfo.source, {
+        cwd,
+        offline: !download || (options?.offline ?? createConfig.offline ?? false),
+        ...(cacheDir ? { cacheDir } : {}),
+      })
+    : undefined
+  const sourceDir = sourceResolution?.sourceDir ?? templateInfo.sourceDir
   const targetName = name && name.length > 0 ? name : templateDefinition.target
   const targetDir = path.join(cwd, targetName)
   const sourceJsonPath = path.resolve(sourceDir, 'package.json')
@@ -163,5 +125,17 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
     packageJsonFileName,
     packageName,
     templateDefinition,
+    templateInfo,
+    ...(sourceResolution ? { sourceResolution } : {}),
   }
+}
+
+/** Read-only creation preview; fetch remote assets explicitly before planning. */
+export function resolveCreateNewProjectPlan(options?: CreateNewProjectOptions) {
+  return resolvePlan(options, false)
+}
+
+/** Internal creation path may acquire verified remote assets before any target writes. */
+export function resolveCreationPlan(options?: CreateNewProjectOptions) {
+  return resolvePlan(options, true)
 }

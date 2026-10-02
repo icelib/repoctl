@@ -63,4 +63,12 @@ export const templateChoices = [
     category: 'docs',
     description: '默认文档模板：Nimbus + Astro，中英双语与 AI 文档入口',
   },
+  {
+    key: 'react-lib',
+    label: 'React 组件库',
+    source: 'react-lib',
+    target: 'packages/react-lib',
+    category: 'library',
+    description: '带类型声明、显式 CSS 出口和发布消费验证的 React 组件库',
+  },
 ]

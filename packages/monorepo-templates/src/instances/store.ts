@@ -159,7 +159,7 @@ export function canVerifyTemplateInstance(existing: TemplateInstance, next: Temp
     template: instance.template,
     profile: instance.generator.profile,
     parameters: instance.parameters,
-    source: { kind: instance.source.kind, packageName: instance.source.packageName, version: instance.source.version, templatePath: instance.source.templatePath },
+    source: { kind: instance.source.kind, packageName: instance.source.packageName, version: instance.source.version, templatePath: instance.source.templatePath, remote: instance.source.remote },
   })
   return existing.baseline.status === 'unverified' && next.baseline.status === 'available' && identity(existing) === identity(next)
 }

@@ -1,10 +1,11 @@
-import type { TemplateChoice } from '@icebreakers/monorepo-templates'
-import { readdir } from 'node:fs/promises'
-import { getTemplateChoices, shouldSkipTemplatePath } from '@icebreakers/monorepo-templates'
+import type { TemplateCatalogEntry } from '../core/template-catalog'
+import { readdir, stat } from 'node:fs/promises'
+import { shouldSkipTemplatePath } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
-import { templatesDir as defaultTemplatesDir } from '../constants'
+import { createTemplateCatalog } from '../core/template-catalog'
+import { loadTemplateCatalogContext } from '../core/template-catalog/config'
+import { resolveRemoteTemplateSource } from '../core/template-source'
 import { localize } from '../i18n'
-import fs from '../utils/fs'
 
 export type TemplateHealthStatus = 'pass' | 'warn' | 'fail'
 
@@ -14,6 +15,8 @@ export interface TemplateHealthCheck {
   title: string
   detail: string
   template?: string
+  configFile?: string | null
+  configPath?: string
   fix?: string
 }
 
@@ -26,12 +29,16 @@ export interface TemplateHealthSummary {
 export interface TemplateHealthReport {
   templatesDir: string
   templateCount: number
+  templates: TemplateCatalogEntry[]
+  configFile: string | null
   checks: TemplateHealthCheck[]
   summary: TemplateHealthSummary
 }
 
 export interface CheckTemplatesOptions {
+  cwd?: string
   templatesDir?: string
+  cacheDir?: string
 }
 
 async function collectFiles(rootDir: string) {
@@ -66,12 +73,12 @@ function summarizeTemplateChecks(checks: TemplateHealthCheck[]): TemplateHealthS
   })
 }
 
-function checkDuplicates(choices: TemplateChoice[], field: 'source' | 'target') {
+function checkDuplicates(choices: TemplateCatalogEntry[], field: 'sourceDir' | 'target') {
   const seen = new Map<string, string>()
   const duplicates: Array<[string, string, string]> = []
 
   for (const choice of choices) {
-    const value = choice[field]
+    const value = field === 'target' ? path.normalize(choice.target) : choice.sourceDir
     const previous = seen.get(value)
     if (previous) {
       duplicates.push([value, previous, choice.key])
@@ -84,18 +91,23 @@ function checkDuplicates(choices: TemplateChoice[], field: 'source' | 'target') 
 }
 
 export async function checkTemplates(options: CheckTemplatesOptions = {}): Promise<TemplateHealthReport> {
-  const templatesDir = options.templatesDir ?? defaultTemplatesDir
-  const choices = getTemplateChoices()
-  const checks: TemplateHealthCheck[] = []
+  const context = await loadTemplateCatalogContext(options)
+  const catalog = createTemplateCatalog(context)
+  const { templatesDir, entries: choices } = catalog
+  const checks: TemplateHealthCheck[] = catalog.diagnostics.map(diagnostic => ({
+    ...diagnostic,
+    title: localize('Template configuration', '模板配置'),
+    detail: `${diagnostic.configFile ?? 'repoctl.config'}:${diagnostic.configPath}: ${diagnostic.detail}`,
+  }))
 
-  const sourceDuplicates = checkDuplicates(choices, 'source')
+  const sourceDuplicates = checkDuplicates(choices, 'sourceDir')
   checks.push(sourceDuplicates.length
     ? {
         id: 'unique-source',
         status: 'fail',
         title: localize('Template source uniqueness', '模板 source 唯一性'),
         detail: localize(`Duplicate sources: ${sourceDuplicates.map(([value, first, second]) => `${value} (${first}, ${second})`).join(', ')}`, `存在重复 source：${sourceDuplicates.map(([value, first, second]) => `${value} (${first}, ${second})`).join(', ')}`),
-        fix: localize('Update template-data.mjs so every template has a unique source.', '调整 template-data.mjs，确保每个模板 key 指向独立 source。'),
+        fix: localize('Update repoctl.config / template-data.mjs so every template has a unique source.', '调整 repoctl.config / template-data.mjs，确保每个模板 key 指向独立 source。'),
       }
     : {
         id: 'unique-source',
@@ -111,7 +123,7 @@ export async function checkTemplates(options: CheckTemplatesOptions = {}): Promi
         status: 'fail',
         title: localize('Template target uniqueness', '模板 target 唯一性'),
         detail: localize(`Duplicate targets: ${targetDuplicates.map(([value, first, second]) => `${value} (${first}, ${second})`).join(', ')}`, `存在重复 target：${targetDuplicates.map(([value, first, second]) => `${value} (${first}, ${second})`).join(', ')}`),
-        fix: localize('Update template-data.mjs so every template has a unique target.', '调整 template-data.mjs，避免多个模板默认写入同一目标目录。'),
+        fix: localize('Update repoctl.config / template-data.mjs so every template has a unique target.', '调整 repoctl.config / template-data.mjs，避免多个模板默认写入同一目标目录。'),
       }
     : {
         id: 'unique-target',
@@ -121,9 +133,19 @@ export async function checkTemplates(options: CheckTemplatesOptions = {}): Promi
       })
 
   for (const choice of choices) {
-    const sourceDir = path.join(templatesDir, choice.source)
+    let sourceDir = choice.sourceDir
+    if (choice.remote) {
+      try {
+        const cacheDir = options.cacheDir ?? context.createConfig.cacheDir
+        sourceDir = (await resolveRemoteTemplateSource(choice.remote, choice.source, { cwd: catalog.workspaceDir, offline: true, ...(cacheDir ? { cacheDir } : {}) })).sourceDir
+      }
+      catch (error) {
+        checks.push({ id: 'remote-source', template: choice.key, status: 'fail', title: localize('Remote template assets', '远程模板资产'), detail: String(error), fix: `repo templates fetch ${choice.key}` })
+        continue
+      }
+    }
     const packageJsonPath = path.join(sourceDir, 'package.json')
-    const sourceExists = await fs.pathExists(sourceDir)
+    const sourceExists = await stat(sourceDir).then(info => info.isDirectory()).catch(() => false)
 
     checks.push(sourceExists
       ? {
@@ -138,11 +160,12 @@ export async function checkTemplates(options: CheckTemplatesOptions = {}): Promi
           template: choice.key,
           status: 'fail',
           title: localize('Template directory', '模板目录'),
-          detail: localize(`${choice.key} is missing source directory: ${sourceDir}`, `${choice.key} 缺少 source 目录：${sourceDir}`),
-          fix: localize('Add the directory or correct template-data.mjs.', '补齐模板目录，或修正 template-data.mjs 中的 source。'),
+          detail: localize(`${choice.key} source directory is missing or invalid: ${sourceDir}`, `${choice.key} source 目录不存在或无效：${sourceDir}`),
+          fix: localize('Add the directory or correct repoctl.config / template-data.mjs.', '补齐模板目录，或修正 repoctl.config / template-data.mjs 中的 source。'),
         })
 
-    checks.push(await fs.pathExists(packageJsonPath)
+    const packageExists = sourceExists && await stat(packageJsonPath).then(info => info.isFile()).catch(() => false)
+    checks.push(packageExists
       ? {
           id: 'package-json',
           template: choice.key,
@@ -173,7 +196,7 @@ export async function checkTemplates(options: CheckTemplatesOptions = {}): Promi
           status: 'warn',
           title: localize('Template metadata', '模板元数据'),
           detail: localize(`${choice.key} is missing category or description.`, `${choice.key} 缺少 category 或 description。`),
-          fix: localize('Add category and description in template-data.mjs.', '补充 template-data.mjs 中的 category 和 description，方便 CLI 和文档展示。'),
+          fix: localize('Add category and description in repoctl.config / template-data.mjs.', '补充 repoctl.config / template-data.mjs 中的 category 和 description，方便 CLI 和文档展示。'),
         })
 
     if (!sourceExists) {
@@ -202,9 +225,18 @@ export async function checkTemplates(options: CheckTemplatesOptions = {}): Promi
         })
   }
 
+  for (const check of checks) {
+    const entry = choices.find(choice => choice.key === check.template)
+    if (entry?.configPath && !check.configPath) {
+      check.configFile = entry.configFile
+      check.configPath = entry.configPath
+    }
+  }
   return {
     templatesDir,
     templateCount: choices.length,
+    templates: choices,
+    configFile: catalog.configFile,
     checks,
     summary: summarizeTemplateChecks(checks),
   }

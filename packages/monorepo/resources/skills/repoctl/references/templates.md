@@ -45,3 +45,19 @@ Notes:
 - The command prompts for template selection unless defaults are set in
   repoctl.config.ts or monorepo.config.ts.
 - Override mappings with `commands.create.templateMap` and `commands.create.templatesDir`.
+
+## Custom catalog
+
+Creation, list/detail, interactive choices and `repo templates --check` share `resolveTemplateCatalog({ cwd })`. Object entries in `commands.create.templateMap` accept `source`, `target`, optional `label`, `description`, and `category` (`app`, `docs`, `library`, `service`, `tool`); string entries still map the same source and target. Absolute sources coexist with installed templates. `templatesDir` replaces the root for all relative sources, including built-ins, and is relative to the configuration file, including when invoked in a nested workspace package. A non-empty `choices` array preserves explicit ordering/inclusion and supplies the same labels/descriptions shown by discovery.
+
+Detail/JSON include `origin`, `overridesBuiltin`, `sourceDir`, `configFile` and `configPath`; create JSON includes `templateInfo`. Health checks report invalid declarations, duplicate choices, sources and targets, missing directories/manifests and metadata. Checks are read-only and do not execute template code. Prefer `--check --json` for diagnostic locations; listing JSON keeps the array shape.
+
+## Author validation
+
+Use `repo templates validate <key> --fixture <workspace-skeleton> --json` for explicit generated-project validation. `--dry-run` inspects required scripts without executing them; repeated `--name` validates renamed samples. Execution order is install → build → lint/Stylelint → typecheck → tsd for typed libraries → built-artifact tests and declared E2E. Library samples additionally pack, analyze and consume actual tarballs. Default cleanup removes samples; `--keep-failed` retains failure diagnostics and `--keep-temp` retains every sample. `--timeout` bounds each child command, and interruption stops only the validation process tree. Ordinary template discovery/check never executes scripts.
+
+## Remote assets
+
+A custom entry can add `remote: { kind: 'npm', packageName, version, registry? }` or `remote: { kind: 'git', repository, ref }`; `source` is a relative archive directory, including `.` for its root. npm requires an exact version; prefer a full Git commit for reproducibility across fresh caches. `repo templates fetch <key> --json` prepares verified assets. Actual creation/validation may fetch, while listing, health and previews remain read-only and need a previously fetched cache. `--offline` refuses a miss; `--cache-dir` or `commands.create.cacheDir` overrides the cache relative to invocation cwd.
+
+npm configuration supplies scoped registry/authentication. Never put credentials in the remote declaration. Fetching runs no lifecycle scripts, hooks, submodules or dependency installs. Cache hits recheck original archives against extracted asset contents; corruption is an error, not an automatic refresh. A Git ref stays pinned to its first cached commit. Instances record resolved provenance and retained baselines; remote upgrades are explicitly unsupported by the built-in-version `templates upgrade` command. The exported `resolveRemoteTemplateSource` helper is the same acquisition boundary used by the CLI.

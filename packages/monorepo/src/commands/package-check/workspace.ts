@@ -13,11 +13,11 @@ export function packageBuildSelector(workspaceDir: string, directory: string) {
   return `./${literal}`
 }
 
-export async function selectPackages(options: PackageCheckOptions, timeout: number) {
+export async function selectPackages(options: PackageCheckOptions, timeout: number, execution: { env?: NodeJS.ProcessEnv, signal?: AbortSignal | undefined, packageManager?: string } = {}) {
   const { packages, workspaceDir } = await getWorkspaceData(options.cwd, { ignorePrivatePackage: false })
   let selected = packages
   if (options.filters?.length) {
-    const command = await execute('pnpm', [...options.filters.flatMap(filter => ['--filter', filter]), 'list', '--depth', '-1', '--json'], workspaceDir, timeout)
+    const command = await execute(execution.packageManager ? 'corepack' : 'pnpm', [...(execution.packageManager ? ['pnpm'] : []), ...options.filters.flatMap(filter => ['--filter', filter]), 'list', '--depth', '-1', '--json'], workspaceDir, timeout, execution)
     if (command.exitCode !== 0) {
       throw new Error(failureMessage(command))
     }

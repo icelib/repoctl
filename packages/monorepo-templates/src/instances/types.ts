@@ -1,3 +1,5 @@
+import type { ResolvedTemplateRemoteSource } from '../types'
+
 export interface TemplateSnapshotFile {
   path: string
   content: string
@@ -19,11 +21,12 @@ export interface TemplateGenerationParameters {
 }
 
 export interface TemplateInstanceSource {
-  kind: 'package' | 'snapshot'
+  kind: 'package' | 'snapshot' | 'remote'
   templatePath: string
   packageName?: string
   version?: string
   digest?: string
+  remote?: ResolvedTemplateRemoteSource
 }
 
 export type TemplateInstanceBaseline

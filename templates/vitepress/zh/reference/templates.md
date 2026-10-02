@@ -6,16 +6,17 @@ repoctl 的模板由 `@icebreakers/monorepo-templates` 维护。CLI、脚手架�
 
 ## 内置模板
 
-| Key           | Category | 默认目录           | 适合场景                           |
-| ------------- | -------- | ------------------ | ---------------------------------- |
-| `tsdown`      | library  | `packages/tsdown`  | TypeScript 库包                    |
-| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 组件库                       |
-| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono 前后端一体应用        |
-| `react-vite`  | app      | `apps/react-vite`  | React + Vite + TypeScript 单页应用 |
-| `hono-server` | service  | `apps/server`      | Hono API 服务                      |
-| `vitepress`   | docs     | `apps/website`     | VitePress 文档站                   |
-| `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro，默认中英双语文档   |
-| `cli`         | tool     | `apps/cli`         | TypeScript 命令行工具              |
+| Key           | Category | 默认目录             | 适合场景                             |
+| ------------- | -------- | -------------------- | ------------------------------------ |
+| `tsdown`      | library  | `packages/tsdown`    | TypeScript 库包                      |
+| `vue-lib`     | library  | `packages/vue-lib`   | Vue 3 组件库                         |
+| `vue-hono`    | app      | `apps/client`        | Vue 3 + Hono 前后端一体应用          |
+| `react-vite`  | app      | `apps/react-vite`    | React + Vite + TypeScript 单页应用   |
+| `react-lib`   | library  | `packages/react-lib` | 含类型声明和 CSS 出口的 React 组件库 |
+| `hono-server` | service  | `apps/server`        | Hono API 服务                        |
+| `vitepress`   | docs     | `apps/website`       | VitePress 文档站                     |
+| `nimbus`      | docs     | `apps/docs`          | Nimbus + Astro，默认中英双语文档     |
+| `cli`         | tool     | `apps/cli`           | TypeScript 命令行工具                |
 
 Nimbus 是新建文档站点（`Docs Site`）的默认模板，提供英文 `/`、中文 `/zh/`、搜索和 AI 文档入口。VitePress 仍可显式选择，两者分别生成到 `apps/docs` 和 `apps/website`，可以同时使用。通用创建命令仍默认使用 `tsdown`；项目名称 `docs` 不会隐式改变模板。非交互调用请显式指定 `--template nimbus`。
 
@@ -28,6 +29,45 @@ repo templates --category library
 repo templates --json
 repo templates --markdown --out docs/templates.md
 ```
+
+## 发现自定义模板
+
+在 `commands.create.templateMap` 声明本地模板后，创建、交互选择、列表、详情和健康检查会使用同一份目录结果，包含 key、名称、说明、分类、源目录和默认目标。
+
+```ts
+import { fileURLToPath } from 'node:url'
+import { defineMonorepoConfig } from 'repoctl'
+
+export default defineMonorepoConfig({
+  commands: {
+    create: {
+      templateMap: {
+        'internal-service': {
+          source: fileURLToPath(new URL('./templates/internal-service', import.meta.url)),
+          target: 'apps/internal-service',
+          label: 'Internal service',
+          category: 'service',
+          description: 'Company API service',
+        },
+      },
+    },
+  },
+})
+```
+
+```bash
+repo templates internal-service --json
+repo templates --check --json
+repo new payments --template internal-service --dry-run
+```
+
+绝对 `source` 路径可让内置模板和本地模板同时可用。相对 `source` 按 `templatesDir` 解析；默认根目录是已安装模板包。设置 `templatesDir: './templates'` 会替换所有模板（包括内置模板）的根目录，相对路径按配置文件所在目录解析。从 pnpm 子包目录运行时会查找工作区根配置，不会把模板路径移到子包内；生成目标仍按调用目录解析。
+
+字符串映射保持兼容：`templateMap: { custom: 'custom' }` 等价于 `{ source: 'custom', target: 'custom' }`。对象定义可补充 `label`、`description`、`category`。非空 `choices` 数组继续控制交互顺序和可选范围，其名称与说明也会显示在列表和详情中；未配置时列出全部模板。内置创建意图的默认模板不变；登记自定义模板后交互会直接展示模板目录。
+
+同名覆盖通过 `origin: 'custom'`、`overridesBuiltin: true` 及 `configFile` / `configPath` 显示。无效定义和重复交互 key 会定位到配置字段；`repo templates --check` 还会检查重复 source/target、失效目录和缺失 `package.json`。列表 JSON 仍为数组、详情 JSON 仍为对象，只增加目录字段；创建 JSON 的 `templateInfo` 携带所选模板的相同信息。
+
+列表与健康检查只读取声明和文件，不生成项目，也不执行模板代码；显式 `--out` 才写出报告。程序调用可使用 `resolveTemplateCatalog({ cwd })` 和 `checkTemplates({ cwd })`。
 
 ## 创建模板
 
@@ -291,3 +331,94 @@ export default {
   },
 }
 ```
+
+## React 组件库
+
+```bash
+pnpm create repoctl@latest my-workspace -- --yes --templates react-lib
+# 或向已有工作区添加库：
+repo new ui --template react-lib
+```
+
+`react-lib` 默认生成到 `packages/react-lib`，提供 React 19.3+ 的 ESM 组件库。
+组件 `Counter` 和类型 `CounterProps` 从包根入口导入；消费应用还需显式导入
+`包名/style.css`。React、React DOM 和 JSX runtime 保持 peer 外置，CSS 标记为副作用。
+模板自带构建、ESLint/Stylelint、TypeScript、tsd 和基于构建产物的组件测试。
+
+生成包默认保持私有。发布前请设置包名与版本，移除 `private` 或设为 `false`，
+执行 `repo package check` 后再发布。源码工作区中的 `pnpm test:packaged-react-lib`
+覆盖新建工作区和已有工作区两种创建方式，并把实际 tarball 安装到独立 Vite 应用中，
+验证公开类型、生产样式、鼠标/键盘交互及共享同一 React 实例。打包入口保留
+`use client`，并用 Next App Router 的服务端页面直接导入 tarball，验证生产构建、
+浏览器水合和交互。Storybook 为可选扩展。
+
+## 模板作者验证
+
+`repo templates validate <key>` 是显式执行命令。它解析同一个内置/自定义模板目录，在作者仓库外生成临时工作区，通过 Corepack 使用声明的 pnpm 版本安装依赖，依次执行 build → lint → typecheck（TypeScript/Vue）→ tsd（类型库）→ test → test:e2e（已声明时）。缺少必需脚本会在安装前失败。存在样式文件时，`lint` 必须调用 Stylelint，或提供单独的 `lint:styles` 脚本。
+
+```bash
+repo templates validate internal --fixture ./fixtures/workspace --name basic --name renamed --json
+repo templates validate react-lib --dry-run --json
+repo templates validate internal --fixture ./fixtures/workspace --keep-failed --timeout 240000
+```
+
+可选 fixture 是作者维护的工作区骨架，包含 `package.json`、精确的 `packageManager: "pnpm@..."`、工作区设置及配套包。工具使用正常模板过滤复制它，不会修改原目录；未提供时使用已安装的 repoctl 工作区资产。每个名称生成独立工作区，目前名称组合验证重命名行为，尚不支持任意模板功能参数。
+
+库模板仅在临时副本中移除 `private`，生成真实 tarball，检查 exports 与运行时依赖声明（含 `imports` 映射），再在独立消费者里安装并导入该包。声明文件通过严格 NodeNext 类型解析验证。应用、服务或浏览器行为由模板提供能正常结束的 `test`/`test:e2e` 脚本；脚本负责常规服务生命周期，工具提供超时和中断清理。浏览器安装由作者显式准备。
+
+报告使用稳定阶段和诊断代码记录命令及输出。默认清理成功和失败样本；`--keep-failed` 保留失败样本及 `report.json`，`--keep-temp` 保留全部样本，并返回保留目录。普通 `repo templates` 和 `--check` 不执行模板命令。验证会执行受信任的作者脚本，不是运行不受信任代码的沙箱。
+
+同一能力也通过公开 API 提供：
+
+```ts
+import { planTemplateValidation, validateTemplate } from 'repoctl'
+
+const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace' }
+const controller = new AbortController()
+const plan = await planTemplateValidation(options)
+const report = await validateTemplate({ ...options, keep: 'failure', signal: controller.signal })
+```
+
+## 固定的 npm 与 Git 来源
+
+自定义模板可以来自精确 npm 版本或显式 Git ref；`source` 表示归档内部的相对目录。模板就是归档根目录时使用 `source: '.'`。`templatesDir` 只影响本地来源。
+
+```ts
+export default defineMonorepoConfig({
+  commands: {
+    create: {
+      cacheDir: './.cache/template-assets',
+      templateMap: {
+        team: {
+          source: 'templates/library',
+          target: 'packages/team',
+          category: 'library',
+          remote: { kind: 'npm', packageName: '@acme/templates', version: '1.2.3' },
+        },
+        service: {
+          source: 'templates/service',
+          target: 'apps/service',
+          remote: { kind: 'git', repository: 'https://github.com/acme/templates.git', ref: 'v1.2.3' },
+        },
+      },
+    },
+  },
+})
+```
+
+```sh
+repo templates fetch team --json
+repo new sdk --template team --dry-run
+repo new sdk --template team --offline
+repo templates validate team --fixture ./fixtures/workspace --offline --json
+```
+
+`repo templates fetch <key>` 只获取并验证资产。实际创建和作者验证也能获取缺失来源。列表、健康检查、创建预览、验证预览保持只读，需要先 fetch 同一个来源。`--offline` 遇到缓存缺失直接失败。fetch/new/package-create/validate 的 `--cache-dir` 与 `commands.create.cacheDir` 相对调用目录解析；默认目录为 `$XDG_CACHE_HOME/repoctl/template-sources-v1`，未设置时为 `~/.cache/repoctl/template-sources-v1`。
+
+npm 只接受精确版本，不接受标签或范围。registry 优先使用 `remote.registry`，其次使用 npm 的 scope 配置或默认 registry。已有 `.npmrc` 认证信息仅保留在内存中，不写入计划、缓存清单和来源记录。Git 支持 HTTPS、SSH、file URL，必须提供 ref。通过 credential helper 或 SSH agent 认证，不在 URL 中嵌入凭据。下载阶段不会运行远程包脚本、Git hooks、子模块或依赖安装。
+
+首次获取 Git ref 会记录解析后的 commit。即使分支或标签移动，同一个请求仍复用已验证的缓存 commit。跨全新缓存复现时应填写完整 commit hash；明确需要重新解析浮动 ref 时，可以使用新缓存目录，或确认没有写入者后删除对应缓存项。缓存损坏会明确失败，不会静默信任或刷新。归档在解包前检查体积与路径，拒绝越界、链接、特殊文件以及大小写或 Unicode 等可移植路径冲突。
+
+创建记录 npm 版本与 integrity，或 Git commit 与 integrity，并保存可重建基线。远程实例支持基线重建与漂移检查。`templates upgrade` 当前接受内置模板包版本，对远程实例明确报错；修改远程声明不会升级已生成项目。
+
+公共函数 `resolveRemoteTemplateSource(remote, source, { cwd, cacheDir, offline })` 返回已验证的 `sourceDir`、规范化 `request`、固定的 `resolved` 身份、资产 `digest` 和 `cache: 'hit' | 'downloaded'`。

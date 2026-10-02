@@ -10,6 +10,7 @@ import { normalizeCleanOptions } from '../utils'
 import { registerUpgradeCommand } from './upgrade'
 import { registerWorkspaceBoundaries } from './workspace/boundaries'
 import { registerWorkspaceGraphCommands } from './workspace/graph'
+import { registerWorkspaceOwnersCommand } from './workspace/owners'
 import { registerWorkspaceTasks } from './workspace/tasks'
 
 interface WorkspaceListCliOptions {
@@ -140,6 +141,7 @@ export function registerWorkspaceCommands(program: Command, cwd: string) {
   const workspaceCommand = program.command('workspace').alias('ws').description(localize('Workspace commands', '工作区命令'))
   registerWorkspaceGraphCommands(workspaceCommand, cwd)
   registerWorkspaceBoundaries(workspaceCommand, cwd)
+  registerWorkspaceOwnersCommand(workspaceCommand, cwd)
 
   registerWorkspaceTasks(workspaceCommand, cwd)
   registerUpgradeCommand(workspaceCommand, cwd, 'up')
