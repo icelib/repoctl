@@ -125,6 +125,7 @@ export {
 export { resolveAffectedCheckPlan } from './check/affected'
 export type { AffectedCheckCommand, AffectedCheckOptions, AffectedCheckPlan, AffectedCheckSettings, AffectedFallback, AffectedFile, AffectedGitRange, AffectedPackage } from './check/affected'
 export { runCheckWithReport } from './check/execute'
+export { getKnipConfigurationSuggestions, planKnipCheck, runKnipCheck, saveKnipBaseline } from './check/knip'
 export { resolveAffectedCheckMatrix } from './check/matrix'
 export type { AffectedCheckMatrix, AffectedCheckMatrixJob, AffectedCheckMatrixOptions } from './check/matrix'
 
@@ -139,6 +140,7 @@ export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
 export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
+export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
 
 export { createReleasePlan } from './release/plan'

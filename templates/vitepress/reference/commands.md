@@ -104,6 +104,8 @@ To use it as a release gate, add a package script such as `"package:check": "rep
 
 ## `repo check`
 
+For explicitly enabled unused-code and dependency analysis, see [`repo check knip`](./knip.md).
+
 ```bash
 repo check
 repo check --staged
@@ -198,3 +200,7 @@ repo skills sync --codex
 - [Command Aliases](./aliases.md)
 
 Doctor fix application holds `.repoctl/doctor-fix.lock` from input validation through verification, rollback and cleanup, preventing overlapping writers from undoing a successful fix. After a crash, verify no writer remains and reconcile any retained backups before manually removing the lock.
+
+## `repo tooling references`
+
+`check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
