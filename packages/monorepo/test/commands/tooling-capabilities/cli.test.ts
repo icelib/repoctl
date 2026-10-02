@@ -13,7 +13,7 @@ it('emits parseable JSON for discovery, preview and apply under CI', async () =>
     expect(result.status, result.stderr).toBe(0)
     return JSON.parse(result.stdout)
   }
-  expect(cli('list')).toMatchObject([{ id: 'playwright' }])
+  expect(cli('list')).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'playwright' }), expect.objectContaining({ id: 'storybook' })]))
   const plan = cli('plan', 'playwright', '--target', 'web', '--route', '/', '--role', 'button', '--name', 'Increment', '--expect-text', 'Count: 1')
   expect(plan.status).toBe('ready')
   await h.write('plan.json', JSON.stringify(plan))

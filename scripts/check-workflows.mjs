@@ -150,6 +150,7 @@ function checkCiWorkflow() {
   assert.ok(commands.includes('pnpm test:packaged-nimbus'))
   assert.ok(commands.includes('pnpm test:packaged-react'))
   assert.ok(commands.includes('pnpm test:packaged-capability'))
+  assert.ok(commands.includes('pnpm test:packaged-storybook'))
   assertPinnedActions(steps, 'CI')
 }
 

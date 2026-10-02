@@ -1,8 +1,8 @@
-import type { resolveCapabilitySettings } from '../settings'
+import type { PlaywrightSettings } from '../settings'
 import path from 'pathe'
 import { version } from '../../../constants'
 
-export type CapabilitySettings = Awaited<ReturnType<typeof resolveCapabilitySettings>>
+export type CapabilitySettings = PlaywrightSettings
 
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`
 const quote = (value: string) => `'${JSON.stringify(value).slice(1, -1).replaceAll('\\"', '"').replaceAll('\'', '\\\'')}'`

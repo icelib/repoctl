@@ -1,4 +1,4 @@
-import type { CapabilitySettings } from './playwright/files'
+import type { CapabilitySettings } from './settings'
 import type { ToolingCapabilityPlan } from './types'
 import * as JSONC from 'comment-json'
 import micromatch from 'micromatch'
@@ -16,11 +16,13 @@ export async function rootFiles(settings: CapabilitySettings, conflicts: Tooling
   }
   const pkg = JSONC.parse(rawPackage.toString()) as Record<string, any>
   const scripts = pkg['scripts'] ??= {}
-  if (scripts['test:e2e'] && scripts['test:e2e'] !== 'turbo run test:e2e') {
-    conflict('package.json', 'Existing test:e2e script differs from the requested Turbo entrypoint')
-  }
-  else {
-    scripts['test:e2e'] = 'turbo run test:e2e'
+  const names = settings.kind === 'playwright' ? ['test:e2e'] : ['build:storybook', 'test:storybook']
+  for (const name of names) {
+    const command = `turbo run ${name}`
+    if (scripts[name] && scripts[name] !== command) {
+      conflict('package.json', `Existing ${name} script differs from the requested Turbo entrypoint`)
+    }
+    else { scripts[name] = command }
   }
   if (!pkg['devDependencies']?.turbo && !pkg['dependencies']?.turbo) {
     conflict('package.json', 'The workspace must already install Turbo before adding this capability')
@@ -35,7 +37,7 @@ export async function rootFiles(settings: CapabilitySettings, conflicts: Tooling
     throw new Error('pnpm workspace packages must be an array of patterns')
   }
   if (patterns.some(item => item.startsWith('!') && micromatch.isMatch(workspace.directory, item.slice(1), { dot: true }))) {
-    conflict('pnpm-workspace.yaml', 'The E2E directory is explicitly excluded by existing workspace patterns')
+    conflict('pnpm-workspace.yaml', 'The capability directory is explicitly excluded by existing workspace patterns')
   }
   else if (!micromatch.isMatch(workspace.directory, patterns.filter(item => !item.startsWith('!')), { dot: true })) {
     doc.addIn(['packages'], workspace.directory)
@@ -44,15 +46,17 @@ export async function rootFiles(settings: CapabilitySettings, conflicts: Tooling
   const rawTurbo = await readOptional(root, 'turbo.json')
   const turbo = rawTurbo ? JSONC.parse(rawTurbo.toString()) as Record<string, any> : { $schema: 'https://turborepo.com/schema.json', tasks: {} }
   if (turbo['pipeline']) {
-    conflict('turbo.json', 'Legacy Turbo pipeline configuration needs migration before adding E2E')
+    conflict('turbo.json', 'Legacy Turbo pipeline configuration needs migration before adding this capability')
   }
   const tasks = turbo['tasks'] ??= {}
-  const desired = { dependsOn: ['^build'], cache: false, outputs: ['playwright-report/**', 'test-results/**'] }
-  if (tasks['test:e2e'] && JSON.stringify(tasks['test:e2e']) !== JSON.stringify(desired)) {
-    conflict('turbo.json', 'Existing test:e2e task differs; merge it explicitly before applying')
-  }
-  else {
-    tasks['test:e2e'] = desired
+  const desiredTasks: Record<string, unknown> = settings.kind === 'playwright'
+    ? { 'test:e2e': { dependsOn: ['^build'], cache: false, outputs: ['playwright-report/**', 'test-results/**'] } }
+    : { 'build:storybook': { dependsOn: ['^build'], outputs: ['storybook-static/**'] }, 'test:storybook': { dependsOn: ['^build'], cache: false, outputs: ['test-results/**'] } }
+  for (const [name, desired] of Object.entries(desiredTasks)) {
+    if (tasks[name] && JSON.stringify(tasks[name]) !== JSON.stringify(desired)) {
+      conflict('turbo.json', `Existing ${name} task differs; merge it explicitly before applying`)
+    }
+    else { tasks[name] = desired }
   }
   files['turbo.json'] = `${JSONC.stringify(turbo, null, 2)}\n`
   return files
