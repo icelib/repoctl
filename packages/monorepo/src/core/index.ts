@@ -1,4 +1,5 @@
 export * from '../constants'
+export * from './codeowners'
 export * from './config'
 export * from './context'
 export * from './git'

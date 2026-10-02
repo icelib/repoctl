@@ -4,9 +4,10 @@ import { beforeAll, describe, expect, it } from 'vitest'
 import { cli, fixture, loadRepo, snapshot, template } from './fixtures'
 
 let repo: Awaited<ReturnType<typeof loadRepo>>
+// Cold imports include the delivered dependency graph and coverage instrumentation.
 beforeAll(async () => {
   repo = await loadRepo()
-})
+}, 30_000)
 
 describe('built template catalog discovery', () => {
   it('keeps built-in definitions and literal compatibility helpers aligned', async () => {
