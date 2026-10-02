@@ -4,16 +4,17 @@ repoctl templates are maintained by `@icebreakers/monorepo-templates`. The CLI, 
 
 ## Built-In Templates
 
-| Key           | Category | Default target     | Use case                               |
-| ------------- | -------- | ------------------ | -------------------------------------- |
-| `tsdown`      | library  | `packages/tsdown`  | TypeScript library                     |
-| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 component library                |
-| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono app                       |
-| `react-vite`  | app      | `apps/react-vite`  | React + Vite + TypeScript SPA          |
-| `hono-server` | service  | `apps/server`      | Hono API service                       |
-| `vitepress`   | docs     | `apps/website`     | VitePress docs site                    |
-| `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro, default bilingual docs |
-| `cli`         | tool     | `apps/cli`         | TypeScript CLI                         |
+| Key           | Category | Default target       | Use case                                           |
+| ------------- | -------- | -------------------- | -------------------------------------------------- |
+| `tsdown`      | library  | `packages/tsdown`    | TypeScript library                                 |
+| `vue-lib`     | library  | `packages/vue-lib`   | Vue 3 component library                            |
+| `vue-hono`    | app      | `apps/client`        | Vue 3 + Hono app                                   |
+| `react-vite`  | app      | `apps/react-vite`    | React + Vite + TypeScript SPA                      |
+| `react-lib`   | library  | `packages/react-lib` | React component library with types and CSS exports |
+| `hono-server` | service  | `apps/server`        | Hono API service                                   |
+| `vitepress`   | docs     | `apps/website`       | VitePress docs site                                |
+| `nimbus`      | docs     | `apps/docs`          | Nimbus + Astro, default bilingual docs             |
+| `cli`         | tool     | `apps/cli`           | TypeScript CLI                                     |
 
 Nimbus is the default for the interactive **Docs Site** goal. It includes English at `/`, Chinese at `/zh/`, search and AI documentation endpoints. VitePress remains an explicit alternative. Their default targets are `apps/docs` and `apps/website`, so both can coexist. General creation still defaults to `tsdown`; naming a project `docs` does not infer its template. In noninteractive workflows, pass `--template nimbus` explicitly.
 
@@ -197,3 +198,26 @@ The check validates duplicate sources and targets, existing source directories, 
 - [Adopt an existing workspace](/tasks/adopt-existing)
 - [Add checks to CI](/tasks/ci)
 - [Configuration](./config.md)
+
+## React component library
+
+```bash
+pnpm create repoctl@latest my-workspace -- --yes --templates react-lib
+# Or add a library to an existing workspace:
+repo new ui --template react-lib
+```
+
+`react-lib` provides an ESM-only React 19.3+ library in `packages/react-lib`.
+Import `Counter` and `CounterProps` from the package root and import
+`your-package-name/style.css` once in the consumer application. React/React DOM
+and JSX runtimes remain peer dependencies; CSS is marked as a side effect.
+The library has build, ESLint/Stylelint, TypeScript, tsd and built-component tests.
+
+Generated packages remain private by default. Set your package name and version,
+remove `private` or set it to `false`, then run `repo package check` before
+publishing. The source workspace's `pnpm test:packaged-react-lib` verifies both
+creation flows and installs an actual tarball in a separate Vite application,
+checking public types, production styling, pointer/keyboard interaction and a
+single shared React instance. The bundled client boundary is also exercised by a
+Next App Router Server Component importing the tarball, followed by production
+browser hydration and interaction. Storybook is optional.

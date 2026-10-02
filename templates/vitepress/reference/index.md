@@ -5,6 +5,7 @@ Use the reference when you already know the task and need exact command names, f
 ## Command surface
 
 - [Command reference](./commands.md)
+- [Unused code and dependencies](./knip.md)
 - [Configuration](./config.md)
 - [Execution model](./execution-model.md)
 - [Output formats](./output.md)

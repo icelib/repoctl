@@ -6,16 +6,17 @@ repoctl 的模板由 `@icebreakers/monorepo-templates` 维护。CLI、脚手架�
 
 ## 内置模板
 
-| Key           | Category | 默认目录           | 适合场景                           |
-| ------------- | -------- | ------------------ | ---------------------------------- |
-| `tsdown`      | library  | `packages/tsdown`  | TypeScript 库包                    |
-| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 组件库                       |
-| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono 前后端一体应用        |
-| `react-vite`  | app      | `apps/react-vite`  | React + Vite + TypeScript 单页应用 |
-| `hono-server` | service  | `apps/server`      | Hono API 服务                      |
-| `vitepress`   | docs     | `apps/website`     | VitePress 文档站                   |
-| `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro，默认中英双语文档   |
-| `cli`         | tool     | `apps/cli`         | TypeScript 命令行工具              |
+| Key           | Category | 默认目录             | 适合场景                             |
+| ------------- | -------- | -------------------- | ------------------------------------ |
+| `tsdown`      | library  | `packages/tsdown`    | TypeScript 库包                      |
+| `vue-lib`     | library  | `packages/vue-lib`   | Vue 3 组件库                         |
+| `vue-hono`    | app      | `apps/client`        | Vue 3 + Hono 前后端一体应用          |
+| `react-vite`  | app      | `apps/react-vite`    | React + Vite + TypeScript 单页应用   |
+| `react-lib`   | library  | `packages/react-lib` | 含类型声明和 CSS 出口的 React 组件库 |
+| `hono-server` | service  | `apps/server`        | Hono API 服务                        |
+| `vitepress`   | docs     | `apps/website`       | VitePress 文档站                     |
+| `nimbus`      | docs     | `apps/docs`          | Nimbus + Astro，默认中英双语文档     |
+| `cli`         | tool     | `apps/cli`           | TypeScript 命令行工具                |
 
 Nimbus 是新建文档站点（`Docs Site`）的默认模板，提供英文 `/`、中文 `/zh/`、搜索和 AI 文档入口。VitePress 仍可显式选择，两者分别生成到 `apps/docs` 和 `apps/website`，可以同时使用。通用创建命令仍默认使用 `tsdown`；项目名称 `docs` 不会隐式改变模板。非交互调用请显式指定 `--template nimbus`。
 
@@ -228,3 +229,23 @@ repo templates --check --json
 - [把校验加入 CI](/zh/tasks/ci)
 - [配置文件](./config.md)
 - [模板资产治理](/zh/reference/template-assets)
+
+## React 组件库
+
+```bash
+pnpm create repoctl@latest my-workspace -- --yes --templates react-lib
+# 或向已有工作区添加库：
+repo new ui --template react-lib
+```
+
+`react-lib` 默认生成到 `packages/react-lib`，提供 React 19.3+ 的 ESM 组件库。
+组件 `Counter` 和类型 `CounterProps` 从包根入口导入；消费应用还需显式导入
+`包名/style.css`。React、React DOM 和 JSX runtime 保持 peer 外置，CSS 标记为副作用。
+模板自带构建、ESLint/Stylelint、TypeScript、tsd 和基于构建产物的组件测试。
+
+生成包默认保持私有。发布前请设置包名与版本，移除 `private` 或设为 `false`，
+执行 `repo package check` 后再发布。源码工作区中的 `pnpm test:packaged-react-lib`
+覆盖新建工作区和已有工作区两种创建方式，并把实际 tarball 安装到独立 Vite 应用中，
+验证公开类型、生产样式、鼠标/键盘交互及共享同一 React 实例。打包入口保留
+`use client`，并用 Next App Router 的服务端页面直接导入 tarball，验证生产构建、
+浏览器水合和交互。Storybook 为可选扩展。

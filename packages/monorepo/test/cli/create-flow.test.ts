@@ -34,6 +34,17 @@ describe('runCreateFlow', () => {
     expect(createNewProjectMock).toHaveBeenCalledWith({ cwd: '/repo', name: 'apps/service', type: 'internal' })
   })
 
+  it('offers React libraries and normalizes their package destination', async () => {
+    setTty(true)
+    selectMock.mockResolvedValueOnce('library').mockResolvedValueOnce('react-lib')
+    const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
+    await runCreateFlow('/repo', 'ui')
+    expect(selectMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      choices: expect.arrayContaining([expect.objectContaining({ value: 'react-lib' })]),
+    }))
+    expect(createNewProjectMock).toHaveBeenCalledWith({ name: 'packages/ui', cwd: '/repo', type: 'react-lib' })
+  })
+
   it('maps web-app intent to apps directory', async () => {
     setTty(true)
     selectMock.mockResolvedValueOnce('web-app').mockResolvedValueOnce('vue-hono')
