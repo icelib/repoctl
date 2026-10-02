@@ -101,9 +101,10 @@ export function createCreateRepoctlProgram(options: CreateRepoctlProgramOptions 
 
       const targetDir = path.resolve(cwd, targetInput)
       const projectName = path.basename(targetDir) || targetInput
-      await scaffoldFromNpm(targetDir, selectedTemplates, Boolean(createOptions.force))
-      await updateRootPackageJson(targetDir, projectName)
-      await updateRootTsconfigReferences(targetDir)
+      await scaffoldFromNpm(targetDir, selectedTemplates, Boolean(createOptions.force), async () => {
+        await updateRootPackageJson(targetDir, projectName)
+        await updateRootTsconfigReferences(targetDir)
+      })
       process.stdout.write(formatNextSteps(targetDir, cwd, t('complete')))
     })
 
