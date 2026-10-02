@@ -16,7 +16,7 @@ export async function checkPeerDependencies(cwd: string): Promise<PeerCompatibil
   const { workspaceDir, packages } = await getWorkspaceData(cwd, { ignorePrivatePackage: false, ignoreRootPackage: false })
   const workspace = record(parse(await readFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'utf8'))) ?? {}
   const lockfile = await readPeerLockfile(workspaceDir)
-  const targets: PeerWorkspacePackage[] = packages.map(pkg => ({ name: pkg.manifest.name ?? null, directory: pkg.rootDir, version: pkg.manifest.version ?? null }))
+  const targets: PeerWorkspacePackage[] = packages.map(pkg => ({ name: pkg.manifest.name ?? null, directory: path.resolve(pkg.rootDir), version: pkg.manifest.version ?? null }))
   const report: PeerCompatibilityReport = {
     schemaVersion: 1,
     workspaceDir,
