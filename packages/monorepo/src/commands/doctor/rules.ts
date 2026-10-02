@@ -1,5 +1,6 @@
 import type { DoctorCheck, DoctorContext } from './types'
 import { collectTemplateDriftChecks, templateDriftRuleIds } from '../template-drift/checks'
+import { collectAdmissionChecks } from './admission'
 import { collectBoundaryChecks } from './boundaries'
 import { collectInstallationChecks } from './installation'
 import { collectManifestChecks } from './manifest'
@@ -50,6 +51,7 @@ const collectors: DoctorCollector[] = [
   { ids: ['package-json', 'workspace-manifest', 'config-file', 'commit-hooks', 'workspace-patterns', 'workspace-package-coverage'], collect: collectWorkspaceChecks },
   { ids: manifestIds, collect: collectManifestChecks },
   { ids: ['boundary-rule', 'boundary-cycle', 'boundary-config', 'boundary-selector-unmatched', 'boundary-graph', 'boundary-exception-unused', 'boundary-exceptions', 'boundary-policy'], collect: (context, selected) => collectBoundaryChecks(context.workspaceDir, selected) },
+  { ids: ['admission-denied', 'admission-not-allowed', 'admission-conflict', 'admission-resolution', 'admission-unused-exception', 'admission-expired-exception', 'admission-expiring-exception', 'admission-selector-unmatched', 'admission-exceptions', 'admission-policy', 'admission-config'], collect: (context, selected) => collectAdmissionChecks(context.workspaceDir, selected) },
   { ids: ['node-version'], collect: context => [checkNodeVersion(context)] },
   { ids: ['node-version-files'], collect: async context => [await checkNodeVersionFiles(context)] },
   { ids: ['package-manager', 'pnpm-version'], collect: collectPnpmChecks },

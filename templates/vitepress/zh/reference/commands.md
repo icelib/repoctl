@@ -64,7 +64,7 @@ repo doctor --rules root-scripts --fix --out plans/doctor-fix.json
 repo doctor --apply plans/doctor-fix.json --json
 ```
 
-`--rules` 在执行前选择精确、稳定的检查 ID；未知 ID 会失败并列出可用规则。CLI 会替换 `commands.doctor.rules`；省略规则时执行全部检查，配置中显式空数组表示不执行检查。共享的文件发现和规则前置读取仍会执行。`manifest-health` 是静态清单检查的汇总规则。
+`--rules` 在执行前选择精确、稳定的检查 ID；未知 ID 会失败并列出可用规则。CLI 会替换 `commands.doctor.rules`；省略规则时执行全部检查，配置中显式空数组表示不执行检查。共享的文件发现和规则前置读取仍会执行。`manifest-health` 是静态清单检查的汇总规则。架构边界与第三方依赖准入同样使用稳定的 `boundary-*` / `admission-*` ID；单选 `boundary-policy` 或 `admission-policy` 时汇总仍保留实际失败状态，必要的配置失败不会被过滤。自定义策略名只出现在诊断详情中。
 
 在 `commands.doctor.suppressions` 配置有理由的抑制。每项必须提供 `id` 与非空 `reason`，可选 `path` 精确匹配 workspace 相对文件路径。可选 `expires` 使用 UTC 日期 `YYYY-MM-DD`，到期当天仍有效。JSON 保留原始发现的状态、`suppression`、`rawSummary`，以及全部抑制记录及命中数量。仅有效抑制从 `summary` 和 strict 退出码中排除；过期与未命中的记录仍会展示。
 
@@ -105,6 +105,22 @@ repo new docs --template nimbus --json --out plans/docs.json
 - `--dry-run` 只预览模板、目标目录、package name 和输出文件。
 - `--json` 输出结构化创建计划，隐含 `--dry-run`。
 - 显式传入的 `--template` 会先校验，拼错时会失败并提示相近 key。
+
+## `repo package check`
+
+```bash
+repo package check
+repo package check --filter '@scope/*' --strict
+repo package check --filter my-library --keep-temp --json
+```
+
+按依赖顺序构建选中的 workspace 包及其依赖，再使用 publint 0.3.25 和 ATTW 0.18.5 校验实际 `pnpm pack` tarball。构建失败后不再打包。本地开发依赖也纳入构建，private 构建依赖可以只构建、不打包或校验。private 包默认明确标记为跳过，传入 `--include-private` 可包含它们。可重复 `--filter` 合并 pnpm 选择器；`--build-script` 可替换默认 `build` 脚本，没有该脚本的包按已经准备好的发布文件处理。
+
+临时消费者独立安装 tarball 和本地运行时依赖的 tarball，执行包声明支持的 Node ESM/CJS 入口及 TypeScript NodeNext 消费检查。类型消费使用 ATTW 固定的 TypeScript 5.6.1-rc。未声明支持的模块格式不强制通过；仅供浏览器使用的入口及非 JavaScript 资源接受清单/类型分析，不执行 Node import；JavaScript bin 做语法检查，不调用应用命令。安装可能访问 registry，依赖安装脚本默认禁用；workspace 构建与 pack 生命周期脚本正常执行。
+
+JSON 包含每个包的文件清单、稳定的诊断来源/代码、上游原始细节及子进程参数数组。`--strict` 将 warning 视为失败。`--keep-temp` 保留 tarball、消费者清单和命令工作目录，方便复现；未启用时，失败后也会清理临时文件。命令不会发布包、修改版本或写入发布状态。
+
+接入发布门禁时，可以添加 `"package:check": "repoctl package check --strict"` 脚本，再把 `package:check` 加入 `commands.release.hooks.verify`。不要从 build/prepack 脚本调用本命令，以免循环执行。
 
 ## `repo check`
 

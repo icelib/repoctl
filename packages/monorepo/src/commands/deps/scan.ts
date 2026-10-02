@@ -10,7 +10,7 @@ import { hash, readInput, record } from './files'
 import { dependencySections, validatePolicy } from './policy'
 import { parseSpecifier } from './specifiers'
 
-export async function scanDependencies(cwd: string) {
+export async function scanDependencies(cwd: string, options: { policy?: boolean } = {}) {
   const found = await findWorkspaceDir(cwd)
   if (!found) {
     throw new Error(localize('Dependency checks require a pnpm workspace.', '依赖检查需要 pnpm 工作区。'))
@@ -38,7 +38,7 @@ export async function scanDependencies(cwd: string) {
     const relative = path.relative(workspaceDir, candidate)
     contents.set(relative, await readInput(workspaceDir, relative))
   }
-  const policy = validatePolicy(await resolveCommandConfig('deps', workspaceDir) ?? {})
+  const policy = options.policy === false ? [] : validatePolicy(await resolveCommandConfig('deps', workspaceDir) ?? {})
   const occurrences: DependencyOccurrence[] = []
   const manifests = [...new Set(['package.json', ...packages.map(pkg => path.relative(workspaceDir, path.join(pkg.rootDir, 'package.json')))])].sort()
   for (const relative of manifests) {
