@@ -3,7 +3,9 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { createPackageManagerFixture } from './test-support/fixture'
 
-describe('built workspace package manager API', () => {
+// Copy a real dependency closure and run Node consumers. The fixture's child
+// timeout must expire before this integration budget so cleanup can finish.
+describe('built workspace package manager API', { timeout: 30_000 }, () => {
   it('refreshes stale cached metadata and agent instructions in an isolated source workspace', async () => {
     const fixture = await createPackageManagerFixture()
 
@@ -21,6 +23,12 @@ describe('built workspace package manager API', () => {
         expect(content).toContain('pnpm create repoctl@latest')
         expect(content).not.toContain('outdated cached asset')
       }
+      // A script contract change must refresh an otherwise current asset cache.
+      manifest.scripts.lint = 'pnpm run tooling:build && turbo run lint'
+      await writeFile(path.join(fixture.assetsDir, 'package.json'), JSON.stringify(manifest))
+      expect(await fixture.getPackageManager()).toBe(fixture.packageManager)
+      const refreshed = JSON.parse(await readFile(path.join(fixture.assetsDir, 'package.json'), 'utf8'))
+      expect(refreshed.scripts.lint).toBe('turbo run lint')
     }
     finally {
       await fixture.cleanup()

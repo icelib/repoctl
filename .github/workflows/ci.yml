@@ -58,11 +58,11 @@ jobs:
         run: pnpm audit --audit-level=moderate
         continue-on-error: true
 
-      - name: Lint
-        run: pnpm lint
-
       - name: Build
         run: pnpm build
+
+      - name: Lint
+        run: pnpm lint
 
       - name: Typecheck
         if: ${{ matrix.os != 'windows-latest' || matrix.node-version != 22 }}
@@ -84,6 +84,10 @@ jobs:
       - name: Check packaged monorepo creation
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-create
+
+      - name: Check packaged repoctl doctor
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-doctor
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1

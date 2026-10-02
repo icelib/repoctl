@@ -1,7 +1,6 @@
 import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { assetsDir, ensureTemplateAssetsPrepared } from '@icebreakers/monorepo-templates'
-import { isCI } from 'ci-info'
 import { fdir as Fdir } from 'fdir'
 import path from 'pathe'
 import { createNewProject, upgradeMonorepo } from '@/commands'
@@ -32,7 +31,7 @@ function resolveTestPath(relativePath = '') {
   return path.resolve(testRoot, relativePath)
 }
 
-describe.skipIf(isCI)('createNewProject', () => {
+describe('createNewProject', () => {
   beforeAll(async () => {
     await ensureTemplateAssetsPrepared()
     testRoot = await mkdtemp(path.join(tmpdir(), 'monorepo-create-project-'))

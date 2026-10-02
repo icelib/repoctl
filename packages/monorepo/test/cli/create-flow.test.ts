@@ -20,6 +20,7 @@ const resolveCreateNewProjectPlanMock = vi.fn(async () => ({
   packageJsonFileName: 'package.json',
   packageName: 'demo',
   templateDefinition: { source: 'tsdown', target: 'packages/tsdown' },
+  workspaceManifest: { path: '/repo/pnpm-workspace.yaml', changed: true, pattern: 'packages/demo' },
 }))
 const getCreateChoicesMock = vi.fn(() => [])
 const resolveCommandConfigMock = vi.fn(async () => ({}))

@@ -53,6 +53,10 @@ pnpm create repoctl@latest
 
 create 命令会让你选择需要的内置模板，然后进入 `repo init`、`repo doctor`、`repo new` 与 `repo check` 的标准工作流。
 
+生成项目的根脚本使用随包交付的工具。创建包时遵循工程的 pnpm workspace 规则，支持深层目录与排除规则，失败时恢复本次修改。pre-push 会发现工程中的实际包，识别删除与重命名文件；回退到逐包脚本时先按依赖顺序构建变更包的上游闭包，再按 build、lint、typecheck、类型测试、普通测试的顺序执行，避免根任务与包任务重复运行。
+
+如果创建在发布阶段被中断，可运行 `pnpm exec repo recover <target>` 检查并安全清理过期目标。加上 `--dry-run` 可预览；`--json` 和 `--out <file>` 会输出稳定的恢复结果且不修改文件。
+
 ### 给 AI 代理
 
 请在 repoctl 源仓库之外的新目录或空目录中运行，不要把业务项目创建在本仓库内。
@@ -67,6 +71,18 @@ pnpm exec repo doctor
 ```
 
 模板 key：`vue-hono`（Vue/全栈）、`hono-server`（API）、`tsdown`（TypeScript 库）、`vue-lib`（Vue 组件）、`vitepress`（文档）、`cli`。不传 `--templates` 则创建空工作区，再用 `pnpm exec repo new <name> --template <key>`。
+
+## 预览升级
+
+```bash
+pnpm exec repo upgrade --dry-run
+pnpm exec repo upgrade --json
+pnpm exec repo upgrade --yes
+```
+
+`--dry-run` 只预览受管文件的变化，不写文件或弹出选择提示。`--json` 隐含只读预览，逐文件输出操作、原因、是否需要覆盖确认、迁移依赖和有界内容统计。需要查看文本差异时加上 `--diff`；二进制或超大文件只输出字节数和哈希。默认保留自定义发布工作流；旧发布状态仅在关联迁移整组获准且应用成功后删除。
+
+`repoctl` 与 `@icebreakers/monorepo` 均导出公共 API `resolveUpgradePlan(opts: CliOpts): Promise<UpgradePlan>`，用法与计划字段见[高级 API](packages/repoctl/README.zh-CN.md#高级-api)。
 
 ## 国际化
 

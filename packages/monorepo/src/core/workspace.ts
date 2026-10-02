@@ -3,6 +3,7 @@ import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
 import { findWorkspacePackages } from '@pnpm/workspace.find-packages'
 import { readWorkspaceManifest } from '@pnpm/workspace.read-manifest'
 import path from 'pathe'
+import { resolveWorkspaceDirectory } from './workspace/paths'
 
 export type { GetWorkspacePackagesOptions } from '../types'
 
@@ -29,10 +30,37 @@ function getPackageRootDir(project: WorkspacePackage) {
   return normalizeDir(project.rootDirRealPath || project.rootDir)
 }
 
+function cachePromise<T>(cache: Map<string, Promise<T>>, key: string, load: () => Promise<T>) {
+  const pending = load()
+  cache.set(key, pending)
+  // A rejected discovery must be retried after the filesystem is repaired.
+  // Compare the identity before deleting so a newer concurrent lookup is not
+  // accidentally removed by an older rejection handler.
+  void pending.catch(() => {
+    if (cache.get(key) === pending) {
+      cache.delete(key)
+    }
+  })
+  return pending
+}
+
+/**
+ * `findWorkspacePackages()` returns manifest objects that it keeps in the
+ * cached result. Return a detached copy so callers cannot mutate that shared
+ * state and make subsequent workspace reads disagree with the filesystem.
+ * Package manifests are JSON-compatible by definition, and Node 22 provides
+ * the native structured clone implementation used by the supported runtime.
+ */
+function cloneWorkspaceManifest(manifest: WorkspacePackage['manifest']): WorkspacePackage['manifest'] {
+  return structuredClone(manifest)
+}
+
 async function findWorkspaceDirCached(cwd: string) {
-  const key = normalizeDir(cwd)
+  // Resolve each request so a retargeted symlink cannot reuse another
+  // workspace's cached discovery. Returned cwd remains the caller's path.
+  const key = await resolveWorkspaceDirectory(cwd)
   if (!workspaceDirCache.has(key)) {
-    workspaceDirCache.set(key, findWorkspaceDir(key))
+    return cachePromise(workspaceDirCache, key, () => findWorkspaceDir(key))
   }
   return workspaceDirCache.get(key)!
 }
@@ -40,7 +68,7 @@ async function findWorkspaceDirCached(cwd: string) {
 async function readWorkspaceManifestCached(workspaceDir: string) {
   const key = normalizeDir(workspaceDir)
   if (!workspaceManifestCache.has(key)) {
-    workspaceManifestCache.set(key, readWorkspaceManifest(key))
+    return cachePromise(workspaceManifestCache, key, () => readWorkspaceManifest(key))
   }
   return workspaceManifestCache.get(key)!
 }
@@ -49,13 +77,10 @@ async function findWorkspacePackagesCached(workspaceDir: string, patterns: strin
   const normalizedWorkspaceDir = normalizeDir(workspaceDir)
   const key = `${normalizedWorkspaceDir}:${getPatternsCacheKey(patterns)}`
   if (!workspacePackagesCache.has(key)) {
-    workspacePackagesCache.set(
-      key,
-      findWorkspacePackages(
-        normalizedWorkspaceDir,
-        patterns ? { patterns } : {},
-      ),
-    )
+    return cachePromise(workspacePackagesCache, key, () => findWorkspacePackages(
+      normalizedWorkspaceDir,
+      patterns ? { patterns } : {},
+    ))
   }
   return workspacePackagesCache.get(key)!
 }
@@ -87,7 +112,7 @@ export async function getWorkspacePackages(
   workspaceDir: string,
   options?: GetWorkspacePackagesOptions,
 ): Promise<WorkspacePackageWithJsonPath[]> {
-  const normalizedWorkspaceDir = normalizeDir(workspaceDir)
+  const normalizedWorkspaceDir = await resolveWorkspaceDirectory(workspaceDir)
   const ignoreRootPackage = options?.ignoreRootPackage ?? true
   const ignorePrivatePackage = options?.ignorePrivatePackage ?? true
 
@@ -106,6 +131,7 @@ export async function getWorkspacePackages(
     const pkgJsonPath = path.resolve(rootDir, 'package.json')
     return {
       ...project,
+      manifest: cloneWorkspaceManifest(project.manifest),
       rootDir,
       pkgJsonPath,
     }
@@ -127,7 +153,7 @@ export async function getWorkspacePackages(
  */
 export async function getWorkspaceData(cwd: string, options?: GetWorkspacePackagesOptions): Promise<WorkspaceData> {
   const normalizedCwd = normalizeDir(cwd)
-  const workspaceDir = (await findWorkspaceDirCached(normalizedCwd)) ?? normalizedCwd
+  const workspaceDir = await resolveWorkspaceDirectory((await findWorkspaceDirCached(normalizedCwd)) ?? normalizedCwd)
   const packages = await getWorkspacePackages(workspaceDir, options)
   return {
     cwd: normalizedCwd,

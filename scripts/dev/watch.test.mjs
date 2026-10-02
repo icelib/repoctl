@@ -14,7 +14,7 @@ it('watch builds cold dependencies, propagates updates, blocks failed dependents
   const cwd = await temporaryWorkspace(t)
   await writeFile(path.join(cwd, 'package.json'), JSON.stringify({ name: 'dev-fixture', private: true, packageManager: manifest.packageManager }))
   await writeFile(path.join(cwd, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
-  await writeFile(path.join(cwd, '.gitignore'), 'node_modules\n.turbo\ndist\nrunning.pid\n')
+  await writeFile(path.join(cwd, '.gitignore'), 'node_modules\n.turbo\ndist\nrunning.pid\nbuild-events.log\n')
   await copyFile(new URL('../../turbo.json', import.meta.url), path.join(cwd, 'turbo.json'))
   await copyFile(new URL('./fixtures/build.mjs', import.meta.url), path.join(cwd, 'build.mjs'))
   // The build fixture only reads files; it has no registry dependencies to install.
@@ -31,6 +31,7 @@ it('watch builds cold dependencies, propagates updates, blocks failed dependents
   }
   const source = path.join(cwd, 'packages/upstream/src/value.txt')
   const outputFile = path.join(cwd, 'packages/repoctl/dist/value.txt')
+  const eventsFile = path.join(cwd, 'build-events.log')
   await writeFile(source, 'first')
   execFileSync('git', ['init', '--quiet'], { cwd })
 
@@ -58,7 +59,15 @@ it('watch builds cold dependencies, propagates updates, blocks failed dependents
   const output = () => logs
   const value = () => readFile(outputFile, 'utf8').catch(() => '')
   await waitFor(async () => await value() === 'first', 'cold dependency build', output)
-  assert.ok(logs.indexOf('BUILT upstream first') < logs.indexOf('BUILT repoctl first'))
+  // Artifacts can appear before Turbo forwards child stdout to this process.
+  // Observe build lifecycle events directly instead of relying on buffered logs.
+  let events = ''
+  await waitFor(async () => {
+    events = await readFile(eventsFile, 'utf8').catch(() => '')
+    return events.includes('DONE repoctl first')
+  }, 'cold build completion events', output)
+  const upstreamCompleted = events.indexOf('DONE upstream first')
+  assert.ok(upstreamCompleted >= 0 && upstreamCompleted < events.indexOf('START repoctl'), events)
 
   await writeFile(source, 'second')
   await waitFor(async () => await value() === 'second', 'downstream update', output)

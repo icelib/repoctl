@@ -83,7 +83,7 @@ describe('createNewProject root reference rewriting', () => {
     expect(generatedTsconfig).toContain('"extends": "../../../../tsconfig.json"')
     expect(generatedVitestConfig).toContain(`from 'repoctl/tooling'`)
     expect(generatedVitestConfig).not.toContain('tooling/load-tooling-module.mjs')
-    expect(generatedWorkspaceManifest).toContain('apps/*')
+    expect(generatedWorkspaceManifest).toContain('apps/platform/web/client')
 
     await fs.remove(workspaceDir)
   })

@@ -23,6 +23,7 @@ describe('createContext', () => {
     await vi.resetModules()
     vi.doMock('@/core/workspace', () => ({
       getWorkspaceData: vi.fn(async () => ({ packages: fakePackages, workspaceDir: '/repo' })),
+      clearWorkspaceCache: vi.fn(),
     }))
     vi.doMock('@/core/git', () => ({
       GitClient: GitClientMock,

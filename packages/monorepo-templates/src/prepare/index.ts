@@ -6,7 +6,7 @@ import { templateChoices } from '../../template-data.mjs'
 import { assetsDir, packageDir, templatesDir } from '../paths'
 import { toPublishGitignorePath } from '../utils/gitignore'
 import { shouldSkipTemplatePath } from '../utils/template-filter'
-import { publishedToolingConfigs, removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedManifestContent, sanitizePublishedWorkspaceContent } from './published'
+import { publishedToolingConfigs, removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedCiContent, sanitizePublishedManifestContent, sanitizePublishedWorkspaceContent } from './published'
 
 export { removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedWorkspaceContent } from './published'
 
@@ -163,8 +163,30 @@ async function sanitizePublishedWorkspace() {
   await fs.writeFile(workspacePath, sanitizePublishedWorkspaceContent(content), 'utf8')
 }
 
-async function removePublishedReleaseState() {
-  await fs.rm(path.join(assetsDir, '.changeset', 'ledger.yaml'), { force: true })
+/**
+ * Remove release state that belongs to the source workspace before publishing
+ * assets for a new consumer workspace. Change intent markdown contains the
+ * source repository's package names and release summaries; copying it into a
+ * generated project would make its first `pnpm change`/release plan consume
+ * unrelated changes. The helper accepts a root for filesystem-level tests and
+ * to keep the cleanup boundary explicit.
+ */
+export async function removePublishedReleaseState(rootDir = assetsDir) {
+  const changesetDir = path.join(rootDir, '.changeset')
+  await fs.rm(path.join(changesetDir, 'ledger.yaml'), { force: true })
+  let entries: Dirent[]
+  try {
+    entries = await fs.readdir(changesetDir, { withFileTypes: true })
+  }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return
+    }
+    throw error
+  }
+  await Promise.all(entries
+    .filter(entry => entry.isFile() && entry.name.endsWith('.md'))
+    .map(entry => fs.rm(path.join(changesetDir, entry.name), { force: true })))
 }
 
 async function removeSourceRepoReleaseToolingBuildStep() {
@@ -184,7 +206,7 @@ async function removeSourceRepoChecks() {
   const workflowPath = path.join(assetsDir, '.github/workflows/ci.yml')
   if (await pathExists(workflowPath)) {
     const workflow = await fs.readFile(workflowPath, 'utf8')
-    await fs.writeFile(workflowPath, workflow.replace(/\r?\n\s+- name: Check Worker type generation from packaged templates\r?\n\s+run: pnpm test:worker-types\r?\n/g, '\n'))
+    await fs.writeFile(workflowPath, sanitizePublishedCiContent(workflow))
   }
   const manifestPath = path.join(assetsDir, 'package.json')
   if (await pathExists(manifestPath)) {

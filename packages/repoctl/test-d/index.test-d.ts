@@ -1,5 +1,5 @@
-import type { CreateNewProjectPlan, MonorepoConfig, MonorepoVitestConfigResult, MonorepoVitestProjectConfigResult, TemplateHealthReport, WorkspacePackageSummaryData } from 'repoctl'
-import { checkTemplates, clearWorkspaceCache, defineMonorepoConfig, defineVitestConfig, defineVitestProjectConfig, getWorkspacePackageSummaries, resolveCreateNewProjectPlan } from 'repoctl'
+import type { CreateManifestRecoveryResult, CreateNewProjectPlan, CreateTargetInspection, CreateTargetMarker, MonorepoConfig, MonorepoVitestConfigResult, MonorepoVitestProjectConfigResult, RecoverCreateTargetResult, TemplateHealthReport, WorkspacePackageSummaryData } from 'repoctl'
+import { checkTemplates, clearWorkspaceCache, defineMonorepoConfig, defineVitestConfig, defineVitestProjectConfig, getWorkspacePackageSummaries, inspectCreateTarget, recoverCreateTarget, resolveCreateNewProjectPlan } from 'repoctl'
 import { defineEslintConfig } from 'repoctl/tooling'
 import { expectAssignable, expectType } from 'tsd'
 
@@ -25,4 +25,14 @@ expectType<Promise<MonorepoVitestProjectConfigResult>>(defineVitestProjectConfig
 expectAssignable<Promise<object>>(defineEslintConfig({ options: { ignores: ['dist/**'] }, configs: [{ rules: { 'no-console': 'off' } }] }))
 expectAssignable<Promise<object>>(defineEslintConfig({ ignores: ['dist/**'] }, { rules: { 'no-alert': 'off' } }))
 expectType<Promise<CreateNewProjectPlan>>(resolveCreateNewProjectPlan({ cwd: '.', type: 'tsdown' }))
+expectType<Promise<CreateTargetInspection>>(inspectCreateTarget('.'))
+expectType<Promise<RecoverCreateTargetResult>>(recoverCreateTarget('.', { dryRun: true }))
+declare const createMarker: CreateTargetMarker
+expectType<1 | 2>(createMarker.schemaVersion)
+declare const createRecovery: RecoverCreateTargetResult
+expectType<CreateManifestRecoveryResult | undefined>(createRecovery.manifest)
+declare const manifestRecovery: CreateManifestRecoveryResult
+expectType<string>(manifestRecovery.path)
+expectType<'unchanged' | 'would-restore' | 'restored' | 'preserved' | 'unknown'>(manifestRecovery.status)
+expectType<string | undefined>(manifestRecovery.reason)
 expectType<Promise<TemplateHealthReport>>(checkTemplates())

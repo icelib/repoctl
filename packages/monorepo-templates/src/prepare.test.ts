@@ -1,6 +1,61 @@
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import YAML from 'yaml'
-import { removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedWorkspaceContent } from './prepare'
+import { removePublishedReleaseState, removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedWorkspaceContent } from './prepare'
+import { sanitizePublishedCiContent } from './prepare/published'
+
+describe('consumer CI contract', () => {
+  it('removes source-only script steps including conditional packaged checks', () => {
+    const content = YAML.stringify({
+      jobs: {
+        build: {
+          steps: [
+            { name: 'Install', run: 'pnpm install --frozen-lockfile' },
+            { name: 'Build', run: 'pnpm build' },
+            { name: 'Lint', run: 'pnpm lint' },
+            { name: 'Source workflow check', run: 'pnpm check:workflows' },
+            { name: 'Source artifact check', run: 'pnpm check:no-tracked-build-artifacts' },
+            { name: 'Packed create', if: 'linux', run: 'pnpm test:packaged-create' },
+            { name: 'Packed doctor', if: 'linux', run: 'pnpm test:packaged-doctor' },
+            { name: 'Future source check', run: 'pnpm run test:future-source-check' },
+            { name: 'Test', run: 'pnpm test' },
+          ],
+        },
+      },
+    })
+    const sanitized = YAML.parse(sanitizePublishedCiContent(content))
+    expect(sanitized.jobs.build.steps.map((step: { name: string }) => step.name)).toEqual(['Install', 'Build', 'Lint', 'Test'])
+    expect(sanitizePublishedCiContent(sanitizePublishedCiContent(content))).toBe(sanitizePublishedCiContent(content))
+  })
+})
+
+describe('published release state', () => {
+  it('does not copy source change intents into a generated workspace', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'repoctl-published-release-state-'))
+    const changesetDir = path.join(root, '.changeset')
+    try {
+      await writeFile(path.join(root, 'sentinel.txt'), 'keep\n')
+      await mkdir(changesetDir)
+      await writeFile(path.join(changesetDir, 'ledger.yaml'), 'source ledger\n')
+      await writeFile(path.join(changesetDir, 'auto-pr-1.md'), 'source intent\n')
+      await writeFile(path.join(changesetDir, 'release.md'), 'source intent\n')
+      await writeFile(path.join(changesetDir, 'README.md'), 'documentation\n')
+      await writeFile(path.join(changesetDir, 'config.json'), '{}\n')
+
+      await removePublishedReleaseState(root)
+
+      await expect(readFile(path.join(root, 'sentinel.txt'), 'utf8')).resolves.toBe('keep\n')
+      await expect(readFile(path.join(changesetDir, 'config.json'), 'utf8')).resolves.toBe('{}\n')
+      await expect(readFile(path.join(changesetDir, 'README.md'), 'utf8')).rejects.toMatchObject({ code: 'ENOENT' })
+      await expect(readdir(changesetDir)).resolves.toEqual(['config.json'])
+    }
+    finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+})
 
 describe('sanitizePublishedWorkspaceContent', () => {
   it('removes source repository package identities and preserves generic versioning settings', () => {

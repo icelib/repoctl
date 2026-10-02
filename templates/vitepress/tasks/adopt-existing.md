@@ -52,7 +52,20 @@ pnpm add -D repoctl
 pnpm exec repo init --yes
 ```
 
-`repo init --yes` uses safe defaults. It adds recommended scripts and workspace patterns, but it does not blindly overwrite existing README, package.json, pnpm-workspace.yaml, or tooling files.
+`repo init --yes` validates the workspace manifest before writing initialization files and adds missing default patterns to explicit arrays or missing or blank manifests. Package creation initializes a missing or blank manifest, including a comment-only document, with only the exact target path. Both preserve valid implicit `**` manifests such as `null`, `{}`, or mappings without `packages`, and retain the original text when no additions are needed. Existing README and tooling files are preserved by default.
+
+Additions support alias keys and values for `packages`, preserving comments and other field values and types; references are expanded when needed to keep shared values unchanged. Before writing, the serialized result is reread using pnpm's rules and checked against the complete planned manifest.
+
+Init, package creation, and doctor use pnpm's current YAML core rules. A
+`%YAML 1.1` directive does not enable legacy booleans, octal values, timestamps,
+or `<<` merges. Explicit non-core tags such as `!!merge` and `!!timestamp` are
+rejected before init or create writes; doctor reports `workspace-manifest` with
+status `fail`. Ordinary anchors, aliases, and comments remain supported.
+
+For `catalog` and `catalogs`, pnpm's structural checks reject invalid mappings,
+non-string entries, and null named catalogs before init/create writes; doctor
+reports `workspace-manifest: fail`. Top-level null catalog fields, empty mappings,
+ordinary aliases, and empty string specifiers accepted by pnpm remain valid.
 
 ## Step 2: Save The First Diagnostic Report
 
@@ -84,6 +97,8 @@ pnpm exec repo doctor --markdown --redact --out reports/doctor-after.md
 ```
 
 Use `--no-overwrite` for the first adoption pass. It syncs missing assets while preserving changed managed files.
+
+Upgrade and release migration use the same pnpm manifest and catalog validation, preserving existing implicit `**` discovery and metadata values/types (including `on` and explicitly tagged integers under `%YAML 1.1`); failed validation, declined overwrites, or retained custom workflows preserve legacy release configuration and prerelease state. Unchanged manifests retain their original text; changed manifests use formatted YAML checked against the planned values and types.
 
 ## Step 4: Preview Verification
 
@@ -142,7 +157,7 @@ Run:
 pnpm exec repo init --yes
 ```
 
-or manually extend `pnpm-workspace.yaml`.
+to add missing default patterns to an explicit `packages` array. For other layouts, manually extend `pnpm-workspace.yaml`. A nonempty valid manifest without `packages` already uses pnpm's implicit `**` discovery and stays unchanged.
 
 ## Recommended PR Shape
 

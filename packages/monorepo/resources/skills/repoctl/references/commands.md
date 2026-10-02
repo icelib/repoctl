@@ -12,6 +12,18 @@ Usage:
   Notes:
 - `standard` is the default preset
 - `minimal` currently focuses on the base TypeScript setup
+- Initialization validates the workspace YAML structure, the `packages` string array, and its globs before writing any files
+- Nonempty valid manifests without `packages`, including `null` and `{}`, retain pnpm's implicit `**`; missing or blank manifests (including comment-only documents) receive `apps/*`, `packages/*`, and `examples/*`, while explicit arrays receive missing defaults
+- The original manifest text is retained when no additions are needed; init and creation support alias keys and values for `packages`, preserving comments and other field values and types while expanding references when needed to keep shared values unchanged
+- Before writing additions, the serialized result is reread using pnpm's rules and checked against the complete planned manifest
+- Init, package creation, and doctor use pnpm's current YAML core rules; `%YAML 1.1` does not enable legacy booleans, octal values, timestamps, or `<<` merges
+- Explicit non-core tags such as `!!merge` and `!!timestamp` are rejected before init or create writes; ordinary anchors, aliases, and comments remain supported
+- pnpm's structural validation rejects invalid `catalog`/`catalogs` mappings, non-string entries, and null named catalogs before init/create writes
+- Top-level null catalog fields, empty mappings, ordinary aliases, and empty string specifiers accepted by pnpm remain valid
+- Initialization targets the invocation directory, including nested directories, and preserves parent workspace files
+- Package `repository.directory` uses the physical Git root; README links use the README's physical directory, and existing READMEs are preserved by default
+- Generated README links support package paths with spaces, parentheses, `#`, `?`, and literal percent signs
+- Package names display literally, including Markdown punctuation such as `_`, `*`, or `~`
 
 ## new
 
@@ -25,6 +37,33 @@ Usage:
 - `library` defaults to `packages/<name>`
 - `web-app`, `api-service`, `docs-site`, and `cli-tool` default to `apps/<name>`
 - Advanced users can still use `repoctl package create` or `repoctl pkg new`
+- Generated `repository.directory` uses the physical Git root, including nested workspaces and new targets beneath directory aliases
+- A missing or blank workspace manifest, including a comment-only document, is initialized with only the exact target path; valid implicit manifests such as `null`, `{}`, or mappings without `packages` stay unchanged
+
+An interrupted creation can be reviewed and recovered explicitly:
+
+```bash
+repo recover apps/sdk --dry-run --json
+repo recover apps/sdk
+repo recover-create apps/sdk
+repo new --recover apps/sdk
+repo package create --recover apps/sdk
+```
+
+`repo recover` removes only files that still match the interrupted staging
+snapshot. User edits, new files, and unknown state are preserved. `--dry-run`
+never writes; `--json` and `--out <file>` imply `--dry-run` and report the
+stable `status`, `removed`, `preserved`, `targetRemoved`, and `stagingRemoved`
+fields.
+
+Recovery also restores a committed workspace manifest when it still belongs
+to the interrupted creation and the target has no user files. User changes,
+replacements, or missing or damaged recovery records preserve the target and
+staging evidence; user files retain their workspace inclusion. The optional
+`manifest` result contains `path`, `status`, and optional `reason`. Its stable
+statuses are `unchanged`, `would-restore`, `restored`, `preserved`, and `unknown`.
+Older markers support target-only cleanup with manifest status `unknown`.
+All preview modes leave the workspace manifest unchanged.
 
 ## check
 
@@ -43,6 +82,19 @@ Usage:
 - `--dry-run` previews the verification route without running checks
 - `--json` and `--out <file>` emit the same plan for automation and imply dry-run
 
+Pre-push discovers pnpm packages by default. Programmatic
+`verifyPrePush({ cwd, workspaces })` accepts relative paths, absolute physical
+paths, and directory aliases, matches physical identities, and excludes paths
+outside the explicit `cwd` boundary.
+
+When hook input contains pushed refs, verification runs each distinct peeled
+commit in a temporary local clone, using that commit's workspace, manifests,
+and scripts. Dependencies and install lifecycle scripts trigger
+`pnpm install --frozen-lockfile` in the clone; dependency-free checks skip
+installation. Failures and SIGINT/SIGTERM clean up the owned clone before exit,
+leaving the original checkout and index unchanged. Empty input and deletion-only
+pushes retain local lint/typecheck behavior.
+
 ## doctor
 
 Purpose: diagnose whether the current workspace is ready to use.
@@ -55,6 +107,7 @@ Usage:
 - default output is human-readable
 - `--json` emits the structured report only and still exits non-zero when blocking failures exist
 - `--out <file>` persists the text or JSON report and still exits non-zero when blocking failures exist
+- Invalid workspace YAML, including unsupported explicit tags or invalid `catalog`/`catalogs` structures, reports `workspace-manifest` with status `fail`
 
 ## upgrade
 
@@ -69,7 +122,19 @@ Usage:
 - --core: sync core config only (skip GitHub assets)
 - --outDir <dir>: write to another directory
 - --skip-overwrite: never overwrite existing files
+- --dry-run: preview all changes without writing files
+- --json: emit the structured plan and imply `--dry-run`
+- --diff: include a bounded unified text diff and imply `--dry-run`
 - --overwrite-release: explicitly replace an unmarked custom release workflow
+
+If the configured upgrade targets or interactive selection omit a required migration file, legacy release state is preserved and the plan reports `migration-targets-not-selected`. Include `package.json`, `pnpm-workspace.yaml`, and the legacy release workflow to migrate the group. An already managed release workflow can remain an unchanged dependency.
+
+Upgrade and release migration use the same pnpm manifest and catalog validation, preserving existing implicit `**` discovery and metadata values/types (including `on` and explicitly tagged integers under `%YAML 1.1`); failed validation, declined overwrites, or retained custom workflows preserve legacy release configuration and prerelease state. Unchanged manifests retain their original text; changed manifests use formatted YAML checked against the planned values and types.
+
+If an upgrade is interrupted, inspect the pending journal through the exported
+`inspectUpgradeTransactions(cwd)` API before retrying. An unfinished journal is
+reported as `needs-review` and blocks another upgrade until the ambiguous files
+have been reviewed.
 
 For the first migration of an existing project, bootstrap with
 `pnpm dlx repoctl@latest upgrade --yes`. Managed and official legacy release
@@ -102,6 +167,11 @@ Usage:
 - --core: sync core config only (skip GitHub assets)
 - --outDir <dir>: write to another directory
 - --skip-overwrite: never overwrite existing files
+- --dry-run: preview all changes without writing files
+- --json: emit the structured plan and imply `--dry-run`
+- --diff: include a bounded unified text diff and imply `--dry-run`
+
+The same transaction review rule applies to `repo workspace upgrade`.
 
 ## workspace init (alias: ws init)
 

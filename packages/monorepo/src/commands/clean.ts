@@ -4,7 +4,7 @@ import path from 'pathe'
 import { setByPath } from '@/utils'
 import fs from '@/utils/fs'
 import { resolveCommandConfig } from '../core/config'
-import { getWorkspaceData } from '../core/workspace'
+import { clearWorkspaceCache, getWorkspaceData } from '../core/workspace'
 import { localize } from '../i18n'
 import { getSkillTargetPaths } from './skills'
 
@@ -76,20 +76,27 @@ export async function cleanProjects(cwd: string, overrides?: Partial<CleanComman
     docsPlansDir,
     ...skillTargets,
   ])]
-  await Promise.all(candidates.map(async (dir) => {
-    if (await fs.pathExists(dir)) {
-      await fs.remove(dir)
+  try {
+    await Promise.all(candidates.map(async (dir) => {
+      if (await fs.pathExists(dir)) {
+        await fs.remove(dir)
+      }
+    }))
+    const name = path.resolve(workspaceDir, 'package.json')
+    const pkgJson = await fs.readJson(name)
+    // fix https://github.com/icelib/repoctl/issues/76
+    // 确保根目录仍旧依赖 repoctl。
+    if (pkgJson.devDependencies && typeof pkgJson.devDependencies === 'object') {
+      delete pkgJson.devDependencies['@icebreakers/monorepo']
     }
-  }))
-  const name = path.resolve(workspaceDir, 'package.json')
-  const pkgJson = await fs.readJson(name)
-  // fix https://github.com/icelib/repoctl/issues/76
-  // 确保根目录仍旧依赖 repoctl。
-  if (pkgJson.devDependencies && typeof pkgJson.devDependencies === 'object') {
-    delete pkgJson.devDependencies['@icebreakers/monorepo']
+    setByPath(pkgJson, 'devDependencies.repoctl', cleanConfig?.pinnedVersion ?? 'latest')
+    await fs.outputJson(name, pkgJson, {
+      spaces: 2,
+    })
   }
-  setByPath(pkgJson, 'devDependencies.repoctl', cleanConfig?.pinnedVersion ?? 'latest')
-  await fs.outputJson(name, pkgJson, {
-    spaces: 2,
-  })
+  finally {
+    // Package directories and the root manifest changed. Drop every discovery
+    // result so subsequent programmatic calls in this process see the new tree.
+    clearWorkspaceCache()
+  }
 }

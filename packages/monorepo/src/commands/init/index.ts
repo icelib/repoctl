@@ -2,14 +2,15 @@ import type { InitToolingTarget } from './tooling/types'
 import type { PackageJson } from '@/types'
 import { getWorkspacePackageManager } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
-import YAML from 'yaml'
 import fs from '@/utils/fs'
 import { createContext } from '../../core/context'
+import { clearWorkspaceCache } from '../../core/workspace'
 import setChangeset from './setChangeset'
 import setIssueTemplateConfig from './setIssueTemplateConfig'
 import setPkgJson from './setPkgJson'
 import setReadme from './setReadme'
 import { initTooling, initToolingTargets, normalizeInitToolingTargets } from './tooling'
+import { prepareInitWorkspaceManifest } from './workspace'
 
 export { initTooling, initToolingTargets } from './tooling'
 export { normalizeInitToolingTargets } from './tooling'
@@ -31,22 +32,6 @@ const presetToolingMap: Record<InitPreset, InitToolingTarget[]> = {
   standard: [...initToolingTargets],
 }
 
-const defaultWorkspacePackages = ['apps/*', 'packages/*', 'examples/*']
-
-function mergeUniqueStrings(current: unknown, additions: string[]) {
-  const values = Array.isArray(current)
-    ? current.filter((item): item is string => typeof item === 'string' && item.length > 0)
-    : []
-  const seen = new Set(values)
-  for (const addition of additions) {
-    if (!seen.has(addition)) {
-      seen.add(addition)
-      values.push(addition)
-    }
-  }
-  return values
-}
-
 async function ensureRootPackageJson(cwd: string) {
   const pkgJsonPath = path.resolve(cwd, 'package.json')
   if (!await fs.pathExists(pkgJsonPath)) {
@@ -66,44 +51,38 @@ async function ensureRootPackageJson(cwd: string) {
   }
 }
 
-async function ensureWorkspaceManifest(cwd: string) {
-  const workspacePath = path.resolve(cwd, 'pnpm-workspace.yaml')
-  const existing = await fs.pathExists(workspacePath)
-  const manifest = existing
-    ? YAML.parse(await fs.readFile(workspacePath, 'utf8')) ?? {}
-    : {}
-  const nextManifest = {
-    ...(typeof manifest === 'object' && manifest !== null ? manifest : {}),
-    packages: mergeUniqueStrings(
-      typeof manifest === 'object' && manifest !== null ? (manifest as { packages?: unknown }).packages : undefined,
-      defaultWorkspacePackages,
-    ),
-  }
-  const nextContent = YAML.stringify(nextManifest, { singleQuote: true })
-  const previous = existing ? await fs.readFile(workspacePath, 'utf8') : ''
-  if (!existing || previous !== nextContent) {
-    await fs.writeFile(workspacePath, nextContent, 'utf8')
-  }
-}
-
 async function runInitMetadata(cwd: string, options: InitCommandRuntimeOptions = {}) {
+  const workspaceManifest = await prepareInitWorkspaceManifest(cwd)
   await ensureRootPackageJson(cwd)
-  await ensureWorkspaceManifest(cwd)
+  if (workspaceManifest.content !== undefined) {
+    await fs.writeFile(workspaceManifest.path, workspaceManifest.content, 'utf8')
+  }
+  // The workspace may have been queried before init created its root files.
+  // Rebuild discovery before creating a context so it sees the new manifest.
+  clearWorkspaceCache()
   const ctx = await createContext(cwd)
   const initConfig = ctx.config.commands?.init ?? {}
   const overwrite = options.overwrite ?? options.force ?? initConfig.force ?? false
 
-  if (!initConfig.skipChangeset) {
-    await setChangeset(ctx)
+  try {
+    if (!initConfig.skipChangeset) {
+      await setChangeset(ctx)
+    }
+    if (!initConfig.skipPkgJson) {
+      await setPkgJson(ctx)
+    }
+    if (!initConfig.skipReadme) {
+      await setReadme(ctx, { force: overwrite })
+    }
+    if (!initConfig.skipIssueTemplateConfig) {
+      await setIssueTemplateConfig(ctx)
+    }
   }
-  if (!initConfig.skipPkgJson) {
-    await setPkgJson(ctx)
-  }
-  if (!initConfig.skipReadme) {
-    await setReadme(ctx, { force: overwrite })
-  }
-  if (!initConfig.skipIssueTemplateConfig) {
-    await setIssueTemplateConfig(ctx)
+  finally {
+    // Metadata writers can update package manifests. Always invalidate after
+    // they run, including partial failures, so later calls cannot reuse stale
+    // package contents.
+    clearWorkspaceCache()
   }
 
   return { ctx, initConfig }

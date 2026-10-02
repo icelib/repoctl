@@ -1,3 +1,6 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
   createMonorepoCommitlintConfig,
@@ -18,6 +21,20 @@ import {
 } from '@/index'
 
 describe('tooling factories', () => {
+  it('treats an exact workspace package path as a Vitest project root', async () => {
+    const root = await mkdtemp(path.join(tmpdir(), 'repoctl-tooling-exact-project-'))
+    try {
+      await mkdir(path.join(root, 'packages/exact'), { recursive: true })
+      await writeFile(path.join(root, 'pnpm-workspace.yaml'), 'packages:\n  - packages/exact\n')
+      await writeFile(path.join(root, 'packages/exact/vitest.config.ts'), 'export default {}\n')
+      const config = createMonorepoVitestConfig({ rootDir: root })
+      expect(config.test?.projects).toEqual(['packages/exact/vitest.config.ts'])
+    }
+    finally {
+      await rm(root, { recursive: true, force: true })
+    }
+  })
+
   it('creates shared config wrappers', () => {
     expect(createMonorepoCommitlintConfig()).toBeTruthy()
     expect(createMonorepoEslintConfig()).toBeTruthy()

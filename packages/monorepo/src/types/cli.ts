@@ -42,6 +42,8 @@ export interface CliOpts {
    * @default false
    */
   noOverwrite?: boolean
+  /** Include a bounded unified text diff in upgrade previews. */
+  diff?: boolean
   /**
    * 是否允许覆盖未标记的自定义 release workflow。
    * @default false

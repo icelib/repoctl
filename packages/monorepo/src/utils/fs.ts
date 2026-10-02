@@ -1,4 +1,5 @@
-import { access, cp, mkdir, mkdtemp, open, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import { access, chmod, cp, mkdir, mkdtemp, open, readdir, readFile, rename, rm, stat, unlink, writeFile } from 'node:fs/promises'
 import path from 'pathe'
 
 /**
@@ -91,6 +92,31 @@ export async function outputFile(targetPath: string, data: Parameters<typeof wri
 }
 
 /**
+ * Write a file by first creating a sibling temporary file and then replacing
+ * the destination with a single rename.  Upgrade uses this helper so a
+ * process termination or a failed write cannot leave a truncated managed
+ * file at the destination.
+ */
+async function outputFileAtomic(targetPath: string, data: Parameters<typeof writeFile>[1], options?: Parameters<typeof writeFile>[2]) {
+  await ensureParentDir(targetPath)
+  const temporaryPath = `${targetPath}.repoctl-${randomUUID()}.tmp`
+  try {
+    await writeFile(temporaryPath, data, options)
+    // `writeFile` only applies mode when it creates a file.  Callers that pass
+    // an existing file's mode therefore get the same permissions after the
+    // temporary file is renamed into place.
+    if (typeof options === 'object' && options !== null && 'mode' in options && options.mode !== undefined) {
+      await chmod(temporaryPath, options.mode)
+    }
+    await rename(temporaryPath, targetPath)
+  }
+  catch (error) {
+    await unlink(temporaryPath).catch(() => {})
+    throw error
+  }
+}
+
+/**
  * 读取 JSON 文件并解析。
  */
 export async function readJson<T = any>(targetPath: string) {
@@ -147,6 +173,7 @@ const fs = {
   exists,
   mkdtemp,
   outputFile,
+  outputFileAtomic,
   outputJSON,
   outputJson,
   pathExists,

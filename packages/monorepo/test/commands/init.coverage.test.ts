@@ -34,7 +34,7 @@ function createTestContext(overrides: Partial<Context> = {}): Context {
   const workspaceFilepath = overrides.workspaceFilepath ?? `${workspaceDir}/pnpm-workspace.yaml`
   return {
     cwd: overrides.cwd ?? workspaceDir,
-    git: overrides.git ?? ({} as Context['git']),
+    git: overrides.git ?? ({ getRepoRoot: async () => undefined } as Context['git']),
     gitUrl: overrides.gitUrl ?? gitUrlParse('https://github.com/ice/awesome.git'),
     gitUser: overrides.gitUser ?? { name: 'Dev Example', email: 'dev@example.com' },
     workspaceDir,

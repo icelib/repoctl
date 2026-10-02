@@ -1,12 +1,14 @@
 import type { Command } from '@icebreakers/monorepo-templates'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
+import { runRecoverCreate } from './recovery'
 
 interface PackageCreateCliOptions {
   template?: string
   dryRun?: boolean
   json?: boolean
   out?: string
+  recover?: string
 }
 
 export function registerPackageCommands(program: Command, cwd: string) {
@@ -20,7 +22,12 @@ export function registerPackageCommands(program: Command, cwd: string) {
     .option('--dry-run', localize('Preview without writing files', '预览将要创建的目录与 package 信息，不写入文件'))
     .option('--json', localize('Output JSON; implies --dry-run', '以 JSON 输出创建预览，隐含 --dry-run'))
     .option('--out <file>', localize('Write the preview to a file; implies --dry-run', '把创建预览写入文件，隐含 --dry-run'))
+    .option('--recover <target>', localize('Recover an interrupted package creation; implies --dry-run with --json/--out', '恢复被中断的包创建；与 --json/--out 一起使用时隐含 --dry-run'))
     .action(async (inputName: string, opts: PackageCreateCliOptions) => {
+      if (opts.recover) {
+        await runRecoverCreate(cwd, opts.recover, opts)
+        return
+      }
       const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
       const result = await runCreateFlow(cwd, inputName, {
         ...(opts.template !== undefined ? { template: opts.template } : {}),

@@ -1,6 +1,6 @@
 /* eslint-disable perfectionist/sort-imports */
-import type { CliOpts, CreateChoiceOption, CreateNewProjectPlan, MonorepoCommitlintConfig, MonorepoTsconfig, MonorepoVitestConfigResult, MonorepoVitestProjectConfigResult, PackageJson, WorkspacePackageSummaryData } from '..'
-import { clearWorkspaceCache, createMonorepoCommitlintConfig, createMonorepoEslintConfig, createMonorepoLintStagedConfig, createMonorepoStylelintConfig, createMonorepoTsconfig, createMonorepoVitestConfig, defineCommitlintConfig, defineEslintConfig, defineVitestConfig, defineVitestProjectConfig, getCreateChoices, getFileHash, getTemplateMap, getWorkspacePackageSummaries, resolveCreateNewProjectPlan, templateMap } from '..'
+import type { CliOpts, CreateChoiceOption, CreateManifestRecoveryResult, CreateNewProjectPlan, CreateTargetInspection, CreateTargetMarker, MonorepoCommitlintConfig, MonorepoTsconfig, MonorepoVitestConfigResult, MonorepoVitestProjectConfigResult, PackageJson, RecoverCreateTargetResult, WorkspacePackageSummaryData } from '..'
+import { clearWorkspaceCache, createMonorepoCommitlintConfig, createMonorepoEslintConfig, createMonorepoLintStagedConfig, createMonorepoStylelintConfig, createMonorepoTsconfig, createMonorepoVitestConfig, defineCommitlintConfig, defineEslintConfig, defineVitestConfig, defineVitestProjectConfig, getCreateChoices, getFileHash, getTemplateMap, getWorkspacePackageSummaries, inspectCreateTarget, recoverCreateTarget, resolveCreateNewProjectPlan, templateMap } from '..'
 import { expectAssignable, expectType } from 'tsd'
 
 expectType<string>(getFileHash('demo'))
@@ -9,6 +9,22 @@ expectType<Promise<WorkspacePackageSummaryData>>(getWorkspacePackageSummaries('.
 expectType<'tsdown'>(templateMap.tsdown.source)
 expectAssignable<CreateChoiceOption[]>(getCreateChoices())
 expectType<Promise<CreateNewProjectPlan>>(resolveCreateNewProjectPlan({ cwd: '.', type: 'tsdown' }))
+expectType<Promise<CreateTargetInspection>>(inspectCreateTarget('.'))
+expectType<Promise<RecoverCreateTargetResult>>(recoverCreateTarget('.', { dryRun: true }))
+
+declare const createMarker: CreateTargetMarker
+expectType<1 | 2>(createMarker.schemaVersion)
+declare const createRecovery: RecoverCreateTargetResult
+expectType<CreateManifestRecoveryResult | undefined>(createRecovery.manifest)
+declare const manifestRecovery: CreateManifestRecoveryResult
+expectType<string>(manifestRecovery.path)
+expectType<'unchanged' | 'would-restore' | 'restored' | 'preserved' | 'unknown'>(manifestRecovery.status)
+expectType<string | undefined>(manifestRecovery.reason)
+
+declare const createPlan: CreateNewProjectPlan
+expectType<string>(createPlan.workspaceManifest.path)
+expectType<boolean>(createPlan.workspaceManifest.changed)
+expectType<string | undefined>(createPlan.workspaceManifest.pattern)
 
 const templates = getTemplateMap()
 

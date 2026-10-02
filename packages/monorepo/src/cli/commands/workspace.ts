@@ -6,7 +6,8 @@ import path from 'pathe'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import fs from '../../utils/fs'
-import { normalizeCleanOptions, normalizeCliOpts } from '../utils'
+import { normalizeCleanOptions } from '../utils'
+import { runUpgradeCommand } from './upgrade'
 
 interface WorkspaceListCliOptions {
   json?: boolean
@@ -144,11 +145,12 @@ export function registerWorkspaceCommands(program: Command, cwd: string) {
     .option('-y, --yes', localize('Skip prompts and overwrite drifted managed assets', '跳过交互并覆盖 drifted 标准资产'))
     .option('--overwrite', localize('Overwrite drifted managed assets', '覆盖 drifted 标准资产'))
     .option('--no-overwrite', localize('Preserve drifted managed assets', '不覆盖 drifted 标准资产'))
+    .option('--dry-run', localize('Preview changes without writing files', '预览全部升级变更，不写入文件'))
+    .option('--json', localize('Output the upgrade plan as JSON; implies --dry-run', '以 JSON 输出升级计划，隐含 --dry-run'))
+    .option('--diff', localize('Include bounded text diffs; implies --dry-run', '输出有界文本差异，隐含 --dry-run'))
     .option('--overwrite-release', localize('Overwrite an unmarked custom release workflow', '覆盖未标记的自定义 release workflow'))
-    .action(async (opts: CliOpts) => {
-      const { upgradeMonorepo } = await import('@/commands')
-      await upgradeMonorepo(normalizeCliOpts(cwd, opts))
-      logger.success(localize('Workspace upgrade finished.', 'Workspace 升级完成。'))
+    .action(async (opts: CliOpts & { dryRun?: boolean, json?: boolean, diff?: boolean }) => {
+      await runUpgradeCommand(cwd, opts)
     })
 
   workspaceCommand.command('init')

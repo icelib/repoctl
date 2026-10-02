@@ -69,8 +69,7 @@ async function copyDependency(name: string, destinationRoot: string, seen = new 
   }
 }
 
-export async function createPackageManagerFixture() {
-  const root = await realpath(await mkdtemp(path.join(tmpdir(), 'repoctl-package-manager-')))
+async function preparePackageManagerFixture(root: string) {
   const packageDir = path.join(root, 'packages/monorepo-templates')
   const assetsDir = path.join(packageDir, 'assets')
   const sourceManifest = JSON.parse(await readFile(path.join(sourceRoot, 'package.json'), 'utf8')) as {
@@ -85,7 +84,7 @@ export async function createPackageManagerFixture() {
   ]
 
   await mkdir(packageDir, { recursive: true })
-  await Promise.all([
+  const preparation = await Promise.allSettled([
     ...['dist', 'assets-data.mjs', 'template-data.mjs'].map(name => cp(path.join(sourcePackageDir, name), path.join(packageDir, name), { recursive: true })),
     ...sourceFiles.map(async name => outputFile(path.join(root, name), await readFile(path.join(sourceRoot, name), 'utf8'))),
     outputFile(path.join(root, 'package.json'), JSON.stringify({ name: 'repoctl-workspace', packageManager: sourceManifest.packageManager })),
@@ -99,12 +98,19 @@ export async function createPackageManagerFixture() {
     ...['AGENTS.md', 'CLAUDE.md', 'LICENSE', '.agents/skills/repoctl/SKILL.md'].map(name => outputFile(path.join(assetsDir, name), 'outdated cached asset\n')),
     mkdir(path.join(packageDir, 'templates/tsdown'), { recursive: true }),
   ])
+  // Settle all writers before failed setup removes their shared root.
+  for (const result of preparation) {
+    if (result.status === 'rejected') {
+      throw result.reason
+    }
+  }
   const packageManifest = JSON.parse(await readFile(path.join(sourcePackageDir, 'package.json'), 'utf8')) as {
     dependencies?: Record<string, string>
   }
   const dependencies = Object.keys(packageManifest.dependencies ?? {})
+  const copiedDependencies = new Set<string>()
   for (const dependency of dependencies) {
-    await copyDependency(dependency, path.join(packageDir, 'node_modules'))
+    await copyDependency(dependency, path.join(packageDir, 'node_modules'), copiedDependencies)
   }
 
   return {
@@ -118,7 +124,7 @@ export async function createPackageManagerFixture() {
         '--input-type=module',
         '--eval',
         `import { getWorkspacePackageManager } from ${JSON.stringify(entry)}; process.stdout.write(await getWorkspacePackageManager())`,
-      ], { cwd: root, encoding: 'utf8' })
+      ], { cwd: root, encoding: 'utf8', timeout: 10_000 })
       return stdout
     },
     async usePublishedAssets(packageManager: unknown) {
@@ -128,5 +134,16 @@ export async function createPackageManagerFixture() {
     async cleanup() {
       await rm(root, { recursive: true, force: true })
     },
+  }
+}
+
+export async function createPackageManagerFixture() {
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), 'repoctl-package-manager-')))
+  try {
+    return await preparePackageManagerFixture(root)
+  }
+  catch (error) {
+    await rm(root, { recursive: true, force: true })
+    throw error
   }
 }

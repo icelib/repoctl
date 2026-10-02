@@ -53,6 +53,10 @@ pnpm create repoctl@latest
 
 The create command lets you select the built-in templates to include, then prepares the workspace for the normal `repo init`, `repo doctor`, `repo new`, and `repo check` workflow.
 
+Generated root scripts use the distributed tooling rather than source-checkout helpers. Package creation follows your pnpm workspace patterns, including nested directories and exclusions, and restores its changes if creation fails. Pre-push verification discovers your packages, includes deleted and renamed files, builds changed package dependencies first when package scripts are used as a fallback, and runs build, lint, typecheck, type tests, and tests in that order without repeating root and package tasks.
+
+If a creation is interrupted after publishing starts, use `pnpm exec repo recover <target>` to inspect and safely clean the stale target. Add `--dry-run` to preview; `--json` and `--out <file>` emit stable recovery results without changing files.
+
 ### For AI agents
 
 Run this from a new or empty directory outside the repoctl source checkout; do
@@ -68,6 +72,18 @@ pnpm exec repo doctor
 ```
 
 Template keys: `vue-hono` (Vue/full-stack), `hono-server` (API), `tsdown` (TypeScript library), `vue-lib` (Vue components), `vitepress` (docs), `cli`. Omit `--templates` for an empty workspace, then `pnpm exec repo new <name> --template <key>`.
+
+## Preview an upgrade
+
+```bash
+pnpm exec repo upgrade --dry-run
+pnpm exec repo upgrade --json
+pnpm exec repo upgrade --yes
+```
+
+`--dry-run` previews managed file changes without writing files or prompting. `--json` implies this read-only preview and reports each file's action, reason, confirmation requirement, migration dependencies, and bounded content statistics. Add `--diff` when you need a bounded unified text diff; binary or oversized files are summarized by bytes and hashes. Custom release workflows are preserved by default. Legacy release state is removed only when the related migration changes are accepted together and applied successfully.
+
+The public `resolveUpgradePlan(opts: CliOpts): Promise<UpgradePlan>` API is exported from `repoctl` and `@icebreakers/monorepo`. See the [API example and plan fields](packages/repoctl/README.md#advanced-apis).
 
 ## Internationalization
 

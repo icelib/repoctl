@@ -34,10 +34,12 @@ describe('updateRootPackageJson', () => {
       }
 
       expect(pkg.name).toBe('demo-repo')
-      expect(pkg.scripts).toEqual({
-        'check': 'repo check',
+      expect(pkg.scripts).toMatchObject({
         'repo:init': 'repo init',
+        'lint': 'turbo run lint',
+        'test': 'vitest run --passWithNoTests && pnpm test:types',
       })
+      expect(pkg.scripts).not.toHaveProperty('tooling:build')
       expect(pkg.devDependencies).toMatchObject({
         repoctl: 'latest',
         turbo: '^2.9.14',

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -11,11 +11,14 @@ const tempRoot = mkdtempSync(path.join(tmpdir(), 'repoctl-packaged-doctor-'))
 const packDir = path.join(tempRoot, 'packs')
 const workspaceDir = path.join(tempRoot, 'workspace')
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+const sourceManifest = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'))
 
 function run(args, cwd, stdio = 'inherit') {
   return execFileSync(pnpmCommand, args, {
     cwd,
     encoding: 'utf8',
+    env: { ...process.env, HUSKY: '0', CI: 'true' },
+    timeout: 180_000,
     stdio,
   })
 }
@@ -42,8 +45,8 @@ try {
   writeFileSync(path.join(workspaceDir, 'package.json'), `${JSON.stringify({
     name: 'repoctl-packaged-doctor-smoke',
     private: true,
-    packageManager: 'pnpm@11.22.0',
-    engines: { node: '>=22.12.0' },
+    packageManager: sourceManifest.packageManager,
+    engines: sourceManifest.engines,
     scripts: {
       'repo:init': 'repo init',
       'repo:new': 'repo new',

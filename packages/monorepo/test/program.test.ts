@@ -71,6 +71,10 @@ describe('commander program', () => {
     const runCreateFlowMock = vi.fn(async (_cwd: string, _name?: string, options?: { dryRun?: boolean }) => ({
       dryRun: options?.dryRun === true,
     }))
+    const runRecoverCreateMock = vi.fn(async () => ({
+      dryRun: true,
+      result: { status: 'stale' },
+    }))
     const aiTemplateMock = vi.fn(async () => {})
     const getWorkspacePackageSummariesMock = vi.fn(async () => ({
       cwd: '/repo',
@@ -159,6 +163,9 @@ describe('commander program', () => {
     vi.doMock('@/cli/commands/package/create-flow', () => ({
       runCreateFlow: runCreateFlowMock,
     }))
+    vi.doMock('@/cli/commands/recovery', () => ({
+      runRecoverCreate: runRecoverCreateMock,
+    }))
     vi.doMock('@/core/config', () => ({
       resolveCommandConfig: resolveCommandConfigMock,
     }))
@@ -187,6 +194,7 @@ describe('commander program', () => {
     await program.parseAsync(['node', 'repo', 'new', 'demo', '--template', 'tsdown'])
     await program.parseAsync(['node', 'repo', 'new', 'demo-json', '--template', 'tsdown', '--json'])
     await program.parseAsync(['node', 'repo', 'new', 'demo-out', '--template', 'tsdown', '--out', 'plans/create.json'])
+    await program.parseAsync(['node', 'repo', 'new', '--recover', 'apps/interrupted', '--json'])
     await program.parseAsync(['node', 'repo', 'check', '--full'])
     await program.parseAsync(['node', 'repo', 'doctor'])
     await program.parseAsync(['node', 'repo', 'upgrade'])
@@ -207,12 +215,15 @@ describe('commander program', () => {
     await program.parseAsync(['node', 'repo', 'ai', 'prompt', 'create', '--output', 'agentic.md', '--force', '--format', 'json'])
     await program.parseAsync(['node', 'repo', 'ai', 'prompt', 'new'])
     await program.parseAsync(['node', 'repo', 'package', 'create'])
+    await program.parseAsync(['node', 'repo', 'package', 'create', '--recover', 'packages/interrupted', '--dry-run'])
     await program.parseAsync(['node', 'repo', 'skills', 'sync', '--codex'])
 
     expect(initMock).toHaveBeenCalledWith(expect.any(String), { preset: 'minimal' })
     expect(runCreateFlowMock).toHaveBeenNthCalledWith(1, expect.any(String), 'demo', { template: 'tsdown' })
     expect(runCreateFlowMock).toHaveBeenNthCalledWith(2, expect.any(String), 'demo-json', { template: 'tsdown', dryRun: true, json: true })
     expect(runCreateFlowMock).toHaveBeenNthCalledWith(3, expect.any(String), 'demo-out', { template: 'tsdown', dryRun: true, out: 'plans/create.json' })
+    expect(runRecoverCreateMock).toHaveBeenNthCalledWith(1, expect.any(String), 'apps/interrupted', expect.objectContaining({ recover: 'apps/interrupted', json: true }))
+    expect(runRecoverCreateMock).toHaveBeenNthCalledWith(2, expect.any(String), 'packages/interrupted', expect.objectContaining({ recover: 'packages/interrupted', dryRun: true }))
     expect(runRecommendedCheckMock).toHaveBeenCalledWith({
       cwd: expect.any(String),
       full: true,

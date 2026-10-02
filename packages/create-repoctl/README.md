@@ -18,7 +18,11 @@ npm create repoctl@latest my-app -- --yes --templates vue-hono
 npx create-repoctl@latest my-app --yes --templates vue-hono
 ```
 
-Template keys: `vue-hono`, `hono-server`, `tsdown`, `vue-lib`, `vitepress`, `cli`. After creation:
+Template keys: `vue-hono`, `hono-server`, `tsdown`, `vue-lib`, `vitepress`, `cli`.
+
+With `--yes` and no `--templates`, the command creates an empty workspace. Its test command succeeds until you add tests; actual test failures still fail the command.
+
+After creation:
 
 ```bash
 cd <project>

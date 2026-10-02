@@ -1,8 +1,10 @@
+import type { WorkspaceManifest } from './workspace-manifest'
 import { access, open, readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { readPackageManagerFromManifest } from './package-manager/read'
 import { assetsDir, packageDir, templatesDir } from './paths'
 import { prepareAssets, sanitizePublishedWorkspaceContent } from './prepare'
+import { createWorkspaceManifest } from './workspace-manifest'
 
 const lockFileName = '.prepare-assets.lock'
 const lockPollIntervalMs = 200
@@ -45,9 +47,9 @@ async function isPrepared() {
 
   const sourceRoot = path.resolve(packageDir, '..', '..')
   const sourceManifest = path.join(sourceRoot, 'package.json')
-  let sourcePackage: { name?: unknown }
+  let sourcePackage: WorkspaceManifest
   try {
-    sourcePackage = JSON.parse(await readFile(sourceManifest, 'utf8')) as { name?: unknown }
+    sourcePackage = JSON.parse(await readFile(sourceManifest, 'utf8')) as WorkspaceManifest
   }
   catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -67,6 +69,7 @@ async function isPrepared() {
   ])
 
   let preparedPackageManager: string
+  let preparedManifest: string
   let preparedNpmrc: string
   let preparedWorkspace: string
   let sourceAgentContent: string[]
@@ -87,6 +90,7 @@ async function isPrepared() {
       readFile(path.join(assetsDir, '.agents/skills/repoctl/SKILL.md'), 'utf8'),
     ])
     preparedPackageManager = prepared[0]
+    preparedManifest = await readFile(path.join(assetsDir, 'package.json'), 'utf8')
     preparedNpmrc = prepared[1]
     preparedWorkspace = prepared[2]
     sourceAgentContent = sourceAgents
@@ -105,6 +109,7 @@ async function isPrepared() {
   }
 
   return sourcePackageManager === preparedPackageManager
+    && JSON.stringify(createWorkspaceManifest(sourcePackage)) === JSON.stringify(JSON.parse(preparedManifest))
     && sourceNpmrc === preparedNpmrc
     && sanitizePublishedWorkspaceContent(sourceWorkspace) === preparedWorkspace
     && sourceAgentContent.every((content, index) => content === preparedAgentContent[index])

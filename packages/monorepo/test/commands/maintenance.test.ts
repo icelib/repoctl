@@ -69,6 +69,7 @@ describe('cleanProjects', () => {
     })
     vi.doMock('@/core/workspace', () => ({
       getWorkspaceData: vi.fn(async () => ({ packages, workspaceDir })),
+      clearWorkspaceCache: vi.fn(),
     }))
     vi.doMock('@/core/config', () => ({
       resolveCommandConfig: vi.fn(async () => ({})),
@@ -122,7 +123,7 @@ describe('init helpers', () => {
 
     const ctx: Context = {
       cwd: workspaceDir,
-      git: {} as Context['git'],
+      git: { getRepoRoot: async () => undefined } as Context['git'],
       gitUrl: gitUrlParse('https://github.com/ice/awesome.git'),
       gitUser: { name: 'Dev Example', email: 'dev@example.com' },
       packages,

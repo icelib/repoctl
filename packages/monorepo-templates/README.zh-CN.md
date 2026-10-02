@@ -15,6 +15,8 @@ const vitepress = getTemplateDefinition('vitepress')
 
 仓库 `templates/` 下的源码工作区均为私有，本包是这些模板的正式分发边界。
 
+`createWorkspaceManifest(source, { name?, packageManager? })` 用于生成新工作区的根 manifest：将源码脚本替换为消费者可用的命令，将源码工作区依赖转换为可安装的包，并使用 `repoctl` 入口。它返回新对象，供脚手架创建使用，不用于合并已有用户项目的脚本。
+
 ## 项目链接
 
 - 文档：https://repoctl.icebreaker.top

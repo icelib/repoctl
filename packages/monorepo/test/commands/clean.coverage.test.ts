@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const resolveCommandConfigMock = vi.fn()
 const getWorkspaceDataMock = vi.fn()
+const clearWorkspaceCacheMock = vi.fn()
 const checkboxMock = vi.fn()
 const pathExistsMock = vi.fn()
 const removeMock = vi.fn()
@@ -40,11 +41,13 @@ vi.mock('@/core/config', () => ({
 
 vi.mock('@/core/workspace', () => ({
   getWorkspaceData: getWorkspaceDataMock,
+  clearWorkspaceCache: clearWorkspaceCacheMock,
 }))
 
 afterEach(() => {
   resolveCommandConfigMock.mockReset()
   getWorkspaceDataMock.mockReset()
+  clearWorkspaceCacheMock.mockReset()
   checkboxMock.mockReset()
   pathExistsMock.mockReset()
   removeMock.mockReset()
@@ -174,6 +177,7 @@ describe('clean coverage', () => {
         repoctl: 'canary',
       },
     }, { spaces: 2 })
+    expect(clearWorkspaceCacheMock).toHaveBeenCalledTimes(3)
   })
 
   it('migrates legacy scoped helper dependency to repoctl', async () => {
@@ -202,5 +206,6 @@ describe('clean coverage', () => {
         repoctl: '3.0.0',
       },
     }, { spaces: 2 })
+    expect(clearWorkspaceCacheMock).toHaveBeenCalledTimes(1)
   })
 })

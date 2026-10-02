@@ -141,4 +141,72 @@ describe('workspace helpers', () => {
     expect(readManifestMock).toHaveBeenCalledTimes(2)
     expect(findWorkspacePackagesMock).toHaveBeenCalledTimes(2)
   })
+
+  it('detaches returned manifests from the cached package objects', async () => {
+    const findWorkspacePackagesMock = vi.fn(async () => [
+      {
+        rootDir: '/repo/packages/a',
+        manifest: {
+          name: 'pkg-a',
+          private: false,
+          custom: { nested: true },
+        },
+        rootDirRealPath: '/repo/packages/a',
+      },
+    ])
+
+    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: vi.fn(async () => ({ packages: ['packages/*'] })) }))
+    vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: vi.fn(async () => '/repo') }))
+
+    const { getWorkspacePackages } = await import('@/core/workspace')
+    const first = await getWorkspacePackages('/repo')
+    const firstManifest = first[0]!.manifest as typeof first[0]['manifest'] & { custom: { nested: boolean } }
+    firstManifest.name = 'mutated'
+    firstManifest.custom.nested = false
+
+    const second = await getWorkspacePackages('/repo')
+    const secondManifest = second[0]!.manifest as typeof second[0]['manifest'] & { custom: { nested: boolean } }
+    expect(secondManifest.name).toBe('pkg-a')
+    expect(secondManifest.custom.nested).toBe(true)
+    expect(findWorkspacePackagesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('evicts rejected discovery promises so repaired manifests can be retried', async () => {
+    const findWorkspacePackagesMock = vi.fn(async () => [
+      { rootDir: '/repo/packages/a', manifest: { name: 'pkg-a', private: false }, rootDirRealPath: '/repo/packages/a' },
+    ])
+    const readManifestMock = vi.fn()
+      .mockRejectedValueOnce(new Error('invalid workspace manifest'))
+      .mockResolvedValue({ packages: ['packages/*'] })
+
+    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: readManifestMock }))
+    vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: vi.fn(async () => '/repo') }))
+
+    const { getWorkspacePackages } = await import('@/core/workspace')
+    await expect(getWorkspacePackages('/repo')).rejects.toThrow('invalid workspace manifest')
+    const result = await getWorkspacePackages('/repo')
+
+    expect(result.map(pkg => pkg.manifest.name)).toEqual(['pkg-a'])
+    expect(readManifestMock).toHaveBeenCalledTimes(2)
+    expect(findWorkspacePackagesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('evicts rejected package discovery promises without clearing a newer result', async () => {
+    const findWorkspacePackagesMock = vi.fn()
+      .mockRejectedValueOnce(new Error('temporary package scan failure'))
+      .mockResolvedValue([{ rootDir: '/repo/packages/a', manifest: { name: 'pkg-a', private: false }, rootDirRealPath: '/repo/packages/a' }])
+
+    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: vi.fn(async () => ({ packages: ['packages/*'] })) }))
+    vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: vi.fn(async () => '/repo') }))
+
+    const { getWorkspacePackages } = await import('@/core/workspace')
+    await expect(getWorkspacePackages('/repo', { patterns: ['packages/*'] })).rejects.toThrow('temporary package scan failure')
+    const result = await getWorkspacePackages('/repo', { patterns: ['packages/*'] })
+
+    expect(result.map(pkg => pkg.manifest.name)).toEqual(['pkg-a'])
+    expect(findWorkspacePackagesMock).toHaveBeenCalledTimes(2)
+  })
 })

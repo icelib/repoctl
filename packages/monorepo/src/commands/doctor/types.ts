@@ -36,9 +36,13 @@ export interface DoctorContext {
   cwd: string
   workspaceDir: string
   packageJson: DoctorPackageJson
+  packageJsonError?: string
   packageCount: number
   workspacePatterns: string[]
   workspacePackageDirs: string[]
+  workspaceManifestError?: string
+  /** A package manifest prevented the broad pnpm discovery pass. */
+  workspacePackageDiscoveryError?: string
   hasPackageJson: boolean
   hasWorkspaceManifest: boolean
   hasRepoctlConfig: boolean

@@ -7,9 +7,10 @@ import path from 'pathe'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import fs from '../../utils/fs'
-import { normalizeCliOpts } from '../utils'
 import { createCheckPlanOutput } from './check/output'
 import { createDoctorReportOutput, createInteractiveDoctorReportOutput, hasDoctorBlockingIssues } from './doctor/output'
+import { runRecoverCreate } from './recovery'
+import { runUpgradeCommand } from './upgrade'
 
 interface CheckCliOptions {
   full?: boolean
@@ -34,6 +35,7 @@ interface NewCliOptions {
   dryRun?: boolean
   json?: boolean
   out?: string
+  recover?: string
 }
 
 interface DoctorCliOptions {
@@ -42,6 +44,12 @@ interface DoctorCliOptions {
   out?: string
   redact?: boolean
   strict?: boolean
+}
+
+interface RecoverCreateCliOptions {
+  dryRun?: boolean
+  json?: boolean
+  out?: string
 }
 
 async function emitDoctorReport(report: DoctorReport, opts: DoctorCliOptions, cwd: string) {
@@ -98,7 +106,12 @@ export function registerTopLevelCommands(program: Command, cwd: string) {
     .option('--dry-run', localize('Preview directories and package metadata without writing', '预览将要创建的目录与 package 信息，不写入文件'))
     .option('--json', localize('Output the creation preview as JSON; implies --dry-run', '以 JSON 输出创建预览，隐含 --dry-run'))
     .option('--out <file>', localize('Write the creation preview to a file; implies --dry-run', '把创建预览写入文件，隐含 --dry-run'))
+    .option('--recover <target>', localize('Recover an interrupted package creation; implies --dry-run with --json/--out', '恢复被中断的包创建；与 --json/--out 一起使用时隐含 --dry-run'))
     .action(async (inputName: string, opts: NewCliOptions) => {
+      if (opts.recover) {
+        await runRecoverCreate(cwd, opts.recover, opts)
+        return
+      }
       const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
       const result = await runCreateFlow(cwd, inputName, {
         ...(opts.template !== undefined ? { template: opts.template } : {}),
@@ -111,6 +124,17 @@ export function registerTopLevelCommands(program: Command, cwd: string) {
       }
       logger.success(localize('Package creation finished.', '包创建完成。'))
       logger.info(localize('Next: run `pnpm install` and start the new workspace package.', '下一步：运行 `pnpm install`，然后启动新 workspace 包。'))
+    })
+
+  program.command('recover')
+    .alias('recover-create')
+    .description(localize('Recover an interrupted package creation', '恢复被中断的包创建'))
+    .argument('<target>', localize('Target directory to recover', '要恢复的目标目录'))
+    .option('--dry-run', localize('Preview recovery without writing files', '预览恢复操作，不写入文件'))
+    .option('--json', localize('Output the recovery result as JSON; implies --dry-run', '以 JSON 输出恢复结果，隐含 --dry-run'))
+    .option('--out <file>', localize('Write the recovery result to a file; implies --dry-run', '把恢复结果写入文件，隐含 --dry-run'))
+    .action(async (target: string, opts: RecoverCreateCliOptions) => {
+      await runRecoverCreate(cwd, target, opts)
     })
 
   program.command('check')
@@ -188,10 +212,11 @@ export function registerTopLevelCommands(program: Command, cwd: string) {
     .option('-y, --yes', localize('Skip prompts and overwrite drifted managed assets', '跳过交互并覆盖 drifted 标准资产'))
     .option('--overwrite', localize('Overwrite drifted managed assets', '覆盖 drifted 标准资产'))
     .option('--no-overwrite', localize('Preserve drifted managed assets', '不覆盖 drifted 标准资产'))
+    .option('--dry-run', localize('Preview changes without writing files', '预览全部升级变更，不写入文件'))
+    .option('--json', localize('Output the upgrade plan as JSON; implies --dry-run', '以 JSON 输出升级计划，隐含 --dry-run'))
+    .option('--diff', localize('Include bounded text diffs; implies --dry-run', '输出有界文本差异，隐含 --dry-run'))
     .option('--overwrite-release', localize('Overwrite an unmarked custom release workflow', '覆盖未标记的自定义 release workflow'))
-    .action(async (opts: CliOpts) => {
-      const { upgradeMonorepo } = await import('@/commands')
-      await upgradeMonorepo(normalizeCliOpts(cwd, opts))
-      logger.success(localize('Upgrade finished.', '升级完成。'))
+    .action(async (opts: CliOpts & { dryRun?: boolean, json?: boolean, diff?: boolean }) => {
+      await runUpgradeCommand(cwd, opts)
     })
 }

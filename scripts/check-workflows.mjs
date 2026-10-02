@@ -124,6 +124,9 @@ function checkCiWorkflow() {
   assert.ok(commands.includes('pnpm test'))
   assert.ok(commands.includes('pnpm test:worker-types'))
   assert.ok(commands.includes('pnpm test:packaged-create'))
+  const packagedDoctor = steps.find(step => step.run === 'pnpm test:packaged-doctor')
+  assert.equal(packagedDoctor?.if, githubExpression('matrix.os == \'ubuntu-latest\' && matrix.node-version == 22'))
+  assert.ok(commands.indexOf('pnpm build') < commands.indexOf('pnpm lint'))
   assertPinnedActions(steps, 'CI')
 }
 

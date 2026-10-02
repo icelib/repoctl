@@ -1,9 +1,21 @@
 import type { Context } from '../../core/context'
 import path from 'pathe'
 import fs from '@/utils/fs'
+import { resolveWorkspaceDirectory, resolveWorkspacePath } from '../../core/workspace/paths'
 
-async function getRows(ctx: Context) {
-  const { packages, gitUrl, gitUser, cwd } = ctx
+function encodeRelativeLink(relativePath: string) {
+  // Keep directory separators and parent segments, but escape URL delimiters
+  // and Markdown punctuation (encodeURIComponent alone leaves parentheses).
+  return relativePath.split('/').map(segment => encodeURIComponent(segment)
+    .replace(/[!'()*]/g, character => `%${character.charCodeAt(0).toString(16).toUpperCase()}`)).join('/')
+}
+
+function escapePackageLabel(name: string) {
+  return name.replace(/[\\`*_[\]<>~&]/g, '\\$&')
+}
+
+async function getRows(ctx: Context, readmeDirectory: string) {
+  const { packages, gitUrl, gitUser } = ctx
   const rows: string[] = []
   if (gitUrl) {
     rows.push(`# ${gitUrl.name}\n`)
@@ -17,10 +29,10 @@ async function getRows(ctx: Context) {
   })
 
   for (const pkg of sortedPackages) {
-    const p = path.relative(cwd, pkg.rootDirRealPath)
+    const p = path.relative(readmeDirectory, await resolveWorkspacePath(pkg.rootDirRealPath))
     if (p) {
       const description = pkg.manifest.description ? `- ${pkg.manifest.description}` : ''
-      rows.push(`- [${pkg.manifest.name}](${p}) ${description}`)
+      rows.push(`- [${escapePackageLabel(String(pkg.manifest.name))}](${encodeRelativeLink(p)}) ${description}`)
     }
   }
   // ## Documentation
@@ -66,6 +78,6 @@ export default async function (ctx: Context, options: { force?: boolean } = {}) 
     return
   }
 
-  const rows = await getRows(ctx)
+  const rows = await getRows(ctx, await resolveWorkspaceDirectory(path.dirname(readmePath)))
   await fs.writeFile(readmePath, `${rows.join('\n')}\n`)
 }

@@ -60,7 +60,9 @@ function printCreatePlan(plan: CreateNewProjectPlan) {
   logger.log(localize(`  target: ${formatPlanPath(plan.cwd, plan.targetDir)}${plan.targetExists ? ' (already exists)' : ''}`, `  目标目录：${formatPlanPath(plan.cwd, plan.targetDir)}${plan.targetExists ? '（已存在）' : ''}`))
   logger.log(localize(`  package: ${plan.packageName}`, `  包名：${plan.packageName}`))
   logger.log(localize(`  package json: ${plan.hasPackageJson ? plan.packageJsonFileName : 'not included in template'}`, `  package json：${plan.hasPackageJson ? plan.packageJsonFileName : '模板中未包含'}`))
-  logger.log(localize(`  workspace manifest: pnpm-workspace.yaml will include ${plan.targetName.includes('/') ? `${plan.targetName.split('/')[0]}/*` : 'packages/*'}`, `  workspace 清单：pnpm-workspace.yaml 将包含 ${plan.targetName.includes('/') ? `${plan.targetName.split('/')[0]}/*` : 'packages/*'}`))
+  logger.log(plan.workspaceManifest.changed
+    ? localize(`  workspace manifest: add ${plan.workspaceManifest.pattern}`, `  workspace 清单：添加 ${plan.workspaceManifest.pattern}`)
+    : localize('  workspace manifest: already covered; unchanged', '  workspace 清单：已覆盖，不需要修改'))
   logger.log('')
   logger.info(localize('Dry run only; no files were written.', '仅执行预览；未写入任何文件。'))
 }
@@ -77,7 +79,9 @@ function formatCreatePlan(plan: CreateNewProjectPlan) {
     localize(`  target: ${formatPlanPath(plan.cwd, plan.targetDir)}${plan.targetExists ? ' (already exists)' : ''}`, `  目标目录：${formatPlanPath(plan.cwd, plan.targetDir)}${plan.targetExists ? '（已存在）' : ''}`),
     localize(`  package: ${plan.packageName}`, `  包名：${plan.packageName}`),
     localize(`  package json: ${plan.hasPackageJson ? plan.packageJsonFileName : 'not included in template'}`, `  package json：${plan.hasPackageJson ? plan.packageJsonFileName : '模板中未包含'}`),
-    localize(`  workspace manifest: pnpm-workspace.yaml will include ${plan.targetName.includes('/') ? `${plan.targetName.split('/')[0]}/*` : 'packages/*'}`, `  workspace 清单：pnpm-workspace.yaml 将包含 ${plan.targetName.includes('/') ? `${plan.targetName.split('/')[0]}/*` : 'packages/*'}`),
+    plan.workspaceManifest.changed
+      ? localize(`  workspace manifest: add ${plan.workspaceManifest.pattern}`, `  workspace 清单：添加 ${plan.workspaceManifest.pattern}`)
+      : localize('  workspace manifest: already covered; unchanged', '  workspace 清单：已覆盖，不需要修改'),
     '',
     localize('Dry run only; no files were written.', '仅执行预览；未写入任何文件。'),
   ].join('\n')

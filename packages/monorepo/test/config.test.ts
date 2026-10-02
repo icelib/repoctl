@@ -1,5 +1,4 @@
 import { tmpdir } from 'node:os'
-import { isCI } from 'ci-info'
 import path from 'pathe'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -12,7 +11,7 @@ function writeConfig(dir: string, content: string, filename = 'repoctl.config.ts
 }
 
 describe('monorepo config integration', () => {
-  it.skipIf(isCI)('prefers repoctl config when present', async () => {
+  it('prefers repoctl config when present', async () => {
     await vi.resetModules()
     const root = await fs.mkdtemp(path.join(tmpdir(), 'repoctl-config-prefer-'))
 
@@ -33,7 +32,7 @@ describe('monorepo config integration', () => {
     await fs.remove(root)
   })
 
-  it.skipIf(isCI)('ignores legacy monorepo config files', async () => {
+  it('ignores legacy monorepo config files', async () => {
     await vi.resetModules()
     const root = await fs.mkdtemp(path.join(tmpdir(), 'repoctl-config-legacy-'))
 
@@ -46,7 +45,7 @@ describe('monorepo config integration', () => {
     await fs.remove(root)
   })
 
-  it.skipIf(isCI)('overrides create command defaults', async () => {
+  it('overrides create command defaults', async () => {
     await vi.resetModules()
     const root = await fs.mkdtemp(path.join(tmpdir(), 'monorepo-config-create-'))
     await writeConfig(
@@ -65,7 +64,7 @@ describe('monorepo config integration', () => {
     await fs.remove(root)
   })
 
-  it.skipIf(isCI)('allows clean command to run without prompt via config', async () => {
+  it('allows clean command to run without prompt via config', async () => {
     await vi.resetModules()
     const root = await fs.mkdtemp(path.join(tmpdir(), 'monorepo-config-clean-'))
     const workspaceDir = path.join(root, 'workspace')
@@ -106,6 +105,7 @@ describe('monorepo config integration', () => {
         ],
         workspaceDir,
       })),
+      clearWorkspaceCache: vi.fn(),
     }))
 
     const { cleanProjects: mockedClean } = await import('@/commands/clean')

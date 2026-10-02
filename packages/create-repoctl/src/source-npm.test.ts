@@ -45,6 +45,7 @@ describe('scaffoldFromNpm', () => {
       expect(await readFile(path.join(targetDir, 'pnpm-workspace.yaml'), 'utf8')).toMatch(/^pmOnFail: error$/mu)
       expect(rootVitestConfig).toContain(`from 'repoctl/tooling'`)
       expect(rootVitestConfig).not.toContain('tooling/load-tooling-module.mjs')
+      expect(rootVitestConfig).toContain('passWithNoTests: true')
       expect(releaseWorkflow).not.toContain('Build Release Tooling')
       expect(releaseWorkflow).not.toContain('pnpm run tooling:build')
       expect(parsedTsconfig.references).toEqual([

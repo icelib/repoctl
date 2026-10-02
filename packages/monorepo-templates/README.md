@@ -23,6 +23,8 @@ const vitepress = getTemplateDefinition('vitepress')
 
 The source workspaces under the repository's `templates/` directory are private. This package is their supported distribution boundary.
 
+`createWorkspaceManifest(source, { name?, packageManager? })` prepares a new workspace's root manifest. It replaces source scripts with the portable consumer commands, resolves source workspace dependencies to installable packages, and selects `repoctl` as the entrypoint. It returns a new object and is intended for scaffold creation, not merging scripts into an existing user's project.
+
 ## Project links
 
 - Documentation: https://repoctl.icebreaker.top

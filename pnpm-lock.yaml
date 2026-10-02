@@ -488,12 +488,18 @@ importers:
       consola:
         specifier: ^3.4.2
         version: 3.4.2
+      cross-spawn:
+        specifier: 7.0.6
+        version: 7.0.6
       eslint:
         specifier: ^9.0.0 || ^10.0.0
         version: 10.11.0(jiti@2.7.0)(supports-color@10.2.2)
       git-url-parse:
         specifier: ^16.1.0
         version: 16.1.0
+      js-yaml:
+        specifier: 5.4.2
+        version: 5.4.2
       klaw:
         specifier: ^4.1.0
         version: 4.1.0
@@ -509,6 +515,9 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
+      picomatch:
+        specifier: ^4.0.7
+        version: 4.0.7
       semver:
         specifier: 'catalog:'
         version: 7.8.5
@@ -528,12 +537,21 @@ importers:
         specifier: 'catalog:'
         version: 2.9.1
     devDependencies:
+      '@types/cross-spawn':
+        specifier: ^6.0.6
+        version: 6.0.6
       '@types/klaw':
         specifier: ^3.0.7
         version: 3.0.7
+      '@types/markdown-it':
+        specifier: 14.1.2
+        version: 14.1.2
       '@types/micromatch':
         specifier: ^4.0.10
         version: 4.0.10
+      '@types/picomatch':
+        specifier: ^4.0.3
+        version: 4.0.3
       '@types/semver':
         specifier: 'catalog:'
         version: 7.8.0
@@ -543,6 +561,9 @@ importers:
       fdir:
         specifier: ^6.5.0
         version: 6.5.0(picomatch@4.0.7)
+      markdown-it:
+        specifier: 14.1.1
+        version: 14.1.1
       micromatch:
         specifier: ^4.0.8
         version: 4.0.8
@@ -3930,6 +3951,9 @@ packages:
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
+  '@types/cross-spawn@6.0.6':
+    resolution: {integrity: sha512-fXRhhUkG4H3TQk5dBhQ7m/JDdSNHKwR2BBia62lhwEIq9xGiQKLxd6LymNhn47SjXhsUEPmxi+PKw2OkW4LLjA==}
+
   '@types/d3-array@3.2.2':
     resolution: {integrity: sha512-hOLWVbm7uRza0BYXpIIW5pxfrKe0W+D5lrFiAEYR+pb6w3N2SwSMaJbXdUfSEv+dT4MfHBLtn5js0LAWaO6otw==}
 
@@ -4092,6 +4116,9 @@ packages:
   '@types/parse-path@7.1.0':
     resolution: {integrity: sha512-EULJ8LApcVEPbrfND0cRQqutIOdiIgJ1Mgrhpy755r14xMohPTEpkV/k28SJvuOs9bHRFW8x+KeDAEPiGQPB9Q==}
     deprecated: This is a stub types definition. parse-path provides its own type definitions, so you do not need this installed.
+
+  '@types/picomatch@4.0.3':
+    resolution: {integrity: sha512-iG0T6+nYJ9FAPmx9SsUlnwcq1ZVRuCXcVEvWnntoPlrOpwtSTKNDC9uVAxTsC3PUvJ+99n4RpAcNgBbHX3JSnQ==}
 
   '@types/semver@7.8.0':
     resolution: {integrity: sha512-1mAINjtQCXXeLkJ9ehXkwOcBpqtLxiVtKhpUf83DdRNdQKV0iXZpaHYqRr7nj+wvxuJzoAmAwXI+sCNMv1CzLQ==}
@@ -13432,6 +13459,10 @@ snapshots:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
 
+  '@types/cross-spawn@6.0.6':
+    dependencies:
+      '@types/node': 26.6.3
+
   '@types/d3-array@3.2.2': {}
 
   '@types/d3-axis@3.0.6':
@@ -13619,6 +13650,8 @@ snapshots:
   '@types/parse-path@7.1.0':
     dependencies:
       parse-path: 7.1.0
+
+  '@types/picomatch@4.0.3': {}
 
   '@types/semver@7.8.0': {}
 

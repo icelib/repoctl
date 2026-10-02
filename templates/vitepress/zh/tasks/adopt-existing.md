@@ -52,7 +52,19 @@ pnpm add -D repoctl
 pnpm exec repo init --yes
 ```
 
-`repo init --yes` 会使用安全默认值。它会补齐推荐脚本和 workspace patterns，但不会无条件覆盖已有 README、package.json、pnpm-workspace.yaml 或 tooling 配置。
+`repo init --yes` 会在写入初始化文件前校验 workspace 清单，为显式数组或缺失、空白的清单补齐默认规则。创建包遇到缺失或空白清单（含仅注释）时只写入准确目标路径。两者均保留 `null`、`{}` 或未声明 `packages` 的合法清单所采用的隐式 `**` 发现，无需追加时保留原文。已有 README 和 tooling 配置默认保留。
+
+追加支持以别名作为 `packages` 的键或值，保留注释及其他字段的值和类型，必要时展开引用以保持共享值不变。写入前按 pnpm 规则重读序列化结果，并与完整的计划清单比较。
+
+初始化、创建包和 doctor 按当前 pnpm 的 YAML core 规则解释清单。
+`%YAML 1.1` 不会启用旧式布尔值、八进制、时间戳或 `<<` 合并。
+显式非 core 标签（如 `!!merge`、`!!timestamp`）会在初始化或创建写入前被拒绝，
+doctor 则报告状态为 `fail` 的 `workspace-manifest`。普通锚点、别名和注释仍受支持。
+
+`catalog` 和 `catalogs` 还会复用 pnpm 的结构校验，在初始化或创建写入前拒绝
+无效映射、非字符串条目及值为 null 的命名 catalog；doctor 同样报告
+`workspace-manifest: fail`。pnpm 接受的顶层 `catalog: null`、`catalogs: null`、
+空映射、普通别名和空字符串 specifier 仍然有效。
 
 ## 第二步：保存第一次诊断
 
@@ -84,6 +96,8 @@ pnpm exec repo doctor --markdown --redact --out reports/doctor-after.md
 ```
 
 `--no-overwrite` 适合第一次接入：它同步缺失资产，但保留已有 drifted 文件。你可以在 PR diff 里逐项看哪些配置要进一步迁移。
+
+升级与发布迁移复用相同的 pnpm 清单和 catalog 校验，保留已有隐式 `**` 发现及元数据值和类型（包括 `%YAML 1.1` 下的 `on` 和显式标记的整数）；校验失败、拒绝覆盖或保留自定义工作流时，旧发布配置和预发布状态也会保留。清单无变化时保留原文；有变化时使用格式化 YAML，并校验其值和类型与计划一致。
 
 ## 第四步：预览校验计划
 
@@ -142,7 +156,7 @@ pnpm exec repo upgrade --yes
 pnpm exec repo init --yes
 ```
 
-或手动扩展 `pnpm-workspace.yaml`。
+为显式 `packages` 数组补齐缺失的默认规则。其他目录布局需手动扩展 `pnpm-workspace.yaml`。非空合法清单未声明 `packages` 时已采用 pnpm 隐式 `**` 发现，会保持不变。
 
 ## 推荐 PR 结构
 

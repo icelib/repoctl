@@ -2,12 +2,13 @@ import type { GetWorkspacePackagesOptions } from '../types'
 import type { AgenticTemplateFormat, AgenticTemplateTask, GenerateAgenticTemplateOptions } from './ai'
 import type { RecommendedCheckMode, RecommendedCheckOptions, RecommendedCheckPlan, RecommendedCheckPlanCommand } from './check'
 import type { ConfigInspection } from './config'
-import type { CreateNewProjectOptions, CreateNewProjectPlan } from './create'
+import type { CreateManifestRecoveryResult, CreateNewProjectOptions, CreateNewProjectPlan, CreateTargetInspection, CreateTargetInspectionStatus, CreateTargetMarker, RecoverCreateTargetOptions, RecoverCreateTargetResult } from './create'
 import type { DoctorCheck, DoctorReport, DoctorStatus, DoctorSummary } from './doctor'
 import type { EnvInfo, EnvPathEntry, EnvPaths, EnvSnapshot, EnvSupportBundle } from './env'
 import type { EnsurePullRequestOptions, EnsureReleaseOptions, EnsureTagOptions, GitHubClientOptions, GitHubOperations } from './release'
 import type { SkillTarget, SyncSkillsOptions } from './skills'
 import type { CheckTemplatesOptions, TemplateHealthCheck, TemplateHealthReport, TemplateHealthStatus, TemplateHealthSummary } from './templates'
+import type { UpgradeAction, UpgradeDiff, UpgradeFileIdentity, UpgradeJournalOperation, UpgradeLockErrorCode, UpgradeLockInspection, UpgradeLockInspectionState, UpgradeLockOwner, UpgradePlan, UpgradePlanFile, UpgradeTransactionInspection, UpgradeTransactionJournal, UpgradeTransactionLock, UpgradeTransactionState } from './upgrade'
 import type { CommitMsgVerifyOptions, PreCommitVerifyOptions, PrePushVerifyOptions, StagedTypecheckOptions, VerifyCommandOptions } from './verify'
 import { GitClient } from '../core/git'
 import { getWorkspaceData, getWorkspacePackages } from '../core/workspace'
@@ -15,7 +16,7 @@ import { createTimestampFolderName, defaultAgenticBaseDir, generateAgenticTempla
 import { getKnownRepoCheckCommands, resolveFullWorkspaceCheckPlan, resolveRecommendedCheckPlan, runRecommendedCheck } from './check'
 import { cleanProjects } from './clean'
 import { inspectMonorepoConfig } from './config'
-import { createNewProject, getCreateChoices, getTemplateMap, resolveCreateNewProjectPlan, templateMap } from './create'
+import { createNewProject, getCreateChoices, getTemplateMap, inspectCreateTarget, recoverCreateTarget, resolveCreateNewProjectPlan, templateMap } from './create'
 import { runDoctor } from './doctor'
 import { collectEnvInfo, collectEnvPaths, collectEnvSnapshot, collectEnvSupportBundle } from './env'
 import { init, initMetadata, initTooling, initToolingTargets, normalizeInitToolingTargets } from './init'
@@ -23,7 +24,7 @@ import { setVscodeBinaryMirror } from './mirror'
 import { createReleasePullRequest, enterPrerelease, exitPrerelease, GitHubApiError, GitHubClient, parsePublishSummary, prepareStable, publishStable, reconcileRelease, recoverUnpublished, releaseCi, releasePrerelease, releaseStable, repairReleaseNotes } from './release'
 import { getSkillTargetPaths, skillTargets, syncSkills } from './skills'
 import { checkTemplates } from './templates'
-import { upgradeMonorepo } from './upgrade'
+import { inspectUpgradeLock, inspectUpgradeTransactions, resolveUpgradePlan, UpgradeLockError, upgradeMonorepo } from './upgrade'
 import { verifyCommitMsg, verifyPreCommit, verifyPrePush, verifyStagedTypecheck } from './verify'
 
 export type {
@@ -32,8 +33,12 @@ export type {
   CheckTemplatesOptions,
   CommitMsgVerifyOptions,
   ConfigInspection,
+  CreateManifestRecoveryResult,
   CreateNewProjectOptions,
   CreateNewProjectPlan,
+  CreateTargetInspection,
+  CreateTargetInspectionStatus,
+  CreateTargetMarker,
   DoctorCheck,
   DoctorReport,
   DoctorStatus,
@@ -56,6 +61,8 @@ export type {
   RecommendedCheckOptions,
   RecommendedCheckPlan,
   RecommendedCheckPlanCommand,
+  RecoverCreateTargetOptions,
+  RecoverCreateTargetResult,
   SkillTarget,
   StagedTypecheckOptions,
   SyncSkillsOptions,
@@ -63,6 +70,20 @@ export type {
   TemplateHealthReport,
   TemplateHealthStatus,
   TemplateHealthSummary,
+  UpgradeAction,
+  UpgradeDiff,
+  UpgradeFileIdentity,
+  UpgradeJournalOperation,
+  UpgradeLockErrorCode,
+  UpgradeLockInspection,
+  UpgradeLockInspectionState,
+  UpgradeLockOwner,
+  UpgradePlan,
+  UpgradePlanFile,
+  UpgradeTransactionInspection,
+  UpgradeTransactionJournal,
+  UpgradeTransactionLock,
+  UpgradeTransactionState,
   VerifyCommandOptions,
 }
 
@@ -94,13 +115,17 @@ export {
   initMetadata,
   initTooling,
   initToolingTargets,
+  inspectCreateTarget,
   inspectMonorepoConfig,
+  inspectUpgradeLock,
+  inspectUpgradeTransactions,
   loadAgenticTasks,
   normalizeInitToolingTargets,
   parsePublishSummary,
   prepareStable,
   publishStable,
   reconcileRelease,
+  recoverCreateTarget,
   recoverUnpublished,
   releaseCi,
   releasePrerelease,
@@ -109,12 +134,14 @@ export {
   resolveCreateNewProjectPlan,
   resolveFullWorkspaceCheckPlan,
   resolveRecommendedCheckPlan,
+  resolveUpgradePlan,
   runDoctor,
   runRecommendedCheck,
   setVscodeBinaryMirror,
   skillTargets,
   syncSkills,
   templateMap,
+  UpgradeLockError,
   upgradeMonorepo,
   verifyCommitMsg,
   verifyPreCommit,

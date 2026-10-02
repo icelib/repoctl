@@ -14,59 +14,72 @@ export function collectWorkspaceChecks(context: DoctorContext) {
     hasLintStagedConfig,
     packageCount,
     packageJson,
+    packageJsonError,
     workspaceDir,
+    workspaceManifestError,
+    workspacePackageDiscoveryError,
     workspacePackageDirs,
     workspacePatterns,
   } = context
   const checks: DoctorCheck[] = [
-    hasPackageJson
+    hasPackageJson && !packageJsonError
       ? createCheck({
           id: 'package-json',
           title: 'package.json',
           status: 'pass',
           detail: localize(`Found root package.json: ${workspaceDir}/package.json`, `已找到根 package.json：${workspaceDir}/package.json`),
         })
-      : createCheck({
-          id: 'package-json',
-          title: 'package.json',
-          status: 'fail',
-          detail: localize('The current directory does not contain a root package.json.', '当前目录缺少根 package.json。'),
-          fix: localize('Run the command from the monorepo root or initialize the workspace first.', '请在 monorepo 根目录执行命令，或先完成工作区初始化。'),
-        }),
-    hasWorkspaceManifest
+      : hasPackageJson
+        ? createCheck({
+            id: 'package-json',
+            title: 'package.json',
+            status: 'fail',
+            detail: localize(`The root package.json is invalid: ${packageJsonError ?? 'unable to read the manifest'}.`, `根 package.json 无效：${packageJsonError ?? '无法读取清单'}。`),
+            fix: localize('Fix the root package.json syntax, then run repo doctor again.', '请修复根 package.json 语法，然后重新运行 repo doctor。'),
+          })
+        : createCheck({
+            id: 'package-json',
+            title: 'package.json',
+            status: 'fail',
+            detail: localize('The current directory does not contain a root package.json.', '当前目录缺少根 package.json。'),
+            fix: localize('Run the command from the monorepo root or initialize the workspace first.', '请在 monorepo 根目录执行命令，或先完成工作区初始化。'),
+          }),
+    hasWorkspaceManifest && !workspaceManifestError
       ? createCheck({
           id: 'workspace-manifest',
           title: 'pnpm workspace',
           status: 'pass',
           detail: localize(`Found a pnpm workspace with ${packageCount} package(s).`, `已找到 pnpm workspace，当前识别到 ${packageCount} 个 workspace 包。`),
         })
-      : createCheck({
-          id: 'workspace-manifest',
-          title: 'pnpm workspace',
-          status: 'fail',
-          detail: localize('pnpm-workspace.yaml is missing; this directory is not a complete pnpm monorepo root.', '缺少 pnpm-workspace.yaml，当前目录不是完整的 pnpm monorepo 根目录。'),
-          fix: localize('Run repo init --yes or switch to the workspace root.', '运行 repo init --yes，或切换到 workspace 根目录。'),
-        }),
+      : hasWorkspaceManifest
+        ? createCheck({
+            id: 'workspace-manifest',
+            title: 'pnpm workspace',
+            status: 'fail',
+            detail: localize(`pnpm-workspace.yaml is invalid: ${workspaceManifestError ?? 'unable to parse the manifest'}.`, `pnpm-workspace.yaml 无效：${workspaceManifestError ?? '无法解析该文件'}。`),
+            fix: localize('Fix the YAML syntax in pnpm-workspace.yaml, then run repo doctor again.', '请修复 pnpm-workspace.yaml 中的 YAML 语法，然后重新运行 repo doctor。'),
+          })
+        : createCheck({
+            id: 'workspace-manifest',
+            title: 'pnpm workspace',
+            status: 'fail',
+            detail: localize('pnpm-workspace.yaml is missing; this directory is not a complete pnpm monorepo root.', '缺少 pnpm-workspace.yaml，当前目录不是完整的 pnpm monorepo 根目录。'),
+            fix: localize('Run repo init --yes or switch to the workspace root.', '运行 repo init --yes，或切换到 workspace 根目录。'),
+          }),
   ]
 
-  const nodeRange = packageJson.engines?.node
-  if (nodeRange) {
-    checks.push(satisfies(process.version, nodeRange)
-      ? createCheck({
-          id: 'node-version',
-          title: localize('Node version', 'Node 版本'),
-          status: 'pass',
-          detail: localize(`Node ${process.version} satisfies ${nodeRange}.`, `当前 Node 版本 ${process.version} 满足要求 ${nodeRange}。`),
-        })
-      : createCheck({
-          id: 'node-version',
-          title: localize('Node version', 'Node 版本'),
-          status: 'fail',
-          detail: localize(`Node ${process.version} does not satisfy ${nodeRange}.`, `当前 Node 版本 ${process.version} 不满足要求 ${nodeRange}。`),
-          fix: localize('Switch to a version allowed by package.json engines.node before continuing.', '继续之前，请切换到 package.json engines.node 允许的版本。'),
-        }))
+  if (workspacePackageDiscoveryError) {
+    checks.push(createCheck({
+      id: 'workspace-package-discovery',
+      title: localize('Workspace package discovery', 'Workspace 包发现'),
+      status: 'fail',
+      detail: localize(`Unable to inspect every workspace package manifest: ${workspacePackageDiscoveryError}.`, `无法检查全部 workspace 包清单：${workspacePackageDiscoveryError}。`),
+      fix: localize('Fix or remove the malformed package.json, then run repo doctor again.', '请修复或移除损坏的 package.json，然后重新运行 repo doctor。'),
+    }))
   }
-  else {
+
+  const nodeRange: unknown = packageJson.engines?.node
+  if (nodeRange === undefined) {
     checks.push(createCheck({
       id: 'node-version',
       title: localize('Node version', 'Node 版本'),
@@ -74,6 +87,47 @@ export function collectWorkspaceChecks(context: DoctorContext) {
       detail: localize('The root package.json does not declare engines.node.', '根 package.json 未声明 engines.node。'),
       fix: localize('Declare package.json engines.node to keep runtimes consistent.', '请声明 package.json engines.node 以保持运行时一致。'),
     }))
+  }
+  else if (typeof nodeRange !== 'string' || nodeRange.length === 0) {
+    checks.push(createCheck({
+      id: 'node-version',
+      title: localize('Node version', 'Node 版本'),
+      status: 'fail',
+      detail: localize('package.json engines.node must be a valid semver range.', 'package.json 的 engines.node 必须是有效的 semver 范围。'),
+      fix: localize('Set engines.node to a valid semver range, then run repo doctor again.', '请将 engines.node 设置为有效的 semver 范围，然后重新运行 repo doctor。'),
+    }))
+  }
+  else {
+    let isCompatible = false
+    try {
+      isCompatible = satisfies(process.version, nodeRange)
+    }
+    catch {
+      checks.push(createCheck({
+        id: 'node-version',
+        title: localize('Node version', 'Node 版本'),
+        status: 'fail',
+        detail: localize(`package.json engines.node is not a valid semver range: ${nodeRange}.`, `package.json 的 engines.node 不是有效的 semver 范围：${nodeRange}。`),
+        fix: localize('Set engines.node to a valid semver range, then run repo doctor again.', '请将 engines.node 设置为有效的 semver 范围，然后重新运行 repo doctor。'),
+      }))
+    }
+    if (isCompatible) {
+      checks.push(createCheck({
+        id: 'node-version',
+        title: localize('Node version', 'Node 版本'),
+        status: 'pass',
+        detail: localize(`Node ${process.version} satisfies ${nodeRange}.`, `当前 Node 版本 ${process.version} 满足要求 ${nodeRange}。`),
+      }))
+    }
+    else if (!checks.some(check => check.id === 'node-version' && check.status === 'fail')) {
+      checks.push(createCheck({
+        id: 'node-version',
+        title: localize('Node version', 'Node 版本'),
+        status: 'fail',
+        detail: localize(`Node ${process.version} does not satisfy ${nodeRange}.`, `当前 Node 版本 ${process.version} 不满足要求 ${nodeRange}。`),
+        fix: localize('Switch to a version allowed by package.json engines.node before continuing.', '继续之前，请切换到 package.json engines.node 允许的版本。'),
+      }))
+    }
   }
 
   if (hasLegacyMonorepoConfig) {
@@ -121,9 +175,8 @@ export function collectWorkspaceChecks(context: DoctorContext) {
     }))
   }
 
-  const existingBases = ['apps', 'packages', 'examples'].filter(base => workspacePackageDirs.some(dir => dir.startsWith(`${base}/`)))
-  const missingPatterns = existingBases.map(base => `${base}/*`).filter(pattern => !workspacePatterns.includes(pattern))
-  if (hasWorkspaceManifest) {
+  const missingPatterns = workspacePackageDirs.filter(dir => !isWorkspacePatternCovered(dir, workspacePatterns))
+  if (hasWorkspaceManifest && !workspaceManifestError) {
     checks.push(createCheck(missingPatterns.length === 0
       ? {
           id: 'workspace-patterns',

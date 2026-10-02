@@ -1,7 +1,8 @@
-import type { TemplateChoice } from '..'
+import type { TemplateChoice, WorkspaceManifest } from '..'
 import { expectAssignable, expectType } from 'tsd'
 import {
   assetTargets,
+  createWorkspaceManifest,
   getAssetTargets,
   getTemplateChoice,
   getTemplateChoices,
@@ -22,6 +23,7 @@ import {
 } from '..'
 
 expectType<string[]>(assetTargets)
+expectType<WorkspaceManifest>(createWorkspaceManifest({ scripts: { build: 'source-only' } }, { name: 'consumer' }))
 expectType<string[]>(getAssetTargets())
 expectType<Promise<string>>(getWorkspacePackageManager())
 expectType<string | undefined>(templateSourceMap['cli'])

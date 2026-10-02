@@ -1,12 +1,14 @@
 import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
+import type { CreateWorkspaceManifestPlan } from './workspace'
 import type { CreateChoiceOption } from '@/types'
 import process from 'node:process'
 import { suggestTemplateKey, templateChoices } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
-import fs from '@/utils/fs'
 import { templatesDir as defaultTemplatesDir } from '../../constants'
 import { resolveCommandConfig } from '../../core/config'
 import { localize } from '../../i18n'
+import { pathEntryExists, validateCreateSource, validateCreateTarget } from './validation'
+import { prepareWorkspaceManifest } from './workspace'
 
 /**
  * 内置模板映射表，source 指向 templates 根目录下的来源目录，target 为生成路径。
@@ -61,6 +63,7 @@ export interface CreateNewProjectPlan {
   packageJsonFileName: 'package.json' | 'package.mock.json'
   packageName: string
   templateDefinition: TemplateDefinition
+  workspaceManifest: CreateWorkspaceManifestPlan
 }
 
 /**
@@ -113,7 +116,7 @@ export function getTemplateMap(extra?: Record<string, string | TemplateDefinitio
 }
 
 export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOptions): Promise<CreateNewProjectPlan> {
-  const cwd = options?.cwd ?? process.cwd()
+  const cwd = path.resolve(options?.cwd ?? process.cwd())
   const createConfig = await resolveCommandConfig('create', cwd)
 
   const renameJson = options?.renameJson ?? createConfig?.renameJson ?? false
@@ -140,10 +143,13 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
   }
 
   const sourceDir = path.join(templatesRoot, templateDefinition.source)
-  const targetName = name && name.length > 0 ? name : templateDefinition.target
-  const targetDir = path.join(cwd, targetName)
-  const sourceJsonPath = path.resolve(sourceDir, 'package.json')
-  const hasPackageJson = await fs.pathExists(sourceJsonPath)
+  const targetInput = name && name.length > 0 ? name : templateDefinition.target
+  const targetDir = path.resolve(cwd, targetInput)
+  const targetName = path.relative(cwd, targetDir).split(path.sep).join('/')
+  await validateCreateTarget(cwd, targetDir)
+  const packageJson = await validateCreateSource(sourceDir)
+  const hasPackageJson = packageJson !== undefined
+  const { plan: workspaceManifest } = await prepareWorkspaceManifest(cwd, targetName)
   const packageJsonFileName = renameJson ? 'package.mock.json' : 'package.json'
   const packageName = name?.startsWith('@') ? name : path.basename(targetName)
 
@@ -155,11 +161,12 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
     sourceDir,
     targetName,
     targetDir,
-    targetExists: await fs.pathExists(targetDir),
+    targetExists: await pathEntryExists(targetDir),
     renameJson,
     hasPackageJson,
     packageJsonFileName,
     packageName,
     templateDefinition,
+    workspaceManifest,
   }
 }

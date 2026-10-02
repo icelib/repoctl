@@ -1,4 +1,4 @@
-import { mkdtemp } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'pathe'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -8,6 +8,11 @@ const packagePathPattern = /^packages\//
 describe('coverage binder', () => {
   afterEach(() => {
     vi.doUnmock('@icebreakers/monorepo-templates')
+    vi.doUnmock('@/utils/fs')
+    vi.doUnmock('node:fs/promises')
+    vi.doUnmock('simple-git')
+    vi.doUnmock('@/core/config')
+    vi.doUnmock('@/core/logger')
   })
 
   it('executes vitest setup paths', async () => {
@@ -63,62 +68,35 @@ describe('coverage binder', () => {
     expect(targets).toEqual(expect.arrayContaining(['README.md', 'package.json']))
   })
 
-  it('executes create command primary flow', async () => {
-    await vi.resetModules()
-    const ensureDirMock = vi.fn(async () => {})
-    const pathExistsMock = vi.fn(async (targetPath: string) => targetPath.endsWith('package.json'))
-    const readJsonMock = vi.fn(async () => ({ name: 'template', version: '1.0.0' }))
-    const outputJsonMock = vi.fn(async () => {})
-    const outputFileMock = vi.fn(async () => {})
-    const scaffoldTemplateMock = vi.fn(async () => {})
-
-    vi.doMock('@/utils/fs', async () => {
-      const actual = await vi.importActual<typeof import('@/utils/fs')>('@/utils/fs')
-      return {
-        ...actual,
-        default: {
-          ...actual.default,
-          ensureDir: ensureDirMock,
-          pathExists: pathExistsMock,
-          readJson: readJsonMock,
-          outputJson: outputJsonMock,
-          outputFile: outputFileMock,
-        },
-        ensureDir: ensureDirMock,
-        pathExists: pathExistsMock,
-        readJson: readJsonMock,
-        outputJson: outputJsonMock,
-        outputFile: outputFileMock,
-      }
-    })
-    vi.doMock('@icebreakers/monorepo-templates', async (importOriginal) => {
-      const actual = await importOriginal<typeof import('@icebreakers/monorepo-templates')>()
-      return {
-        ...actual,
-        scaffoldTemplate: scaffoldTemplateMock,
-      }
-    })
-    vi.doMock('@/core/config', () => ({
-      resolveCommandConfig: vi.fn(async () => ({
-        renameJson: true,
-        name: 'my-app',
-        templatesDir: './templates',
-        templateMap: { custom: 'custom/path' },
-        defaultTemplate: 'custom',
-      })),
-    }))
-    const successMock = vi.fn()
-    vi.doMock('@/core/logger', () => ({
-      logger: {
-        success: successMock,
-      },
-    }))
-
-    const { createNewProject } = await import('@/commands/create')
-    await createNewProject({ cwd: '/repo', type: 'custom' })
-    expect(scaffoldTemplateMock).toHaveBeenCalled()
-    expect(outputJsonMock).toHaveBeenCalledWith(path.join('/repo', 'my-app', 'package.mock.json'), expect.any(Object), { spaces: 2 })
-    expect(successMock).toHaveBeenCalled()
+  it('creates a configured custom template with real filesystem output', async () => {
+    vi.resetModules()
+    const root = await mkdtemp(path.join(tmpdir(), 'repoctl-configured-create-'))
+    try {
+      const source = path.join(root, 'templates/custom/path')
+      await mkdir(source, { recursive: true })
+      await writeFile(path.join(source, 'package.json'), JSON.stringify({ name: 'template', version: '1.0.0' }))
+      await writeFile(path.join(source, 'README.md'), 'Custom template\n')
+      await writeFile(path.join(root, 'repoctl.config.ts'), `export default {
+  commands: {
+    create: {
+      renameJson: true,
+      name: 'my-app',
+      templatesDir: './templates',
+      templateMap: { custom: 'custom/path' },
+      defaultTemplate: 'custom',
+    },
+  },
+}\n`)
+      const { createNewProject } = await import('@/commands/create')
+      await createNewProject({ cwd: root })
+      expect(JSON.parse(await readFile(path.join(root, 'my-app/package.mock.json'), 'utf8'))).toMatchObject({ name: 'my-app', version: '0.0.0' })
+      expect(await readFile(path.join(root, 'my-app/README.md'), 'utf8')).toBe('Custom template\n')
+      expect(await readFile(path.join(root, 'pnpm-workspace.yaml'), 'utf8')).toContain('my-app')
+      expect((await readdir(root)).some(entry => entry.startsWith('.repoctl-create-'))).toBe(false)
+    }
+    finally {
+      await rm(root, { recursive: true, force: true })
+    }
   })
 
   it('executes upgrade targets helper', async () => {

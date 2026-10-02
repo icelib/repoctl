@@ -59,6 +59,7 @@ export function setPkgJson(
   targetPkgJson: PackageJson,
   options?: {
     scripts?: Record<string, string>
+    preserveLegacyRelease?: boolean
   },
 ) {
   const packageManager = sourcePkgJson.packageManager ?? ''
@@ -129,9 +130,11 @@ export function setPkgJson(
   if (legacyToolPackageName in targetDevDeps && 'repoctl' in targetDevDeps) {
     delete targetDevDeps[legacyToolPackageName]
   }
-  for (const dependency of legacyReleaseDependencies) {
-    delete targetDeps[dependency]
-    delete targetDevDeps[dependency]
+  if (!options?.preserveLegacyRelease) {
+    for (const dependency of legacyReleaseDependencies) {
+      delete targetDeps[dependency]
+      delete targetDevDeps[dependency]
+    }
   }
   if (shouldEnsureRepoctl) {
     const nextVersion = `^${pkgVersion}`

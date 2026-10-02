@@ -18,7 +18,11 @@ npm create repoctl@latest my-app -- --yes --templates vue-hono
 npx create-repoctl@latest my-app --yes --templates vue-hono
 ```
 
-模板 key：`vue-hono`、`hono-server`、`tsdown`、`vue-lib`、`vitepress`、`cli`。创建完成后运行：
+模板 key：`vue-hono`、`hono-server`、`tsdown`、`vue-lib`、`vitepress`、`cli`。
+
+传入 `--yes` 且省略 `--templates` 时，会创建空工作区。尚未添加测试时，测试命令正常通过；已有测试失败时仍返回失败状态。
+
+创建完成后运行：
 
 ```bash
 cd <project>

@@ -1,5 +1,4 @@
 import type { DoctorCheck, DoctorContext, DoctorPackageJson } from './types'
-import { readdir } from 'node:fs/promises'
 import { localize } from '../../i18n'
 import fs from '../../utils/fs'
 import { hasLegacyToolingReference } from '../tooling-migration'
@@ -25,16 +24,18 @@ async function findLegacyToolingFiles(context: DoctorContext) {
   const rootFiles = context.isSourceWorkspace
     ? []
     : ['eslint.config.js', 'stylelint.config.js', 'lint-staged.config.js', 'vitest.config.ts']
-  const files = [...rootFiles]
-  for (const baseDir of ['apps', 'packages', 'examples']) {
-    const absoluteBase = `${context.workspaceDir}/${baseDir}`
-    if (!await fs.pathExists(absoluteBase)) {
-      continue
-    }
-    for (const entry of await readdir(absoluteBase)) {
-      files.push(`${baseDir}/${entry}/eslint.config.js`, `${baseDir}/${entry}/vitest.config.ts`)
-    }
-  }
+  // Workspace packages are allowed to live in any directory selected by
+  // pnpm-workspace.yaml.  Discover package-level tooling from the actual
+  // package list instead of assuming the conventional apps/packages/examples
+  // layout; otherwise doctor silently misses legacy configs in, for example,
+  // `modules/` or `services/` workspaces.
+  const files = [
+    ...rootFiles,
+    ...context.workspacePackageDirs.flatMap(dir => [
+      `${dir}/eslint.config.js`,
+      `${dir}/vitest.config.ts`,
+    ]),
+  ]
   const legacyFiles: string[] = []
   await Promise.all(files.map(async (file) => {
     const candidate = `${context.workspaceDir}/${file}`
