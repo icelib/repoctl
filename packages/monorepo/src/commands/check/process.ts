@@ -14,7 +14,7 @@ function abortSignal(signal: AbortSignal): NodeJS.Signals {
   return signal.reason === 'SIGTERM' ? 'SIGTERM' : 'SIGINT'
 }
 
-function stopChild(child: ChildProcess, signal: NodeJS.Signals) {
+export function stopCheckProcessTree(child: ChildProcess, signal: NodeJS.Signals) {
   if (!child.pid) {
     return
   }
@@ -46,8 +46,8 @@ export async function executeCheckTask(task: CheckExecutionTask, signal?: AbortS
     const abort = () => {
       interrupted = abortSignal(signal!)
       if (child) {
-        stopChild(child, interrupted)
-        timer = setTimeout(() => child && stopChild(child, 'SIGKILL'), 3000)
+        stopCheckProcessTree(child, interrupted)
+        timer = setTimeout(() => child && stopCheckProcessTree(child, 'SIGKILL'), 3000)
         timer.unref()
       }
     }
@@ -61,7 +61,7 @@ export async function executeCheckTask(task: CheckExecutionTask, signal?: AbortS
         clearTimeout(timer)
       }
       if (interrupted && child) {
-        stopChild(child, 'SIGKILL')
+        stopCheckProcessTree(child, 'SIGKILL')
       }
       task.endedAt = new Date().toISOString()
       task.durationMs = Math.max(0, performance.now() - start)

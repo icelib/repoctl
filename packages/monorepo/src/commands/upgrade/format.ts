@@ -7,6 +7,12 @@ export function formatUpgradePlan(plan: UpgradePlan, format: 'text' | 'markdown'
   for (const file of plan.files) {
     lines.push(format === 'markdown' ? `## ${file.path}` : file.path)
     lines.push(`${file.status} (${file.reason}): ${file.detail}`)
+    if (file.baseline) {
+      lines.push(`baseline: ${file.baseline.path} (${file.baseline.beforeHash ?? 'absent'} -> ${file.baseline.afterHash ?? 'removed'})`)
+    }
+    for (const conflict of file.merge?.conflicts ?? []) {
+      lines.push(`Conflict at base lines ${conflict.baseStart}-${conflict.baseEnd}:`, '<<<<<<< local', conflict.local, '||||||| base', conflict.base, '=======', conflict.upstream, '>>>>>>> upstream')
+    }
     if (file.diff) {
       lines.push(...(format === 'markdown' ? ['````diff', file.diff, '````'] : [file.diff]))
     }

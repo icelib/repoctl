@@ -55,6 +55,10 @@ describe('coverage binder', () => {
       return {
         ...actual,
         scaffoldTemplate: scaffoldTemplateMock,
+        createTemplateInstanceTarget: ensureDirMock,
+        prepareTemplateInstanceSource: vi.fn(async () => ({ snapshot: { schemaVersion: 1, files: [], directories: [] } })),
+        snapshotDigest: vi.fn(() => 'unchanged'),
+        recordGeneratedTemplateInstance: vi.fn(async () => {}),
       }
     })
     vi.doMock('@/core/config', () => ({
