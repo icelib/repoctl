@@ -249,3 +249,30 @@ repo new ui --template react-lib
 验证公开类型、生产样式、鼠标/键盘交互及共享同一 React 实例。打包入口保留
 `use client`，并用 Next App Router 的服务端页面直接导入 tarball，验证生产构建、
 浏览器水合和交互。Storybook 为可选扩展。
+
+## 模板作者验证
+
+`repo templates validate <key>` 是显式执行命令。它解析同一个内置/自定义模板目录，在作者仓库外生成临时工作区，通过 Corepack 使用声明的 pnpm 版本安装依赖，依次执行 build → lint → typecheck（TypeScript/Vue）→ tsd（类型库）→ test → test:e2e（已声明时）。缺少必需脚本会在安装前失败。存在样式文件时，`lint` 必须调用 Stylelint，或提供单独的 `lint:styles` 脚本。
+
+```bash
+repo templates validate internal --fixture ./fixtures/workspace --name basic --name renamed --json
+repo templates validate react-lib --dry-run --json
+repo templates validate internal --fixture ./fixtures/workspace --keep-failed --timeout 240000
+```
+
+可选 fixture 是作者维护的工作区骨架，包含 `package.json`、精确的 `packageManager: "pnpm@..."`、工作区设置及配套包。工具使用正常模板过滤复制它，不会修改原目录；未提供时使用已安装的 repoctl 工作区资产。每个名称生成独立工作区，目前名称组合验证重命名行为，尚不支持任意模板功能参数。
+
+库模板仅在临时副本中移除 `private`，生成真实 tarball，检查 exports 与运行时依赖声明（含 `imports` 映射），再在独立消费者里安装并导入该包。声明文件通过严格 NodeNext 类型解析验证。应用、服务或浏览器行为由模板提供能正常结束的 `test`/`test:e2e` 脚本；脚本负责常规服务生命周期，工具提供超时和中断清理。浏览器安装由作者显式准备。
+
+报告使用稳定阶段和诊断代码记录命令及输出。默认清理成功和失败样本；`--keep-failed` 保留失败样本及 `report.json`，`--keep-temp` 保留全部样本，并返回保留目录。普通 `repo templates` 和 `--check` 不执行模板命令。验证会执行受信任的作者脚本，不是运行不受信任代码的沙箱。
+
+同一能力也通过公开 API 提供：
+
+```ts
+import { planTemplateValidation, validateTemplate } from 'repoctl'
+
+const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace' }
+const controller = new AbortController()
+const plan = await planTemplateValidation(options)
+const report = await validateTemplate({ ...options, keep: 'failure', signal: controller.signal })
+```

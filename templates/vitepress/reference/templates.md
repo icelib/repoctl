@@ -221,3 +221,30 @@ checking public types, production styling, pointer/keyboard interaction and a
 single shared React instance. The bundled client boundary is also exercised by a
 Next App Router Server Component importing the tarball, followed by production
 browser hydration and interaction. Storybook is optional.
+
+## Validate a template as its author
+
+`repo templates validate <key>` is an explicit execution command. It resolves the same built-in/custom catalog, creates a disposable workspace outside the author repository, installs its declared pnpm version through Corepack, then runs build → lint → typecheck (TypeScript/Vue) → tsd (typed libraries) → test → test:e2e (when declared). Missing required scripts fail before installation. Style files require Stylelint in `lint`, or a separate `lint:styles` script.
+
+```bash
+repo templates validate internal --fixture ./fixtures/workspace --name basic --name renamed --json
+repo templates validate react-lib --dry-run --json
+repo templates validate internal --fixture ./fixtures/workspace --keep-failed --timeout 240000
+```
+
+The optional fixture is an author-owned workspace skeleton with `package.json`, an exact `packageManager: "pnpm@..."`, workspace settings, and any companion packages. It is copied through normal template filtering; it is never modified. Without a fixture, the installed repoctl workspace assets supply the root. Each name receives its own workspace. Names currently test package renaming; arbitrary template feature parameters are not supported yet.
+
+Library validation removes `private` only from its disposable copy, packs a tarball, checks exports and declared runtime dependencies (including `imports` mappings), then installs and imports the tarball in an independent consumer. Type declarations are checked with strict NodeNext resolution. Application/service/browser behavior belongs in the template's finite `test`/`test:e2e` scripts; those scripts own their normal service lifecycle, with timeout/interruption cleanup as a backstop. Browser installation is an explicit author setup step.
+
+Commands and output are returned with stable stages and diagnostic codes. Successful and failed samples are removed by default; `--keep-failed` preserves failed samples with `report.json`, and `--keep-temp` preserves all samples. The report includes the retained directory. Execution never happens during `repo templates` or `--check`. Validation executes trusted author scripts; it is not an untrusted-code sandbox.
+
+The same contract is public API:
+
+```ts
+import { planTemplateValidation, validateTemplate } from 'repoctl'
+
+const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace' }
+const controller = new AbortController()
+const plan = await planTemplateValidation(options)
+const report = await validateTemplate({ ...options, keep: 'failure', signal: controller.signal })
+```

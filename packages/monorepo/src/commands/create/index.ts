@@ -1,5 +1,5 @@
 import type { Dirent } from 'node:fs'
-import type { CreateNewProjectOptions } from './plan'
+import type { CreateNewProjectOptions, CreateNewProjectPlan } from './plan'
 import type { PackageJson } from '@/types'
 import { readdir } from 'node:fs/promises'
 import { scaffoldTemplate } from '@icebreakers/monorepo-templates'
@@ -167,6 +167,12 @@ async function updateWorkspaceManifest(workspaceDir: string, targetName: string)
  */
 export async function createNewProject(options?: CreateNewProjectOptions) {
   const plan = await resolveCreateNewProjectPlan(options)
+  await applyCreateNewProjectPlan(plan)
+  logger.success(localize(`${pc.bgGreenBright(pc.white(`[${plan.template}]`))} Created ${plan.targetName}.`, `${pc.bgGreenBright(pc.white(`[${plan.template}]`))} ${plan.targetName} 项目创建成功！`))
+}
+
+/** Shared rendering path for normal creation and isolated author validation. */
+export async function applyCreateNewProjectPlan(plan: CreateNewProjectPlan, includeGitMetadata = true) {
   if (plan.targetExists) {
     throw new Error(`${pc.red(localize('Target directory already exists', '目标目录已存在'))}: ${path.relative(plan.cwd, plan.targetDir)}`)
   }
@@ -185,7 +191,9 @@ export async function createNewProject(options?: CreateNewProjectOptions) {
     sanitizeTemplatePackageJson(sourceJson)
     setByPath(sourceJson, 'version', '0.0.0')
     setByPath(sourceJson, 'name', plan.packageName)
-    await applyGitMetadata(sourceJson, plan.cwd, plan.targetDir)
+    if (includeGitMetadata) {
+      await applyGitMetadata(sourceJson, plan.cwd, plan.targetDir)
+    }
     // renameJson 可将 package.json 暂存为 package.mock.json，满足某些仓库需要自定义命名的情景。
     await fs.outputJson(
       path.resolve(plan.targetDir, plan.packageJsonFileName),
@@ -195,6 +203,4 @@ export async function createNewProject(options?: CreateNewProjectOptions) {
   }
 
   await updateWorkspaceManifest(plan.cwd, plan.targetName)
-
-  logger.success(localize(`${pc.bgGreenBright(pc.white(`[${plan.template}]`))} Created ${plan.targetName}.`, `${pc.bgGreenBright(pc.white(`[${plan.template}]`))} ${plan.targetName} 项目创建成功！`))
 }

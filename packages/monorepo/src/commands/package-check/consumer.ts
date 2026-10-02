@@ -24,8 +24,9 @@ function checkDependencyRanges(pkg: PackedPackage, packages: PackedPackage[], re
   }
 }
 
-export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[], entries: ConsumerEntry[], directory: string, timeout: number) {
+export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[], entries: ConsumerEntry[], directory: string, timeout: number, options: { env?: NodeJS.ProcessEnv, signal?: AbortSignal | undefined, packageManager?: string } = {}) {
   const { result } = pkg
+  const { packageManager } = options
   checkDependencyRanges(pkg, packages, results)
   if (result.diagnostics.some(item => item.severity === 'error')) {
     return
@@ -34,6 +35,7 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
   await writeFile(path.join(directory, 'package.json'), JSON.stringify({
     name: 'repoctl-package-consumer',
     private: true,
+    ...(packageManager ? { packageManager } : {}),
     dependencies: { [String(pkg.manifest.name)]: `file:${result.tarball}` },
   }, null, 2))
   // Overrides use packed files, never workspace source directories. Keep this consumer
@@ -48,7 +50,7 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
       })),
     ]),
   }))
-  const install = await execute('pnpm', ['install', '--ignore-scripts', '--no-frozen-lockfile', '--config.manage-package-manager-versions=false'], directory, timeout)
+  const install = await execute(packageManager ? 'corepack' : 'pnpm', [...(packageManager ? ['pnpm'] : []), 'install', '--ignore-scripts', '--no-frozen-lockfile', '--config.manage-package-manager-versions=false'], directory, timeout, options)
   result.commands.push(install)
   if (install.exitCode !== 0) {
     result.diagnostics.push({ source: 'repoctl', code: 'CONSUMER_INSTALL', severity: 'error', message: failureMessage(install) })
@@ -65,7 +67,7 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
     const specifier = `${pkg.manifest.name}${entry.subpath === '.' ? '' : entry.subpath.slice(1)}`
     if (entry.runtime) {
       const source = entry.format === 'esm' ? `await import(${JSON.stringify(specifier)})` : `require(${JSON.stringify(specifier)})`
-      const command = await execute(process.execPath, ['--input-type', entry.format === 'esm' ? 'module' : 'commonjs', '--eval', source], directory, timeout)
+      const command = await execute(process.execPath, ['--input-type', entry.format === 'esm' ? 'module' : 'commonjs', '--eval', source], directory, timeout, options)
       result.commands.push(command)
       if (command.exitCode !== 0) {
         result.diagnostics.push({ source: 'node', code: 'RUNTIME_IMPORT', severity: 'error', entry: entry.subpath, file: entry.target, message: failureMessage(command) })
@@ -75,7 +77,7 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
       const file = `consume-${index}.${entry.format === 'esm' ? 'mts' : 'cts'}`
       const importText = !entry.runtime ? `import type * as subject from ${JSON.stringify(specifier)}` : entry.format === 'esm' ? `import * as subject from ${JSON.stringify(specifier)}` : `import subject = require(${JSON.stringify(specifier)})`
       await writeFile(path.join(directory, file), `${importText};\ntype Consumer = typeof subject;\n`)
-      const types = await execute(process.execPath, [tsc, '--noEmit', '--strict', '--module', 'nodenext', '--target', 'es2022', file], directory, timeout)
+      const types = await execute(process.execPath, [tsc, '--noEmit', '--strict', '--module', 'nodenext', '--target', 'es2022', file], directory, timeout, options)
       result.commands.push(types)
       if (types.exitCode !== 0) {
         result.diagnostics.push({ source: 'repoctl', code: 'TYPESCRIPT_CONSUMER', severity: 'error', entry: entry.subpath, file: entry.target, message: failureMessage(types) })
@@ -85,7 +87,7 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
   const bins = typeof pkg.manifest.bin === 'string' ? [pkg.manifest.bin] : Object.values(pkg.manifest.bin ?? {})
   for (const bin of bins) {
     if (typeof bin === 'string' && /\.[cm]?js$/u.test(bin)) {
-      const command = await execute(process.execPath, ['--check', path.join(installed, bin)], directory, timeout)
+      const command = await execute(process.execPath, ['--check', path.join(installed, bin)], directory, timeout, options)
       result.commands.push(command)
       if (command.exitCode !== 0) {
         result.diagnostics.push({ source: 'node', code: 'BIN_SYNTAX', severity: 'error', file: bin, message: failureMessage(command) })
