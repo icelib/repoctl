@@ -28,68 +28,6 @@ afterEach(async () => {
   await vi.resetModules()
 })
 
-describe('cleanProjects', () => {
-  it('removes packages and resets devDependency', async () => {
-    const tmpRoot = await fs.mkdtemp(path.join(tmpdir(), 'monorepo-clean-'))
-    const workspaceDir = path.join(tmpRoot, 'workspace')
-    const packagesDir = path.join(workspaceDir, 'packages')
-    const pkgFooDir = path.join(packagesDir, 'foo')
-    const pkgBarDir = path.join(packagesDir, 'bar')
-    const readmeZhPath = path.join(workspaceDir, 'README.zh-CN.md')
-    const docsPlansDir = path.join(workspaceDir, 'docs/plans')
-
-    await fs.ensureDir(pkgFooDir)
-    await fs.ensureDir(pkgBarDir)
-    await fs.ensureDir(docsPlansDir)
-    await fs.writeFile(readmeZhPath, 'should be removed')
-    await fs.writeFile(path.join(docsPlansDir, 'test-plan.md'), 'should be removed')
-    await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
-      devDependencies: {
-        '@icebreakers/monorepo': '^0.1.0',
-      },
-    }, { spaces: 2 })
-
-    const packages: WorkspacePackage[] = [
-      createWorkspacePackage({ name: 'foo' }, pkgFooDir),
-      createWorkspacePackage({ name: 'bar' }, pkgBarDir),
-    ]
-
-    for (const pkg of packages) {
-      await fs.writeJSON(pkg.pkgJsonPath, { name: pkg.manifest.name }, { spaces: 2 })
-    }
-
-    const checkboxMock = vi.fn(async () => packages.map(pkg => pkg.rootDir))
-    await vi.resetModules()
-    vi.doMock('@icebreakers/monorepo-templates', async () => {
-      const actual = await vi.importActual<typeof import('@icebreakers/monorepo-templates')>('@icebreakers/monorepo-templates')
-      return {
-        ...actual,
-        checkbox: checkboxMock,
-      }
-    })
-    vi.doMock('@/core/workspace', () => ({
-      getWorkspaceData: vi.fn(async () => ({ packages, workspaceDir })),
-    }))
-    vi.doMock('@/core/config', () => ({
-      resolveCommandConfig: vi.fn(async () => ({})),
-    }))
-
-    const { cleanProjects } = await import('@/commands/clean')
-    await cleanProjects(workspaceDir)
-
-    expect(await fs.pathExists(pkgFooDir)).toBe(false)
-    expect(await fs.pathExists(pkgBarDir)).toBe(false)
-    expect(await fs.pathExists(readmeZhPath)).toBe(false)
-    expect(await fs.pathExists(docsPlansDir)).toBe(false)
-
-    const rootPkg = await fs.readJSON(path.join(workspaceDir, 'package.json'))
-    expect(rootPkg.devDependencies.repoctl).toBe('latest')
-    expect(rootPkg.devDependencies['@icebreakers/monorepo']).toBeUndefined()
-
-    await fs.remove(tmpRoot)
-  })
-})
-
 describe('init helpers', () => {
   it('updates metadata across workspace artifacts', async () => {
     const tmpRoot = await fs.mkdtemp(path.join(tmpdir(), 'monorepo-init-'))

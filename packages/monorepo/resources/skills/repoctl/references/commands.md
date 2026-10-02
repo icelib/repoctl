@@ -151,15 +151,33 @@ Usage:
 
 ## workspace clean (alias: ws clean)
 
-Purpose: remove selected packages and update the repo helper package version.
-Usage:
+Remove explicitly selected workspace package directories. Nothing is preselected.
+Empty selection or cancelling the prompt changes no files. Repository docs,
+`.qoder`, and global agent skills are not added to the selection or removed as
+cleanup side effects.
+Clean configuration is read from the workspace root, including when invoked from
+a package subdirectory.
 
-- npx repoctl workspace clean
-- npx repoctl ws clean
-  Options:
-- --yes: auto confirm
-- --include-private
-- --pinned-version <version>
+```bash
+pnpm exec repo workspace clean --dry-run
+pnpm exec repo workspace clean --yes --dry-run
+pnpm exec repo workspace clean --yes
+```
+
+- `--yes` selects all eligible packages after `ignorePackages` and private-package filtering.
+- `--dry-run` prints a JSON plan with `deletions` and every root `package.json`
+  dependency change; it does not write a report file or modify the workspace.
+- `--include-private` overrides `commands.clean.includePrivate: false`.
+  Private packages are included by default for compatibility.
+- `--pinned-version <version>` explicitly replaces `devDependencies.repoctl`.
+  Otherwise its current range is retained; when absent, `latest` is used.
+
+Only a nonempty selection may also remove the legacy
+`devDependencies.@icebreakers/monorepo` entry and ensure `devDependencies.repoctl`.
+An already-correct manifest is not rewritten. All targets are validated before
+execution: workspace root/outside paths, symbolic-link targets or parent paths,
+linked root manifests, and unselected nested workspaces are rejected. Dependency
+references from consuming packages are not rewritten by this command.
 
 ## env info (alias: e i)
 

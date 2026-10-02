@@ -1,206 +1,83 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { CleanCommandConfig } from '@/types'
+import { access, readFile, rm } from 'node:fs/promises'
+import path from 'pathe'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createCleanFixture, snapshotTree } from './clean/fixture'
 
-const resolveCommandConfigMock = vi.fn()
-const getWorkspaceDataMock = vi.fn()
-const checkboxMock = vi.fn()
-const pathExistsMock = vi.fn()
-const removeMock = vi.fn()
-const readJsonMock = vi.fn()
-const outputJsonMock = vi.fn()
-
-vi.mock('@icebreakers/monorepo-templates', async () => {
-  const actual = await vi.importActual<typeof import('@icebreakers/monorepo-templates')>('@icebreakers/monorepo-templates')
-  return {
-    ...actual,
-    checkbox: checkboxMock,
-  }
-})
-
-vi.mock('@/utils/fs', async () => {
-  const actual = await vi.importActual<typeof import('@/utils/fs')>('@/utils/fs')
-  return {
-    ...actual,
-    default: {
-      ...actual.default,
-      pathExists: pathExistsMock,
-      remove: removeMock,
-      readJson: readJsonMock,
-      outputJson: outputJsonMock,
-    },
-    pathExists: pathExistsMock,
-    remove: removeMock,
-    readJson: readJsonMock,
-    outputJson: outputJsonMock,
-  }
-})
-
-vi.mock('@/core/config', () => ({
-  resolveCommandConfig: resolveCommandConfigMock,
+const checkboxMock = vi.hoisted(() => vi.fn())
+const configMock = vi.hoisted(() => vi.fn<() => Promise<CleanCommandConfig>>())
+const skillsMock = vi.hoisted(() => vi.fn(() => {
+  throw new Error('Global skills must never be accessed')
 }))
+vi.mock('@icebreakers/monorepo-templates', async original => ({ ...await original<typeof import('@icebreakers/monorepo-templates')>(), checkbox: checkboxMock }))
+vi.mock('@/core/config', () => ({ resolveCommandConfig: configMock }))
+vi.mock('@/commands/skills', () => ({ getSkillTargetPaths: skillsMock }))
 
-vi.mock('@/core/workspace', () => ({
-  getWorkspaceData: getWorkspaceDataMock,
-}))
-
-afterEach(() => {
-  resolveCommandConfigMock.mockReset()
-  getWorkspaceDataMock.mockReset()
+let fixture: Awaited<ReturnType<typeof createCleanFixture>>
+beforeEach(async () => {
+  fixture = await createCleanFixture()
+  configMock.mockResolvedValue({})
   checkboxMock.mockReset()
-  pathExistsMock.mockReset()
-  removeMock.mockReset()
-  readJsonMock.mockReset()
-  outputJsonMock.mockReset()
+  skillsMock.mockClear()
+})
+afterEach(async () => {
+  expect(skillsMock).not.toHaveBeenCalled()
+  await rm(fixture.root, { recursive: true, force: true })
 })
 
-describe('clean coverage', () => {
-  it('covers interactive and auto confirm branches', async () => {
-    const workspaceDir = '/repo'
-    const rootPackageJson = { devDependencies: {} }
-
-    resolveCommandConfigMock
-      .mockResolvedValueOnce({
-        ignorePackages: ['skip-me'],
-        pinnedVersion: '1.2.3',
-      })
-      .mockResolvedValueOnce({
-        autoConfirm: true,
-        includePrivate: true,
-      })
-      .mockResolvedValueOnce({
-        pinnedVersion: '2.0.0',
-      })
-
-    getWorkspaceDataMock
-      .mockResolvedValueOnce({
-        workspaceDir,
-        packages: [
-          {
-            manifest: { name: 'skip-me' },
-            rootDir: '/repo/packages/skip-me',
-            rootDirRealPath: '/repo/packages/skip-me',
-            pkgJsonPath: '/repo/packages/skip-me/package.json',
-          },
-          {
-            manifest: { name: 'keep-me' },
-            rootDir: '/repo/packages/keep-me',
-            rootDirRealPath: '/repo/packages/keep-me',
-            pkgJsonPath: '/repo/packages/keep-me/package.json',
-          },
-          {
-            manifest: {},
-            rootDir: '/repo/packages/unnamed',
-            rootDirRealPath: '/repo/packages/unnamed',
-            pkgJsonPath: '/repo/packages/unnamed/package.json',
-          },
-        ],
-      })
-      .mockResolvedValueOnce({
-        workspaceDir,
-        packages: [
-          {
-            manifest: { name: 'pkg-a' },
-            rootDir: '/repo/packages/a',
-            rootDirRealPath: '/repo/packages/a',
-            pkgJsonPath: '/repo/packages/a/package.json',
-          },
-          {
-            manifest: { name: 'pkg-b' },
-            rootDir: '/repo/packages/b',
-            rootDirRealPath: '/repo/packages/b',
-            pkgJsonPath: '/repo/packages/b/package.json',
-          },
-        ],
-      })
-      .mockResolvedValueOnce({
-        workspaceDir,
-        packages: [
-          {
-            manifest: { name: 'pkg-a' },
-            rootDir: '/repo/packages/a',
-            rootDirRealPath: '/repo/packages/a',
-            pkgJsonPath: '/repo/packages/a/package.json',
-          },
-        ],
-      })
-
-    checkboxMock.mockResolvedValue(['/repo/packages/keep-me'])
-    pathExistsMock.mockResolvedValue(true)
-    removeMock.mockResolvedValue(undefined)
-    readJsonMock
-      .mockResolvedValueOnce(rootPackageJson)
-      .mockResolvedValueOnce({ devDependencies: {} })
-      .mockResolvedValueOnce({ devDependencies: {} })
-    outputJsonMock.mockResolvedValue(undefined)
-
+describe('clean selection boundaries', () => {
+  it('only deletes the checked workspace and preserves its existing repoctl version', async () => {
+    const before = await snapshotTree(fixture.root)
+    checkboxMock.mockResolvedValue([path.join(fixture.workspace, 'packages/a')])
     const { cleanProjects } = await import('@/commands/clean')
-
-    await cleanProjects(workspaceDir)
-
-    expect(getWorkspaceDataMock).toHaveBeenCalledWith(workspaceDir, { ignorePrivatePackage: false })
-    expect(checkboxMock).toHaveBeenCalled()
-    expect(removeMock).toHaveBeenCalledWith('/repo/packages/keep-me')
-    expect(removeMock).toHaveBeenCalledWith('/repo/README.zh-CN.md')
-    expect(removeMock).toHaveBeenCalledWith('/repo/.qoder')
-    expect(removeMock).toHaveBeenCalledWith('/repo/docs/plans')
-    expect(readJsonMock).toHaveBeenCalledWith('/repo/package.json')
-    expect(outputJsonMock).toHaveBeenCalledWith('/repo/package.json', {
-      devDependencies: {
-        repoctl: '1.2.3',
-      },
-    }, { spaces: 2 })
-
-    checkboxMock.mockClear()
-    removeMock.mockClear()
-
-    await cleanProjects(workspaceDir)
-
-    expect(checkboxMock).not.toHaveBeenCalled()
-    expect(removeMock).toHaveBeenCalledWith('/repo/packages/a')
-    expect(outputJsonMock).toHaveBeenNthCalledWith(2, '/repo/package.json', {
-      devDependencies: {
-        repoctl: 'latest',
-      },
-    }, { spaces: 2 })
-
-    checkboxMock.mockClear()
-    removeMock.mockClear()
-
-    await cleanProjects(workspaceDir, { autoConfirm: true, pinnedVersion: 'canary' })
-
-    expect(checkboxMock).not.toHaveBeenCalled()
-    expect(removeMock).toHaveBeenCalledWith('/repo/packages/a')
-    expect(outputJsonMock).toHaveBeenNthCalledWith(3, '/repo/package.json', {
-      devDependencies: {
-        repoctl: 'canary',
-      },
-    }, { spaces: 2 })
+    await cleanProjects(fixture.workspace)
+    await expect(access(path.join(fixture.workspace, 'packages/a'))).rejects.toThrow()
+    const after = await snapshotTree(fixture.root)
+    for (const [file, content] of Object.entries(before)) {
+      if (!file.startsWith('workspace/packages/a/') && file !== 'workspace/package.json') {
+        expect(after[file]).toBe(content)
+      }
+    }
+    expect(JSON.parse(await readFile(path.join(fixture.workspace, 'package.json'), 'utf8')).devDependencies).toEqual({ repoctl: '^5.6.0', other: '^1.0.0' })
+    expect(checkboxMock.mock.calls[0]?.[0].choices.every((choice: { checked: boolean }) => choice.checked === false)).toBe(true)
   })
 
-  it('migrates legacy scoped helper dependency to repoctl', async () => {
-    resolveCommandConfigMock.mockResolvedValue({
-      autoConfirm: true,
-      pinnedVersion: '3.0.0',
-    })
-    getWorkspaceDataMock.mockResolvedValue({
-      workspaceDir: '/repo',
-      packages: [],
-    })
-    pathExistsMock.mockResolvedValue(false)
-    readJsonMock.mockResolvedValue({
-      devDependencies: {
-        '@icebreakers/monorepo': '^2.0.0',
-      },
-    })
-    outputJsonMock.mockResolvedValue(undefined)
-
+  it.each(['empty', 'ExitPromptError', 'AbortPromptError'])('does not write on %s selection', async (mode) => {
+    const before = await snapshotTree(fixture.root)
+    if (mode === 'empty') {
+      checkboxMock.mockResolvedValue([])
+    }
+    else {
+      checkboxMock.mockRejectedValue(Object.assign(new Error('cancelled'), { name: mode }))
+    }
     const { cleanProjects } = await import('@/commands/clean')
+    await cleanProjects(fixture.workspace, { pinnedVersion: 'next' })
+    expect(await snapshotTree(fixture.root)).toEqual(before)
+  })
 
-    await cleanProjects('/repo')
+  it('propagates unexpected prompt errors without writes', async () => {
+    const before = await snapshotTree(fixture.root)
+    checkboxMock.mockRejectedValue(new Error('prompt failed'))
+    const { cleanProjects } = await import('@/commands/clean')
+    await expect(cleanProjects(fixture.workspace)).rejects.toThrow('prompt failed')
+    expect(await snapshotTree(fixture.root)).toEqual(before)
+  })
 
-    expect(outputJsonMock).toHaveBeenCalledWith('/repo/package.json', {
-      devDependencies: {
-        repoctl: '3.0.0',
-      },
-    }, { spaces: 2 })
+  it('keeps config filtering and ignores undefined overrides', async () => {
+    configMock.mockResolvedValue({ autoConfirm: true, includePrivate: false, ignorePackages: ['pkg-a'] })
+    const before = await snapshotTree(fixture.root)
+    const { cleanProjects } = await import('@/commands/clean')
+    // @ts-expect-error JavaScript callers can explicitly pass undefined overrides.
+    await cleanProjects(fixture.workspace, { autoConfirm: undefined })
+    expect(checkboxMock).not.toHaveBeenCalled()
+    expect(await snapshotTree(fixture.root)).toEqual(before)
+  })
+
+  it('rejects a prompt result outside the available selection before any deletion', async () => {
+    const before = await snapshotTree(fixture.root)
+    checkboxMock.mockResolvedValue([path.join(fixture.workspace, 'packages/a'), fixture.home])
+    const { cleanProjects } = await import('@/commands/clean')
+    await expect(cleanProjects(fixture.workspace)).rejects.toThrow('unavailable workspace')
+    expect(await snapshotTree(fixture.root)).toEqual(before)
   })
 })

@@ -10,6 +10,7 @@ import type { ViteUserConfig } from 'vitest/config'
 import type { AgenticTemplateFormat } from '../commands/ai'
 import type { CreateNewProjectOptions } from '../commands/create'
 import type { InitPreset, InitToolingTarget } from '../commands/init'
+import type { CleanCommandConfig } from './clean'
 import type { CliOpts } from './cli'
 import type { ReleaseCommandConfig } from './release'
 
@@ -96,32 +97,6 @@ export interface CreateChoiceOption {
    * @default false
    */
   disabled?: boolean | string
-}
-
-/**
- * `repo workspace clean` 命令配置，可控制自动选择、排除包等行为。
- */
-export interface CleanCommandConfig {
-  /**
-   * 是否跳过交互直接清理全部。
-   * @default false
-   */
-  autoConfirm?: boolean
-  /**
-   * 不允许被清理的包名列表。
-   * @default []
-   */
-  ignorePackages?: string[]
-  /**
-   * 是否包含 private 包。
-   * @default true
-   */
-  includePrivate?: boolean
-  /**
-   * 强制写回的 repoctl 版本。
-   * @default 当前依赖版本
-   */
-  pinnedVersion?: string
 }
 
 /**
@@ -454,5 +429,7 @@ export interface MonorepoConfig {
    */
   tooling?: ToolingConfig
 }
+
+export type { CleanCommandConfig } from './clean'
 
 export type { ReleaseAfterPublishHookConfig, ReleaseCommandConfig } from './release'

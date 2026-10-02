@@ -194,7 +194,7 @@ describe('commander program', () => {
     await program.parseAsync(['node', 'repo', 'workspace', 'init'])
     await program.parseAsync(['node', 'repo', 'workspace', 'list', '--json', '--include-private', '--include-root', '--pattern', 'packages/*', '--pattern', 'apps/*'])
     await program.parseAsync(['node', 'repo', 'tooling', 'init', 'eslint', 'vitest', '--force'])
-    await program.parseAsync(['node', 'repo', 'workspace', 'clean', '--yes', '--include-private', '--pinned-version', 'next'])
+    await program.parseAsync(['node', 'repo', 'workspace', 'clean', '--yes', '--dry-run', '--include-private', '--pinned-version', 'next'])
     await program.parseAsync(['node', 'repo', 'env', 'info', '--json'])
     await program.parseAsync(['node', 'repo', 'env', 'snapshot', '--json'])
     await program.parseAsync(['node', 'repo', 'env', 'paths', '--json'])
@@ -231,6 +231,7 @@ describe('commander program', () => {
       autoConfirm: true,
       includePrivate: true,
       pinnedVersion: 'next',
+      dryRun: true,
     })
     expect(mirrorMock).toHaveBeenCalled()
     expect(collectEnvInfoMock).toHaveBeenCalledWith(expect.any(String))
@@ -269,7 +270,7 @@ describe('commander program', () => {
       targets: ['eslint', 'vitest'],
       force: true,
     })
-    expect(successMock).toHaveBeenCalledTimes(12)
+    expect(successMock).toHaveBeenCalledTimes(11)
     expect(infoMock).toHaveBeenCalledWith('Next: run `pnpm install` and `pnpm build`.')
     expect(infoMock).toHaveBeenCalledWith('Next: run `pnpm install` and start the new workspace package.')
     expect(logMock).toHaveBeenCalledWith(expect.stringContaining('"packages"'))

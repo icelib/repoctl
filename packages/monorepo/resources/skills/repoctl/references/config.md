@@ -33,6 +33,7 @@ export default defineMonorepoConfig({
     },
     clean: {
       autoConfirm: false,
+      dryRun: false,
       ignorePackages: ['docs'],
       includePrivate: true,
       pinnedVersion: 'latest',
@@ -61,7 +62,7 @@ Key areas:
 
 - ai: default output, format, batch tasks
 - create: default template and template directory
-- clean: auto confirm and pinned version control
+- clean: explicit package selection, optional read-only dryRun, private/ignored package filtering, and an explicit pinnedVersion override; existing repoctl versions are retained otherwise
 - upgrade: overwrite behavior and extra targets
 - init: skip steps for README/package.json/pnpm change intent setup
 - mirror: add or override env mirrors

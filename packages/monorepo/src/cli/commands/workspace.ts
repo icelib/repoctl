@@ -19,6 +19,7 @@ interface WorkspaceListCliOptions {
 }
 
 interface WorkspaceCleanCliOptions {
+  dryRun?: boolean
   yes?: boolean
   includePrivate?: boolean
   pinnedVersion?: string
@@ -184,12 +185,12 @@ export function registerWorkspaceCommands(program: Command, cwd: string) {
   workspaceCommand.command('clean')
     .description(localize('Remove selected workspace packages', '清除选中的包'))
     .alias('rm')
-    .option('-y, --yes', localize('Skip prompts and clean immediately', '跳过交互直接清理（等价 autoConfirm）'))
+    .option('-y, --yes', localize('Select all eligible workspace packages without prompting', '跳过交互并选择所有符合条件的工作区包'))
+    .option('--dry-run', localize('Preview directory deletions and metadata changes without writing', '预览目录删除和元数据变更，不写入文件'))
     .option('--include-private', localize('Include private packages', '包含 private 包'))
     .option('--pinned-version <version>', localize('Override the repoctl version written to the root package', '覆盖写入的 repoctl 版本'))
     .action(async (opts: WorkspaceCleanCliOptions) => {
       const { cleanProjects } = await import('@/commands')
       await cleanProjects(cwd, normalizeCleanOptions(opts))
-      logger.success(localize('Workspace cleanup finished.', 'Workspace 清理完成。'))
     })
 }

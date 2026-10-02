@@ -51,12 +51,13 @@ export default defineMonorepoConfig({
 })
 ```
 
-| Option                            | Purpose                                         |
-| --------------------------------- | ----------------------------------------------- |
-| `commands.init.preset`            | Default setup preset                            |
-| `commands.create.defaultTemplate` | Default template for `repo new <name>`          |
-| `commands.clean.autoConfirm`      | Whether clean commands confirm by default       |
-| `commands.upgrade.skipOverwrite`  | Whether upgrade preserves changed managed files |
+| Option                            | Purpose                                                  |
+| --------------------------------- | -------------------------------------------------------- |
+| `commands.init.preset`            | Default setup preset                                     |
+| `commands.create.defaultTemplate` | Default template for `repo new <name>`                   |
+| `commands.clean.autoConfirm`      | Select all eligible packages without prompting           |
+| `commands.clean.dryRun`           | Preview deletions and dependency changes without writing |
+| `commands.upgrade.skipOverwrite`  | Whether upgrade preserves changed managed files          |
 
 ## Inspect Config
 
@@ -67,3 +68,23 @@ repo cfg i --markdown --redact --out reports/config.md
 ```
 
 Use `--redact` before sharing reports in issues, PRs, or external support channels.
+
+## Cleaning workspace packages
+
+Use `repo workspace clean --dry-run` to select packages and preview the changes.
+For automation, `repo workspace clean --yes --dry-run` previews all eligible
+packages. Remove `--dry-run` to execute. Interactive choices start unchecked;
+empty selection or cancellation writes nothing. `--yes` respects `ignorePackages`
+and `includePrivate`; it never adds repository docs, `.qoder`, or global skills.
+Configuration is read from the workspace root even when invoked inside a package.
+
+The JSON preview lists removed directories in `deletions` and root `package.json`
+dependency changes with before/after values in `metadata`. Only a nonempty
+selection may migrate `devDependencies.@icebreakers/monorepo` and ensure
+`devDependencies.repoctl`. Existing repoctl versions are retained unless
+`--pinned-version` overrides them; a missing version defaults to `latest`.
+An already-correct manifest is not rewritten.
+
+Outside paths, symbolic-link targets or parent paths, linked root manifests,
+and deletion of unselected nested packages fail validation before any writes.
+The command does not update consumer dependency declarations.
