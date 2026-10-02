@@ -2,15 +2,15 @@ import type { AffectedCheckOptions, AffectedCheckPlan } from './types'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { getWorkspaceGraph } from '../../../core/workspace-graph'
-import { createAffectedCommands } from './commands'
+import { createAffectedCommandPlanner } from './commands'
 import { readAffectedGitRange } from './git'
 import { classifyAffectedFiles, readAffectedGlobalInputs } from './inputs'
 import { selectAffectedPackages } from './selection'
 
 export type * from './types'
 
-/** Resolve one explainable plan; Git uncertainty expands checks rather than yielding an empty selection. */
-export async function resolveAffectedCheckPlan(options: AffectedCheckOptions): Promise<AffectedCheckPlan> {
+/** Internal shared snapshot used by local checks and matrix generation. */
+export async function resolveAffectedCheckContext(options: AffectedCheckOptions) {
   const graph = await getWorkspaceGraph(options.cwd)
   if (!existsSync(path.join(graph.workspaceDir, 'pnpm-workspace.yaml'))) {
     throw new Error('Affected checks require a discoverable pnpm-workspace.yaml')
@@ -29,7 +29,8 @@ export async function resolveAffectedCheckPlan(options: AffectedCheckOptions): P
   }
   const full = fallback.length > 0
   const packages = selectAffectedPackages(graph, changes.files, full, options.filters)
-  return {
+  const createCommands = createAffectedCommandPlanner(graph)
+  const plan: AffectedCheckPlan = {
     schemaVersion: 1,
     mode: 'affected',
     cwd: graph.workspaceDir,
@@ -39,6 +40,12 @@ export async function resolveAffectedCheckPlan(options: AffectedCheckOptions): P
     globalInputs: inputs.patterns,
     files: changes.files,
     packages,
-    commands: createAffectedCommands(graph, packages, full, !!options.filters?.length),
+    commands: createCommands(packages, full, !!options.filters?.length),
   }
+  return { plan, createCommands }
+}
+
+/** Resolve one explainable plan; Git uncertainty expands checks rather than yielding an empty selection. */
+export async function resolveAffectedCheckPlan(options: AffectedCheckOptions): Promise<AffectedCheckPlan> {
+  return (await resolveAffectedCheckContext(options)).plan
 }

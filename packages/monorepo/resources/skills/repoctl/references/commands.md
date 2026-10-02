@@ -303,3 +303,7 @@ Usage:
   `--dry-run` and does not write files.
 - Add `--out <file>` to write the preview or JSON plan to disk. It also implies
   `--dry-run`.
+
+## Affected CI matrix
+
+`repo check --affected --matrix` previews a versioned GitHub Actions matrix without running checks. `--shards N` deterministically groups workspaces into at most 1–256 jobs. Reuse base/head, filters and global inputs from affected mode. Pass only `matrix` to Actions `fromJSON`, gate strategy expansion with `hasWork`, and execute each row's non-skipped executable/args arrays in order from the checkout root. Each job builds dependencies itself. Full fallbacks stay in one job and retain diagnostics. No workflow is changed or triggered; only explicit `--out` writes a report.

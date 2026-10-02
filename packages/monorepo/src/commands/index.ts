@@ -125,6 +125,8 @@ export {
 export { resolveAffectedCheckPlan } from './check/affected'
 export type { AffectedCheckCommand, AffectedCheckOptions, AffectedCheckPlan, AffectedCheckSettings, AffectedFallback, AffectedFile, AffectedGitRange, AffectedPackage } from './check/affected'
 export { runCheckWithReport } from './check/execute'
+export { resolveAffectedCheckMatrix } from './check/matrix'
+export type { AffectedCheckMatrix, AffectedCheckMatrixJob, AffectedCheckMatrixOptions } from './check/matrix'
 
 export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus, CheckExecutionTask } from './check/types'
 export { applyDependencyFixPlan, checkDependencies, planDependencyFix } from './deps'

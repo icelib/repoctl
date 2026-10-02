@@ -6,7 +6,7 @@ import path from 'pathe'
 import { logger } from '../../../core/logger'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
-import { createCheckPlanOutput } from './output'
+import { createCheckPlanOutput, redactCheckOutput } from './output'
 
 interface CheckCliOptions {
   full?: boolean
@@ -16,6 +16,8 @@ interface CheckCliOptions {
   head?: string
   filter?: string[]
   globalInput?: string[]
+  matrix?: boolean
+  shards?: string
   editFile?: string
   dryRun?: boolean
   json?: boolean
@@ -28,10 +30,9 @@ interface CheckCliOptions {
 
 const collect = (value: string, previous: string[] = []) => [...previous, value]
 
-async function emitCheckPlan(plan: RecommendedCheckPlan | AffectedCheckPlan, opts: CheckCliOptions, cwd: string) {
-  const content = createCheckPlanOutput(plan, opts)
+async function emitCheckOutput(content: string, opts: CheckCliOptions, cwd: string, stdout: boolean) {
   if (!opts.out) {
-    if (plan.mode === 'affected') {
+    if (stdout) {
       process.stdout.write(`${content}\n`)
     }
     else {
@@ -44,6 +45,10 @@ async function emitCheckPlan(plan: RecommendedCheckPlan | AffectedCheckPlan, opt
   logger.success(localize(`Wrote ${path.relative(cwd, outFile)}`, `已写入 ${path.relative(cwd, outFile)}`))
 }
 
+async function emitCheckPlan(plan: RecommendedCheckPlan | AffectedCheckPlan, opts: CheckCliOptions, cwd: string) {
+  await emitCheckOutput(createCheckPlanOutput(plan, opts), opts, cwd, plan.mode === 'affected')
+}
+
 export function registerCheckCommand(program: Command, cwd: string) {
   program.command('check')
     .description(localize('Run the recommended local verification', '执行推荐的本地校验'))
@@ -54,6 +59,8 @@ export function registerCheckCommand(program: Command, cwd: string) {
     .option('--head <ref>', localize('Affected comparison head (default: HEAD)', 'affected 比较终点（默认 HEAD）'))
     .option('--filter <package>', localize('Intersect affected packages with exact names or directories; repeatable', '按精确包名或目录与 affected 集合取交集，可重复'), collect)
     .option('--global-input <glob>', localize('Add a global input glob; repeatable', '追加全局输入 glob，可重复'), collect)
+    .option('--matrix', localize('Preview a GitHub Actions matrix as JSON; requires --affected', '以 JSON 预览 GitHub Actions matrix，需配合 --affected'))
+    .option('--shards <count>', localize('Group matrix packages into at most 1–256 jobs', '把 matrix 工作区分为最多 1–256 个 job'))
     .option('--edit-file <file>', localize('Validate a commit message file', '执行 commit message 校验'))
     .option('--dry-run', localize('Preview checks without running them', '预览将要执行的校验，不实际运行'))
     .option('--json', localize('Output the check plan as JSON; implies --dry-run', '以 JSON 输出校验计划，隐含 --dry-run'))
@@ -69,6 +76,15 @@ export function registerCheckCommand(program: Command, cwd: string) {
       if (!opts.affected && (opts.base || opts.head || opts.filter || opts.globalInput)) {
         throw new Error('--base, --head, --filter and --global-input require --affected')
       }
+      if (opts.matrix && !opts.affected) {
+        throw new Error('--matrix requires --affected')
+      }
+      if (opts.shards !== undefined && !opts.matrix) {
+        throw new Error('--shards requires --matrix')
+      }
+      if (opts.matrix && (opts.markdown || opts.report || opts.reportFormat)) {
+        throw new Error('--matrix cannot be combined with --markdown, --report or --report-format')
+      }
       const options = {
         cwd,
         ...(opts.full !== undefined ? { full: opts.full } : {}),
@@ -79,6 +95,13 @@ export function registerCheckCommand(program: Command, cwd: string) {
         ...(opts.head !== undefined ? { head: opts.head } : {}),
         ...(opts.filter ? { filters: opts.filter } : {}),
         ...(opts.globalInput ? { globalInputs: opts.globalInput } : {}),
+      }
+      if (opts.matrix) {
+        const { resolveAffectedCheckMatrix } = await import('@/commands')
+        const matrix = await resolveAffectedCheckMatrix({ ...options, ...(opts.shards !== undefined ? { shards: Number(opts.shards) } : {}) })
+        const output = opts.redact ? redactCheckOutput(matrix, matrix.affectedPlan.cwd) : matrix
+        await emitCheckOutput(JSON.stringify(output, null, 2), opts, cwd, true)
+        return
       }
       if (opts.reportFormat && !opts.report) {
         throw new Error('--report-format requires --report <file>')

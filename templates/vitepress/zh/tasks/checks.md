@@ -136,6 +136,8 @@ affected 模式选择变更包及其直接、传递消费者，包含 private �
 
 `--json`、`--markdown`、`--dry-run`、`--out` 仍然只预览。`--report` 执行同一模型并保存为 `affectedPlan`。`--affected` 不能与 `--full`、`--staged`、`--edit-file` 组合；base/head/filter/global-input 参数必须与 affected 模式一起使用。程序化调用可使用 `resolveAffectedCheckPlan({ cwd, base, head, filters, globalInputs })` 或 `runCheckWithReport({ cwd, affected: true, ... })`。
 
+使用 `repo check --affected --matrix` 将同一计划导出为 GitHub Actions matrix，使用 `--shards 16` 分组。空结果处理和安全的参数数组执行方式见 [CI matrix 配置](/zh/tasks/ci#生成-affected-github-actions-matrix)。
+
 ## 8. 实际执行报告
 
 ```bash

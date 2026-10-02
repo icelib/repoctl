@@ -87,6 +87,8 @@ Execution follows `build → lint → typecheck → tsd → test`, skipping unav
 
 `--json`, `--markdown`, `--dry-run` and `--out` remain previews. `--report` executes the same model and embeds it as `affectedPlan`. `--affected` cannot combine with `--full`, `--staged` or `--edit-file`; base/head/filter/global-input options require affected mode. Programmatic callers use `resolveAffectedCheckPlan({ cwd, base, head, filters, globalInputs })` or `runCheckWithReport({ cwd, affected: true, ... })`.
 
+Export this same plan as a GitHub Actions matrix with `repo check --affected --matrix`; use `--shards 16` to group workspaces. See [CI matrix setup](/tasks/ci#generate-an-affected-github-actions-matrix) for empty-result handling and safe argument-array execution.
+
 ## Execution Reports
 
 ```bash
