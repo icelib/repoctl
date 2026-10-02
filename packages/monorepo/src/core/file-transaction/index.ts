@@ -20,7 +20,7 @@ interface StagedFile {
 }
 
 /** Keep preparation, replacement and cleanup separate for transactions that also move directories. */
-export async function stageFileTransaction(updates: FileTransactionUpdate[], validate: (file: string) => Promise<string>, namespace: 'deps' | 'remove' | 'move') {
+export async function stageFileTransaction(updates: FileTransactionUpdate[], validate: (file: string) => Promise<string>, namespace: 'deps' | 'remove' | 'doctor' | 'references' | 'move') {
   const id = randomUUID()
   const staged: StagedFile[] = []
   const check = async (item: StagedFile) => {
