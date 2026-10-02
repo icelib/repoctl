@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, 
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { checkPackagedTemplateOrigins } from './template-origins/packaged.mjs'
 import { checkPackagedWebsite } from './vitepress/packaged.mjs'
 
 const repoRoot = path.resolve(import.meta.dirname, '..')
@@ -97,6 +98,7 @@ try {
   const workspaceDir = path.join(tempRoot, 'workspace')
   const output = run(process.execPath, [cliPath, workspaceDir, '--yes', '--templates', 'tsdown'], bootstrapDir)
   checkWorkspace(workspaceDir)
+  await checkPackagedTemplateOrigins(workspaceDir, installedTemplates, tempRoot)
   assert.ok(output.includes('  corepack enable\n  pnpm install\n'), 'next steps must enable Corepack before installation')
 
   // Launch from the source root so Corepack selects its pnpm, then verify that
