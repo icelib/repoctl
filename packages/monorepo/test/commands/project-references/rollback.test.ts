@@ -18,7 +18,7 @@ async function failReplacement(root: string, concurrent: boolean | 'registry' = 
     const rename = fs.rename
     const copyFile = fs.copyFile
     fs.copyFile = async (source, target, flags) => {
-      if (concurrent === 'registry' && source === path.join(root, 'tsconfig.json')) {
+      if (concurrent === 'registry' && path.resolve(source) === path.resolve(root, 'tsconfig.json')) {
         const registry = path.join(root, '.repoctl/typescript-references.json')
         await fs.unlink(registry)
         await fs.writeFile(registry, '')
@@ -27,7 +27,7 @@ async function failReplacement(root: string, concurrent: boolean | 'registry' = 
       return copyFile(source, target, flags)
     }
     fs.rename = async (source, target) => {
-      if (source.endsWith('.tmp') && target === path.join(root, 'tsconfig.json')) {
+      if (source.endsWith('.tmp') && path.resolve(target) === path.resolve(root, 'tsconfig.json')) {
         if (concurrent === 'true') await fs.writeFile(path.join(root, 'packages/app/tsconfig.json'), 'concurrent business edit\\n')
         throw new Error('Injected reference replacement failure')
       }
