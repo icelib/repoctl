@@ -125,4 +125,5 @@ export {
 export { runCheckWithReport } from './check/execute'
 
 export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus, CheckExecutionTask } from './check/types'
+export { applyDependencyFixPlan, checkDependencies, planDependencyFix } from './deps'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'

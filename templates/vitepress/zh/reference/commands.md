@@ -113,6 +113,9 @@ repo check --markdown --redact --out reports/check-plan.md
 
 ## `repo upgrade`
 
+第三方依赖声明可用 `repo deps check` 检查，使用 `repo deps plan` 生成显式只读计划，
+审阅 JSON 后再执行 `repo deps apply`。协议、版本分组及恢复方式见[依赖版本一致性](./dependencies.md)。
+
 ```bash
 repo upgrade
 repo upgrade --yes

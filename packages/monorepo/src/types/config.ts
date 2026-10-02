@@ -12,6 +12,7 @@ import type { CreateNewProjectOptions } from '../commands/create'
 import type { InitPreset, InitToolingTarget } from '../commands/init'
 import type { CleanCommandConfig } from './clean'
 import type { CliOpts } from './cli'
+import type { DependenciesCommandConfig } from './dependencies'
 import type { ReleaseCommandConfig } from './release'
 
 export interface AiCommandConfig {
@@ -417,6 +418,7 @@ export interface MonorepoConfig {
     ai?: AiCommandConfig
     create?: CreateCommandConfig
     clean?: CleanCommandConfig
+    deps?: DependenciesCommandConfig
     upgrade?: UpgradeCommandConfig
     init?: InitCommandConfig
     mirror?: MirrorCommandConfig

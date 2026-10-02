@@ -1,6 +1,7 @@
 export type { RepoctlLocale } from '../i18n/types'
 export * from './cli'
 export * from './config'
+export * from './dependencies'
 export * from './package-json'
 export * from './workspace'
 export type { ConfigValues, SimpleGit, SimpleGitOptions } from 'simple-git'

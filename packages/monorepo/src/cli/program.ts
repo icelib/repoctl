@@ -5,6 +5,7 @@ import { cliName, version } from '../constants'
 import { message, supportedLocales } from '../i18n'
 import { registerAiCommands } from './commands/ai'
 import { registerConfigCommands } from './commands/config'
+import { registerDepsCommands } from './commands/deps'
 import { registerEnvCommands } from './commands/env'
 import { registerPackageCommands } from './commands/package'
 import { registerReleaseCommands } from './commands/release'
@@ -82,6 +83,7 @@ registerWorkspaceCommands(program, cwd)
 registerToolingCommands(program, cwd)
 registerEnvCommands(program, cwd)
 registerConfigCommands(program, cwd)
+registerDepsCommands(program, cwd)
 registerReleaseCommands(program, cwd)
 registerSkillsCommands(program, cwd)
 registerVerifyCommands(program, cwd)
