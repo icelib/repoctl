@@ -1,8 +1,9 @@
 import type { UpgradePlan } from '../../../types/upgrade'
 import { Buffer } from 'node:buffer'
+import { validateBaselineChange, writesAsset } from '../baseline/apply'
 import { hash, relativeFile } from '../plan/files'
 
-export const actionable = (file: UpgradePlan['files'][number]) => ['add', 'modify', 'delete'].includes(file.status)
+export const actionable = (file: UpgradePlan['files'][number]) => writesAsset(file) || Boolean(file.baseline)
 const digest = (value: unknown) => value === null || (typeof value === 'string' && /^[\da-f]{64}$/.test(value))
 
 export function validateUpgradePlan(plan: UpgradePlan) {
@@ -26,7 +27,7 @@ export function validateUpgradePlan(plan: UpgradePlan) {
   }
   for (const file of plan.files) {
     relativeFile(file.path)
-    if (!['add', 'modify', 'delete', 'identical', 'skip'].includes(file.status) || !digest(file.beforeHash) || !digest(file.afterHash)
+    if (!['add', 'modify', 'delete', 'identical', 'skip', 'conflict'].includes(file.status) || !digest(file.beforeHash) || !digest(file.afterHash)
       || (file.content !== null && typeof file.content !== 'string') || (file.group !== null && typeof file.group !== 'string')) {
       throw new Error('Invalid upgrade file.')
     }
@@ -34,7 +35,8 @@ export function validateUpgradePlan(plan: UpgradePlan) {
     if (!input || input.hash !== file.beforeHash) {
       throw new Error(`Missing upgrade precondition: ${file.path}`)
     }
-    if (actionable(file)) {
+    validateBaselineChange(file, plan)
+    if (writesAsset(file)) {
       if (file.beforeHash === file.afterHash) {
         throw new Error(`Unchanged file cannot be an upgrade action: ${file.path}`)
       }
