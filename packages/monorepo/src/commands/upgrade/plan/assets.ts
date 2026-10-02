@@ -9,6 +9,7 @@ import { toWorkspaceAssetPath, updateIssueTemplateConfig } from '../../../utils'
 import { renderReleaseBranchesWorkflow } from '../../release/lines/workflow'
 import { migrateLegacyToolingReferences } from '../../tooling-migration'
 import { isAgentsMarkdownEquivalent, mergeAgentsMarkdown } from '../agents'
+import { createBaselinePlanner } from '../baseline/plan'
 import { setPkgJson } from '../pkg-json'
 import { isLegacyReleaseWorkflow, releaseWorkflowMarker } from '../release-migration/classify'
 import { isTextEquivalent, mergeGitignore } from '../text'
@@ -16,6 +17,7 @@ import { mergeWorkspaceManifest, normalizeWorkspaceManifest } from '../workspace
 
 export async function planAssets(context: UpgradeContext) {
   const { plan, read, put, options, config } = context
+  const baseline = await createBaselinePlanner(context)
   const repoName = await new GitClient({ baseDir: plan.cwd }).getRepoName()
   async function walk(directory: string) {
     for (const item of (await readdir(path.join(plan.assetDir, directory), { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
@@ -35,6 +37,7 @@ export async function planAssets(context: UpgradeContext) {
         }
         const before = await read('target', filename)
         let after = source
+        let upstream = source
         let reason = 'managed-asset'
         let skip = false
         if ((config.skipChangesetMarkdown ?? true) && filename.startsWith('.changeset/') && filename.endsWith('.md')) {
@@ -87,15 +90,29 @@ export async function planAssets(context: UpgradeContext) {
         }
         else if (filename === '.github/ISSUE_TEMPLATE/config.yml') {
           after = Buffer.from(updateIssueTemplateConfig(source.toString(), repoName))
+          upstream = after
           reason = 'repository-issue-links'
         }
         else if (/\.(?:js|mjs|ts|mts|cjs|cts)$/.test(filename)) {
+          upstream = Buffer.from(migrateLegacyToolingReferences(source.toString(), 'repoctl/tooling'))
           const original = (before ?? source).toString()
           const migrated = migrateLegacyToolingReferences(original, 'repoctl/tooling')
           after = Buffer.from(migrated === original ? migrateLegacyToolingReferences(source.toString(), 'repoctl/tooling') : migrated)
           reason = migrated === original ? 'managed-asset' : 'tooling-reference-migration'
         }
-        await put(filename, after, reason, reason.replaceAll('-', ' '), { skip, force: filename === '.github/workflows/release.yml' && options.overwriteRelease === true })
+        const semantic = reason.endsWith('semantic-merge') || reason === 'tooling-reference-migration'
+        const result = skip ? { content: after } : await baseline.asset(filename, assetPath, source, upstream, semantic)
+        if (!result) {
+          continue
+        }
+        if (!semantic) {
+          after = result.content
+        }
+        if ('reason' in result && result.reason) {
+          reason = result.reason
+        }
+        const file = await put(filename, after, reason, reason.replaceAll('-', ' '), { skip, force: filename === '.github/workflows/release.yml' && options.overwriteRelease === true })
+        baseline.annotate(file, result)
       }
       catch (error) {
         context.conflict(filename, error)
@@ -103,4 +120,6 @@ export async function planAssets(context: UpgradeContext) {
     }
   }
   await walk('')
+  await baseline.removals()
+  return baseline
 }
