@@ -136,6 +136,8 @@ affected 模式选择变更包及其直接、传递消费者，包含 private �
 
 `--json`、`--markdown`、`--dry-run`、`--out` 仍然只预览。`--report` 执行同一模型并保存为 `affectedPlan`。`--affected` 不能与 `--full`、`--staged`、`--edit-file` 组合；base/head/filter/global-input 参数必须与 affected 模式一起使用。程序化调用可使用 `resolveAffectedCheckPlan({ cwd, base, head, filters, globalInputs })` 或 `runCheckWithReport({ cwd, affected: true, ... })`。
 
+使用 `repo check --affected --matrix` 将同一计划导出为 GitHub Actions matrix，使用 `--shards 16` 分组。空结果处理和安全的参数数组执行方式见 [CI matrix 配置](/zh/tasks/ci#生成-affected-github-actions-matrix)。
+
 ## 8. 实际执行报告
 
 ```bash
@@ -166,3 +168,4 @@ repo workspace locate client --json
 `locate` 将绝对目录路径（包括目录符号链接）作为精确查询，未指向工作区根目录的绝对路径不会回退成文本搜索。其他查询优先精确匹配包名或相对 workspace 的路径，再按名称、路径和说明搜索；即使从子包调用，相对路径和 `.` 仍相对于 workspace 根目录。唯一匹配只输出绝对路径；没有匹配或存在歧义时退出码为 1，并列出候选。`--interactive` 仅在 TTY 中允许选择，提示写入 stderr；JSON 和 CI 始终返回候选。把结果传给 shell 命令时应为路径加引号。
 
 公共 `getWorkspaceTaskCatalog(cwd, options)` 和 `locateWorkspace(cwd, query)` API 返回 `schemaVersion: 1` 数据。目录提供稳定的排除原因，以及各任务原有脚本和 pnpm executable/args 数组（`--dir`、目录、`run`、任务名）。调用方可以显式执行该参数数组，继续使用 pnpm/Turbo 的行为；搜索本身不会启动任务。
+

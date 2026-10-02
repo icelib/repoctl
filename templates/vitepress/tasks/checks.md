@@ -87,6 +87,8 @@ Execution follows `build → lint → typecheck → tsd → test`, skipping unav
 
 `--json`, `--markdown`, `--dry-run` and `--out` remain previews. `--report` executes the same model and embeds it as `affectedPlan`. `--affected` cannot combine with `--full`, `--staged` or `--edit-file`; base/head/filter/global-input options require affected mode. Programmatic callers use `resolveAffectedCheckPlan({ cwd, base, head, filters, globalInputs })` or `runCheckWithReport({ cwd, affected: true, ... })`.
 
+Export this same plan as a GitHub Actions matrix with `repo check --affected --matrix`; use `--shards 16` to group workspaces. See [CI matrix setup](/tasks/ci#generate-an-affected-github-actions-matrix) for empty-result handling and safe argument-array execution.
+
 ## Execution Reports
 
 ```bash
@@ -117,3 +119,4 @@ repo workspace locate client --json
 `locate` accepts an absolute directory path (including directory symlinks) as an exact query; an absolute path that is not a workspace root never falls back to text search. Other queries prefer an exact package name or workspace-relative path, then search names, paths and descriptions. Relative paths and `.` refer to the workspace root even when invoked from a child package. A unique match prints only its absolute path. Missing or ambiguous matches exit with code 1; ambiguity lists candidates instead of choosing one. `--interactive` enables a choice only in a TTY, with the prompt on stderr; JSON and CI always report candidates. Quote the resulting path when passing it to a shell command.
 
 The public `getWorkspaceTaskCatalog(cwd, options)` and `locateWorkspace(cwd, query)` APIs return `schemaVersion: 1` data. The catalog includes stable exclusion reasons and each task's existing script plus a pnpm executable/argument array (`--dir`, directory, `run`, task). Callers may explicitly execute that array to preserve pnpm and Turbo behavior; searching never launches it.
+

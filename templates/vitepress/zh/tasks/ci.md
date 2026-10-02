@@ -136,6 +136,98 @@ repo ws ls --json --out reports/workspaces.json
 | 输出给脚本         | `--json --out <file>`                              |
 | 输出给人看并脱敏   | `--markdown --redact --out <file>`                 |
 
+## 生成 affected GitHub Actions matrix
+
+```bash
+pnpm exec repo check --affected --base origin/main --matrix
+pnpm exec repo check --affected --base origin/main --filter @scope/web --matrix
+pnpm exec repo check --affected --base origin/main --matrix --shards 16 --out reports/matrix.json
+```
+
+`--matrix` 始终以 JSON 预览，不执行检查，不创建或修改 workflow；只有显式 `--out` 会写出报告。它要求 `--affected`，复用相同的 `--base`、`--head`、可重复的 `--filter` 和 `--global-input`，不能与 `--markdown` 或执行报告选项组合。matrix 本身已经是 JSON 预览，因此 `--json`、`--dry-run` 可省略。
+
+公共 `resolveAffectedCheckMatrix(options)` API 返回 `schemaVersion: 1`、`provider: "github-actions"`、`hasWork`、`grouping`、`summary`、`matrix: { include: [...] }` 和完整 `affectedPlan`。内嵌计划与相同输入的 `resolveAffectedCheckPlan` 一致，保留选择原因、Git 诊断和跳过阶段。**仅将 `matrix` 传给 `fromJSON`**，并在 strategy 展开之前用 `hasWork` 控制 job；无变更或没有可执行阶段时返回 `hasWork: false`、`include: []`。
+
+每个矩阵项包含稳定 `id`、相对 workspace 的 `packages`，以及按顺序排列的 `commands`；命令保留 `executable`/`args`、`targets`、`prerequisiteTargets` 和 `skipReason`。在新 checkout 的根目录执行参数数组，展示用的 `command` 字符串不应用于 shell 求值。每个 job 内始终完整运行 **build → lint → typecheck → tsd → test**，其 build 还包含内部依赖，消费者无需等待其他矩阵 job 的构建产物。缺失脚本仍有明确原因；没有可执行命令的组列在 `summary.skippedPackages`。
+
+默认每个选中的 workspace 对应一个 job。`--shards N`（1–256）先按包目录排序，再循环分配到最多 N 组，不丢弃任何包。超过 GitHub 的 256-job 上限时会明确报错，并提示使用 `--shards 256` 或更少。序列化后的 matrix 还会按 UTF-16 估算检查 1 MB job-output 上限，并为元数据预留少量空间。超限时明确失败，不截断目标；减少分片可以避免重复的依赖构建数据。所有全量回退都保留为**一个完整 job**，即使设置了 `--shards`，以保留根脚本并保守处理不确定的依赖图。Git 基线缺失或引用无效时，沿用 affected 的全量回退，并保留明确的诊断码，不会变成成功的空矩阵。
+
+以下示例拉取完整 Git 历史，使用 PR 的 base SHA。每个 job 检出同一事件提交并按相同 lockfile 安装依赖，只需 `contents: read` 权限。pnpm store 缓存不会替代 job 自身的依赖构建，任务排序和缓存仍由已有 pnpm/Turbo 脚本负责。示例面向 Linux，通过环境变量传递矩阵数据，再执行参数数组，因此含空格、引号或 shell 语法的路径仍只是数据。
+
+```yaml
+name: Affected checks
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      has-work: ${{ steps.matrix.outputs.has-work }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - id: matrix
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          node --input-type=module <<'JS'
+          import { appendFileSync } from 'node:fs'
+          import { resolveAffectedCheckMatrix } from 'repoctl'
+          const result = await resolveAffectedCheckMatrix({
+            cwd: process.cwd(), base: process.env.BASE_SHA, head: 'HEAD', shards: 16,
+          })
+          appendFileSync(process.env.GITHUB_OUTPUT,
+            `has-work=${result.hasWork}\nmatrix=${JSON.stringify(result.matrix)}\n`)
+          if (result.affectedPlan.fallback.length) {
+            console.error('Full fallback:', JSON.stringify(result.affectedPlan.fallback))
+          }
+          JS
+  checks:
+    needs: plan
+    if: ${{ needs.plan.outputs.has-work == 'true' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Run this job's planned stages
+        env:
+          MATRIX_JOB: ${{ toJSON(matrix) }}
+        run: |
+          node --input-type=module <<'JS'
+          import { spawnSync } from 'node:child_process'
+          const job = JSON.parse(process.env.MATRIX_JOB)
+          for (const command of job.commands) {
+            if (command.skipReason) continue
+            const result = spawnSync(command.executable, command.args, {
+              stdio: 'inherit', shell: false,
+            })
+            if (result.error) throw result.error
+            if (result.status !== 0) process.exit(result.status ?? 1)
+          }
+          JS
+```
+
+计划步骤使用 API，避免在选择前生成未跟踪的报告。使用 `--out` 时，应写入已忽略的报告目录。生成 matrix 不会修改或触发远程 workflow。参见 [GitHub matrix 语法](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations) 和 [Turborepo 任务执行](https://turborepo.dev/docs/reference/run)。
+
 ## 文档 Worker
 
 repoctl 文档通过名为 `repoctl-docs` 的 Cloudflare Worker 部署。VitePress 只生成静态资产，Workers Static Assets 直接提供这些文件，因此不需要应用 handler，也不声明 `ASSETS` binding。

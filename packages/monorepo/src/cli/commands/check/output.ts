@@ -76,20 +76,20 @@ function redactCheckPlanValue(value: unknown, replacements: Array<[string, strin
   return value
 }
 
-function redactCheckPlan(plan: CheckPlan): CheckPlan {
+export function redactCheckOutput<T>(value: T, cwd: string): T {
   const candidates: Array<[string, string]> = [
-    [plan.cwd, '<cwd>'],
+    [cwd, '<cwd>'],
     [os.homedir(), '<home>'],
   ]
   const replacements = candidates
     .filter(([search], index, entries) => search.length > 0 && entries.findIndex(([value]) => value === search) === index)
     .sort(([left], [right]) => right.length - left.length)
 
-  return redactCheckPlanValue(plan, replacements) as CheckPlan
+  return redactCheckPlanValue(value, replacements) as T
 }
 
 export function createCheckPlanOutput(plan: CheckPlan, opts: CheckOutputOptions) {
-  const outputPlan = opts.redact ? redactCheckPlan(plan) : plan
+  const outputPlan = opts.redact ? redactCheckOutput(plan, plan.cwd) : plan
   if (opts.json) {
     return JSON.stringify(outputPlan, null, 2)
   }
