@@ -30,6 +30,7 @@ export { areTemplateAssetsPrepared, ensureTemplateAssetsPrepared, prepareAssets 
 export { getWorkspacePackageManager }
 export { scaffoldTemplate, scaffoldWorkspace }
 export * from './instances'
+export * from './parameters'
 export {
   createTemplateCopyFilter,
   isGitignoreFile,
