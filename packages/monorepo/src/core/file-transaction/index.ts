@@ -132,3 +132,6 @@ export async function stageFileTransaction(updates: FileTransactionUpdate[], val
     },
   }
 }
+
+export { writeFileTransaction } from './write'
+export type { FileTransactionChange } from './write'
