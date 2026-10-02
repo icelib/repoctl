@@ -66,3 +66,22 @@ Key areas:
 - upgrade: overwrite behavior and extra targets
 - init: skip steps for README/package.json/pnpm change intent setup
 - mirror: add or override env mirrors
+
+## `commands.doctor`
+
+```ts
+export default defineMonorepoConfig({
+  commands: {
+    doctor: {
+      rules: ['root-scripts', 'commit-hooks'],
+      suppressions: [{
+        id: 'commit-hooks',
+        reason: 'CI validates commits while the hooks migration is scheduled',
+        expires: '2026-12-31',
+      }],
+    },
+  },
+})
+```
+
+Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs `id` and a nonempty `reason`; optional `path` matches an exact workspace-relative finding path. Optional `expires` is an inclusive UTC date (`YYYY-MM-DD`). JSON retains the original finding status, `suppression`, `rawSummary`, and every waiver with its matched count. Only active waivers are excluded from effective `summary` and strict exit status; expired and unmatched waivers remain visible.
