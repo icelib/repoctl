@@ -64,6 +64,23 @@ it('keeps source and Git refs unchanged on a build failure, with no upload', asy
   expect(await snapshot(h.cwd)).toEqual(before)
 }, 120_000)
 
+it('bounds nightly tarball filenames while retaining complete versions and snapshot identity', async () => {
+  const h = await fixture()
+  const identity = { kind: 'nightly' as const, commit: h.options.identity.commit, buildId: 'nightly-portable-artifacts' }
+  const report = await releaseSnapshot({ ...h.options, identity })
+  expect(report.status, report.error).toBe('prepared')
+  expect(new Set(report.packages.map(pkg => pkg.tarball)).size).toBe(2)
+  for (const pkg of report.packages) {
+    expect(path.basename(pkg.tarball!).length).toBeLessThanOrEqual(32)
+    const packed = createPackageFromTarballData(Uint8Array.from(await readFile(pkg.tarball!)))
+    const manifest = JSON.parse(packed.readFile(`/node_modules/${pkg.name}/package.json`))
+    expect(manifest.version).toBe(pkg.version)
+    expect(manifest.version).toContain(identity.commit)
+    expect(manifest.repoctlSnapshot).toMatchObject({ commit: identity.commit, identityKey: report.identityKey })
+  }
+  expect(h.uploads).toEqual([])
+}, 120_000)
+
 it('rejects a packed commit changed by build scripts even when the identity key is retained', async () => {
   const h = await fixture()
   const build = await readFile(path.join(h.cwd, 'build.cjs'), 'utf8')

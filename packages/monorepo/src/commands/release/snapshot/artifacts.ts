@@ -17,7 +17,8 @@ export async function prepareSnapshotArtifacts(source: string, report: SnapshotR
   for (const [index, pkg] of report.packages.entries()) {
     const directory = path.join(report.outputDirectory!, 'tarballs', String(index))
     await mkdir(directory, { recursive: true })
-    snapshotCommand('pnpm', [...isolatedPnpmOptions, 'pack', '--pack-destination', directory], { ...options, cwd: path.join(source, pkg.directory) })
+    // Identity lives in the verified manifest; avoid long name/version-derived paths on Windows.
+    snapshotCommand('pnpm', [...isolatedPnpmOptions, 'pack', '--out', path.join(directory, 'package.tgz')], { ...options, cwd: path.join(source, pkg.directory) })
     const files = (await readdir(directory)).filter(file => file.endsWith('.tgz'))
     if (files.length !== 1) {
       throw new Error(`Expected exactly one snapshot tarball for ${pkg.name}.`)
