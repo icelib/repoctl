@@ -7,7 +7,7 @@ import { fixture, options } from './fixture'
 it('previews exact changes without writes, applies once, and preserves the application', async () => {
   const h = await fixture()
   const before = await h.snapshot()
-  expect(listToolingCapabilities()).toMatchObject([{ id: 'playwright', version: 1 }])
+  expect(listToolingCapabilities()).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'playwright', version: 1 })]))
   const plan = await planToolingCapability(h.root, options)
   expect(await h.snapshot()).toEqual(before)
   expect(plan.status).toBe('ready')

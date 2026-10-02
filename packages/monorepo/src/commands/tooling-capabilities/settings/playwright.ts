@@ -1,9 +1,9 @@
-import type { PackageJson } from '../../types'
-import type { ToolingCapabilityOptions } from './types'
+import type { PackageJson } from '../../../types'
+import type { PlaywrightCapabilityOptions } from '../types'
 import { createHash } from 'node:crypto'
 import path from 'pathe'
-import { canonicalDirectory, checkedFile, hash, readOptional, relativeFile } from '../../core/file-transaction/paths'
-import { clearWorkspaceCache, getWorkspaceData } from '../../core/workspace'
+import { canonicalDirectory, checkedFile, hash, readOptional, relativeFile } from '../../../core/file-transaction/paths'
+import { clearWorkspaceCache, getWorkspaceData } from '../../../core/workspace'
 
 function text(value: unknown, label: string): string {
   if (typeof value !== 'string' || !value.trim() || value.includes('\0')) {
@@ -22,7 +22,7 @@ function port(value: unknown, fallback: number) {
   return Number(value)
 }
 
-export async function resolveCapabilitySettings(cwd: string, input: ToolingCapabilityOptions) {
+export async function resolvePlaywrightSettings(cwd: string, input: PlaywrightCapabilityOptions) {
   if (!input || input.capability !== 'playwright') {
     throw new Error('Unknown tooling capability; run repo tooling list')
   }
@@ -75,7 +75,7 @@ export async function resolveCapabilitySettings(cwd: string, input: ToolingCapab
   if (localPort === ciPort) {
     throw new Error('CI must have a dedicated port different from the local port')
   }
-  const options: ToolingCapabilityOptions = {
+  const options: PlaywrightCapabilityOptions = {
     capability: 'playwright',
     target: name,
     directory,
