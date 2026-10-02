@@ -18,6 +18,7 @@ describe('runDoctor', () => {
     await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
     await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
       name: 'demo-workspace',
+      private: true,
       engines: { node: '>=0' },
       devDependencies: {
         repoctl: '^3.0.0',
@@ -31,6 +32,7 @@ describe('runDoctor', () => {
     }, { spaces: 2 })
     await fs.writeJSON(path.join(pkgDir, 'package.json'), {
       name: '@demo/app',
+      private: true,
       version: '0.0.0',
     }, { spaces: 2 })
     await fs.writeFile(path.join(workspaceDir, 'repoctl.config.ts'), 'export default {}\n')
@@ -45,7 +47,7 @@ describe('runDoctor', () => {
     expect(report.workspaceDir).toBe(normalizedWorkspaceDir)
     expect(report.packageCount).toBe(1)
     expect(report.summary).toEqual({
-      pass: 15,
+      pass: 16,
       warn: 0,
       fail: 0,
     })
@@ -65,6 +67,7 @@ describe('runDoctor', () => {
     await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - apps/*\n  - packages/*\n  - examples/*\n')
     await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
       name: 'demo-workspace',
+      private: true,
       engines: { node: '>=0' },
       devDependencies: {
         repoctl: '^3.0.0',
@@ -78,6 +81,7 @@ describe('runDoctor', () => {
     }, { spaces: 2 })
     await fs.writeJSON(path.join(pkgDir, 'package.json'), {
       name: '@demo/app',
+      private: true,
       version: '0.0.0',
     }, { spaces: 2 })
     await fs.writeFile(path.join(workspaceDir, 'repoctl.config.ts'), 'export default {}\n')
@@ -89,7 +93,7 @@ describe('runDoctor', () => {
     const report = await runDoctor(pkgDir)
 
     expect(report.summary).toEqual({
-      pass: 15,
+      pass: 16,
       warn: 0,
       fail: 0,
     })
@@ -136,6 +140,7 @@ describe('runDoctor', () => {
     await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
     await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
       name: 'broken-workspace',
+      private: true,
       engines: { node: '>=999.0.0' },
       scripts: {
         setup: 'repo init',
@@ -149,7 +154,7 @@ describe('runDoctor', () => {
     const report = await runDoctor(workspaceDir)
 
     expect(report.summary).toEqual({
-      pass: 6,
+      pass: 7,
       warn: 6,
       fail: 3,
     })
@@ -171,6 +176,7 @@ describe('runDoctor', () => {
     await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - apps/*\n  - packages/*\n  - examples/*\n')
     await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
       name: 'demo-workspace',
+      private: true,
       engines: { node: '>=0' },
       devDependencies: {
         repoctl: '^3.0.0',

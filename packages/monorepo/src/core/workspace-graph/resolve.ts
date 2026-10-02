@@ -12,7 +12,7 @@ interface DependencyReference {
   resolution: WorkspaceGraphEdge['resolution']
 }
 
-function parseReference(dependency: string, specifier: string, rootDir: string): DependencyReference | undefined {
+export function parseDependencyReference(dependency: string, specifier: string, rootDir: string): DependencyReference | undefined {
   const workspace = specifier.startsWith('workspace:')
   const local = specifier.startsWith('link:') || specifier.startsWith('file:')
   if (local || (workspace && specifier.slice(10).startsWith('.'))) {
@@ -52,7 +52,7 @@ export function resolveGraphDependency(
   packages: WorkspacePackageWithJsonPath[],
   nodes: WorkspaceGraphNode[],
 ): { target?: string, resolution?: WorkspaceGraphEdge['resolution'], diagnostic?: WorkspaceGraphDiagnostic } {
-  const reference = parseReference(dependency, specifier, source.rootDir)
+  const reference = parseDependencyReference(dependency, specifier, source.rootDir)
   if (!reference) {
     const alias = specifier.startsWith('npm:') ? specifier.slice(4) : undefined
     const separator = alias?.lastIndexOf('@') ?? -1

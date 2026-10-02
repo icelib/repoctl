@@ -4,6 +4,17 @@ import { compareManifest } from '@/commands/doctor/installation/lockfile'
 const entry = (specifier: string) => ({ specifier, version: '1.0.0' })
 
 describe('manifest and lockfile comparison', () => {
+  it('treats both default catalog spellings and storage locations equivalently', () => {
+    const lockfile = { catalogs: { default: { a: entry('^1.0.0') } } }
+    for (const specifier of ['catalog:', 'catalog:default']) {
+      const manifest = { dependencies: { a: specifier } }
+      const importer = { dependencies: { a: entry(specifier) } }
+      for (const workspace of [{ catalog: { a: '^1.0.0' } }, { catalogs: { default: { a: '^1.0.0' } } }]) {
+        expect(compareManifest(manifest, importer, workspace, lockfile)).toEqual({ mismatches: [], unknown: [] })
+      }
+      expect(compareManifest(manifest, importer, { catalog: { a: '^1.0.0' }, catalogs: { default: { a: '^1.0.0' } } }, lockfile)).toEqual({ mismatches: [], unknown: ['dependencies.a'] })
+    }
+  })
   it('resolves default and named catalogs before checking manifest changes', () => {
     const workspace = { catalog: { a: '^1.0.0' }, catalogs: { tools: { b: '~2.0.0' } } }
     const manifest = { dependencies: { a: 'catalog:', b: 'catalog:tools' } }

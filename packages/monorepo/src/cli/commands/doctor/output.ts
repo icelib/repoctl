@@ -81,7 +81,7 @@ function formatDoctorMarkdown(report: DoctorReport) {
       ? [
           localize('## Findings', '## 问题'),
           '',
-          ...warningsAndFailures.map(check => localize(`- ${check.status}: ${check.title}${check.fix ? ` (fix: ${check.fix})` : ''}`, `- ${check.status}: ${check.title}${check.fix ? `（修复：${check.fix}）` : ''}`)),
+          ...warningsAndFailures.map(check => localize(`- ${check.status}: ${check.title}${check.fix ? ` (fix: ${check.fix})` : ''} — ${check.detail}`, `- ${check.status}: ${check.title}${check.fix ? `（修复：${check.fix}）` : ''} — ${check.detail}`)),
           '',
         ]
       : []),

@@ -1,26 +1,32 @@
 import type { DoctorCheck, DoctorContext } from '../types'
 import { isDeepStrictEqual } from 'node:util'
 import path from 'pathe'
-import { getWorkspacePackages } from '../../../core/workspace'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
 import { compareManifest, readLockfile, readYaml, record } from './lockfile'
 import { checkInstallation } from './state'
 
 export async function collectInstallationChecks(context: DoctorContext): Promise<DoctorCheck[]> {
-  const { workspaceDir, packageJson, hasWorkspaceManifest } = context
-  const packages = hasWorkspaceManifest
-    ? await getWorkspacePackages(workspaceDir, { ignorePrivatePackage: false })
-    : []
-  const manifests = [{ dir: '.', manifest: { ...packageJson } }, ...await Promise.all(packages.map(async pkg => ({
-    dir: path.relative(workspaceDir, pkg.rootDir),
-    manifest: await fs.readJson<Record<string, unknown>>(pkg.pkgJsonPath),
-  })))]
+  const { workspaceDir, packageJson } = context
+  const manifests = context.manifests.filter(entry => entry.data).map(entry => ({
+    dir: path.relative(workspaceDir, entry.directory) || '.',
+    manifest: entry.data!,
+  }))
   const lockfilePath = path.join(workspaceDir, 'pnpm-lock.yaml')
   const lockfile = await readLockfile(lockfilePath)
   const workspace = (await readYaml(path.join(workspaceDir, 'pnpm-workspace.yaml')))?.[0] ?? {}
   const mismatches: string[] = []
-  const unknown: string[] = []
+  const unknown = context.manifests.filter(entry => entry.error).map(entry => `${entry.path} (invalid manifest)`)
+  for (const entry of context.manifests) {
+    for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+      if (entry.data?.[section] !== undefined && !record(entry.data[section])) {
+        unknown.push(`${entry.path}: ${section} (invalid structure)`)
+      }
+    }
+  }
+  if (context.workspaceManifestError || !context.manifests.some(entry => entry.directory === workspaceDir && entry.data)) {
+    unknown.push('workspace or root package manifest is unreadable')
+  }
   if (lockfile) {
     const overrides = record(workspace['overrides']) ?? record(record(packageJson)?.['pnpm'])?.['overrides'] ?? {}
     if (!isDeepStrictEqual(overrides, lockfile['overrides'] ?? {})) {
