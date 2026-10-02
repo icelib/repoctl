@@ -107,3 +107,41 @@ repo cfg i --markdown --redact --out reports/config.md
 
 工作区之外的目录、符号链接目标或父路径、链接的根 package.json，以及
 会连带删除未选嵌套包的目标会在写入前被拒绝。此命令不修改消费者的依赖声明。
+
+## TypeScript project references
+
+无需启用写入，即可检查现有引用图：
+
+```bash
+repo tooling references check --json
+repo tooling references plan > references-plan.json
+repo tooling references sync --dry-run
+repo tooling references apply references-plan.json
+repo tooling references sync
+```
+
+发现诊断或待同步差异时，`check` 返回退出码 1。所有命令输出带版本的 JSON。`check`、`plan`、`sync --dry-run` 不写文件；`apply` 和 `sync` 要求显式启用：
+
+```ts
+export default defineMonorepoConfig({
+  tooling: {
+    projectReferences: {
+      enabled: true,
+      root: 'tsconfig.json',
+      projects: ['packages/*/tsconfig.json', 'apps/*/tsconfig.build.json'],
+      exclude: ['packages/legacy/tsconfig.json'],
+      relations: [
+        { source: 'packages/app/tsconfig.json', target: 'packages/shared/tsconfig.json' },
+      ],
+    },
+  },
+})
+```
+
+根聚合配置和目标 tsconfig 必须已存在。不填 `projects` 时，发现实际 pnpm workspace 包（含 private 包）下的 `tsconfig.json`；没有 TS 配置的包会跳过。模式以 workspace 为基准，可选择同一包的多个配置。`exclude` 只排除受管发现，不删除已有手工引用。workspace 包以外的配置不自动入选，也不会把 repoctl 源仓库的引用清单复制给用户项目。
+
+根配置聚合选中的工程；只有显式 `relations` 才会添加工程之间的编译关系，npm 依赖不会自动变为 TS 引用。目标 workspace 需要安装 TypeScript，命令使用该编译器读取继承配置，在写入前检查缺失目标、循环、`composite`、声明输出与 `noEmit` 兼容性。不会强制启用 composite、修改编译选项、创建 tsconfig 或替换脚本。计划提供验证命令，优先保留包原有的 `typecheck`（包括 `vue-tsc`）入口；同步后运行这些命令验证真实源码。计划阶段检查配置，不代替完整源码编译。
+
+已有引用归用户维护。只有本功能新增的条目会记入 `.repoctl/typescript-references.json`，请将该文件与 tsconfig 一起提交。删除或排除项目只移除登记过的引用。用户编辑或移除受管条目会阻止同步：可以恢复条目，或明确删除登记记录，将该条目重新交给用户管理。保留 `references` 以外的 JSONC 字节、BOM 和换行风格，根引用与显式关系使用稳定的相对配置文件路径。
+
+保存的计划包含输入指纹和精确 diff。过期或被修改的计划在写入前失败；重复应用已完成的计划不产生变化。`.repoctl/typescript-references.lock` 进程锁覆盖重新校验、写入、验证、回滚和清理。多文件变更先准备备份，再统一替换并验证，失败会回滚。若并发编辑阻止安全回滚，错误会列出保留的恢复文件：保留这些文件，合并业务修改与原始备份，一致恢复归属登记后重新生成计划。进程被终止也可能留下 `.repoctl-references-*.bak`/`.tmp`；确认没有写入进程，恢复对应备份与归属登记后，再移除遗留锁；不会自动覆盖并发编辑。

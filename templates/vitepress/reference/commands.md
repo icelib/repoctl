@@ -71,7 +71,25 @@ repo new docs --template nimbus --json --out plans/docs.json
 
 Use it to create packages and apps. Explicit template keys are validated first; invalid keys fail with suggestions instead of silently falling back.
 
+## `repo package check`
+
+```bash
+repo package check
+repo package check --filter '@scope/*' --strict
+repo package check --filter my-library --keep-temp --json
+```
+
+Build the selected workspace packages and their dependencies in dependency order, then validate real `pnpm pack` tarballs with publint 0.3.25 and ATTW 0.18.5. Build failure prevents all packing. Local development prerequisites are included in the build; private prerequisites can build without being packed or checked. Private packages are reported as skipped unless `--include-private` is supplied. Repeat `--filter` to combine pnpm selectors; `--build-script` changes the default `build` script. Packages without that script are treated as already authored artifacts.
+
+Independent temporary consumers install the tarballs and their local runtime dependency tarballs, then exercise declared Node ESM/CJS entrypoints and TypeScript NodeNext consumption. TypeScript consumption uses ATTW's pinned TypeScript 5.6.1-rc. Undeclared module formats are not required. Browser-only and non-JavaScript asset exports receive manifest/type analysis rather than Node execution; JavaScript bins receive syntax checks, without invoking application commands. Installation can contact the registry, while dependency install scripts are disabled. Workspace build and pack lifecycle scripts run normally.
+
+JSON contains each package's file list, stable diagnostic source/code, original upstream details, and subprocess argument arrays. `--strict` also fails on warnings. `--keep-temp` preserves the tarballs, consumer manifests and command working directories for reproduction; otherwise temporary files are removed even after failure. The command never publishes, changes package versions, or writes release state.
+
+To use it as a release gate, add a package script such as `"package:check": "repoctl package check --strict"` and reference `package:check` in `commands.release.hooks.verify`. Do not put this command in a build/prepack script, since it runs those stages itself.
+
 ## `repo check`
+
+For explicitly enabled unused-code and dependency analysis, see [`repo check knip`](./knip.md).
 
 ```bash
 repo check
@@ -165,3 +183,7 @@ repo skills sync --codex
 - [Add checks to CI](/tasks/ci)
 - [Troubleshoot](/tasks/troubleshooting)
 - [Command Aliases](./aliases.md)
+
+## `repo tooling references`
+
+`check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.

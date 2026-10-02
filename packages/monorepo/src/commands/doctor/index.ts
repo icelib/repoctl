@@ -1,4 +1,5 @@
 import type { DoctorReport } from './types'
+import { collectAdmissionChecks } from './admission'
 import { collectBoundaryChecks } from './boundaries'
 import { collectDoctorContext } from './context'
 import { summarizeChecks } from './helpers'
@@ -18,6 +19,7 @@ export async function runDoctor(cwd: string) {
     ...collectWorkspaceChecks(context),
     ...collectManifestChecks(context),
     ...await collectBoundaryChecks(context.workspaceDir),
+    ...await collectAdmissionChecks(context.workspaceDir),
     checkNodeVersion(context),
     await checkNodeVersionFiles(context),
     ...await collectPnpmChecks(context),
