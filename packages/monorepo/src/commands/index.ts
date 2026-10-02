@@ -139,6 +139,9 @@ export { checkPackages } from './package-check'
 
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+export { resolveReleaseBranches } from './release/lines'
+
+export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
 export { createReleasePlan } from './release/plan'
 
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'

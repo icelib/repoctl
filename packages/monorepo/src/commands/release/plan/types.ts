@@ -1,3 +1,4 @@
+import type { ReleaseBranchRule } from '../lines/types'
 import type { ReleaseNoteDocument } from '../notes/model'
 import type { ReleaseOptions } from '../types'
 
@@ -16,6 +17,7 @@ export interface ReleasePlanPackage {
 
 export interface ReleasePlan {
   schemaVersion: 1
+  branchRule: ReleaseBranchRule | null
   cwd: string
   pnpmVersion: string | null
   nativeFormat: 'json' | 'text' | null
@@ -25,4 +27,4 @@ export interface ReleasePlan {
   notes: ReleaseNoteDocument
 }
 
-export type ReleasePlanOptions = Pick<ReleaseOptions, 'cwd' | 'env' | 'spawn'>
+export type ReleasePlanOptions = Pick<ReleaseOptions, 'cwd' | 'env' | 'spawn' | 'branch' | 'config'>
