@@ -187,3 +187,7 @@ repo skills sync --codex
 ### Public API baselines
 
 `repoctl package api check [--package <selectors...>] [--json]` compares built public declarations with explicitly configured API Extractor reports. Set `tooling.apiReports` with package-relative declaration entries and workspace-relative `.api.md` baselines; install a local stable `@microsoft/api-extractor >=7.52.12 <8` and build first. `package api update --json` only previews; review its output, then pass it to `package api update --apply <plan.json>`. Updates revalidate inputs and use guarded transactions. Signature diffs and pending change intents are advisory; no complete SemVer inference or release is performed.
+
+## `repo tooling references`
+
+`check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.

@@ -7,6 +7,7 @@ import type { StylelintConfig as IcebreakerStylelintConfigOptions } from '@icebr
 import type { Configuration as LintStagedConfiguration } from 'lint-staged'
 import type { ViteUserConfig } from 'vitest/config'
 import type { PublicApiConfig } from '../../commands/api-report/types'
+import type { ProjectReferencesConfig } from '../project-references'
 
 /**
  * `tooling.commitlint` 配置块。
@@ -232,6 +233,7 @@ export interface ToolingConfig {
   stylelint?: StylelintToolingConfig
   lintStaged?: LintStagedToolingConfig
   tsconfig?: TsconfigToolingConfig
+  projectReferences?: ProjectReferencesConfig
   vitest?: VitestToolingConfig
   vitestProject?: VitestProjectToolingConfig
   husky?: HuskyToolingConfig

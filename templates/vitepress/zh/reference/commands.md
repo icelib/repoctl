@@ -234,3 +234,7 @@ repo skills sync --codex
 ### 公共 API 基线
 
 `repoctl package api check [--package <selectors...>] [--json]` 比较已构建公开声明与显式配置的 API Extractor 报告。通过 `tooling.apiReports` 声明相对包目录的声明入口和相对工作区的 `.api.md` 基线，先安装本地稳定版 `@microsoft/api-extractor >=7.52.12 <8` 并构建。`package api update --json` 只预览；审核后使用 `package api update --apply <plan.json>` 更新。执行重新验证输入并使用文件事务，保留冲突与恢复提示。签名 diff 和未消费 change intents 仅作建议，不自动推断完整 SemVer 或发布。
+
+## `repo tooling references`
+
+`check --json` 无需启用即可检查已有引用；`plan` 和 `sync --dry-run` 只读输出稳定 JSON。显式配置 `tooling.projectReferences.enabled: true` 后，使用 `sync` 或 `apply <plan.json>` 同步受管引用。保留手工引用及 TypeScript/Vue 原有验证入口；不兼容编译选项、循环、缺失目标和过期计划会阻止应用。[配置参考](./config#typescript-project-references)说明了发现规则、显式编译关系、归属和恢复方式。
