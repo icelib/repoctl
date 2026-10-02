@@ -150,3 +150,19 @@ JSON 的 `schemaVersion` 为 `1`，包含模式、目录、开始与结束时间
 报告记录根脚本或 verify 阶段，不展开 Turbo、lint-staged 内部任务。staged 模式的类型检查由 pre-commit 中的 lint-staged 配置执行，单独的 staged-typecheck 没有显式文件参数，会标记为 skipped。报告不收集环境变量值和子进程输出；`--redact` 会替换目录及命令参数中的 workspace/home 路径前缀。
 
 程序化 API `runCheckWithReport({ cwd, full: true, signal })` 返回同样的报告，不退出调用方进程；可传入 `AbortSignal` 取消正在执行的命令。
+
+## 查找工作区可用任务
+
+`repo workspace tasks` 列出 package.json 中实际存在的脚本，默认包含根级任务和 private 应用；没有脚本的包会明确标出。查询文本按名称、路径、说明和任务名进行字面匹配，`--script` 要求脚本名完全一致。发现与定位均不执行脚本、不写入文件。
+
+```bash
+repo workspace tasks client
+repo workspace tasks --script test --json
+repo workspace tasks --no-private --no-root
+repo workspace locate @scope/client
+repo workspace locate client --json
+```
+
+`locate` 将绝对目录路径（包括目录符号链接）作为精确查询，未指向工作区根目录的绝对路径不会回退成文本搜索。其他查询优先精确匹配包名或相对 workspace 的路径，再按名称、路径和说明搜索；即使从子包调用，相对路径和 `.` 仍相对于 workspace 根目录。唯一匹配只输出绝对路径；没有匹配或存在歧义时退出码为 1，并列出候选。`--interactive` 仅在 TTY 中允许选择，提示写入 stderr；JSON 和 CI 始终返回候选。把结果传给 shell 命令时应为路径加引号。
+
+公共 `getWorkspaceTaskCatalog(cwd, options)` 和 `locateWorkspace(cwd, query)` API 返回 `schemaVersion: 1` 数据。目录提供稳定的排除原因，以及各任务原有脚本和 pnpm executable/args 数组（`--dir`、目录、`run`、任务名）。调用方可以显式执行该参数数组，继续使用 pnpm/Turbo 的行为；搜索本身不会启动任务。
