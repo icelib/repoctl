@@ -25,10 +25,25 @@ async function fixture() {
 }
 
 function invoke(root: string, lang = 'en', markdown = false, env: NodeJS.ProcessEnv = {}) {
+  const childEnv = { ...process.env }
+  // Windows compares environment names case-insensitively. Remove inherited
+  // aliases before overriding/deleting a value; undefined alone leaves aliases.
+  for (const layer of [{ CI: 'true', NODE_ENV: 'production', TEST: undefined, CONSOLA_LEVEL: '3', npm_config_user_agent: 'pnpm/12.8.1 npm/? node/v24', npm_execpath: '/fixture/pnpm.cjs' }, env]) {
+    for (const [key, value] of Object.entries(layer)) {
+      for (const inherited of Object.keys(childEnv)) {
+        if (inherited.toLowerCase() === key.toLowerCase()) {
+          delete childEnv[inherited]
+        }
+      }
+      if (value !== undefined) {
+        childEnv[key] = value
+      }
+    }
+  }
   const result = spawnSync(process.execPath, [cli, '--lang', lang, 'doctor', markdown ? '--markdown' : '--json'], {
     cwd: path.join(root, 'packages/demo'),
     encoding: 'utf8',
-    env: { ...process.env, CI: 'true', NODE_ENV: 'production', TEST: undefined, CONSOLA_LEVEL: '3', npm_config_user_agent: 'pnpm/12.8.1 npm/? node/v24', npm_execpath: '/fixture/pnpm.cjs', ...env },
+    env: childEnv,
     timeout: 30000,
   })
   if (result.error || !result.stdout) {
