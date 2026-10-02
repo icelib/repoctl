@@ -226,3 +226,37 @@ repo templates recover-upgrade packages/shared-utils --apply --json
 Recovery preview is read-only. Applying recovery restores recorded files and the previous source version only when each affected path still matches either its before or after state; conflicting business edits must be preserved and resolved first. It does not replay the failed upgrade. A process crash can leave `.repoctl/template-instances.lock`; verify its recorded process has stopped before removing that lock and applying recovery. A failure to clean up after metadata commit explicitly reports that the upgrade was applied; recovery still rolls that recorded operation back.
 
 Recovery records contain local before/after content only for files changed by that upgrade, and are removed on successful completion or recovery. Treat them as local backups and exclude `.repoctl/template-upgrades/` from version control. Keep the registry and template baselines tracked. JSON previews also contain template-managed candidate contents and should be handled accordingly. `--out <file>` explicitly writes a report even in preview mode.
+
+## Diagnose versions and managed file drift
+
+```sh
+repo templates drift --json
+repo templates drift --source-dir ../templates-2.2.0 --markdown --out reports/template-drift.md
+repo templates drift --remote --strict
+repo doctor --rules template-instance-baseline,template-instance-version,template-instance-drift,root-asset-drift --strict
+```
+
+Drift diagnosis is read-only. It does not update source versions, snapshots, registry entries or business files. `--out` writes only the requested report. Reports contain paths and content hashes, without business file bodies.
+
+The default comparison uses the actual installed template package metadata and performs no network request. `--source-dir` selects metadata from an extracted package, without executing its scripts. `--remote` explicitly queries the public npm registry's `latest` dist-tag, with a timeout; it cannot be combined with `--source-dir`. A failed, malformed or mismatched response remains unavailable. A local `same` result means only that the compared versions match, not that the package is remotely latest. A `newer` result identifies a newer package version, not a claim that every individual template changed. Custom snapshot sources remain unversioned with an `unknown` version comparison.
+
+Each instance or root asset reports baseline validity, version comparison (`newer`, `same`, `ahead`, `unknown`) and local drift independently. Only paths in retained trustworthy baselines are inspected. Business additions are outside ownership; user deletions appear as `deleted`, and persistent upgrade exclusions appear as `excluded` without reading their content. Unsafe or unreadable paths remain `unavailable`. Root assets enter comparison only through validated records in `.repoctl/baselines/root/`; absent registries mean unregistered, not verified healthy.
+
+Local modifications, deletions, newer known versions and missing evidence are warnings by default. `--strict` fails when any warning remains effective. The doctor rules are `template-version-evidence`, `template-instance-registry`, `template-instance-baseline`, `template-instance-version`, `template-instance-drift`, `root-asset-registry`, `root-asset-version` and `root-asset-drift`.
+
+Reuse `commands.doctor.suppressions` for reasoned decisions. An exact workspace-relative path scopes a decision to one finding; omission covers that rule across instances. Active suppressions affect effective counts and strict exits, while raw findings, reasons, expired entries and unmatched entries remain visible. Suppression does not transfer file ownership; use instance upgrade exclusions when a file should leave template management.
+
+```ts
+export default {
+  commands: {
+    doctor: {
+      suppressions: [{
+        id: 'template-instance-drift',
+        path: 'packages/shared-utils/README.md',
+        reason: 'The team maintains this documentation separately',
+        expires: '2027-01-31',
+      }],
+    },
+  },
+}
+```

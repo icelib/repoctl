@@ -132,8 +132,12 @@ export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus,
 export { applyDependencyFixPlan, checkDependencies, planDependencyFix } from './deps'
 export { checkPeerDependencies } from './deps/peers'
 export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport } from './deps/peers'
+export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
+export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+
 export { createReleasePlan } from './release/plan'
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
+export * from './template-drift'
 export * from './template-instances'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
