@@ -1,0 +1,73 @@
+import type { UpgradeApplyOptions, UpgradeApplyResult, UpgradePlan } from '../../../types/upgrade'
+import { findWorkspacePackages } from '@pnpm/workspace.find-packages'
+import path from 'pathe'
+import { assetsDir } from '../../../constants'
+import { clearWorkspaceCache } from '../../../core/workspace'
+import { canonicalDirectory, hash, readOptional } from '../plan/files'
+import { writeUpgradeTransaction } from './transaction'
+import { actionable, validateUpgradePlan } from './validate'
+
+/** Apply reviewed bytes only after all plan preconditions have been checked. */
+export async function applyUpgradePlan(cwd: string, plan: UpgradePlan, options: UpgradeApplyOptions = {}): Promise<UpgradeApplyResult> {
+  validateUpgradePlan(plan)
+  if (await canonicalDirectory(path.resolve(cwd)) !== plan.cwd || await canonicalDirectory(plan.rootDir) !== plan.rootDir
+    || await canonicalDirectory(assetsDir) !== plan.assetDir) {
+    throw new Error('Upgrade plan belongs to another directory or asset installation.')
+  }
+  const selected = new Set(options.files ?? plan.files.filter(actionable).map(file => file.path))
+  if ([...selected].some(filename => !plan.files.some(file => file.path === filename && actionable(file)))) {
+    throw new Error('Selection contains an unplanned upgrade path.')
+  }
+  for (const file of plan.files.filter(actionable)) {
+    if (file.group && selected.has(file.path) && plan.files.some(other => other.group === file.group && actionable(other) && !selected.has(other.path))) {
+      throw new Error(`Apply every file in migration group ${file.group} together.`)
+    }
+  }
+  const conflicts: string[] = []
+  let pending = 0
+  let applied = 0
+  for (const input of plan.inputs) {
+    const root = input.area === 'target' ? plan.rootDir : input.area === 'asset' ? plan.assetDir : path.dirname(input.path)
+    const current = await readOptional(root, input.area === 'config' ? path.basename(input.path) : input.path)
+    const currentHash = current === null ? null : hash(current)
+    const relative = input.area === 'config' ? path.relative(plan.rootDir, input.path) : input.path
+    const file = input.area !== 'asset' ? plan.files.find(item => item.path === relative && selected.has(item.path)) : undefined
+    if (currentHash === input.hash) {
+      if (file && input.area === 'target') {
+        pending++
+      }
+    }
+    else if (file && currentHash === file.afterHash) {
+      if (input.area === 'target') {
+        applied++
+      }
+    }
+    else {
+      conflicts.push(`${input.area}:${input.path}`)
+    }
+  }
+  if (plan.discovery) {
+    const packages = await findWorkspacePackages(plan.rootDir, plan.discovery.patterns ? { patterns: plan.discovery.patterns } : {})
+    const manifests = packages.map(pkg => path.relative(plan.rootDir, path.join(path.resolve(pkg.rootDir), 'package.json'))).sort()
+    if (JSON.stringify(manifests) !== JSON.stringify(plan.discovery.manifests)) {
+      conflicts.push('workspace package set')
+    }
+  }
+  if (conflicts.length) {
+    throw new Error(`Upgrade conflicts; regenerate the plan: ${conflicts.join(', ')}`)
+  }
+  if (pending && applied) {
+    throw new Error('Upgrade plan is partially applied; restore retained backups or review a new plan.')
+  }
+  if (!pending) {
+    return { status: 'unchanged', changed: [] }
+  }
+  const files = plan.files.filter(file => selected.has(file.path))
+  try {
+    await writeUpgradeTransaction(plan.rootDir, files)
+  }
+  finally {
+    clearWorkspaceCache()
+  }
+  return { status: 'applied', changed: files.map(file => file.path) }
+}

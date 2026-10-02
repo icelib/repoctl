@@ -135,3 +135,4 @@ export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport }
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
 export { createReleasePlan } from './release/plan'
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
+export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'

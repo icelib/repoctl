@@ -1,14 +1,13 @@
 import type { Command } from '@icebreakers/monorepo-templates'
 import type { DoctorReport } from '../../commands/doctor'
-import type { CliOpts } from '../../types'
 import process from 'node:process'
 import path from 'pathe'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import fs from '../../utils/fs'
-import { normalizeCliOpts } from '../utils'
 import { registerCheckCommand } from './check'
 import { createDoctorReportOutput, createInteractiveDoctorReportOutput, hasDoctorBlockingIssues } from './doctor/output'
+import { registerUpgradeCommand } from './upgrade'
 
 interface InitCliOptions {
   force?: boolean
@@ -130,19 +129,5 @@ export function registerTopLevelCommands(program: Command, cwd: string) {
       logger.success(localize('Doctor finished.', 'Doctor 诊断完成。'))
     })
 
-  program.command('upgrade')
-    .description(localize('Synchronize standard repository assets and scripts', '同步仓库标准资产与脚本'))
-    .option('-i,--interactive', localize('Select managed files interactively', '交互式选择受管文件'))
-    .option('-c,--core', localize('Synchronize core configuration without GitHub assets', '仅同步核心配置，跳过 GitHub 相关资产'))
-    .option('--outDir <dir>', localize('Output directory', '输出目录'))
-    .option('-s,--skip-overwrite', localize('Preserve existing files', '保留已存在文件'))
-    .option('-y, --yes', localize('Skip prompts and overwrite drifted managed assets', '跳过交互并覆盖 drifted 标准资产'))
-    .option('--overwrite', localize('Overwrite drifted managed assets', '覆盖 drifted 标准资产'))
-    .option('--no-overwrite', localize('Preserve drifted managed assets', '不覆盖 drifted 标准资产'))
-    .option('--overwrite-release', localize('Overwrite an unmarked custom release workflow', '覆盖未标记的自定义 release workflow'))
-    .action(async (opts: CliOpts) => {
-      const { upgradeMonorepo } = await import('@/commands')
-      await upgradeMonorepo(normalizeCliOpts(cwd, opts))
-      logger.success(localize('Upgrade finished.', '升级完成。'))
-    })
+  registerUpgradeCommand(program, cwd)
 }

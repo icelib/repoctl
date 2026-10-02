@@ -99,9 +99,23 @@ repo upgrade --no-overwrite
 repo upgrade --core
 repo upgrade -i
 repo upgrade -s
+repo upgrade --dry-run
+repo upgrade --json > upgrade-plan.json
+repo upgrade --markdown
+repo upgrade --apply upgrade-plan.json
 ```
 
 Use it to sync standard assets and scripts. `--core` skips GitHub-related assets. `--no-overwrite` preserves changed files.
+
+`--dry-run`, `--json` and `--markdown` always preview without writes or prompts. Every selected asset has an `add`, `modify`, `delete`, `identical`, `skip` or `conflict` status and a reason. Package scripts/dependencies, workspace settings, AGENTS sections, gitignore rules, tooling references and legacy versioning migration all use the same plan. Text and Markdown show per-file unified diffs; binary files and text larger than 256 KiB combined are explicitly marked without a fabricated diff.
+
+`--apply` applies every actionable entry in a reviewed JSON plan, using its exact bytes. The ordinary command retains interactive overwrite selection; non-interactive execution without `--yes` writes only approved additions. All approvals happen before the first write. `--no-overwrite` and `-s` also preserve legacy metadata. Custom release workflows remain protected unless `--overwrite-release` is explicit; existing licenses are preserved. A prerelease lane migration and its metadata deletion form one indivisible selection group. Unknown prerelease state stays on disk for manual migration.
+
+Plans record the original target, asset and local configuration hashes. Application checks all inputs before any replacement, rejects concurrent edits or a changed workspace package set, and treats a fully applied plan as a no-op. It creates original `.repoctl-upgrade-*.bak` backups before replacing files and rolls back a failed operation. When a concurrent edit prevents rollback, the error identifies retained originals. After a process interruption, inspect those backups, restore originals as needed, remove leftover `.tmp` files and generate a new plan. Unrelated files and Git refs/index are untouched.
+
+Each preview refreshes configuration entries, inherited configs and statically resolved local imports, including literal dynamic imports, in memory. These files join the input checks; module-relative paths remain intact. Installed packages, computed imports, environment variables and arbitrary filesystem/network reads are outside this tracked module set, so regenerate the plan when those runtime inputs change. Executable configuration must itself avoid side effects for a read-only preview.
+
+Preview never generates missing template assets. An `assets-not-prepared` blocker means the package installation must be repaired first; source contributors can run `pnpm --filter @icebreakers/monorepo-templates sync:assets` explicitly. Plans belong to the same working directory, output directory and installed asset location. Public APIs are `planUpgrade(options)`, `formatUpgradePlan(plan, 'text' | 'markdown')`, `applyUpgradePlan(cwd, plan, { files? })` and `upgradeMonorepo({ dryRun: true })`; `UpgradePlan` includes base64 payloads for exact application. `repo workspace upgrade` and `repo ws up` share these options.
 
 ## Workspace Dependencies
 
