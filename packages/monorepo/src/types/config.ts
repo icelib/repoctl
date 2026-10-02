@@ -1,6 +1,7 @@
 import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
 import type { AgenticTemplateFormat } from '../commands/ai'
 import type { CreateNewProjectOptions } from '../commands/create'
+import type { DependencyAdmissionConfig } from '../commands/deps/admission/types'
 import type { InitPreset, InitToolingTarget } from '../commands/init'
 import type { WorkspaceBoundariesConfig } from '../core/workspace-boundaries/types'
 import type { CleanCommandConfig } from './clean'
@@ -176,6 +177,8 @@ export interface MirrorCommandConfig {
  * 项目级配置入口，按命令划分可插拔的配置块。
  */
 export interface MonorepoConfig {
+  /** Offline admission of direct third-party declarations, also checked by doctor. */
+  dependencyPolicy?: DependencyAdmissionConfig
   /** Internal manifest dependency policies, also checked by doctor when configured. */
   boundaries?: WorkspaceBoundariesConfig
   /**

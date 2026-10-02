@@ -130,6 +130,8 @@ export type { AffectedCheckMatrix, AffectedCheckMatrixJob, AffectedCheckMatrixOp
 
 export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus, CheckExecutionTask } from './check/types'
 export { applyDependencyFixPlan, checkDependencies, planDependencyFix } from './deps'
+export { checkDependencyAdmission } from './deps/admission'
+export type { AdmissionDeclaration, DependencyAdmissionConfig, DependencyAdmissionException, DependencyAdmissionFinding, DependencyAdmissionOptions, DependencyAdmissionReport, DependencyAdmissionRule } from './deps/admission'
 export { checkPeerDependencies } from './deps/peers'
 export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport } from './deps/peers'
 export { checkPackages } from './package-check'
@@ -137,5 +139,6 @@ export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
 export { createReleasePlan } from './release/plan'
+
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
