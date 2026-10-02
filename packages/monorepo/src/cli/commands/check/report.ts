@@ -1,5 +1,6 @@
 import type { CheckExecutionReport } from '../../../commands/check/types'
 import os from 'node:os'
+import { formatAffectedCheckPlan } from './affected'
 
 export function createCheckReportOutput(report: CheckExecutionReport, format: 'json' | 'markdown', redact = false) {
   let serialized = JSON.stringify(report)
@@ -31,5 +32,6 @@ export function createCheckReportOutput(report: CheckExecutionReport, format: 'j
     '| Task | Command | Status | Duration (ms) | Exit code | Signal | Reason |',
     '| --- | --- | --- | ---: | ---: | --- | --- |',
     ...output.tasks.map(task => `| ${[task.name, [task.executable, ...task.args].join(' '), task.status, task.durationMs.toFixed(1), task.exitCode, task.signal, task.reason ?? task.errorCode].map(cell).join(' | ')} |`),
+    ...(output.affectedPlan ? ['', formatAffectedCheckPlan(output.affectedPlan, true)] : []),
   ].join('\n')
 }

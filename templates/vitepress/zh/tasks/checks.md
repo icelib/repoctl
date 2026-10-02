@@ -117,7 +117,26 @@ repo check --edit-file .git/COMMIT_EDITMSG
 | CI 门禁            | `repo doctor --strict` 后接 `repo check --full`   |
 | 只生成计划         | `repo check --json --out reports/check-plan.json` |
 
-## 7. 实际执行报告
+## 7. Affected 校验
+
+```bash
+repo check --affected --base origin/main --head HEAD --json
+repo check --affected --base HEAD~1 --filter @acme/web --dry-run
+repo check --affected --global-input 'shared-config/**'
+repo check --affected --base origin/main --report reports/affected.json
+```
+
+affected 模式选择变更包及其直接、传递消费者，包含 private 应用。JSON schema version `1` 记录 Git 范围、文件归属、依赖路径、回退原因、包选择和任务跳过原因。可重复的 `--filter` 接受精确包名或 workspace 相对目录，与 affected 集合取交集。交集为空或缺少脚本时会明确说明，不会执行没有过滤条件的递归命令。
+
+默认比较 `origin/main` 与 `HEAD` 的 merge base 到 `HEAD`，并纳入当前检出的暂存、未暂存和未跟踪文件。`--head` 必须指向当前 HEAD。引用缺失、浅克隆或历史不足、非当前 head、Git 不可用，以及 workspace 位于 Git 根目录下层时，都会明确全量回退。无法安全发现 workspace 时直接失败，不返回误导性的零影响计划。删除文件和跨包重命名两侧保留归属；包清单修改、新增或删除触发全量，因为依赖关系可能已经改变。
+
+默认全局输入包括根 package/workspace/lock/Turbo 文件、TypeScript/lint/test/commit 配置、`.npmrc`、`.pnpmfile.*`、Node 版本文件、`.github/**`、`.husky/**`、`scripts/**` 和 `patches/**`。Turbo `globalDependencies` 与可重复的 `--global-input` glob 会追加到规则中。无法归属的未知文件也触发全量。根 Markdown、`docs/**` 和许可证/notice 文档默认忽略，但全局规则优先；workspace 包内文件仍属于该包输入。存在变更时，无法读取的 Turbo 配置或未解析图诊断（包括 catalog）也会保守全量回退。可在 JSON 的 `globalInputs`、`fallback` 中审查完整规则和原因。
+
+执行顺序为 `build → lint → typecheck → tsd → test`，缺少脚本会跳过。pnpm recursive 接收精确计划过滤条件，由 pnpm 处理依赖顺序。build 还包含 affected/过滤集合以外的依赖，记录在 `prerequisiteTargets`，以便测试使用构建产物。全量回退优先执行对应根脚本；根脚本不存在时，改为运行全部选中包的对应脚本。显式过滤始终限制检查范围，包括回退时；build 前置依赖仍可能位于过滤集合之外。根脚本自行负责调用 Turbo/pnpm。
+
+`--json`、`--markdown`、`--dry-run`、`--out` 仍然只预览。`--report` 执行同一模型并保存为 `affectedPlan`。`--affected` 不能与 `--full`、`--staged`、`--edit-file` 组合；base/head/filter/global-input 参数必须与 affected 模式一起使用。程序化调用可使用 `resolveAffectedCheckPlan({ cwd, base, head, filters, globalInputs })` 或 `runCheckWithReport({ cwd, affected: true, ... })`。
+
+## 8. 实际执行报告
 
 ```bash
 repo check --full --report reports/check-result.json --redact
