@@ -5,6 +5,7 @@ import { localize } from '../i18n'
 
 export interface CleanCommandOptions {
   yes?: boolean
+  dryRun?: boolean
   includePrivate?: boolean
   pinnedVersion?: string
 }
@@ -24,6 +25,9 @@ export function normalizeCliOpts(cwd: string, opts: CliOpts): CliOpts {
 
 export function normalizeCleanOptions(opts: CleanCommandOptions) {
   const overrides: Partial<CleanCommandConfig> = {}
+  if (opts.dryRun) {
+    overrides.dryRun = true
+  }
   if (opts.yes) {
     overrides.autoConfirm = true
   }

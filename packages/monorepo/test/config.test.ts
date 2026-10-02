@@ -87,6 +87,10 @@ describe('monorepo config integration', () => {
     )
 
     const checkboxMock = vi.fn()
+    const skillsMock = vi.fn(() => {
+      throw new Error('Clean must not access global skills')
+    })
+    vi.doMock('@/commands/skills', () => ({ getSkillTargetPaths: skillsMock }))
     vi.doMock('@icebreakers/monorepo-templates', async () => {
       const actual = await vi.importActual<typeof import('@icebreakers/monorepo-templates')>('@icebreakers/monorepo-templates')
       return {
@@ -94,26 +98,17 @@ describe('monorepo config integration', () => {
         checkbox: checkboxMock,
       }
     })
-    vi.doMock('@/core/workspace', () => ({
-      getWorkspaceData: vi.fn(async () => ({
-        packages: [
-          {
-            manifest: { name: 'foo' },
-            rootDir: fooDir,
-            rootDirRealPath: fooDir,
-            pkgJsonPath: path.join(fooDir, 'package.json'),
-          },
-        ],
-        workspaceDir,
-      })),
-    }))
+    await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
+    await fs.writeJson(path.join(fooDir, 'package.json'), { name: 'foo' })
 
     const { cleanProjects: mockedClean } = await import('@/commands/clean')
     await mockedClean(workspaceDir)
 
     expect(checkboxMock).not.toHaveBeenCalled()
+    expect(skillsMock).not.toHaveBeenCalled()
     expect(await fs.pathExists(fooDir)).toBe(false)
 
+    vi.doUnmock('@/commands/skills')
     await vi.resetModules()
     await fs.remove(root)
   })

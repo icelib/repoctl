@@ -59,7 +59,8 @@ export default defineMonorepoConfig({
 | --------------------------------- | --------------------------------------- |
 | `commands.init.preset`            | 控制初始化默认预设                      |
 | `commands.create.defaultTemplate` | 控制 `repo new <name>` 的默认模板       |
-| `commands.clean.autoConfirm`      | 清理命令是否默认确认                    |
+| `commands.clean.autoConfirm`      | 不提示并选择所有符合条件的工作区包      |
+| `commands.clean.dryRun`           | 预览删除及依赖变更，不写入文件          |
 | `commands.upgrade.skipOverwrite`  | 同步标准资产时是否保留已有 drifted 文件 |
 
 ## 查看当前配置
@@ -88,3 +89,21 @@ repo cfg i --markdown --redact --out reports/config.md
 - [模板与创建](./templates.md)
 - [模板资产治理](./template-assets.md)
 - [报告与自动化输出](/zh/tasks/reports)
+
+## 清理工作区包
+
+先运行 `repo workspace clean --dry-run` 选择并预览；非交互场景可用
+`repo workspace clean --yes --dry-run` 预览全部符合条件的包。
+去掉 `--dry-run` 才会执行。交互初始不勾选任何包，空选或取消完全不写入。
+`--yes` 遵循 `ignorePackages` 和 `includePrivate`，不扩大到仓库文档、
+`.qoder` 或用户的全局 skills。
+即使从子包目录调用，也会读取工作区根目录的配置。
+
+预览 JSON 的 `deletions` 列出删除目录，`metadata` 列出根 `package.json`
+的依赖字段前后值。只有非空选择才会迁移旧的
+`devDependencies.@icebreakers/monorepo` 并确保 `devDependencies.repoctl`；
+默认保留已有 repoctl 版本，缺失时填入 `latest`，可通过
+`--pinned-version` 显式指定。无需修复时不重写 package.json。
+
+工作区之外的目录、符号链接目标或父路径、链接的根 package.json，以及
+会连带删除未选嵌套包的目标会在写入前被拒绝。此命令不修改消费者的依赖声明。
