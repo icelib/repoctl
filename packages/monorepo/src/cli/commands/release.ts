@@ -4,6 +4,7 @@ import process from 'node:process'
 import { resolveCommandConfig } from '../../core/config'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
+import { registerReleasePlan } from './release/plan'
 
 async function runReleaseAction(action: () => void | Promise<void>) {
   try {
@@ -25,6 +26,7 @@ async function resolveReleaseOptions(cwd: string): Promise<ReleaseOptions> {
 
 export function registerReleaseCommands(program: Command, cwd: string) {
   const releaseCommand = program.command('release').description(localize('Release and pnpm versioning commands', '发布与 pnpm versioning 工具集'))
+  registerReleasePlan(releaseCommand, cwd)
 
   releaseCommand.command('ci')
     .description(localize('Prepare, publish, or recover versions in CI', '在 CI 中自动准备、发布和恢复版本'))

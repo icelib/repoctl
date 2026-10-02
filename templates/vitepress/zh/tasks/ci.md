@@ -24,7 +24,7 @@ CI 会得到稳定的计划，并可以把 JSON 或 Markdown 报告作为 artifa
 
 - pull request 需要快速门禁：使用 `repo check --staged` 或仓库的 pre-commit 模式。
 - main 分支需要完整门禁：使用 `repo check --full`。
-- 发布 job 需要版本计划：发布前执行 `repo release --dry-run`。
+- 发布 job 需要版本计划：发布前执行 `repo release plan --json`。
 
 repoctl 的命令可以分成两类：给人用的日常入口，以及给 CI、脚本、编辑器用的可保存输出。
 

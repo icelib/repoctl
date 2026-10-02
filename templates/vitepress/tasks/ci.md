@@ -24,7 +24,7 @@ CI receives a stable plan and can upload the JSON or Markdown report as an artif
 
 - Pull requests need a fast gate: use `repo check --staged` or the repository's pre-commit mode.
 - Main branch needs a delivery gate: use `repo check --full`.
-- A release job needs a version plan: run `repo release --dry-run` before publishing.
+- A release job needs a version plan: run `repo release plan --json` before publishing.
 
 repoctl commands have two audiences: humans using short daily commands, and automation consuming stable reports.
 
