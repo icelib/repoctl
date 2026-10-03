@@ -176,6 +176,20 @@ A file is always explicit: `.github/CODEOWNERS`, `CODEOWNERS`, or `docs/CODEOWNE
 The public `planCodeowners()` / `applyCodeownersPlan()` APIs expose before/after content and a diff, revalidate configuration and workspace inputs, and reject stale plans. Writes replace one file atomically, refuse symlink/hardlink targets, and are idempotent. No messages, review requests, permissions, or branch protection are changed.
 Installation policy: see [pnpm installation security](../reference/install-security.md) for release waiting, trust and build approval diagnostics and optional reviewed presets.
 
+## Managed asset upgrade PRs
+
+After a trusted default-branch dependency update, `repo maintenance upgrade --base <full-before-sha> --head <full-current-sha> --out <empty-external-directory>` compares the resolved **root** `repoctl` version in the pnpm lockfile. It understands pnpm 12's separate package-manager document, ignores unrelated dependency and peer-context changes, and blocks unsupported or ambiguous resolutions. The target version must already be installed from the frozen lockfile.
+
+Run preparation in a disposable clean checkout: it applies the complete root upgrade plan and three-way merges, refreshes the lockfile through pnpm, reinstalls with `--frozen-lockfile --ignore-scripts`, then runs declared build, lint, typecheck, tsd and test scripts in that order. The checkout retains the generated changes. Conflicts, changed source inputs, unsupported paths and failed checks leave `report.json` and logs with `blocked` status. No asset diff produces `unchanged`; neither state can create a PR. The report contains every planned file, skips/conflicts, source and target versions, validation results, exact file hashes/modes and the patch digest.
+
+Report file hashes identify exact Git blob bytes. Preparation still checks the planned working-file bytes; publication verifies the patch index and Git-equivalent checkout contents, allowing built-in line-ending conversions. The isolated publisher disables hooks, executable clean/smudge/process filters and filesystem monitors before inspecting files, and retains those settings for PR creation.
+
+Export the opt-in recipe with `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml`; existing files are never overwritten. Configure a repository GitHub App through `REPOCTL_APP_CLIENT_ID` and `REPOCTL_APP_PRIVATE_KEY`, with **Contents, Pull requests and Workflows: write** permissions, then commit the workflow. The Workflows permission is needed for managed workflow updates; an App token also lets the proposed PR trigger normal CI. No registry token is required.
+
+The first job only has read permissions and can run the trusted checkout's configuration, dependencies and validation scripts. It uploads an immutable artifact. The second job downloads that exact artifact ID, verifies its digest, originating run/attempt/repository, source SHA, allowed root paths, Git modes and before/after hashes, and applies only the reviewed patch. It executes no project scripts or installed dependencies. It then obtains the App token and uses a pinned `create-pull-request` action on the dedicated `repoctl/managed-assets` branch. Repeated events update that branch and PR; reserve it for automation. A moved default branch or missing/insufficient App permissions stops publication. Reports remain in the workflow artifacts for review.
+
+Only default-branch pushes touching `pnpm-lock.yaml` and explicit default-branch manual runs are supported. For a manual retry, provide the full trusted ancestor SHA before the dependency update. Concurrency is serialized per repository/default branch. Fork PR events, automatic merges, registry publication, arbitrary dependency updates, organization asset providers and template instance upgrades are outside this recipe.
+
 ## Diagnose Turbo cache misses and slow tasks
 
 Capture evidence with Turbo's existing `pnpm exec turbo run build --summarize`, then analyze an explicit saved summary. The analyzer never invokes tasks, deletes caches or edits configuration:

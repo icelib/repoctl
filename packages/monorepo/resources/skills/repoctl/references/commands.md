@@ -215,6 +215,19 @@ inspect diagnostics before treating the graph as complete or computing affected 
 JSON has schema version 1, stable directory IDs and unresolved/ambiguous reference diagnostics.
 Mermaid uses the same graph. Queries do not write files; JSON and Mermaid flags are mutually exclusive.
 
+## deps catalog check / plan / apply
+
+Inspect default/named catalog references, missing or unused entries, direct-version bypasses,
+and migration candidates with `repo deps catalog check --json`. Integrity checks cover all catalogs;
+`--catalog <name>` selects the policy for direct declarations and migration candidates.
+
+Preview one dependency section/cohort with
+`repo deps catalog plan <dependency> --section devDependencies --json > catalog-plan.json`,
+review the linked YAML/manifest changes, then run `repo deps catalog apply catalog-plan.json`.
+`--catalog`, `--group` and `--to` choose a named catalog, configured cohort and explicit common
+subrange. Planning never writes; apply rejects stale inputs and preserves peer ranges.
+See [dependency governance](./dependencies.md) for migration boundaries and pnpm verification.
+
 ## tooling init (alias: tg init)
 
 Purpose: generate tooling config files plus matching devDependencies.
@@ -229,6 +242,10 @@ Usage:
   Notes:
 - Built-in tooling targets: commitlint, eslint, stylelint, lint-staged, tsconfig, vitest
 - Generated files also update root package.json devDependencies
+
+## workspace remove
+
+For removal of one specific existing package, prefer `workspace remove <exact-name-or-./directory> --json`. It always previews, including root/private/transitive consumers. Save the JSON outside the selected directory. Consumers block by default; `--remove-references` plans only exact manifest dependency fields and matching metadata. Review source/configuration candidates manually: the scan covers only Git-tracked text literal matches and is not an exhaustive import analysis. Git HEAD and a clean selected directory are required; ignored files are inventoried. Root/outside/linked/nested-workspace boundaries and uncertain dependency relationships cannot be forced. Apply only a reviewed plan with `workspace remove --apply <plan.json>`. The `.repoctl/workspace-remove.lock` serializes replay checks through verification, rollback and cleanup; after interruption, verify no writer is active and recover retained originals before removing it. Before commit, failures restore manifests and the directory when safe, preserving concurrent edits and reporting recovery paths; after commit, `cleanupPending` reports retained operation files. Run `pnpm install --lockfile-only`, `pnpm install --frozen-lockfile`, workspace checks, and review Git diff explicitly afterward. Do not hand-edit the lockfile or remove user documentation/global skills.
 
 ## workspace clean (alias: ws clean)
 
@@ -372,6 +389,32 @@ Use `repo doctor security --json` for a read-only, version-aware pnpm policy rep
 ## `repo tooling references`
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config.md#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
+
+### Incremental Playwright capability
+
+Add browser tests to an existing Vue/React Vite application with `build` and `preview` scripts:
+
+```sh
+repo tooling capability list --json
+repo tooling capability plan playwright --target web --route / --role button --name Increment --expect-text 'Count: 1' --json > e2e-plan.json
+repo tooling capability apply e2e-plan.json --json
+pnpm install
+pnpm --filter @repoctl-e2e/web test:e2e:install
+pnpm test:e2e
+```
+
+Use `--test-id` instead of `--role`/`--name` for a test-id locator. The route, click and expected text describe a real interaction in your application. The plan shows file diffs, dependencies, scripts, conflicts and next steps, without installing anything. Apply uses those exact reviewed bytes, rejects stale inputs and conflicts, and rolls back failed writes. A repeated unchanged apply has no effect. Choose an empty destination (`--directory`) for the new E2E workspace. Existing application sources and differing generated files are protected.
+
+The capability creates an independent E2E workspace, headless Chromium tests, Turbo build dependencies, a dedicated CI workflow, HTML reports and failure traces. Browser installation is explicit. `--port` and `--ci-port` set distinct local and CI ports. CI never reuses a running service. `--reuse-existing-server` opts into local reuse; Playwright cleans up its own service after success, failure or interruption, and leaves a borrowed service running. Commit the lockfile after installation.
+
+Public APIs: `listToolingCapabilities()`, `planToolingCapability(cwd, options)` and `applyToolingCapability(plan)`. JSON uses schema version 1 and stable English keys regardless of CLI language.
+
+## Maintenance
+
+- `repo maintenance upgrade --base <full-sha> --head <full-sha> --out <external-empty-directory>` prepares a root-asset upgrade report and validated patch in a disposable clean checkout, only when the locked root repoctl version changes. Conflicts/failed checks block PR publication.
+- `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` exports an opt-in two-job recipe without overwriting files. Use only the trusted default branch; keep project execution in the read-only job and acquire the GitHub App write token only after immutable artifact, SHA, path, mode and hash verification. App permissions must include contents, pull requests and workflows write.
+
+Maintenance report hashes describe exact Git blobs; planned working-file bytes are validated before staging. The isolated publisher verifies index bytes and Git-equivalent checkout contents across line-ending conversions, with hooks, executable filters and filesystem monitors disabled through PR creation.
 
 ## release snapshot
 

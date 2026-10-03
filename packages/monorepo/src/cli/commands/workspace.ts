@@ -12,6 +12,7 @@ import { registerWorkspaceBoundaries } from './workspace/boundaries'
 import { registerWorkspaceGraphCommands } from './workspace/graph'
 import { registerWorkspaceOwnersCommand } from './workspace/owners'
 import { registerWorkspacePrepare } from './workspace/prepare'
+import { registerWorkspaceRemoval } from './workspace/remove'
 import { registerWorkspaceTasks } from './workspace/tasks'
 
 interface WorkspaceListCliOptions {
@@ -147,6 +148,7 @@ export function registerWorkspaceCommands(program: Command, cwd: string) {
   registerWorkspacePrepare(workspaceCommand, cwd)
   registerWorkspaceTasks(workspaceCommand, cwd)
   registerUpgradeCommand(workspaceCommand, cwd, 'up')
+  registerWorkspaceRemoval(workspaceCommand, cwd)
 
   workspaceCommand.command('init')
     .description(localize('Initialize workspace metadata and repository files', '初始化工作区元信息（README、package.json、pnpm intent、issue template）'))
