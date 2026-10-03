@@ -465,4 +465,6 @@ repo package create api --template team --data ./answers.json
 
 预览的可选 `parameterization` 包含脱敏值及文件/package 条目选择。敏感原值仅用于内存渲染，不进入报告、实例参数或留存基线。包含敏感值的文件成为持久排除项，由业务自行维护，基线重建不会恢复它们。升级复用非敏感参数并保留敏感文件；新版本新增敏感插值路径时，必须明确排除该路径才能升级其余文件。
 
+通过 API 关联历史项目时，参数值要求使用 `repo-new-parameters-v1` 且提供可验证的精确历史来源。关联会校验并留存非敏感默认值，在生成计划前拒绝传入敏感值，也不允许创建未验证的参数化登记。不能向 link API 提供秘密值来重建敏感输出文件。
+
 公开 API 为 `resolveCreateNewProjectPlan({ parameters, parameterPrompt? })` 和 `applyCreateNewProjectPlan(plan)`。执行接受同一进程中未修改的原始计划，JSON 报告不能直接执行，须用原数据重新规划。来源变化、已存在目标或计划修改会拒绝写入。参数化创建统一提交暂存输出、workspace 清单和实例记录；失败恢复本次文件，遇到并发编辑或文件替换则保留并报告恢复位置。重复创建不会覆盖项目。
