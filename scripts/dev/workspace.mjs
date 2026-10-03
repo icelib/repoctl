@@ -9,6 +9,17 @@ export async function temporaryWorkspace(t) {
   return directory
 }
 
+/** Cleanup follows the operation's settlement, even if the test runner times out first. */
+export async function withTemporaryWorkspace(run) {
+  const directory = await mkdtemp(path.join(tmpdir(), 'repoctl-dev-'))
+  try {
+    return await run(directory)
+  }
+  finally {
+    await rm(directory, { recursive: true, force: true })
+  }
+}
+
 export async function waitFor(check, description, output = () => '') {
   const deadline = Date.now() + 30_000
   while (Date.now() < deadline) {
