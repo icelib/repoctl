@@ -1,0 +1,169 @@
+{
+  "id": "3K8wHCVg6GhrHHv9U9u0FO3joAP",
+  "version": "1",
+  "turboVersion": "2.11.6",
+  "monorepo": true,
+  "globalCacheInputs": {
+    "rootKey": "I can’t see ya, but I know you’re here",
+    "files": {
+      "package.json": "6974604782781ee90981532058fb64de29b10b47"
+    },
+    "hashOfExternalDependencies": "",
+    "hashOfInternalDependencies": "",
+    "environmentVariables": {
+      "specified": {
+        "env": [],
+        "passThroughEnv": null
+      },
+      "configured": [],
+      "inferred": [],
+      "passthrough": null
+    },
+    "engines": null
+  },
+  "execution": {
+    "command": "turbo run build",
+    "repoPath": "",
+    "success": 2,
+    "failed": 0,
+    "cached": 0,
+    "attempted": 2,
+    "startTime": 1790952411334,
+    "endTime": 1790952412006,
+    "exitCode": 0
+  },
+  "packages": [
+    "a",
+    "b"
+  ],
+  "envMode": "strict",
+  "frameworkInference": true,
+  "tasks": [
+    {
+      "taskId": "a#build",
+      "task": "build",
+      "package": "a",
+      "hash": "58ace201b198f8be",
+      "inputs": {
+        "package.json": "db3949c5e9e6ee01e30970dc56c0588cdb5e1675"
+      },
+      "hashOfExternalDependencies": "",
+      "cache": {
+        "local": false,
+        "remote": false,
+        "status": "MISS",
+        "timeSaved": 0
+      },
+      "command": "node -e \"console.log(123)\"",
+      "cliArguments": [],
+      "outputs": null,
+      "excludedOutputs": null,
+      "logFile": "packages/a/.turbo/turbo-build.log",
+      "directory": "packages/a",
+      "dependencies": [],
+      "dependents": [
+        "b#build"
+      ],
+      "with": [],
+      "resolvedTaskDefinition": {
+        "outputs": [],
+        "cache": true,
+        "dependsOn": [
+          "^build"
+        ],
+        "inputs": [],
+        "outputLogs": "full",
+        "persistent": false,
+        "interruptible": false,
+        "env": [],
+        "passThroughEnv": null,
+        "interactive": false
+      },
+      "expandedOutputs": [
+        "packages/a/.turbo/turbo-build.log"
+      ],
+      "framework": "",
+      "envMode": "strict",
+      "environmentVariables": {
+        "specified": {
+          "env": [],
+          "passThroughEnv": null
+        },
+        "configured": [],
+        "inferred": [],
+        "passthrough": null
+      },
+      "execution": {
+        "startTime": 1790952411373,
+        "endTime": 1790952411692,
+        "exitCode": 0
+      }
+    },
+    {
+      "taskId": "b#build",
+      "task": "build",
+      "package": "b",
+      "hash": "27a55990433d91fd",
+      "inputs": {
+        "package.json": "b3d7aae103d9995f801bfbe9f6add1ed1486c895"
+      },
+      "hashOfExternalDependencies": "",
+      "cache": {
+        "local": false,
+        "remote": false,
+        "status": "MISS",
+        "timeSaved": 0
+      },
+      "command": "node -e \"console.log(123)\"",
+      "cliArguments": [],
+      "outputs": null,
+      "excludedOutputs": null,
+      "logFile": "packages/b/.turbo/turbo-build.log",
+      "directory": "packages/b",
+      "dependencies": [
+        "a#build"
+      ],
+      "dependents": [],
+      "with": [],
+      "resolvedTaskDefinition": {
+        "outputs": [],
+        "cache": true,
+        "dependsOn": [
+          "^build"
+        ],
+        "inputs": [],
+        "outputLogs": "full",
+        "persistent": false,
+        "interruptible": false,
+        "env": [],
+        "passThroughEnv": null,
+        "interactive": false
+      },
+      "expandedOutputs": [
+        "packages/b/.turbo/turbo-build.log"
+      ],
+      "framework": "",
+      "envMode": "strict",
+      "environmentVariables": {
+        "specified": {
+          "env": [],
+          "passThroughEnv": null
+        },
+        "configured": [],
+        "inferred": [],
+        "passthrough": null
+      },
+      "execution": {
+        "startTime": 1790952411693,
+        "endTime": 1790952412005,
+        "exitCode": 0
+      }
+    }
+  ],
+  "user": "",
+  "scm": {
+    "type": "git",
+    "sha": null,
+    "branch": null
+  }
+}

@@ -24,6 +24,43 @@ repo release plan --markdown
 
 JSON 与 Markdown 表达相同的原生版本决策。说明条目复用已有发布 renderer，并排除已消费的 intent 条目。私有包可以升级版本，但标记为非发布候选。公共 `createReleasePlan({ cwd })` API 返回同一报告，不自行写入文件。
 
+## 正式分支与维护版本线
+
+在 `repoctl.config.*` 中配置 `commands.release.branches`：
+
+```ts
+export default {
+  commands: {
+    release: {
+      branches: {
+        stable: 'master',
+        maintenance: [{ branch: '1.x', range: '1.x', tag: 'legacy-1' }],
+        prerelease: [
+          { branch: 'preview/1.x', lane: 'beta', tag: 'legacy-beta', target: '1.x' },
+        ],
+      },
+    },
+  },
+}
+```
+
+省略配置保留 `main` 和 `alpha`、`beta`、`rc`、`next`。`stable` 默认是 `main`；省略 `prerelease` 时保留这四个 lane，并指向正式分支；显式 `prerelease: []` 可禁用预发布。正式分支与维护分支都使用 pnpm 原生 `main` lane；Git 分支名和 npm 标签分别配置。
+
+维护范围必须有有限上界，彼此不能重叠。主正式分支负责所有维护范围以外的版本。范围约束整个仓库的可发布包；各包采用独立主版本时，也需要共同满足所选发布线。私有包仍参与 pnpm 原生版本计算，但不作为发布候选。分支名、npm 标签、预发布 lane 必须唯一。`1.x` 这类 SemVer 范围不能作为 npm 标签，示例使用 `legacy-1`；`snapshot-` 前缀保留给临时包。
+
+```bash
+repo release plan --branch 1.x --markdown
+repo release plan --branch master --json
+```
+
+计划增加 `branchRule`，包含 `branch`、`kind`、`lane`、`range`、`excludedRanges`、`distTag` 和 `target`。显式 `--branch` 或 API `branch` 优先，其次使用匹配的 `GITHUB_REF_NAME`；其他情况的只读计划以主正式分支为目标。执行则使用当前 Git 分支或 CI ref，未配置的分支会被拒绝。API `resolveReleaseBranches(config)` 返回同一份已校验映射。
+
+准备前先用 pnpm 原生 dry-run 检查范围，越界时在执行发布 hooks、写版本、消费 intents 之前停止；校验 hooks 完成后再检查一次。实际写入版本及最终发布候选也会复核，hook 改写版本后仍须满足所选发布线。repoctl 无法撤销任意 hook 的外部副作用；准备或发布中断后继续使用 pnpm ledger 和现有发布检查点恢复。
+
+Release PR 以所选分支为 base。主正式线保留 `release/pnpm-version`；维护线使用 `release/pnpm-version-<编码后的分支名>`，可同时存在。维护发布只使用自己的 dist-tag，GitHub Release 仍标记为正式版本。`repo release pre enter beta` 选择声明的 pnpm lane；`repo release pre exit` 回到目标的原生 `main` lane，并输出正式或维护目标分支，不切换 Git 分支。
+
+修改映射后，先用 `repo upgrade --dry-run --json` 审查，再应用升级，同步受管 Release 工作流的 push 分支。保存的计划会检测配置变化；重复升级无新差异；自定义工作流仍受保护，除非显式要求替换。workflow dispatch 和原提交恢复应在目标配置分支运行，发布工作流保持串行，并保留检查点。
+
 ## 常见分支
 
 - 缺少 intent：添加 changeset 后重新生成计划。
@@ -83,12 +120,12 @@ const hook = { script: 'publish:extension', idempotent: true }
 已有版本尚未完成发布时，新的版本准备会在消费 intent 前失败，并给出原始提交和恢复命令。先恢复旧发布，再准备新版本：
 
 ```bash
-repo release ci --mode publish --source-sha <完整的-main-提交-SHA> --dry-run
-repo release ci --mode publish --source-sha <完整的-main-提交-SHA>
+repo release ci --mode publish --source-sha <完整的发布线提交-SHA> --dry-run
+repo release ci --mode publish --source-sha <完整的发布线提交-SHA>
 repo release ci --mode prepare
 ```
 
-受管 Release 工作流为 `publish` 和 `publish-unpublished` 提供相同的 `source-sha` 输入。当前工具会在独立目录检出原提交，按照其锁文件安装、构建和验证，恢复该提交 manifest 或 ledger 新增的整批版本，包括依赖传播升级的包。package/version 输入只校验是否属于该批发布，不拆分原发布批次。SHA 必须属于 `origin/main` 历史。dry-run 只检查源码与远端状态，不安装、不上传、不运行 hook、不写检查点。后续变更保留到下一版本；恢复过程中不修改版本号。
+受管 Release 工作流为 `publish` 和 `publish-unpublished` 提供相同的 `source-sha` 输入。当前工具会在独立目录检出原提交，按照其锁文件安装、构建和验证，恢复该提交 manifest 或 ledger 新增的整批版本，包括依赖传播升级的包。package/version 输入只校验是否属于该批发布，不拆分原发布批次。SHA 必须属于 `origin/<所选分支>` 历史；以当前调度配置确定发布线，历史源码中的旧映射不会改变目标。dry-run 只检查源码与远端状态，不安装、不上传、不运行 hook、不写检查点。后续变更保留到下一版本；恢复过程中不修改版本号。
 
 恢复保留 GitHub 工作流环境，供可信发布和 provenance 使用：签名身份对应运行工作流的提交；独立检出的源码、发布检查点、Git tag 和 Release 目标则对应 `source-sha`。不要通过覆盖 `GITHUB_SHA` 恢复旧源码，npm 会拒绝与工作流签名身份不一致的 provenance。
 

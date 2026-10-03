@@ -5,6 +5,7 @@ import path from 'pathe'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import fs from '../../utils/fs'
+import { registerEnvironmentCheck } from './env/check'
 import { createEnvInfoOutput, createEnvPathsOutput, createEnvSnapshotOutput, hasStrictEnvSnapshotIssues } from './env/output'
 import { createEnvSupportBundleOutput, hasStrictSupportBundleIssues } from './env/support'
 
@@ -78,6 +79,7 @@ async function emitEnvSupportBundle(bundle: EnvSupportBundle, opts: EnvInfoCliOp
 
 export function registerEnvCommands(program: Command, cwd: string) {
   const envCommand = program.command('env').alias('e').description(localize('Environment and support commands', '环境命令'))
+  registerEnvironmentCheck(envCommand, cwd)
 
   envCommand.command('info')
     .description(localize('Show environment information for the current repository', '输出当前仓库环境信息'))
