@@ -38,7 +38,7 @@ describe('release behavior', () => {
   it('commits, publishes, and pushes prerelease version changes', async () => {
     const cwd = await createTempWorkspace('alpha')
     await writePendingIntent(cwd)
-    const { calls, spawn } = createSpawnMock({ diffStatus: 1, versionedPackages: [{ name: 'repoctl', version: '1.0.1' }] })
+    const { calls, spawn } = createSpawnMock({ diffStatus: 1, versionedPackages: [{ name: 'repoctl', version: '1.0.1-alpha.0' }] })
 
     await releasePrerelease({ branch: 'alpha', cwd, spawn: spawn as never })
 
@@ -60,7 +60,7 @@ describe('release behavior', () => {
     const { calls, spawn } = createSpawnMock()
 
     await enterPrerelease('rc', { cwd, spawn: spawn as never })
-    await exitPrerelease({ cwd, spawn: spawn as never })
+    await exitPrerelease({ cwd, branch: 'rc', spawn: spawn as never })
 
     expect(calls).toEqual([
       { command: 'pnpm', args: ['lane', 'rc', '--filter', 'repoctl'] },

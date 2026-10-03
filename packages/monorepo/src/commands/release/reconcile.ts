@@ -1,12 +1,15 @@
 import type { GitHubOperations } from './github'
 import type { PublishedPackage, ReleaseOptions } from './types'
 import { spawnSync } from 'node:child_process'
+import semver from 'semver'
+import { resolveCommandConfig } from '../../core/config'
 import { getWorkspacePackages } from '../../core/workspace'
 import { buildReleaseNoteDocument, renderGitHubRelease } from './body'
 import { ReleaseCommandError } from './errors'
 import { GitHubClient } from './github'
 import { verifySource } from './lifecycle/identity'
 import { inspectRegistry } from './lifecycle/registry'
+import { assertReleaseLineVersions, resolveReleaseBranch } from './lines'
 import { getReleaseEnv } from './shared'
 
 export interface ReleaseReconcileOptions extends ReleaseOptions {
@@ -41,6 +44,7 @@ function remoteTagTarget(tag: string, options: ReleaseOptions) {
 }
 
 export async function reconcileRelease(options: ReleaseReconcileOptions) {
+  options = { ...options, config: options.config ?? await resolveCommandConfig('release', options.cwd) ?? {} }
   const github = options.github ?? new GitHubClient()
   if (!github.listReleases || !github.ensureRelease) {
     throw new Error('GitHub release reconcile requires listReleases and ensureRelease operations')
@@ -53,6 +57,9 @@ export async function reconcileRelease(options: ReleaseReconcileOptions) {
       ? [{ name: manifest.name, version: manifest.version }]
       : []
   )).filter(pkg => (!options.packageName || pkg.name === options.packageName) && (!options.packageVersion || pkg.version === options.packageVersion))
+  if (options.config?.branches) {
+    assertReleaseLineVersions(await resolveReleaseBranch(options), packages)
+  }
   const env = getReleaseEnv(options)
   const metadata: { repository?: string, serverUrl?: string } = {}
   if (env['GITHUB_REPOSITORY']) {
@@ -87,7 +94,8 @@ export async function reconcileRelease(options: ReleaseReconcileOptions) {
       throw new ReleaseCommandError(`Tag target conflict for ${tag}`)
     }
     const needsTag = !tagTarget
-    const needsRelease = !release || release.name !== tag || release.body !== body
+    const prerelease = Boolean(semver.prerelease(pkg.version))
+    const needsRelease = !release || release.name !== tag || release.body !== body || Boolean(release.prerelease) !== prerelease
     if (!needsTag && !needsRelease) {
       continue
     }
@@ -98,7 +106,7 @@ export async function reconcileRelease(options: ReleaseReconcileOptions) {
     if (needsTag && github.ensureTag) {
       await github.ensureTag({ tag, target })
     }
-    await github.ensureRelease({ tag, target, name: tag, body })
+    await github.ensureRelease({ tag, target, name: tag, body, prerelease })
     repaired.push(tag)
   }
   return { repaired, pending, skipped: publishedPackages.filter(pkg => !pending.includes(`${pkg.name}@${pkg.version}`)).map(pkg => `${pkg.name}@${pkg.version}`) }
