@@ -26,7 +26,7 @@ async function rollback(root: string, staged: StagedFile[]) {
           throw new Error('Concurrent edit must be retained')
         }
         if (current !== null && item.appliedIdentity) {
-          const info = await lstat(item.target)
+          const info = await lstat(item.target, { bigint: true })
           if (info.ino !== item.appliedIdentity.ino || info.dev !== item.appliedIdentity.dev) {
             throw new Error('Concurrent replacement must be retained')
           }
