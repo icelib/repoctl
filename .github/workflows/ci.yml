@@ -22,7 +22,7 @@ concurrency:
 jobs:
   build:
     name: Build and Test
-    # Allow Windows, macOS, and Ubuntu Node 22 to finish all checks and reporting.
+    # Allow Windows, macOS and Ubuntu Node 22 to finish their complete validation.
     timeout-minutes: ${{ (matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || (matrix.os == 'ubuntu-latest' && matrix.node-version == 22)) && 25 || 15 }}
     strategy:
       fail-fast: false
