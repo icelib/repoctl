@@ -22,8 +22,8 @@ concurrency:
 jobs:
   build:
     name: Build and Test
-    # Windows Node 22 serializes typechecking; leave time for tests and cache upload.
-    timeout-minutes: ${{ matrix.os == 'windows-latest' && 25 || 15 }}
+    # Allow Windows checks and the Ubuntu Node 22 packaged/browser matrix to finish.
+    timeout-minutes: ${{ (matrix.os == 'windows-latest' || (matrix.os == 'ubuntu-latest' && matrix.node-version == 22)) && 25 || 15 }}
     strategy:
       fail-fast: false
       matrix:
