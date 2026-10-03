@@ -50,12 +50,12 @@ describe('built installation security with selected doctor rules', () => {
     expect(JSON.parse(report.stdout).kind).toBe('install-security')
   })
 
-  it('does not load unrelated security expectations for an explicit workspace-only selection', async () => {
+  it('does not evaluate unrelated security expectations for an explicit workspace-only selection', async () => {
     const h = await securityFixture()
-    await fs.writeFile(path.join(h.workspace, 'repoctl.config.mjs'), 'export default { installationSecurity: {unknown: true} }')
+    await fs.writeFile(path.join(h.workspace, 'repoctl.config.mjs'), 'export default { installationSecurity: {minimumReleaseAge: 1440, severity: "fail"} }')
     const selected = await runDoctor(h.workspace, { rules: ['package-json'] })
     expect(selected.checks).toEqual([expect.objectContaining({ id: 'package-json', status: 'pass' })])
-    const security = await runDoctor(h.workspace, { rules: ['install-security-config'] })
-    expect(security.checks).toEqual([expect.objectContaining({ id: 'install-security-config', status: 'fail' })])
+    const security = await runDoctor(h.workspace, { rules: ['install-security-expectation'] })
+    expect(security.checks).toEqual([expect.objectContaining({ id: 'install-security-expectation', status: 'fail' })])
   })
 })

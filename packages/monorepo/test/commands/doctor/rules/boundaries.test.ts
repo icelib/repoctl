@@ -13,6 +13,7 @@ it('registers stable boundary IDs and filters findings without exposing custom r
   await fs.outputFile(path.join(h.root, 'repoctl.config.mjs'), 'export default { boundaries: { rules: [{ id: "my-architecture-rule", from: { packages: ["app"] }, allow: [] }] } }')
   expect(getDoctorRuleIds()).toEqual(expect.arrayContaining(boundaryIds))
   expect(getDoctorRuleIds()).not.toContain('my-architecture-rule')
+  expect((await runDoctor(h.cwd, { rules: ['package-json'] })).checks).toEqual([expect.objectContaining({ id: 'package-json', status: 'pass' })])
   const selected = await runDoctor(h.cwd, { rules: ['boundary-rule'] })
   expect(selected.checks).toHaveLength(1)
   expect(selected.checks[0]).toMatchObject({ id: 'boundary-rule', status: 'fail' })
@@ -25,9 +26,11 @@ it('registers stable boundary IDs and filters findings without exposing custom r
   expect(JSON.parse(output.stdout).checks.map((check: { id: string }) => check.id)).toEqual(['boundary-rule'])
 })
 
-it('skips boundary parsing when unrelated rules are selected and retains prerequisite failures', async () => {
+it('validates global configuration and retains selected boundary prerequisite failures', async () => {
   const h = await fixture({ packageManager: 'pnpm@12.8.1' })
   await fs.outputFile(path.join(h.root, 'repoctl.config.mjs'), 'export default { boundaries: null }')
+  await expect(runDoctor(h.cwd, { rules: ['package-manager'] })).rejects.toMatchObject({ code: 'REPOCTL_CONFIG_INVALID', diagnostics: [expect.objectContaining({ path: 'boundaries' })] })
+  await fs.outputFile(path.join(h.root, 'repoctl.config.mjs'), 'export default { boundaries: { rules: [{ id: "rule", from: {}, allow: [] }] } }')
   const unrelated = await runDoctor(h.cwd, { rules: ['package-manager'] })
   expect(unrelated.checks.map(check => check.id)).toEqual(['package-manager'])
   const selected = await runDoctor(h.cwd, { rules: ['boundary-rule'] })

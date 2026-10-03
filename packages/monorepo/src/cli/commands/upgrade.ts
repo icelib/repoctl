@@ -20,6 +20,7 @@ export function registerUpgradeCommand(parent: Command, cwd: string, alias?: str
     .option('--no-overwrite', localize('Preserve existing assets and legacy metadata', '保留既有资产和旧版迁移元数据'))
     .option('--overwrite-release', localize('Replace a custom release workflow', '替换自定义 release workflow'))
     .option('--dry-run', localize('Preview every change without writes or asset preparation', '预览全部变更，不写文件或准备资产'))
+    .option('--from-version <version>', localize('Attest an exact previous template version for migration selection', '提供明确的旧模板版本，用于选择版本迁移'))
     .option('--json', localize('Output a read-only JSON plan', '输出只读 JSON 计划'))
     .option('--markdown', localize('Output a read-only Markdown plan with diffs', '输出含 diff 的只读 Markdown 计划'))
     .option('--apply <file>', localize('Apply all actionable entries from a reviewed JSON plan', '应用已审核 JSON 计划中的全部变更'))

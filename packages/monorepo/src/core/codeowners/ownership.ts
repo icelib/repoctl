@@ -2,6 +2,7 @@ import type { CodeownersOptions, CodeownersReport, WorkspaceOwnership } from './
 import { realpath } from 'node:fs/promises'
 import path from 'node:path'
 import { loadMonorepoConfigDetails } from '../config'
+import { ConfigValidationError } from '../config/validation'
 import { clearWorkspaceCache, getWorkspaceData } from '../workspace'
 
 const ownerPattern = /^(?:@[a-z\d](?:[a-z\d-]*[a-z\d])?(?:\/[a-z\d](?:[\w-]*[a-z\d])?)?|[^\s@#]+@[^\s#@][^\s#.@]*\.[^\s#@]+)$/iu
@@ -9,8 +10,7 @@ const ownerPattern = /^(?:@[a-z\d](?:[a-z\d-]*[a-z\d])?(?:\/[a-z\d](?:[\w-]*[a-z
 export async function inspectWorkspaceOwners(options: CodeownersOptions): Promise<CodeownersReport> {
   clearWorkspaceCache()
   const { workspaceDir, packages } = await getWorkspaceData(await realpath(options.cwd), { ignorePrivatePackage: false, ignoreRootPackage: false })
-  const loaded = await loadMonorepoConfigDetails(workspaceDir, { refresh: true })
-  const report: CodeownersReport = { schemaVersion: 1, workspaceDir, configFile: loaded.file, configFiles: loaded.files, packages: [], diagnostics: [] }
+  const report: CodeownersReport = { schemaVersion: 1, workspaceDir, configFile: null, configFiles: [], packages: [], diagnostics: [] }
   const records: WorkspaceOwnership[] = packages.map(pkg => ({
     path: path.relative(workspaceDir, pkg.rootDir).replaceAll('\\', '/') || '.',
     ...(pkg.manifest.name ? { name: pkg.manifest.name } : {}),
@@ -18,6 +18,19 @@ export async function inspectWorkspaceOwners(options: CodeownersOptions): Promis
     owners: [],
     sources: [],
   }))
+  const loaded = await loadMonorepoConfigDetails(workspaceDir, { refresh: true }).catch((error: unknown) => {
+    if (!(error instanceof ConfigValidationError)) {
+      throw error
+    }
+    report.diagnostics.push(...error.diagnostics.map(item => ({ code: 'INVALID_CONFIG' as const, severity: 'error' as const, source: item.path, message: `${item.id}: ${item.suggestion}` })))
+    return null
+  })
+  if (!loaded) {
+    report.packages = records.filter(pkg => pkg.path !== '.').sort((a, b) => a.path.localeCompare(b.path))
+    return report
+  }
+  report.configFile = loaded.file
+  report.configFiles = loaded.files
   const config = loaded.config.codeowners
   const mappings: unknown = config?.owners ?? {}
   if ((config !== undefined && (!config || typeof config !== 'object' || Array.isArray(config) || config.owners === undefined)) || !mappings || typeof mappings !== 'object' || Array.isArray(mappings)) {

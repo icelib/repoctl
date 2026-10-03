@@ -12,6 +12,7 @@ it('registers admission IDs, filters detailed findings and preserves the failing
   await fs.outputFile(path.join(h.root, 'repoctl.config.mjs'), 'export default { dependencyPolicy: { rules: [{ id: "my-browser-policy", workspaces: ["app"], dependencies: ["legacy-sdk"], effect: "deny", sections: ["dependencies"], reason: "Use a browser-safe dependency" }] } }')
   expect(getDoctorRuleIds()).toEqual(expect.arrayContaining(admissionIds))
   expect(getDoctorRuleIds()).not.toContain('my-browser-policy')
+  expect((await runDoctor(h.cwd, { rules: ['package-json'] })).checks).toEqual([expect.objectContaining({ id: 'package-json', status: 'pass' })])
   const selected = await runDoctor(h.cwd, { rules: ['admission-denied'] })
   expect(selected.checks).toMatchObject([{ id: 'admission-denied', status: 'fail', path: 'packages/app/package.json', field: 'dependencies.legacy-sdk' }])
   expect(selected.checks).toHaveLength(1)
@@ -26,9 +27,11 @@ it('registers admission IDs, filters detailed findings and preserves the failing
   expect(suppressed.rawSummary?.fail).toBe(1)
 })
 
-it('skips unselected admission configuration and retains prerequisite failures for selected admission rules', async () => {
+it('validates global configuration and retains selected admission prerequisite failures', async () => {
   const h = await fixture({ packageManager: 'pnpm@12.8.1' })
   await fs.outputFile(path.join(h.root, 'repoctl.config.mjs'), 'export default { dependencyPolicy: null }')
+  await expect(runDoctor(h.cwd, { rules: ['package-manager'] })).rejects.toMatchObject({ code: 'REPOCTL_CONFIG_INVALID', diagnostics: [expect.objectContaining({ path: 'dependencyPolicy' })] })
+  await fs.outputFile(path.join(h.root, 'repoctl.config.mjs'), 'export default { dependencyPolicy: { rules: [{ id: "deny", workspaces: [], dependencies: ["legacy-sdk"], effect: "deny", sections: ["dependencies"], reason: "Policy" }] } }')
   expect((await runDoctor(h.cwd, { rules: ['package-manager'] })).checks.map(item => item.id)).toEqual(['package-manager'])
   expect((await runDoctor(h.cwd, { rules: ['admission-denied'] })).checks).toMatchObject([{ id: 'admission-config', status: 'fail' }])
   await fs.outputFile(path.join(h.root, 'repoctl.config.mjs'), 'export default {}')

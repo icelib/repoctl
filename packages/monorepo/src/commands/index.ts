@@ -122,6 +122,8 @@ export {
   verifyStagedTypecheck,
 }
 
+export { applyPublicApiUpdate, checkPublicApi, formatPublicApiReport, planPublicApiUpdate } from './api-report'
+export type { PublicApiConfig, PublicApiDiagnostic, PublicApiEntryConfig, PublicApiEntryReport, PublicApiOptions, PublicApiPackageConfig, PublicApiReport, PublicApiUpdatePlan, PublicApiUpdateResult } from './api-report'
 export { resolveAffectedCheckPlan } from './check/affected'
 export type { AffectedCheckCommand, AffectedCheckOptions, AffectedCheckPlan, AffectedCheckSettings, AffectedFallback, AffectedFile, AffectedGitRange, AffectedPackage } from './check/affected'
 export { analyzeTurboRuns } from './check/cache'
@@ -130,7 +132,6 @@ export { runCheckWithReport } from './check/execute'
 export { getKnipConfigurationSuggestions, planKnipCheck, runKnipCheck, saveKnipBaseline } from './check/knip'
 export { resolveAffectedCheckMatrix } from './check/matrix'
 export type { AffectedCheckMatrix, AffectedCheckMatrixJob, AffectedCheckMatrixOptions } from './check/matrix'
-
 export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus, CheckExecutionTask } from './check/types'
 export { applyDependencyFixPlan, checkDependencies, planDependencyFix } from './deps'
 export { checkDependencyAdmission } from './deps/admission'
@@ -157,7 +158,6 @@ export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintena
 export type { MaintenanceFile, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
-
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
 
@@ -169,7 +169,12 @@ export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './rele
 export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
 
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
+
+export * from './template-drift'
 export * from './template-instances'
+export { planTemplateValidation, validateTemplate } from './template-validation'
+
+export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
 
 export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
 export type { PlaywrightCapabilityOptions, PlaywrightInteraction, StorybookArgs, StorybookCapabilityOptions, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'

@@ -91,9 +91,13 @@ repo doctor --apply plans/doctor-fix.json --json
 
 Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs `id` and a nonempty `reason`; optional `path` matches an exact workspace-relative finding path. Optional `expires` is an inclusive UTC date (`YYYY-MM-DD`). JSON retains the original finding status, `suppression`, `rawSummary`, and every waiver with its matched count. Only active waivers are excluded from effective `summary` and strict exit status; expired and unmatched waivers remain visible.
 
+`repo templates drift --json` diagnoses registered instance and trustworthy root asset baselines without modifying them. Versions, local modifications/deletions and missing evidence are independent. Defaults use installed metadata offline; `--source-dir` reads an extracted package, and explicit `--remote` queries public npm. Remote failures remain unknown. `--markdown --out <file>` writes a report without business file bodies. Persistent exclusions are not read, and unowned additions are ignored. Reuse doctor suppressions; `--strict` fails on remaining warnings. Select `template-version-evidence`, `template-instance-registry`, `template-instance-baseline`, `template-instance-version`, `template-instance-drift`, `root-asset-registry`, `root-asset-version` or `root-asset-drift` with doctor rules.
+
 `--fix` previews JSON without modifying project files. Only missing `repo:init`, `repo:new`, `repo:check`, and `repo:doctor` keys in the root `package.json` are supported. Existing values, including empty/custom scripts, are preserved for manual review. An actively suppressed or unselected rule produces no fix. Review the additions, complete before/after content, hashes, risk, and diff before using `--apply`. Plans contain original manifest content and cannot be redacted or rendered as Markdown for execution.
 
 Apply checks the canonical workspace and original file contents, rejects links and modified operations, reuses the staged file transaction with rollback, and reruns the root-script check without suppression. A changed input stops the fix; regenerate the plan. Reapplying an already applied plan is unchanged. Textual `fix` suggestions are never executed, and dependency installation or release workflow modification is outside this fixer.
+
+Doctor fix application holds `.repoctl/doctor-fix.lock` through validation, verification, rollback and cleanup. After a crash, confirm no writer remains and reconcile backups before manually removing the lock.
 
 ## upgrade
 
@@ -102,6 +106,8 @@ Preview the complete operation with `repo upgrade --dry-run`, `--json` or `--mar
 Root assets use old-upstream/local/new-upstream three-way merging. Commit `.repoctl/baselines/root/` to preserve the upstream records across clones; record updates are reviewed in each file's `baseline` plan entry and applied atomically with that file. Independent changes merge automatically, while conflicting files and their baselines stay unchanged. Local deletion is never undone. API results expose unresolved `conflicts`; CLI preview and apply exit with code 1 when conflicts remain. Saved plans are reviewed write payloads; their hashes detect stale inputs and inconsistent content, not authorship. Generated app/package directories are outside this feature.
 
 Upgrade apply holds `.repoctl/upgrade.lock` through validation, no-op detection, writes, rollback and cleanup. It never removes colliding recovery files, changed recovery bytes or replacement directories. After an interruption, confirm no writer is active and recover retained backups before removing the lock and regenerating the plan.
+
+Versioned migrations appear in `migrations` with stable IDs and affected files. The Changesets-to-pnpm migration starts at template 1.1.0. Use `--from-version <exact-semver>` only when the old version is known; dependency ranges are not version evidence. Unknown sources adopt only recognized legacy formats. Commit `.repoctl/migrations/ledger.json` when created; its cursor covers migrations, not all assets. Preview writes nothing. Pending/failed bytes and completed diffs are reviewed together; migration groups cannot be split, and completed is written only at the end of a successful migration transaction. Re-preview pending/failed attempts to see already-applied versus remaining files; third-state local edits block recovery and retain attempt-specific backups. The shared `.repoctl/upgrade.lock` is never stolen by age; confirm no writer is active and recover pending backups before clearing it. Recovery performs no network/publish actions or historical script execution.
 
 Purpose: sync repo assets and scripts into the workspace.
 Usage:
@@ -380,7 +386,9 @@ Usage:
 
 `repo check --affected --matrix` previews a versioned GitHub Actions matrix without running checks. `--shards N` deterministically groups workspaces into at most 1–256 jobs. Reuse base/head, filters and global inputs from affected mode. Pass only `matrix` to Actions `fromJSON`, gate strategy expansion with `hasWork`, and execute each row's non-skipped executable/args arrays in order from the checkout root. Each job builds dependencies itself. Full fallbacks stay in one job and retain diagnostics. No workflow is changed or triggered; only explicit `--out` writes a report.
 
-Doctor fix application holds `.repoctl/doctor-fix.lock` through validation, verification, rollback and cleanup. After a crash, confirm no writer remains and reconcile backups before manually removing the lock.
+### Public API baselines
+
+Use `repoctl package api check --json` after building opted-in `tooling.apiReports` library declarations. Local API Extractor >=7.52.12 <8 is required. `package api update --json` produces a read-only plan; explicitly review it before `package api update --apply <plan.json>`. Preserve existing baselines on check, report failures, review change intents, and never claim API signature differences determine complete SemVer compatibility. Baseline paths are workspace-relative; entries/tsconfig are package-relative.
 
 ### Installation security
 
@@ -423,6 +431,8 @@ Run `pnpm build:storybook` for the static site, then `pnpm --filter @repoctl-sto
 - `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` exports an opt-in two-job recipe without overwriting files. Use only the trusted default branch; keep project execution in the read-only job and acquire the GitHub App write token only after immutable artifact, SHA, path, mode and hash verification. App permissions must include contents, pull requests and workflows write.
 
 Maintenance report hashes describe exact Git blobs; planned working-file bytes are validated before staging. The isolated publisher verifies index bytes and Git-equivalent checkout contents across line-ending conversions, with hooks, executable filters and filesystem monitors disabled through PR creation.
+
+Automatic maintenance can complete the built-in Changesets migration and update only its exact `.repoctl/migrations/ledger.json` metadata path. Preparation and publication share the same fixed migration identity, committed legacy-source, journal and completed-history checks; the target template version comes from the committed root repoctl → monorepo → templates lockfile dependency chain, not the repoctl version number. The publisher binds every migration output to the verified Git patch and checks public-package prerelease lanes against committed workspace membership. Interrupted journals, ambiguous lockfiles, noncanonical workspace patterns, and YAML/JSON5 workspace manifests require a reviewed manual `repo upgrade`; no broader `.repoctl` path is authorized. Refresh the trusted exported workflow to adopt this migration policy.
 
 ## release snapshot
 

@@ -4,6 +4,7 @@ import process from 'node:process'
 import { checkbox } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import { resolveCommandConfig } from '../../core/config'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { logger } from '../../core/logger'
 import { clearWorkspaceCache } from '../../core/workspace'
 import { localize } from '../../i18n'
@@ -15,10 +16,7 @@ import { assertSafePath, validateCleanTargets } from './safety'
 /** Remove only selected workspace directories; dry-run prints every resulting change. */
 export async function cleanProjects(cwd: string, overrides?: Partial<CleanCommandConfig>): Promise<void> {
   const workspace = await discoverCleanWorkspace(cwd)
-  const config: CleanCommandConfig = {
-    ...await resolveCommandConfig('clean', workspace.workspaceDir),
-    ...Object.fromEntries(Object.entries(overrides ?? {}).filter(([, value]) => value !== undefined)),
-  }
+  const config = resolveCommandValues('clean', await resolveCommandConfig('clean', workspace.workspaceDir), overrides).values
   const candidates = workspace.packages.filter(pkg => (config.includePrivate !== false || !pkg.manifest.private)
     && !config.ignorePackages?.includes(pkg.manifest.name ?? ''))
   let selected: string[] = []

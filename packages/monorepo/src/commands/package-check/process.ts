@@ -20,7 +20,11 @@ function stop(child: ChildProcess) {
   }
 }
 
-export async function execute(executable: string, args: string[], cwd: string, timeoutMs: number, options: { env?: NodeJS.ProcessEnv } = {}): Promise<PackageCheckCommand> {
+export async function execute(executable: string, args: string[], cwd: string, timeoutMs: number, options: { env?: NodeJS.ProcessEnv, signal?: AbortSignal | undefined } = {}): Promise<PackageCheckCommand> {
+  const { signal } = options
+  if (signal?.aborted) {
+    return { cwd, executable, args, exitCode: null, output: 'Command interrupted.', stdout: '', stderr: '' }
+  }
   return new Promise((resolve) => {
     const child = spawn(executable, args, {
       cwd,
@@ -35,6 +39,17 @@ export async function execute(executable: string, args: string[], cwd: string, t
     const append = (chunk: unknown) => {
       output = `${output}${String(chunk)}`.slice(-4 * 1024 * 1024)
     }
+    const interrupt = () => {
+      failed = true
+      append('\nCommand interrupted.\n')
+      stop(child)
+    }
+    signal?.addEventListener('abort', interrupt, { once: true })
+    if (signal?.aborted) {
+      interrupt()
+    }
+    // A completed script must not leave its background services running.
+    child.once('exit', () => stop(child))
     const onExit = () => stop(child)
     process.once('exit', onExit)
     const timer = setTimeout(() => {
@@ -59,6 +74,8 @@ export async function execute(executable: string, args: string[], cwd: string, t
     })
     child.once('close', (code) => {
       clearTimeout(timer)
+      signal?.removeEventListener('abort', interrupt)
+      stop(child)
       process.removeListener('exit', onExit)
       resolve({ cwd, executable, args, exitCode: failed ? null : code, output, stdout, stderr })
     })
