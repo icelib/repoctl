@@ -6,6 +6,11 @@ import { ConfigValidationError } from '../core/config/validation'
 
 export function registerConfigPreflight(program: Command, cwd: string) {
   program.hook('preAction', async (_parent, action) => {
+    // The read-only catalog action reports the same validation errors itself.
+    // Future subcommands (such as source fetching) still run this preflight.
+    if (action.name() === 'templates' && action.parent === program) {
+      return
+    }
     let command: Command | null = action
     while (command) {
       if (command.name() === 'config') {

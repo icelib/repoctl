@@ -75,6 +75,7 @@ beforeEach(async () => {
 
   vi.doMock('@/core/config', () => ({
     resolveCommandConfig: resolveCommandConfigMock,
+    loadMonorepoConfigDetails: async () => ({ file: '/repo/repoctl.config.mjs', rawLayers: [], config: { commands: { create: await resolveCommandConfigMock() } } }),
   }))
 
   vi.doMock('@/core/logger', () => ({
