@@ -48,7 +48,7 @@ export async function createNativeReleasePlan(options: ReleasePlanOptions): Prom
     const native = nativePlan({ ...options, cwd: report.cwd })
     report.pnpmVersion = native.version
     report.nativeFormat = native.format
-    const pending = await readPendingIntents(report.cwd, { includeRoot: true })
+    const pending = await readPendingIntents(report.cwd)
     const intents = await Promise.all(pending.map(async (filename) => {
       const content = await readFile(path.join(report.cwd, filename), 'utf8')
       return { path: filename, packages: parseIntent(content, filename), summary: parseIntentSummary(content) }
@@ -70,7 +70,7 @@ export async function createNativeReleasePlan(options: ReleasePlanOptions): Prom
         directory,
         lane,
         private: pkg.manifest.private === true,
-        publishCandidate: pkg.manifest.private !== true,
+        publishCandidate: directory !== '.' && pkg.manifest.private !== true,
         intents: intents.flatMap((intent) => {
           if (isIntentConsumed(ledger, path.basename(intent.path, '.md'), release.name, directory, lane)) {
             return []

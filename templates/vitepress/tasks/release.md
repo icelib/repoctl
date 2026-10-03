@@ -24,6 +24,8 @@ After review, use the separate preparation entry `repo release ci --mode=prepare
 
 JSON and Markdown describe the same native version decisions. Notes use the existing release renderer and exclude already consumed intent entries. Private packages may change version but are marked as non-publish candidates. The public `createReleasePlan({ cwd })` API returns the same report without writing it to disk.
 
+Planning, automatic triggers, and version preparation recognize the same root and private-package intents. Native pnpm controls version propagation across the complete workspace. Release PR notes include only publishable child packages and require their version-specific changelogs; missing root/private changelogs do not block preparation. Root packages are not publication candidates, even when they are not marked private. Configure pnpm's `versioning.ignore` when a workspace package should not participate in versioning, rather than changing workspace discovery only for the apply step.
+
 ## Stable and maintenance branches
 
 Configure `commands.release.branches` in `repoctl.config.*`:
@@ -87,6 +89,8 @@ The managed Release workflow uploads both files as `npm-publish-progress-<run_id
 `repoctl-release-progress.json` is an archived diagnostic copy. Its `complete: true` requires npm version/dist-tag visibility, tags pointing to the original commits, published GitHub Releases, and all required hooks. The older npm progress file only describes the npm stage.
 
 Reruns query the registry and GitHub and finish missing stages without reuploading accepted versions or repeating completed hooks. Prereleases push the version commit before uploading. Source discovery requires complete Git history (`fetch-depth: 0`), and recovery checks the original manifest and changelog. If a later commit changed the changelog, check out the reported original commit before recovery.
+
+When `.changeset/ledger.yaml` records a package version, its first appearance along Git's first-parent history identifies the prepared release, including a first release that keeps the package's initial version. A release merged without squashing belongs to the mainline merge commit. Versions without ledger entries, such as dependency-propagated bumps, fall back to manifest history on the same first-parent chain. Uncommitted ledger entries cannot establish a release source. Recovery also rejects adding or deleting a changelog relative to that source; it permits a missing changelog only when both the source and current checkout omit it.
 
 Legacy releases without a checkpoint use npm `gitHead`; if absent, verify the source manually and set `REPO_RELEASE_SOURCE_SHA`. Never substitute the rerun HEAD. Historical targets with existing Releases remain no-ops. Hooks for legacy targets with missing metadata have unknown outcomes.
 

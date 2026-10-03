@@ -63,7 +63,7 @@ export function parseIntent(content: string, filename: string) {
 }
 
 /** Only unconsumed release requests count; declines and resurrected prose do not. */
-export async function readPendingIntents(cwd: string, options: { includeRoot?: boolean } = {}) {
+export async function readPendingIntents(cwd: string) {
   let files
   try {
     files = await readdir(path.join(cwd, '.changeset'), { withFileTypes: true })
@@ -77,7 +77,8 @@ export async function readPendingIntents(cwd: string, options: { includeRoot?: b
   const root = await realpath(cwd)
   const ledger = await readLedger(cwd)
   const config = YAML.parse(await readFile(path.join(cwd, 'pnpm-workspace.yaml'), 'utf8')) as { versioning?: { lanes?: Record<string, string> } }
-  const workspace = await getWorkspacePackages(cwd, { ignorePrivatePackage: false, ignoreRootPackage: !options.includeRoot })
+  // Match pnpm's versioning domain, including packages that will never be published.
+  const workspace = await getWorkspacePackages(cwd, { ignorePrivatePackage: false, ignoreRootPackage: false })
   const pending: string[] = []
   for (const file of files.sort((a, b) => a.name.localeCompare(b.name))) {
     if (!file.isFile() || !file.name.endsWith('.md') || file.name.toLowerCase() === 'readme.md') {

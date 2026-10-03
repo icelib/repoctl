@@ -7,17 +7,30 @@ import { cleanupReleaseTempRoots, createSpawnMock, createTempWorkspace, writePen
 afterEach(cleanupReleaseTempRoots)
 const source = 'a'.repeat(40)
 
-async function fixture(npmStatus: number, npmOutput: string, npmError = '') {
+async function fixture(npmStatus: number, npmOutput: string, npmError = '', propagated = false) {
   const cwd = await createTempWorkspace('main')
   await writePendingIntent(cwd)
-  await writeFile(path.join(cwd, '.changeset/ledger.yaml'), 'repoctl@1.0.0:\n  dir: packages/repoctl\n  intents: [original]\n')
+  const ledger = propagated ? '{}\n' : 'repoctl@1.0.0:\n  dir: packages/repoctl\n  intents: [original]\n'
+  const changelog = '# repoctl\n\n## 1.0.0\n\n- Updated dependency.\n\n## 0.9.0\n\n- Previous release.\n'
+  const committedFiles = {
+    '.changeset/ledger.yaml': ledger,
+    'packages/repoctl/package.json': JSON.stringify({ name: 'repoctl', version: '1.0.0' }),
+    ...(propagated ? { 'packages/repoctl/CHANGELOG.md': changelog } : {}),
+  }
+  await writeFile(path.join(cwd, '.changeset/ledger.yaml'), ledger)
+  if (propagated) {
+    await writeFile(path.join(cwd, 'packages/repoctl/CHANGELOG.md'), changelog)
+  }
   const h = createSpawnMock({
     statuses: { 'npm view repoctl@1.0.0 --json': npmStatus },
     stdout: {
       'npm view repoctl@1.0.0 --json': npmOutput,
       'git rev-parse --is-shallow-repository': 'false',
-      'git log --format=%H -- packages/repoctl/package.json': source,
-      [`git show ${source}:packages/repoctl/package.json`]: JSON.stringify({ name: 'repoctl', version: '1.0.0' }),
+      ...Object.fromEntries(Object.entries(committedFiles).flatMap(([filename, contents]) => [
+        [`git log --first-parent --format=%H -- ${filename}`, source],
+        [`git ls-tree ${source} -- ${filename}`, `100644 blob ${'b'.repeat(40)}\t${filename}`],
+        [`git show ${source}:${filename}`, contents],
+      ])),
     },
     stderr: { 'npm view repoctl@1.0.0 --json': npmError },
   })
@@ -69,9 +82,7 @@ it('does not overwrite an unpublished prerelease when new intents arrive', async
 })
 
 it('protects propagated versions even when pnpm did not add a ledger entry', async () => {
-  const h = await fixture(1, '', 'E404 Not Found')
-  await writeFile(path.join(h.cwd, '.changeset/ledger.yaml'), '{}\n')
-  await writeFile(path.join(h.cwd, 'packages/repoctl/CHANGELOG.md'), '# repoctl\n\n## 1.0.0\n\n- Updated dependency.\n\n## 0.9.0\n\n- Previous release.\n')
+  const h = await fixture(1, '', 'E404 Not Found', true)
   await expect(releaseCi(h.options)).rejects.toThrow(`--source-sha ${source}`)
   expect(h.calls.some(call => call.command === 'pnpm')).toBe(false)
 })
