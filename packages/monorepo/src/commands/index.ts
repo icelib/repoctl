@@ -166,5 +166,6 @@ export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
 export * from './template-instances'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
-
 export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
+export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
+export { planWorkspaceRemoval } from './workspace/remove/plan'

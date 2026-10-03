@@ -228,6 +228,10 @@ Usage:
 - Built-in tooling targets: commitlint, eslint, stylelint, lint-staged, tsconfig, vitest
 - Generated files also update root package.json devDependencies
 
+## workspace remove
+
+For removal of one specific existing package, prefer `workspace remove <exact-name-or-./directory> --json`. It always previews, including root/private/transitive consumers. Save the JSON outside the selected directory. Consumers block by default; `--remove-references` plans only exact manifest dependency fields and matching metadata. Review source/configuration candidates manually: the scan covers only Git-tracked text literal matches and is not an exhaustive import analysis. Git HEAD and a clean selected directory are required; ignored files are inventoried. Root/outside/linked/nested-workspace boundaries and uncertain dependency relationships cannot be forced. Apply only a reviewed plan with `workspace remove --apply <plan.json>`. The `.repoctl/workspace-remove.lock` serializes replay checks through verification, rollback and cleanup; after interruption, verify no writer is active and recover retained originals before removing it. Before commit, failures restore manifests and the directory when safe, preserving concurrent edits and reporting recovery paths; after commit, `cleanupPending` reports retained operation files. Run `pnpm install --lockfile-only`, `pnpm install --frozen-lockfile`, workspace checks, and review Git diff explicitly afterward. Do not hand-edit the lockfile or remove user documentation/global skills.
+
 ## workspace clean (alias: ws clean)
 
 Remove explicitly selected workspace package directories. Nothing is preselected.
