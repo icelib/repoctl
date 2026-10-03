@@ -1,18 +1,31 @@
-import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
+import type { TemplateDefinition, TemplateParameterPrompt, TemplateParameterValues } from '@icebreakers/monorepo-templates'
 import type { TemplateCatalogEntry } from '../../core/template-catalog'
 import type { templateMap } from '../../core/template-catalog/definitions'
+import type { ResolvedTemplateSource } from '../../core/template-source'
+import type { CreateParameterReport } from './parameters/prepare'
 import process from 'node:process'
 import { suggestTemplateKey } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import fs from '@/utils/fs'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { createTemplateCatalog } from '../../core/template-catalog'
 import { loadTemplateCatalogContext } from '../../core/template-catalog/config'
+import { resolveRemoteTemplateSource } from '../../core/template-source'
+import { attachCreateParameters } from './parameters/prepare'
 
 export { getCreateChoices, getTemplateMap, templateMap } from '../../core/template-catalog/definitions'
 
 export type CreateNewProjectType = keyof typeof templateMap
 
 export interface CreateNewProjectOptions {
+  /** Strict values for repoctl.template.json; sensitive values stay in memory only. */
+  parameters?: TemplateParameterValues
+  /** Optional prompt adapter; programmatic callers are noninteractive by default. */
+  parameterPrompt?: TemplateParameterPrompt
+  /** For remote sources, use only an exact verified cache entry. */
+  offline?: boolean
+  /** Asset cache directory; relative paths use cwd. */
+  cacheDir?: string
   /**
    * 目标项目名。
    * 未提供时使用模板映射中的 `target`。
@@ -38,6 +51,7 @@ export interface CreateNewProjectOptions {
 }
 
 export interface CreateNewProjectPlan {
+  parameterization?: CreateParameterReport
   cwd: string
   requestedTemplate: string
   template: string
@@ -52,6 +66,7 @@ export interface CreateNewProjectPlan {
   packageName: string
   templateDefinition: TemplateDefinition
   templateInfo: TemplateCatalogEntry
+  sourceResolution?: ResolvedTemplateSource
 }
 
 /**
@@ -66,16 +81,17 @@ function formatUnknownTemplateError(template: string, availableTemplates: string
   return `未知模板：${template}。${suggestionText}可用模板：${availableTemplates.join(', ')}`
 }
 
-export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOptions): Promise<CreateNewProjectPlan> {
+async function resolvePlan(options: CreateNewProjectOptions | undefined, download: boolean): Promise<CreateNewProjectPlan> {
   const cwd = options?.cwd ?? process.cwd()
   const context = await loadTemplateCatalogContext({ cwd })
   const createConfig = context.createConfig
   const catalog = createTemplateCatalog(context)
 
-  const renameJson = options?.renameJson ?? createConfig?.renameJson ?? false
-  const rawName = options?.name ?? createConfig?.name
+  const effective = resolveCommandValues('create', createConfig, { renameJson: options?.renameJson, name: options?.name, type: options?.type, offline: options?.offline, cacheDir: options?.cacheDir }).values
+  const renameJson = effective.renameJson!
+  const rawName = effective.name
   const name = typeof rawName === 'string' ? rawName.trim() : undefined
-  const requestedTemplate = options?.type ?? createConfig?.type ?? createConfig?.defaultTemplate ?? defaultTemplate
+  const requestedTemplate = effective.type ?? effective.defaultTemplate ?? defaultTemplate
 
   const requestedTemplateName = String(requestedTemplate)
   const invalid = catalog.diagnostics.find(item => item.status === 'fail' && (!item.template || item.template === requestedTemplateName))
@@ -87,8 +103,16 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
     throw new Error(formatUnknownTemplateError(requestedTemplateName, catalog.entries.map(entry => entry.key).sort()))
   }
   const template = templateInfo.key
-  const templateDefinition = { source: templateInfo.source, target: templateInfo.target }
-  const sourceDir = templateInfo.sourceDir
+  const templateDefinition = { source: templateInfo.source, target: templateInfo.target, ...(templateInfo.remote ? { remote: templateInfo.remote } : {}) }
+  const cacheDir = effective.cacheDir
+  const sourceResolution = templateInfo.remote
+    ? await resolveRemoteTemplateSource(templateInfo.remote, templateInfo.source, {
+        cwd,
+        offline: !download || (effective.offline ?? false),
+        ...(cacheDir ? { cacheDir } : {}),
+      })
+    : undefined
+  const sourceDir = sourceResolution?.sourceDir ?? templateInfo.sourceDir
   const targetName = name && name.length > 0 ? name : templateDefinition.target
   const targetDir = path.join(cwd, targetName)
   const sourceJsonPath = path.resolve(sourceDir, 'package.json')
@@ -96,7 +120,7 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
   const packageJsonFileName = renameJson ? 'package.mock.json' : 'package.json'
   const packageName = name?.startsWith('@') ? name : path.basename(targetName)
 
-  return {
+  return attachCreateParameters({
     cwd,
     requestedTemplate: requestedTemplateName,
     template,
@@ -111,5 +135,16 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
     packageName,
     templateDefinition,
     templateInfo,
-  }
+    ...(sourceResolution ? { sourceResolution } : {}),
+  }, options?.parameters, options?.parameterPrompt)
+}
+
+/** Read-only creation preview; fetch remote assets explicitly before planning. */
+export function resolveCreateNewProjectPlan(options?: CreateNewProjectOptions) {
+  return resolvePlan(options, false)
+}
+
+/** Internal creation path may acquire verified remote assets before any target writes. */
+export function resolveCreationPlan(options?: CreateNewProjectOptions) {
+  return resolvePlan(options, true)
 }

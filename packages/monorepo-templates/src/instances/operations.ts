@@ -1,12 +1,17 @@
-import type { GeneratedTemplateInstanceOptions, TemplateInstanceDraft, TemplateInstanceInfo } from './types'
+import type { GeneratedTemplateInstanceOptions, TemplateInstanceDraft, TemplateInstanceInfo, TemplateSnapshot } from './types'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { exists, instanceRelativePath, safeInstancePath } from './paths'
-import { generationParameters } from './schema'
+import { generationParameters, normalizeTemplateExclusions } from './schema'
 import { captureTemplateSnapshot, snapshotDigest, writeTemplateSnapshot } from './snapshot'
 import { readTemplatePackageVersion } from './source'
 import { loadTemplateBaseline, loadTemplateInstanceRegistry, mutateTemplateRegistry, registerTemplateInstances } from './store'
+
+function excludeSnapshotPaths(snapshot: TemplateSnapshot, excludedPaths: string[]) {
+  const excluded = (file: string) => excludedPaths.some(item => file === item || file.startsWith(`${item}/`))
+  return { ...snapshot, files: snapshot.files.filter(file => !excluded(file.path)), directories: snapshot.directories.filter(directory => !excluded(directory)) }
+}
 
 export function templateInstanceId(target: string, template: string) {
   return createHash('sha256').update(JSON.stringify([target, template])).digest('hex').slice(0, 24)
@@ -29,7 +34,8 @@ export async function prepareGeneratedTemplateInstance(options: GeneratedTemplat
   const requested = instanceRelativePath(options.workspaceDir, options.targetDir)
   const safeTarget = await safeInstancePath(options.workspaceDir, requested)
   const target = instanceRelativePath(await fs.realpath(options.workspaceDir), await fs.realpath(safeTarget))
-  const rendered = await captureTemplateSnapshot(safeTarget)
+  const excludedPaths = normalizeTemplateExclusions(options.excludedPaths ?? [])
+  const rendered = excludeSnapshotPaths(await captureTemplateSnapshot(safeTarget), excludedPaths)
   const originalDigest = snapshotDigest(options.preparedSource.snapshot)
   const renderedDigest = snapshotDigest(rendered)
   return {
@@ -42,6 +48,7 @@ export async function prepareGeneratedTemplateInstance(options: GeneratedTemplat
       generator: { profile: options.profile, version: options.generatorVersion ?? await readTemplatePackageVersion() },
       parameters: generationParameters(options.parameters),
       baseline: { status: 'available', original: originalDigest, rendered: renderedDigest },
+      ...(excludedPaths.length ? { excludedPaths } : {}),
     },
     snapshots: { [originalDigest]: options.preparedSource.snapshot, [renderedDigest]: rendered },
   }
@@ -107,9 +114,9 @@ export async function relocateTemplateInstance(workspaceDir: string, id: string,
     if (instance.baseline.status !== 'available') {
       throw new Error('Cannot verify relocation without an available baseline.')
     }
-    await loadTemplateBaseline(workspaceDir, instance.baseline.rendered)
-    const destination = await captureTemplateSnapshot(await safeInstancePath(workspaceDir, target))
-    if (snapshotDigest(destination) !== instance.baseline.rendered) {
+    const baseline = excludeSnapshotPaths(await loadTemplateBaseline(workspaceDir, instance.baseline.rendered), instance.excludedPaths ?? [])
+    const destination = excludeSnapshotPaths(await captureTemplateSnapshot(await safeInstancePath(workspaceDir, target)), instance.excludedPaths ?? [])
+    if (snapshotDigest(destination) !== snapshotDigest(baseline)) {
       throw new Error('Relocation cannot verify this destination as the same instance: its files differ from the retained baseline.')
     }
     if (registry.instances.some(item => item.id !== instance.id && (item.target === target || item.target.startsWith(`${target}/`) || target.startsWith(`${item.target}/`)))) {

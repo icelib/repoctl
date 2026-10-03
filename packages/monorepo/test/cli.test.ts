@@ -9,15 +9,16 @@ afterEach(async () => {
 })
 
 describe('CLI entrypoint', () => {
-  it('invokes program.parse on startup when arguments are present', async () => {
-    const parseMock = vi.fn()
+  it('invokes program.parseAsync on startup when arguments are present', async () => {
+    const parseMock = vi.fn().mockResolvedValue(undefined)
     const outputHelpMock = vi.fn()
     vi.doMock('node:process', () => ({
       default: {
+        cwd: () => '/repo',
         argv: ['node', 'repoctl', 'init'],
       },
     }))
-    vi.doMock('@/cli/program', () => ({ default: { parse: parseMock, outputHelp: outputHelpMock } }))
+    vi.doMock('@/cli/program', () => ({ default: { parseAsync: parseMock, outputHelp: outputHelpMock, hook: vi.fn() } }))
 
     await import('@/cli')
 
@@ -26,14 +27,15 @@ describe('CLI entrypoint', () => {
   })
 
   it('prints help instead of staying silent when no arguments are provided', async () => {
-    const parseMock = vi.fn()
+    const parseMock = vi.fn().mockResolvedValue(undefined)
     const outputHelpMock = vi.fn()
     vi.doMock('node:process', () => ({
       default: {
+        cwd: () => '/repo',
         argv: ['node', 'repoctl'],
       },
     }))
-    vi.doMock('@/cli/program', () => ({ default: { parse: parseMock, outputHelp: outputHelpMock } }))
+    vi.doMock('@/cli/program', () => ({ default: { parseAsync: parseMock, outputHelp: outputHelpMock, hook: vi.fn() } }))
 
     await import('@/cli')
 

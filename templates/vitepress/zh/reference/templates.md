@@ -230,53 +230,6 @@ repo templates --check --json
 - [配置文件](./config.md)
 - [模板资产治理](/zh/reference/template-assets)
 
-## React 组件库
-
-```bash
-pnpm create repoctl@latest my-workspace -- --yes --templates react-lib
-# 或向已有工作区添加库：
-repo new ui --template react-lib
-```
-
-`react-lib` 默认生成到 `packages/react-lib`，提供 React 19.3+ 的 ESM 组件库。
-组件 `Counter` 和类型 `CounterProps` 从包根入口导入；消费应用还需显式导入
-`包名/style.css`。React、React DOM 和 JSX runtime 保持 peer 外置，CSS 标记为副作用。
-模板自带构建、ESLint/Stylelint、TypeScript、tsd 和基于构建产物的组件测试。
-
-生成包默认保持私有。发布前请设置包名与版本，移除 `private` 或设为 `false`，
-执行 `repo package check` 后再发布。源码工作区中的 `pnpm test:packaged-react-lib`
-覆盖新建工作区和已有工作区两种创建方式，并把实际 tarball 安装到独立 Vite 应用中，
-验证公开类型、生产样式、鼠标/键盘交互及共享同一 React 实例。打包入口保留
-`use client`，并用 Next App Router 的服务端页面直接导入 tarball，验证生产构建、
-浏览器水合和交互。Storybook 为可选扩展。
-
-## 模板作者验证
-
-`repo templates validate <key>` 是显式执行命令。它解析同一个内置/自定义模板目录，在作者仓库外生成临时工作区，通过 Corepack 使用声明的 pnpm 版本安装依赖，依次执行 build → lint → typecheck（TypeScript/Vue）→ tsd（类型库）→ test → test:e2e（已声明时）。缺少必需脚本会在安装前失败。存在样式文件时，`lint` 必须调用 Stylelint，或提供单独的 `lint:styles` 脚本。
-
-```bash
-repo templates validate internal --fixture ./fixtures/workspace --name basic --name renamed --json
-repo templates validate react-lib --dry-run --json
-repo templates validate internal --fixture ./fixtures/workspace --keep-failed --timeout 240000
-```
-
-可选 fixture 是作者维护的工作区骨架，包含 `package.json`、精确的 `packageManager: "pnpm@..."`、工作区设置及配套包。工具使用正常模板过滤复制它，不会修改原目录；未提供时使用已安装的 repoctl 工作区资产。每个名称生成独立工作区，目前名称组合验证重命名行为，尚不支持任意模板功能参数。
-
-库模板仅在临时副本中移除 `private`，生成真实 tarball，检查 exports 与运行时依赖声明（含 `imports` 映射），再在独立消费者里安装并导入该包。声明文件通过严格 NodeNext 类型解析验证。应用、服务或浏览器行为由模板提供能正常结束的 `test`/`test:e2e` 脚本；脚本负责常规服务生命周期，工具提供超时和中断清理。浏览器安装由作者显式准备。
-
-报告使用稳定阶段和诊断代码记录命令及输出。默认清理成功和失败样本；`--keep-failed` 保留失败样本及 `report.json`，`--keep-temp` 保留全部样本，并返回保留目录。普通 `repo templates` 和 `--check` 不执行模板命令。验证会执行受信任的作者脚本，不是运行不受信任代码的沙箱。
-
-同一能力也通过公开 API 提供：
-
-```ts
-import { planTemplateValidation, validateTemplate } from 'repoctl'
-
-const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace' }
-const controller = new AbortController()
-const plan = await planTemplateValidation(options)
-const report = await validateTemplate({ ...options, keep: 'failure', signal: controller.signal })
-```
-
 ## 实例来源登记与历史关联
 
 `repo new` 和 `create-repoctl` 成功后会把每个生成实例登记到 `.repoctl/template-instances.json`。请把该文件与 `.repoctl/template-baselines/` 一起纳入版本控制。记录包含稳定模板标识、实际模板包版本、源内容摘要、生成配置，以及白名单内的 `packageName` / `renameJson` 参数。自定义本地来源使用不可变内容摘要，不会声称拥有已发布的上游版本。根工程受管资产有独立所有权，不会登记为项目实例。
@@ -344,3 +297,172 @@ repo templates recover-upgrade packages/shared-utils --apply --json
 恢复预览只读。应用恢复时，只有每个受影响路径仍与记录的变更前或变更后状态一致，才会恢复文件与旧来源版本；冲突的业务编辑须先另行保存并处理。恢复不会重放失败的升级。进程异常退出可能留下 `.repoctl/template-instances.lock`；核实记录中的进程已经停止后，再移除该锁并应用恢复。元数据已提交但恢复记录清理失败时，错误会明确说明升级已应用，此时恢复命令仍会撤销记录中的这次升级。
 
 恢复记录仅包含本次实际修改文件的本地前后内容，操作成功或恢复完成后会自动删除。请作为本地备份处理，将 `.repoctl/template-upgrades/` 排除在版本控制之外，并继续跟踪实例登记与模板基线。JSON 预览也包含受管候选文件内容，应按对应文件的敏感程度保存。即使是预览模式，显式传入 `--out <文件>` 仍会写出报告。
+
+## 诊断版本落后与受管文件漂移
+
+```sh
+repo templates drift --json
+repo templates drift --source-dir ../templates-2.2.0 --markdown --out reports/template-drift.md
+repo templates drift --remote --strict
+repo doctor --rules template-instance-baseline,template-instance-version,template-instance-drift,root-asset-drift --strict
+```
+
+漂移诊断只读，不更新来源版本、快照、登记信息或业务文件。`--out` 仅写出指定报告。报告包含路径与内容摘要，不包含业务文件正文。
+
+默认读取当前实际安装的模板包元数据，不访问网络。`--source-dir` 改为读取已解压包的元数据，不执行其脚本。`--remote` 显式查询公共 npm 仓库的 `latest` 标签并设置超时，不能与 `--source-dir` 同用。请求失败、返回内容无效或包身份不符时保持不可用状态。本地比较的 `same` 只表示两个已知版本一致，不代表已经是远程最新版本。`newer` 表示已知有较新模板包，不声称每个独立模板都发生变化。自定义快照来源没有可比较包版本，版本状态保留为 `unknown`。
+
+每个实例或根资产分别报告基线有效性、版本比较（`newer`、`same`、`ahead`、`unknown`）与本地漂移。仅检查可信留存基线中的路径，业务新增文件不进入扫描；用户删除明确显示 `deleted`，持久升级排除项显示 `excluded` 且不读取内容。不安全或不可读路径显示 `unavailable`。根资产必须具有经过验证的 `.repoctl/baselines/root/` 记录才能参与比较；登记不存在表示未受管，不是已验证健康。
+
+本地修改、删除、已知新版本和证据缺失默认产生警告。`--strict` 在存在有效警告时失败。Doctor 稳定规则 ID 为 `template-version-evidence`、`template-instance-registry`、`template-instance-baseline`、`template-instance-version`、`template-instance-drift`、`root-asset-registry`、`root-asset-version`、`root-asset-drift`。
+
+需要保留有理由的诊断豁免时，复用 `commands.doctor.suppressions`。精确的 workspace 相对路径将决定限定到一处发现；省略路径会覆盖所有实例中对应规则。有效抑制影响有效统计与 strict 退出码，原始发现、理由、过期项和未命中项仍完整保留。诊断抑制不改变文件所有权；文件需要退出模板管理时，应使用实例升级的持久排除功能。
+
+```ts
+export default {
+  commands: {
+    doctor: {
+      suppressions: [{
+        id: 'template-instance-drift',
+        path: 'packages/shared-utils/README.md',
+        reason: '团队独立维护该业务文档',
+        expires: '2027-01-31',
+      }],
+    },
+  },
+}
+```
+
+## React 组件库
+
+```bash
+pnpm create repoctl@latest my-workspace -- --yes --templates react-lib
+# 或向已有工作区添加库：
+repo new ui --template react-lib
+```
+
+`react-lib` 默认生成到 `packages/react-lib`，提供 React 19.3+ 的 ESM 组件库。
+组件 `Counter` 和类型 `CounterProps` 从包根入口导入；消费应用还需显式导入
+`包名/style.css`。React、React DOM 和 JSX runtime 保持 peer 外置，CSS 标记为副作用。
+模板自带构建、ESLint/Stylelint、TypeScript、tsd 和基于构建产物的组件测试。
+
+生成包默认保持私有。发布前请设置包名与版本，移除 `private` 或设为 `false`，
+执行 `repo package check` 后再发布。源码工作区中的 `pnpm test:packaged-react-lib`
+覆盖新建工作区和已有工作区两种创建方式，并把实际 tarball 安装到独立 Vite 应用中，
+验证公开类型、生产样式、鼠标/键盘交互及共享同一 React 实例。打包入口保留
+`use client`，并用 Next App Router 的服务端页面直接导入 tarball，验证生产构建、
+浏览器水合和交互。Storybook 为可选扩展。
+
+## 模板作者验证
+
+`repo templates validate <key>` 是显式执行命令。它解析同一个内置/自定义模板目录，在作者仓库外生成临时工作区，通过 Corepack 使用声明的 pnpm 版本安装依赖，依次执行 build → lint → typecheck（TypeScript/Vue）→ tsd（类型库）→ test → test:e2e（已声明时）。缺少必需脚本会在安装前失败。存在样式文件时，`lint` 必须调用 Stylelint，或提供单独的 `lint:styles` 脚本。
+
+```bash
+repo templates validate internal --fixture ./fixtures/workspace --name basic --name renamed --json
+repo templates validate internal --fixture ./fixtures/workspace --parameter-matrix matrix.json --dry-run --json
+repo templates validate internal --fixture ./fixtures/workspace --keep-failed --timeout 240000
+```
+
+可选 fixture 是作者维护的工作区骨架，包含 `package.json`、精确的 `packageManager: "pnpm@..."`、工作区设置及配套包。工具使用正常模板过滤复制它，不会修改原目录；未提供时使用已安装的 repoctl 工作区资产。每个名称与 `--parameter-matrix matrix.json` 提供的类型化参数对象（JSON 数组）交叉验证，总计最多 20 个样本。未提供矩阵时，模板默认参数构成一组。每个组合生成独立工作区，按渲染后的文件和条件包字段确定必需脚本，复用 `repo new` 的 `repoctl.template.json` 契约。
+
+库模板仅在临时副本中移除 `private`，生成真实 tarball，检查 exports 与运行时依赖声明（含 `imports` 映射），再在独立消费者里安装并导入该包。声明文件通过严格 NodeNext 类型解析验证。应用、服务或浏览器行为由模板提供能正常结束的 `test`/`test:e2e` 脚本；脚本负责常规服务生命周期，工具提供超时和中断清理。浏览器安装由作者显式准备。
+
+报告使用稳定阶段和诊断代码记录命令及输出。默认清理成功和失败样本；`--keep-failed` 保留失败样本及 `report.json`，`--keep-temp` 保留全部样本，并返回保留目录。普通 `repo templates` 和 `--check` 不执行模板命令。验证会执行受信任的作者脚本，不是运行不受信任代码的沙箱。
+
+标记为 `sensitive` 的参数值不会进入计划和报告。含敏感值的组合隐藏子命令输出与诊断消息，保留阶段、退出码和诊断代码。保留的生成工作区可能在目标文件中包含输入密钥，调试后请妥善保护或删除目录。参数文件只读取，不打印内容。
+
+同一能力也通过公开 API 提供：
+
+```ts
+import { planTemplateValidation, validateTemplate } from 'repoctl'
+
+const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace', parameterSets: [{ enabled: false }, { enabled: true }] }
+const controller = new AbortController()
+const plan = await planTemplateValidation(options)
+const report = await validateTemplate({ ...options, keep: 'failure', signal: controller.signal })
+```
+
+## 固定的 npm 与 Git 来源
+
+自定义模板可以来自精确 npm 版本或显式 Git ref；`source` 表示归档内部的相对目录。模板就是归档根目录时使用 `source: '.'`。`templatesDir` 只影响本地来源。
+
+```ts
+export default defineMonorepoConfig({
+  commands: {
+    create: {
+      cacheDir: './.cache/template-assets',
+      templateMap: {
+        team: {
+          source: 'templates/library',
+          target: 'packages/team',
+          category: 'library',
+          remote: { kind: 'npm', packageName: '@acme/templates', version: '1.2.3' },
+        },
+        service: {
+          source: 'templates/service',
+          target: 'apps/service',
+          remote: { kind: 'git', repository: 'https://github.com/acme/templates.git', ref: 'v1.2.3' },
+        },
+      },
+    },
+  },
+})
+```
+
+```sh
+repo templates fetch team --json
+repo new sdk --template team --dry-run
+repo new sdk --template team --offline
+repo templates validate team --fixture ./fixtures/workspace --offline --json
+```
+
+`repo templates fetch <key>` 只获取并验证资产。实际创建和作者验证也能获取缺失来源。列表、健康检查、创建预览、验证预览保持只读，需要先 fetch 同一个来源。`--offline` 遇到缓存缺失直接失败。fetch/new/package-create/validate 的 `--cache-dir` 与 `commands.create.cacheDir` 相对调用目录解析；默认目录为 `$XDG_CACHE_HOME/repoctl/template-sources-v1`，未设置时为 `~/.cache/repoctl/template-sources-v1`。
+
+npm 只接受精确版本，不接受标签或范围。registry 优先使用 `remote.registry`，其次使用 npm 的 scope 配置或默认 registry。已有 `.npmrc` 认证信息仅保留在内存中，不写入计划、缓存清单和来源记录。Git 支持 HTTPS、SSH、file URL，必须提供 ref。通过 credential helper 或 SSH agent 认证，不在 URL 中嵌入凭据。下载阶段不会运行远程包脚本、Git hooks、子模块或依赖安装。
+
+首次获取 Git ref 会记录解析后的 commit。即使分支或标签移动，同一个请求仍复用已验证的缓存 commit。跨全新缓存复现时应填写完整 commit hash；明确需要重新解析浮动 ref 时，可以使用新缓存目录，或确认没有写入者后删除对应缓存项。缓存损坏会明确失败，不会静默信任或刷新。归档在解包前检查体积与路径，拒绝越界、链接、特殊文件以及大小写或 Unicode 等可移植路径冲突。
+
+创建记录 npm 版本与 integrity，或 Git commit 与 integrity，并保存可重建基线。远程实例支持基线重建与漂移检查。`templates upgrade` 当前接受内置模板包版本，对远程实例明确报错；修改远程声明不会升级已生成项目。
+
+公共函数 `resolveRemoteTemplateSource(remote, source, { cwd, cacheDir, offline })` 返回已验证的 `sourceDir`、规范化 `request`、固定的 `resolved` 身份、资产 `digest` 和 `cache: 'hit' | 'downloaded'`。
+
+## 类型化参数与条件生成
+
+模板作者可在根目录放置 `repoctl.template.json`，声明参数、需要插值的文件，以及一起启用或省略的文件、scripts 和依赖。配置支持声明式等值条件，不执行脚本。
+
+```json
+{
+  "schemaVersion": 1,
+  "parameters": {
+    "label": { "type": "string", "default": "demo" },
+    "tests": { "type": "boolean", "default": false },
+    "flavor": { "type": "enum", "options": ["plain", "bold"], "default": "plain" },
+    "token": { "type": "string", "required": true, "sensitive": true }
+  },
+  "interpolate": ["src/settings.ts", "credentials.local"],
+  "conditions": [{
+    "when": { "parameter": "tests", "equals": true },
+    "files": ["test"],
+    "package": {
+      "scripts": { "test": "vitest run" },
+      "devDependencies": { "vitest": "catalog:" }
+    }
+  }]
+}
+```
+
+`interpolate` 和条件文件使用精确相对路径，目录包含其后代；不支持 glob、文件名插值和路径逃逸。只有声明的 UTF-8 文本会替换 <code v-pre>{{repoctl:label}}</code>（原值文本）和 <code v-pre>{{repoctl-json:label}}</code>（JSON 字面量），二进制保持原字节。工程路径引用在插值前转换。原值不自动做代码或 HTML 转义，作者须选择符合目标格式的占位方式。契约文件不进入生成项目。
+
+条件 package 条目只能有一个所有者，且不得已存在于基础清单。支持 scripts、dependencies、devDependencies、peerDependencies 和 optionalDependencies；示例的 catalog 引用须由消费工作区提供。条件不能使用敏感参数，package 条目不能插入敏感值。
+
+```bash
+# answers.json: {"label":"api","tests":true,"flavor":"bold","token":"..."}
+repo new api --template team --data ./answers.json --json
+repo new api --template team --data ./answers.json
+repo package create api --template team --data ./answers.json
+```
+
+数据文件为不超过 1 MiB 的 UTF-8 JSON 对象。未知字段、类型错误、无效枚举和缺少必填值在写入前失败，诊断不回显输入值。布尔值不能使用字符串。交互终端询问缺少的参数，敏感字符串使用掩码输入；JSON 和非交互调用不弹出问题。问答和文件使用同一校验规则。无参数契约的模板保持原输出，且拒绝额外参数。
+
+预览的可选 `parameterization` 包含脱敏值及文件/package 条目选择。敏感原值仅用于内存渲染，不进入报告、实例参数或留存基线。包含敏感值的文件成为持久排除项，由业务自行维护，基线重建不会恢复它们。升级复用非敏感参数并保留敏感文件；新版本新增敏感插值路径时，必须明确排除该路径才能升级其余文件。
+
+公开 API 为 `resolveCreateNewProjectPlan({ parameters, parameterPrompt? })` 和 `applyCreateNewProjectPlan(plan)`。执行接受同一进程中未修改的原始计划，JSON 报告不能直接执行，须用原数据重新规划。来源变化、已存在目标或计划修改会拒绝写入。参数化创建统一提交暂存输出、workspace 清单和实例记录；失败恢复本次文件，遇到并发编辑或文件替换则保留并报告恢复位置。重复创建不会覆盖项目。

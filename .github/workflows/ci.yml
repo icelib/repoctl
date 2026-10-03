@@ -114,7 +114,15 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-template-validation
 
+      - name: Check packaged remote template sources
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-template-sources
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Check packaged typed template parameters
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 24
+        run: pnpm test:packaged-template-parameters

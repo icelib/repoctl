@@ -1,15 +1,21 @@
 export * from '../constants'
 export * from './codeowners'
 export * from './config'
+export * from './config/inspection'
+export * from './config/resolution'
+export * from './config/validation'
 export * from './context'
 export * from './git'
 export * from './logger'
 export { resolveTemplateCatalog } from './template-catalog'
 export type { CreateTemplateDefinition, ResolveTemplateCatalogOptions, TemplateCatalog, TemplateCatalogDiagnostic, TemplateCatalogEntry } from './template-catalog'
-
+export { resolveRemoteTemplateSource } from './template-source'
+export type { ResolvedTemplateSource, TemplateSourceOptions, TemplateSourceRequest } from './template-source'
 export * from './workspace'
 
 export * from './workspace-boundaries'
 
 export * from './workspace-graph'
+
 export * from './workspace-tasks'
+export type { ResolvedTemplateRemoteSource, TemplateRemoteSource } from '@icebreakers/monorepo-templates'

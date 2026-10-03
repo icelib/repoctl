@@ -1,4 +1,4 @@
-import type { TemplateChoice } from '..'
+import type { TemplateChoice, TemplateDefinition } from '..'
 import { expectAssignable, expectType } from 'tsd'
 import {
   assetTargets,
@@ -38,7 +38,7 @@ expectType<boolean>(isTemplateCategory('library'))
 expectType<boolean>(isTemplateKey('cli'))
 expectType<string | undefined>(getTemplateSource('cli'))
 expectType<string | undefined>(getTemplateTarget('cli'))
-expectType<{ source: string, target: string } | undefined>(getTemplateDefinition('cli'))
+expectType<TemplateDefinition | undefined>(getTemplateDefinition('cli'))
 expectType<string | undefined>(suggestTemplateKey('tsdwon'))
 expectType<string | undefined>(suggestTemplateKey('custom', { keys: ['custom-template'] }))
 

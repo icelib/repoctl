@@ -34,11 +34,17 @@ function formatDoctorReport(report: DoctorReport, color = false) {
   for (const check of report.checks) {
     lines.push(`[${status(check.status)}] ${check.title}`)
     lines.push(`  ${check.detail}`)
+    if (check.suppression) {
+      lines.push(`  suppression: ${check.suppression.state}; reason: ${check.suppression.reason}; expires: ${check.suppression.expires ?? 'never'}`)
+    }
     if (check.fix) {
       lines.push(localize(`  fix: ${check.fix}`, `  修复：${check.fix}`))
     }
   }
 
+  for (const item of report.suppressions ?? []) {
+    lines.push(`suppression ${item.id}: ${item.state}; matched: ${item.matched}; reason: ${item.reason}; expires: ${item.expires ?? 'never'}`)
+  }
   lines.push('')
   lines.push(
     color
@@ -85,6 +91,7 @@ function formatDoctorMarkdown(report: DoctorReport) {
           '',
         ]
       : []),
+    ...(report.suppressions?.length ? [localize('## Suppressions', '## 抑制记录'), '', ...report.suppressions.map(item => `- ${item.id}: ${item.state}; matched: ${item.matched}; reason: ${item.reason}; expires: ${item.expires ?? 'never'}`), ''] : []),
     localize('## Checks', '## 检查项'),
     '',
     ...report.checks.map(check => `- ${check.status}: ${check.title}`),
