@@ -1,11 +1,17 @@
-import type { TemplateInstance, TemplateInstanceDraft, TemplateInstanceRegistry, TemplateInstanceReplacementHooks, TemplateSnapshot } from './types'
-import { randomUUID } from 'node:crypto'
+import type { TemplateInstance, TemplateInstanceDraft, TemplateInstanceRegistrationOptions, TemplateInstanceRegistry, TemplateInstanceReplacementHooks, TemplateSnapshot } from './types'
+import { createHash, randomUUID } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { exists, instanceRelativePath, safeInstancePath, templateBaselineDirectory, templateRegistryPath } from './paths'
 import { digestPattern, parseRegistry, validateInstance } from './schema'
 import { snapshotDigest, validateSnapshot } from './snapshot'
+
+export class TemplateRegistryCleanupError extends AggregateError {
+  constructor(readonly paths: string[], errors: unknown[]) {
+    super(errors, `Template registry cleanup failed; inspect retained metadata: ${paths.join(', ')}`)
+  }
+}
 
 async function removeOwnedLock(lockPath: string, token: string) {
   try {
@@ -59,7 +65,7 @@ export async function loadTemplateBaseline(workspaceDir: string, digest: string)
 export async function mutateTemplateRegistry<T>(
   workspaceDir: string,
   mutate: (registry: TemplateInstanceRegistry) => Promise<{ result: T, snapshots?: Record<string, TemplateSnapshot> }>,
-  hooks?: Pick<TemplateInstanceReplacementHooks, 'rollback' | 'committed'>,
+  hooks?: Partial<Pick<TemplateInstanceReplacementHooks, 'rollback' | 'committed'>>,
 ): Promise<T> {
   const file = await safeInstancePath(workspaceDir, templateRegistryPath)
   const lockPath = await safeInstancePath(workspaceDir, '.repoctl/template-instances.lock')
@@ -79,78 +85,89 @@ export async function mutateTemplateRegistry<T>(
   let temporaryOwner: { dev: bigint, ino: bigint } | undefined
   const lockToken = `${process.pid}:${randomUUID()}\n`
   let committed = false
+  let result!: T
+  let failure: { error: unknown } | undefined
   try {
     await lock.writeFile(lockToken)
     const registry = await loadTemplateInstanceRegistry(workspaceDir)
     const previous = JSON.stringify(registry)
-    const { result, snapshots = {} } = await mutate(registry)
+    const mutation = await mutate(registry)
+    result = mutation.result
+    const snapshots = mutation.snapshots ?? {}
     registry.instances.sort((a, b) => a.target < b.target ? -1 : a.target > b.target ? 1 : 0)
     parseRegistry(JSON.stringify(registry))
-    if (JSON.stringify(registry) === previous) {
-      committed = true
-      await hooks?.committed()
-      return result
-    }
-    for (const [digest, snapshot] of Object.entries(snapshots)) {
-      validateSnapshot(snapshot)
-      if (!digestPattern.test(digest) || snapshotDigest(snapshot) !== digest) {
-        throw new Error('Template snapshot digest does not match its content.')
+    if (JSON.stringify(registry) !== previous) {
+      for (const [digest, snapshot] of Object.entries(snapshots)) {
+        validateSnapshot(snapshot)
+        if (!digestPattern.test(digest) || snapshotDigest(snapshot) !== digest) {
+          throw new Error('Template snapshot digest does not match its content.')
+        }
+        const target = await safeInstancePath(workspaceDir, `${templateBaselineDirectory}/${digest}.json`)
+        if (await exists(target)) {
+          await loadTemplateBaseline(workspaceDir, digest)
+          continue
+        }
+        await fs.mkdir(path.dirname(target), { recursive: true })
+        const handle = await fs.open(target, 'wx')
+        written.push(target)
+        try {
+          await handle.writeFile(`${JSON.stringify(snapshot)}\n`)
+        }
+        finally {
+          await handle.close()
+        }
       }
-      const target = await safeInstancePath(workspaceDir, `${templateBaselineDirectory}/${digest}.json`)
-      if (await exists(target)) {
-        await loadTemplateBaseline(workspaceDir, digest)
-        continue
-      }
-      await fs.mkdir(path.dirname(target), { recursive: true })
-      const handle = await fs.open(target, 'wx')
-      written.push(target)
+      const handle = await fs.open(temporary, 'wx')
       try {
-        await handle.writeFile(`${JSON.stringify(snapshot)}\n`)
+        temporaryOwner = await handle.stat({ bigint: true })
+        await handle.writeFile(`${JSON.stringify(registry, null, 2)}\n`)
       }
       finally {
         await handle.close()
       }
+      await fs.rename(temporary, file)
     }
-    const handle = await fs.open(temporary, 'wx')
-    try {
-      temporaryOwner = await handle.stat({ bigint: true })
-      await handle.writeFile(`${JSON.stringify(registry, null, 2)}\n`)
-    }
-    finally {
-      await handle.close()
-    }
-    await fs.rename(temporary, file)
     committed = true
-    await hooks?.committed()
-    return result
+    await hooks?.committed?.()
   }
   catch (error) {
+    failure = { error }
     if (!committed) {
       try {
-        await hooks?.rollback()
+        await hooks?.rollback?.()
       }
       catch (recoveryError) {
-        throw new AggregateError([error, recoveryError], 'Template registry transaction failed and file recovery needs attention. Preserve the pending recovery record.')
+        failure = { error: new AggregateError([error, recoveryError], `Template registry transaction failed and file recovery needs attention: ${recoveryError instanceof Error ? recoveryError.message : String(recoveryError)}. Preserve the pending recovery record.`) }
       }
     }
-    throw error
   }
-  finally {
+  const paths: string[] = []
+  const errors: unknown[] = []
+  const cleanup = async (filename: string, operation: () => Promise<unknown>) => {
     try {
-      await removeOwnedTemporary(temporary, temporaryOwner)
-      if (!committed) {
-        await Promise.all(written.map(target => fs.rm(target, { force: true })))
-      }
+      await operation()
     }
-    finally {
-      try {
-        await lock.close()
-      }
-      finally {
-        await removeOwnedLock(lockPath, lockToken)
-      }
+    catch (error) {
+      paths.push(filename)
+      errors.push(error)
     }
   }
+  await cleanup(temporary, async () => await removeOwnedTemporary(temporary, temporaryOwner))
+  if (!committed) {
+    await Promise.all(written.map(target => cleanup(target, async () => await fs.rm(target, { force: true }))))
+  }
+  await cleanup(lockPath, async () => await lock.close())
+  await cleanup(lockPath, async () => await removeOwnedLock(lockPath, lockToken))
+  if (paths.length) {
+    const cleanupError = new TemplateRegistryCleanupError([...new Set(paths)].sort(), errors)
+    failure = { error: failure
+      ? new AggregateError([failure.error, cleanupError], `${failure.error instanceof Error ? failure.error.message : 'Template registry transaction failed'}. ${cleanupError.message}`)
+      : cleanupError }
+  }
+  if (failure) {
+    throw failure.error
+  }
+  return result
 }
 
 export function canVerifyTemplateInstance(existing: TemplateInstance, next: TemplateInstance) {
@@ -164,7 +181,8 @@ export function canVerifyTemplateInstance(existing: TemplateInstance, next: Temp
   return existing.baseline.status === 'unverified' && next.baseline.status === 'available' && identity(existing) === identity(next)
 }
 
-export async function registerTemplateInstances(workspaceDir: string, drafts: TemplateInstanceDraft[], precondition?: (registry: TemplateInstanceRegistry) => Promise<void>, hooks?: Pick<TemplateInstanceReplacementHooks, 'rollback' | 'committed'>) {
+/** Generated IDs can opt into collision allocation under the lock; retries retain the existing target identity. */
+export async function registerTemplateInstances(workspaceDir: string, drafts: TemplateInstanceDraft[], precondition?: (registry: TemplateInstanceRegistry) => Promise<void>, options: TemplateInstanceRegistrationOptions = {}) {
   return mutateTemplateRegistry(workspaceDir, async (registry) => {
     await precondition?.(registry)
     const registered = []
@@ -193,9 +211,17 @@ export async function registerTemplateInstances(workspaceDir: string, drafts: Te
       if (registry.instances.some(instance => instance.target.startsWith(`${draft.instance.target}/`) || draft.instance.target.startsWith(`${instance.target}/`))) {
         throw new Error(`Template target overlaps an existing instance: ${draft.instance.target}`)
       }
-      registry.instances.push(draft.instance)
+      let id = draft.instance.id
+      if (!options.allocateIdOnConflict && registry.instances.some(instance => instance.id === id)) {
+        throw new Error(`Template instance identity is already registered at a different target: ${id}`)
+      }
+      for (let attempt = 1; registry.instances.some(instance => instance.id === id); attempt++) {
+        id = createHash('sha256').update(JSON.stringify([draft.instance.id, draft.instance.target, attempt])).digest('hex').slice(0, 24)
+      }
+      const instance = { ...draft.instance, id }
+      registry.instances.push(instance)
       Object.assign(snapshots, draft.snapshots)
-      registered.push(draft.instance)
+      registered.push(instance)
     }
     for (const instance of registered) {
       if (instance.baseline.status === 'available') {
@@ -207,5 +233,5 @@ export async function registerTemplateInstances(workspaceDir: string, drafts: Te
       }
     }
     return { result: registered, snapshots }
-  }, hooks)
+  }, options)
 }

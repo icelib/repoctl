@@ -83,11 +83,24 @@ export interface TemplateInstanceDraft {
   snapshots: Record<string, TemplateSnapshot>
 }
 
+export interface TemplateInstanceRegistrationOptions extends Partial<Pick<TemplateInstanceReplacementHooks, 'rollback' | 'committed'>> {
+  /** Generated path-based IDs may collide after relocation; explicit caller IDs remain strict by default. */
+  allocateIdOnConflict?: boolean
+}
+
 /** File-side transaction hooks run while the instance registry lock is held. */
 export interface TemplateInstanceReplacementHooks {
   apply: () => Promise<void>
   rollback: () => Promise<void>
   committed: () => Promise<void>
+}
+
+export interface TemplateInstanceMovePlan {
+  from: string
+  to: string
+  beforeHash: string
+  afterHash: string
+  relocations: { id: string, from: string, to: string }[]
 }
 
 export interface TemplateFileDifference {
