@@ -17,6 +17,7 @@ describe('runCreateFlow', () => {
     await runCreateFlow('/repo', '')
 
     expect(createNewProjectMock).toHaveBeenCalledWith({
+      parameterPrompt: expect.any(Function),
       name: 'packages/demo',
       cwd: '/repo',
       type: 'tsdown',
@@ -33,7 +34,18 @@ describe('runCreateFlow', () => {
     const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
     await runCreateFlow('/repo', 'service')
     expect(selectMock).toHaveBeenCalledWith(expect.objectContaining({ choices: [{ value: 'internal', name: 'Company service', description: 'Company API' }] }))
-    expect(createNewProjectMock).toHaveBeenCalledWith({ cwd: '/repo', name: 'apps/service', type: 'internal' })
+    expect(createNewProjectMock).toHaveBeenCalledWith({ parameterPrompt: expect.any(Function), cwd: '/repo', name: 'apps/service', type: 'internal' })
+  })
+
+  it('offers React libraries and normalizes their package destination', async () => {
+    setTty(true)
+    selectMock.mockResolvedValueOnce('library').mockResolvedValueOnce('react-lib')
+    const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
+    await runCreateFlow('/repo', 'ui')
+    expect(selectMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      choices: expect.arrayContaining([expect.objectContaining({ value: 'react-lib' })]),
+    }))
+    expect(createNewProjectMock).toHaveBeenCalledWith({ parameterPrompt: expect.any(Function), name: 'packages/ui', cwd: '/repo', type: 'react-lib' })
   })
 
   it('maps web-app intent to apps directory', async () => {
@@ -44,19 +56,23 @@ describe('runCreateFlow', () => {
     await runCreateFlow('/repo', 'portal')
 
     expect(createNewProjectMock).toHaveBeenCalledWith({
+      parameterPrompt: expect.any(Function),
       name: 'apps/portal',
       cwd: '/repo',
       type: 'vue-hono',
     })
   })
 
-  it('selects React from the web-app intent without changing the Vue default', async () => {
+  it.each(['react-vite', 'next'])('selects %s from the web-app intent without changing the Vue default', async (template) => {
     setTty(true)
-    selectMock.mockResolvedValueOnce('web-app').mockResolvedValueOnce('react-vite')
+    selectMock.mockResolvedValueOnce('web-app').mockResolvedValueOnce(template)
     const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
     await runCreateFlow('/repo', 'portal')
-    expect(createNewProjectMock).toHaveBeenCalledWith({ name: 'apps/portal', cwd: '/repo', type: 'react-vite' })
-    expect(selectMock).toHaveBeenLastCalledWith(expect.objectContaining({ default: 'vue-hono' }))
+    expect(createNewProjectMock).toHaveBeenCalledWith({ parameterPrompt: expect.any(Function), name: 'apps/portal', cwd: '/repo', type: template })
+    expect(selectMock).toHaveBeenLastCalledWith(expect.objectContaining({
+      choices: expect.arrayContaining([expect.objectContaining({ value: template })]),
+      default: 'vue-hono',
+    }))
   })
 
   it('keeps explicit nested paths unchanged in intent flow', async () => {
@@ -67,6 +83,7 @@ describe('runCreateFlow', () => {
     await runCreateFlow('/repo', 'apps/custom-api')
 
     expect(createNewProjectMock).toHaveBeenCalledWith({
+      parameterPrompt: expect.any(Function),
       name: 'apps/custom-api',
       cwd: '/repo',
       type: 'hono-server',
@@ -84,6 +101,7 @@ describe('runCreateFlow', () => {
     await runCreateFlow('/repo', '')
 
     expect(createNewProjectMock).toHaveBeenCalledWith({
+      parameterPrompt: expect.any(Function),
       name: 'apps/demo',
       cwd: '/repo',
       type: 'cli',
@@ -96,6 +114,7 @@ describe('runCreateFlow', () => {
 
     expect(selectMock).not.toHaveBeenCalled()
     expect(createNewProjectMock).toHaveBeenCalledWith({
+      parameterPrompt: expect.any(Function),
       name: 'apps/dashboard',
       cwd: '/repo',
       type: 'vue-hono',

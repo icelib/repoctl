@@ -13,3 +13,7 @@ declare const draft: TemplateInstanceDraft
 declare const options: TemplateInstanceRegistrationOptions
 expectType<Promise<TemplateInstance[]>>(registerTemplateInstances('/workspace', [draft], undefined, options))
 expectError(registerTemplateInstances('/workspace', [draft], undefined, { allocateIdOnConflict: 'yes' }))
+
+expectType<Promise<TemplateInstance[]>>(registerTemplateInstances('/workspace', [draft], undefined, { allocateIdOnConflict: true, rollback: hooks.rollback, committed: hooks.committed }))
+expectType<Promise<TemplateInstance[]>>(registerTemplateInstances('/workspace', [draft], undefined, { rollback: hooks.rollback }))
+expectError(registerTemplateInstances('/workspace', [draft], undefined, { rollback: true }))

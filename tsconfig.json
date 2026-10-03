@@ -66,6 +66,12 @@
     },
     {
       "path": "./templates/react-vite"
+    },
+    {
+      "path": "./templates/react-lib"
+    },
+    {
+      "path": "./templates/next"
     }
   ],
   "files": []

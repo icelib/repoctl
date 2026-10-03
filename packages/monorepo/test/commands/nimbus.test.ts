@@ -7,7 +7,7 @@ import { verifyStagedTypecheck } from '@/commands'
 
 describe('Nimbus template delivery', () => {
   it('preserves template numbering and supports both documentation engines', () => {
-    expect(getTemplateKeys()).toEqual(['tsdown', 'vue-lib', 'vue-hono', 'react-vite', 'hono-server', 'vitepress', 'cli', 'nimbus'])
+    expect(getTemplateKeys()).toEqual(['tsdown', 'vue-lib', 'vue-hono', 'react-vite', 'hono-server', 'vitepress', 'cli', 'nimbus', 'react-lib', 'next'])
     expect(getTemplateKeys({ category: 'docs' })).toEqual(['vitepress', 'nimbus'])
   })
 

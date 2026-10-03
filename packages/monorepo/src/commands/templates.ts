@@ -2,7 +2,9 @@ import type { TemplateCatalogEntry } from '../core/template-catalog'
 import { readdir, stat } from 'node:fs/promises'
 import { shouldSkipTemplatePath } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
-import { resolveTemplateCatalog } from '../core/template-catalog'
+import { createTemplateCatalog } from '../core/template-catalog'
+import { loadTemplateCatalogContext } from '../core/template-catalog/config'
+import { resolveRemoteTemplateSource } from '../core/template-source'
 import { localize } from '../i18n'
 
 export type TemplateHealthStatus = 'pass' | 'warn' | 'fail'
@@ -36,6 +38,7 @@ export interface TemplateHealthReport {
 export interface CheckTemplatesOptions {
   cwd?: string
   templatesDir?: string
+  cacheDir?: string
 }
 
 async function collectFiles(rootDir: string) {
@@ -88,7 +91,8 @@ function checkDuplicates(choices: TemplateCatalogEntry[], field: 'sourceDir' | '
 }
 
 export async function checkTemplates(options: CheckTemplatesOptions = {}): Promise<TemplateHealthReport> {
-  const catalog = await resolveTemplateCatalog(options)
+  const context = await loadTemplateCatalogContext(options)
+  const catalog = createTemplateCatalog(context)
   const { templatesDir, entries: choices } = catalog
   const checks: TemplateHealthCheck[] = catalog.diagnostics.map(diagnostic => ({
     ...diagnostic,
@@ -129,7 +133,17 @@ export async function checkTemplates(options: CheckTemplatesOptions = {}): Promi
       })
 
   for (const choice of choices) {
-    const sourceDir = choice.sourceDir
+    let sourceDir = choice.sourceDir
+    if (choice.remote) {
+      try {
+        const cacheDir = options.cacheDir ?? context.createConfig.cacheDir
+        sourceDir = (await resolveRemoteTemplateSource(choice.remote, choice.source, { cwd: catalog.workspaceDir, offline: true, ...(cacheDir ? { cacheDir } : {}) })).sourceDir
+      }
+      catch (error) {
+        checks.push({ id: 'remote-source', template: choice.key, status: 'fail', title: localize('Remote template assets', '远程模板资产'), detail: String(error), fix: `repo templates fetch ${choice.key}` })
+        continue
+      }
+    }
     const packageJsonPath = path.join(sourceDir, 'package.json')
     const sourceExists = await stat(sourceDir).then(info => info.isDirectory()).catch(() => false)
 

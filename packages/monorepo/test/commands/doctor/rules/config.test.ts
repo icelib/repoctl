@@ -22,7 +22,7 @@ describe('built doctor configuration lifecycle', () => {
   it.each(['null', '{rules:null}', '{suppressions:null}', '{suppressions:[{id:"root-scripts",reason:null}]}'])('rejects a malformed raw doctor policy %s', async (doctor) => {
     const h = await fixture()
     await fs.writeFile(path.join(h.root, 'repoctl.config.mjs'), `export default {commands:{doctor:${doctor}}}`)
-    await expect(runDoctor(h.cwd)).rejects.toThrow('cannot be null')
+    await expect(runDoctor(h.cwd)).rejects.toMatchObject({ code: 'REPOCTL_CONFIG_INVALID', diagnostics: [expect.objectContaining({ id: 'config.invalid-type', actualType: 'null' })] })
   })
 
   it('restores the manifest if fresh configuration prevents post-apply verification', async () => {
@@ -30,7 +30,7 @@ describe('built doctor configuration lifecycle', () => {
     const plan = await planDoctorFix(h.cwd, { rules: ['root-scripts'] })
     const before = await fs.readFile(path.join(h.root, 'package.json'), 'utf8')
     await fs.writeFile(path.join(h.root, 'repoctl.config.mjs'), 'throw new Error("verification blocked")')
-    await expect(applyDoctorFixPlan(h.cwd, plan)).rejects.toThrow('verification blocked')
+    await expect(applyDoctorFixPlan(h.cwd, plan)).rejects.toMatchObject({ code: 'REPOCTL_CONFIG_INVALID', diagnostics: [expect.objectContaining({ id: 'config.load-failed' })] })
     expect(await fs.readFile(path.join(h.root, 'package.json'), 'utf8')).toBe(before)
   })
 

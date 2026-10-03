@@ -1,4 +1,5 @@
 import type { DoctorCheck, DoctorContext } from './types'
+import { collectTemplateDriftChecks, templateDriftRuleIds } from '../template-drift/checks'
 import { collectAdmissionChecks } from './admission'
 import { collectBoundaryChecks } from './boundaries'
 import { collectInstallationChecks } from './installation'
@@ -47,6 +48,7 @@ const manifestIds = [
 ].map(id => `manifest-${id}`)
 
 const collectors: DoctorCollector[] = [
+  { ids: templateDriftRuleIds, collect: collectTemplateDriftChecks },
   { ids: ['package-json', 'workspace-manifest', 'config-file', 'commit-hooks', 'workspace-patterns', 'workspace-package-coverage'], collect: collectWorkspaceChecks },
   { ids: manifestIds, collect: collectManifestChecks },
   { ids: ['boundary-rule', 'boundary-cycle', 'boundary-config', 'boundary-selector-unmatched', 'boundary-graph', 'boundary-exception-unused', 'boundary-exceptions', 'boundary-policy'], collect: (context, selected) => collectBoundaryChecks(context.workspaceDir, selected) },

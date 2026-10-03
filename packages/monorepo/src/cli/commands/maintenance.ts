@@ -25,7 +25,7 @@ export function registerMaintenanceCommands(program: Command, cwd: string) {
     .action(async (options: { out: string }) => {
       const filename = path.resolve(cwd, options.out)
       await mkdir(path.dirname(filename), { recursive: true })
-      await writeFile(filename, await getMaintenanceWorkflow(), { flag: 'wx' })
+      await writeFile(filename, await getMaintenanceWorkflow(cwd), { flag: 'wx' })
       process.stdout.write(`${filename}\n`)
     })
 }

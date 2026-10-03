@@ -1,4 +1,4 @@
-import type { GetTemplateChoicesOptions, SuggestTemplateKeyOptions, TemplateCategory, TemplateChoice, TemplateDefinition } from './types'
+import type { GetTemplateChoicesOptions, ResolvedTemplateRemoteSource, SuggestTemplateKeyOptions, TemplateCategory, TemplateChoice, TemplateDefinition, TemplateRemoteSource } from './types'
 import { assetTargets as rawAssetTargets, getAssetTargets as rawGetAssetTargets } from '../assets-data.mjs'
 import { getWorkspacePackageManager } from './package-manager'
 import { assetsDir, packageDir, skeletonDir, templatesDir } from './paths'
@@ -30,6 +30,7 @@ export { areTemplateAssetsPrepared, ensureTemplateAssetsPrepared, prepareAssets 
 export { getWorkspacePackageManager }
 export { scaffoldTemplate, scaffoldWorkspace }
 export * from './instances'
+export * from './parameters'
 export {
   createTemplateCopyFilter,
   isGitignoreFile,
@@ -39,7 +40,7 @@ export {
   toWorkspaceAssetPath,
   toWorkspaceGitignorePath,
 }
-export type { GetTemplateChoicesOptions, SuggestTemplateKeyOptions, TemplateCategory, TemplateChoice, TemplateDefinition }
+export type { GetTemplateChoicesOptions, ResolvedTemplateRemoteSource, SuggestTemplateKeyOptions, TemplateCategory, TemplateChoice, TemplateDefinition, TemplateRemoteSource }
 export {
   getTemplateChoice,
   getTemplateChoices,
@@ -55,5 +56,6 @@ export {
 export { execaCommand } from './utils/command'
 export { default as checkbox } from '@inquirer/checkbox'
 export { default as input } from '@inquirer/input'
+export { default as password } from '@inquirer/password'
 export { default as select } from '@inquirer/select'
 export { Command, program } from 'commander'

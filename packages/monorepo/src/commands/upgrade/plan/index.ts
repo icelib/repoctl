@@ -3,9 +3,9 @@ import process from 'node:process'
 import { areTemplateAssetsPrepared } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import { assetsDir } from '../../../constants'
+import { planMigrations } from '../migrations/plan'
 import { planAssets } from './assets'
 import { createContext } from './context'
-import { planVersioningMigration } from './migration'
 
 /** Read-only: even asset preparation must be explicitly performed before previewing. */
 export async function planUpgrade(options: UpgradeOptions = {}): Promise<UpgradePlan> {
@@ -18,8 +18,9 @@ export async function planUpgrade(options: UpgradeOptions = {}): Promise<Upgrade
     const context = await createContext(options)
     plan = context.plan
     const baseline = await planAssets(context)
-    await planVersioningMigration(context)
+    const migrations = await planMigrations(context)
     await baseline.finalize()
+    await migrations.finalize()
     plan.files.sort((a, b) => a.path.localeCompare(b.path))
     plan.inputs.sort((a, b) => `${a.area}:${a.path}`.localeCompare(`${b.area}:${b.path}`))
     plan.status = plan.blockers.length ? 'blocked' : 'ready'

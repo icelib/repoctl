@@ -2,6 +2,7 @@ import { tmpdir } from 'node:os'
 import path from 'pathe'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import fs from '@/utils/fs'
+import { loadedConfigFixture } from '../helpers/config'
 
 afterEach(async () => {
   await vi.resetModules()
@@ -31,14 +32,10 @@ describe('createNewProject root reference rewriting', () => {
     )
 
     vi.doMock('@/core/config', () => ({
-      loadMonorepoConfigDetails: vi.fn(async () => ({
-        file: path.join(workspaceDir, 'repoctl.config.mjs'),
-        rawLayers: [],
-        config: { commands: { create: {
-          templatesDir,
-          templateMap: { custom: { source: 'deep-template', target: 'apps/client' } },
-        } } },
-      })),
+      loadMonorepoConfigDetails: vi.fn(async () => loadedConfigFixture({ commands: { create: {
+        templatesDir,
+        templateMap: { custom: { source: 'deep-template', target: 'apps/client' } },
+      } } }, path.join(workspaceDir, 'repoctl.config.mjs'))),
     }))
     vi.doMock('@/core/logger', () => ({
       logger: {

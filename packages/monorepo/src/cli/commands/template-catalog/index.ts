@@ -6,7 +6,9 @@ import { resolveTemplateCatalog } from '../../../core/template-catalog'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
 import { registerTemplateInstanceCommands } from '../template-instances'
+import { registerTemplateFetch } from './fetch'
 import { formatTemplateDetail, formatTemplateHealthReport, formatTemplateMarkdownDetail, formatTemplateMarkdownTable, formatTemplateTable } from './format'
+import { registerTemplateValidation } from './validate'
 
 interface TemplatesCliOptions {
   json?: boolean
@@ -125,4 +127,6 @@ export function registerTemplatesCommands(program: Command) {
       }
     })
   registerTemplateInstanceCommands(templates)
+  registerTemplateValidation(templates)
+  registerTemplateFetch(templates)
 }

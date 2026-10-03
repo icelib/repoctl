@@ -13,7 +13,7 @@ describe('built template catalog discovery', () => {
   it('keeps built-in definitions and literal compatibility helpers aligned', async () => {
     const cwd = await fixture()
     const catalog = await repo.resolveTemplateCatalog({ cwd })
-    expect(catalog.entries).toHaveLength(8)
+    expect(catalog.entries).toHaveLength(10)
     expect(catalog.diagnostics).toEqual([])
     for (const entry of catalog.entries) {
       expect(entry.origin).toBe('builtin')
@@ -21,6 +21,21 @@ describe('built template catalog discovery', () => {
       expect(catalog.choices.find(choice => choice.value === entry.key)).toMatchObject({ name: entry.label, description: entry.description })
     }
     expect((await repo.checkTemplates({ cwd })).summary.fail).toBe(0)
+  })
+
+  it('discovers and creates Next.js through the same built catalog contract', async () => {
+    const cwd = await fixture()
+    const catalog = await repo.resolveTemplateCatalog({ cwd })
+    const entry = catalog.entries.find(item => item.key === 'next')!
+    expect(entry).toMatchObject({ key: 'next', source: 'next', target: 'apps/next', category: 'app', origin: 'builtin' })
+    expect(catalog.choices).toContainEqual(expect.objectContaining({ value: 'next', name: entry.label }))
+    const before = await snapshot(cwd)
+    const preview = await cli(cwd, ['new', 'portal', '--template', 'next', '--json'])
+    expect(preview.exitCode).toBe(0)
+    expect(JSON.parse(preview.stdout)).toMatchObject({ template: 'next', targetName: 'apps/portal', templateInfo: entry })
+    expect(await snapshot(cwd)).toEqual(before)
+    await repo.createNewProject({ cwd, type: 'next', name: 'apps/portal' })
+    expect(await readFile(path.join(cwd, 'apps/portal/src/app/page.tsx'), 'utf8')).toContain('Counter')
   })
 
   it('shares custom metadata across listing, detail, choices and creation from a nested directory', async () => {
@@ -64,7 +79,7 @@ describe('built template catalog discovery', () => {
     const catalog = await repo.resolveTemplateCatalog({ cwd })
     expect(catalog.entries.find(entry => entry.key === 'legacy')).toMatchObject({ source: 'legacy', target: 'legacy', origin: 'custom' })
     expect(catalog.entries.find(entry => entry.key === 'tsdown')).toMatchObject({ source: 'replacement', origin: 'custom', overridesBuiltin: true })
-    expect(catalog.diagnostics).toEqual([expect.objectContaining({ id: 'template-override', status: 'warn', template: 'tsdown', configFile: expect.stringContaining('repoctl.config.mjs'), configPath: 'commands.create.templateMap["tsdown"]' })])
+    expect(catalog.diagnostics).toEqual([expect.objectContaining({ id: 'template-override', status: 'warn', template: 'tsdown', configFile: expect.stringContaining('repoctl.config.mjs'), configPath: 'commands.create.templateMap.tsdown' })])
     const detail = await cli(cwd, ['templates', 'tsdown', '--markdown'])
     expect(detail.stdout).toContain('| Overrides built-in | true |')
     await repo.createNewProject({ cwd, type: 'tsdown' })
@@ -76,7 +91,7 @@ describe('built template catalog discovery', () => {
     const source = await template(cwd, 'company/service')
     const other = await fixture({ templateMap: { company: { source, target: 'apps/company', category: 'service', description: 'Internal service' } } })
     const report = await repo.checkTemplates({ cwd: other })
-    expect(report.templateCount).toBe(9)
+    expect(report.templateCount).toBe(11)
     expect(report.summary.fail).toBe(0)
     const filtered = await cli(other, ['templates', '--category', 'service', '--json'])
     expect(JSON.parse(filtered.stdout).map((entry: { key: string }) => entry.key)).toEqual(['hono-server', 'company'])

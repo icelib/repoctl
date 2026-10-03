@@ -12,6 +12,7 @@ import type { ToolingConfig } from './config/tooling'
 import type { DependenciesCommandConfig } from './dependencies'
 import type { DoctorCommandConfig } from './doctor'
 import type { EnvCacheConfig } from './env-cache'
+import type { OrganizationPresetReference } from './presets'
 import type { ReleaseCommandConfig } from './release'
 
 export interface AiCommandConfig {
@@ -44,8 +45,9 @@ export interface AiCommandConfig {
 
 /**
  * `repo package create` 命令的配置项。
+ * 模板参数与交互回调仅由单次创建调用传入。
  */
-export interface CreateCommandConfig extends Partial<Omit<CreateNewProjectOptions, 'cwd'>> {
+export interface CreateCommandConfig extends Partial<Omit<CreateNewProjectOptions, 'cwd' | 'parameters' | 'parameterPrompt'>> {
   /**
    * 自定义模板根目录，相对路径按配置文件所在目录解析。
    * @default 已安装模板包的 templates 目录
@@ -181,6 +183,8 @@ export interface MirrorCommandConfig {
  * 项目级配置入口，按命令划分可插拔的配置块。
  */
 export interface MonorepoConfig {
+  /** Installed JSON-only organization packages, pinned to exact versions. */
+  presets?: OrganizationPresetReference[]
   /** Offline admission of direct third-party declarations, also checked by doctor. */
   dependencyPolicy?: DependencyAdmissionConfig
   /** Internal manifest dependency policies, also checked by doctor when configured. */

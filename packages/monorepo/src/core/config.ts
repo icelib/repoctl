@@ -1,9 +1,14 @@
 import type { MonorepoConfig } from '../types'
+import type { ConfigSourceLayer, ConfigValueSource, OrganizationPresetResolution } from '../types/presets'
 import fs from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import { loadConfig } from 'c12'
 import path from 'pathe'
-import { freshConfigLoading } from './config/refresh'
+import { commandConfigDirectory } from './config/context'
+import { validatedConfigLoading } from './config/loading'
+import { mergeConfigValues } from './config/merge'
+import { assertMonorepoConfig, ConfigValidationError } from './config/validation'
+import { resolveOrganizationPresets } from './presets/load'
 
 export interface LoadedMonorepoConfig {
   file: string | null
@@ -12,6 +17,9 @@ export interface LoadedMonorepoConfig {
   config: MonorepoConfig
   /** Original C12 layers before default merging removes null values; not CLI output. */
   rawLayers: MonorepoConfig[]
+  sourceLayers: ConfigSourceLayer[]
+  sources: Record<string, ConfigValueSource>
+  presets: OrganizationPresetResolution
 }
 
 /**
@@ -40,8 +48,18 @@ async function loadConfigInternal(cwd: string, refresh = false): Promise<LoadedM
     defaults: {},
     globalRc: false,
     packageJson: false,
-    ...(refresh ? freshConfigLoading(dependencies) : {}),
+    ...validatedConfigLoading(dependencies, refresh),
+  }).catch((error: unknown) => {
+    if (error instanceof ConfigValidationError) {
+      throw error
+    }
+    // Config modules can throw credentials or arbitrary values. Never serialize their message/cause.
+    throw new ConfigValidationError([{ id: 'config.load-failed', path: '', actualType: 'unknown', expected: 'loadable repoctl configuration', suggestion: 'Check configuration syntax, imports and evaluation in your local editor.' }])
   })
+  for (const layer of layers ?? []) {
+    assertMonorepoConfig(layer.config ?? {})
+  }
+  assertMonorepoConfig(config ?? {})
 
   const matchedConfigFile = configFile && fs.existsSync(configFile)
     ? findConfigFiles(cwd).find(file => path.basename(file).toLowerCase() === path.basename(configFile).toLowerCase())
@@ -50,13 +68,28 @@ async function loadConfigInternal(cwd: string, refresh = false): Promise<LoadedM
     .filter((file): file is string => Boolean(file && fs.existsSync(file)))
     .map(async file => path.normalize(await realpath(file))))
 
+  const file = matchedConfigFile
+    ? await realpath(matchedConfigFile)
+    : (configFile && fs.existsSync(configFile) ? await realpath(configFile) : null)
+  const presets = await resolveOrganizationPresets(cwd, config?.presets ?? [])
+  const failures = presets.diagnostics.filter(item => item.status === 'fail')
+  if (failures.length) {
+    throw new ConfigValidationError(failures.map(item => ({ id: 'config.invalid-value', path: item.path, actualType: 'preset', expected: 'valid installed organization preset', suggestion: `${item.id}: ${item.detail}` })))
+  }
+  const sourceLayers: ConfigSourceLayer[] = [
+    ...presets.layers.map(layer => ({ source: { kind: 'preset' as const, file: layer.source.manifestFile, packageName: layer.source.packageName, version: layer.source.version }, config: layer.manifest.config ?? {} })),
+    { source: { kind: 'project', file }, config: config ?? {} },
+  ]
+  const merged = mergeConfigValues(sourceLayers.map(layer => ({ source: layer.source, values: layer.config })))
+  assertMonorepoConfig(merged.values)
   return {
-    file: matchedConfigFile
-      ? await realpath(matchedConfigFile)
-      : (configFile && fs.existsSync(configFile) ? await realpath(configFile) : null),
-    files: [...new Set(files)],
-    config: config ?? {},
+    file,
+    files: [...new Set([...files, ...presets.inputs.map(input => input.path)])],
+    config: merged.values as MonorepoConfig,
     rawLayers: (layers ?? []).map(layer => layer.config ?? {}),
+    sourceLayers,
+    sources: merged.sources,
+    presets,
   }
 }
 
@@ -121,7 +154,7 @@ export async function resolveCommandConfig<Name extends keyof NonNullable<Monore
   name: Name,
   cwd: string,
 ): Promise<NonNullable<MonorepoConfig['commands']>[Name]> {
-  const config = await loadMonorepoConfig(cwd)
+  const config = await loadMonorepoConfig(await commandConfigDirectory(name, cwd))
   const commands = config.commands ?? {}
   const commandConfig = commands[name]
   return (commandConfig ?? {}) as NonNullable<MonorepoConfig['commands']>[Name]

@@ -2,6 +2,7 @@ import { mkdtemp } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'pathe'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { loadedConfigFixture } from './helpers/config'
 
 const packagePathPattern = /^packages\//
 
@@ -62,17 +63,13 @@ describe('coverage binder', () => {
       }
     })
     vi.doMock('@/core/config', () => ({
-      loadMonorepoConfigDetails: vi.fn(async () => ({
-        file: '/repo/repoctl.config.mjs',
-        rawLayers: [],
-        config: { commands: { create: {
-          renameJson: true,
-          name: 'my-app',
-          templatesDir: './templates',
-          templateMap: { custom: 'custom/path' },
-          defaultTemplate: 'custom',
-        } } },
-      })),
+      loadMonorepoConfigDetails: vi.fn(async () => loadedConfigFixture({ commands: { create: {
+        renameJson: true,
+        name: 'my-app',
+        templatesDir: './templates',
+        templateMap: { custom: 'custom/path' },
+        defaultTemplate: 'custom',
+      } } })),
     }))
     const successMock = vi.fn()
     vi.doMock('@/core/logger', () => ({

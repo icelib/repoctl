@@ -4,6 +4,7 @@ import path from 'pathe'
 import { logger } from '@/core/logger'
 import { localize } from '@/i18n'
 import fs from '@/utils/fs'
+import { loadMonorepoConfig } from '../../../core/config'
 import { initToolingPresets, resolveToolingImportSource, resolveToolingPackageName } from './presets'
 import { initToolingTargets } from './types'
 
@@ -69,6 +70,7 @@ export function normalizeInitToolingTargets(input: string[]) {
 }
 
 export async function initTooling(cwd: string, options: InitToolingExecutionOptions = {}): Promise<InitToolingResult> {
+  await loadMonorepoConfig(cwd)
   const selectedTargets = resolveTargets(options)
   if (selectedTargets.length === 0) {
     return {

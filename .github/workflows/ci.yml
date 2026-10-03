@@ -22,8 +22,8 @@ concurrency:
 jobs:
   build:
     name: Build and Test
-    # Allow packaged consumers and all platform checks to finish before cache upload.
-    timeout-minutes: ${{ matrix.os == 'ubuntu-latest' && 35 || 25 }}
+    # Preserve time for full validation and packaged checks on every platform.
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
@@ -34,6 +34,7 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
       - name: Check out code
@@ -106,6 +107,10 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-react
 
+      - name: Check packaged Next.js application
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-next
+
       - name: Check packaged Playwright capability
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-capability
@@ -113,8 +118,35 @@ jobs:
       - name: Check packaged Storybook capability
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-storybook
+      - name: Check packaged React component library
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-react-lib
+
+      - name: Check packaged template author validation
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-template-validation
+
+      - name: Check packaged remote template sources
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-template-sources
+
+      - name: Check packaged component and route generators
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-generators
+
+      - name: Check packaged organization presets
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-presets
+
+      - name: Check packaged preset maintenance
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 24 }}
+        run: pnpm test:packaged-maintenance-presets
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Check packaged typed template parameters
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 24
+        run: pnpm test:packaged-template-parameters

@@ -4,9 +4,10 @@ import { loadTemplateCatalogContext } from './config'
 import { resolveCatalogEntries } from './entries'
 
 export function createTemplateCatalog(context: TemplateCatalogContext): TemplateCatalog {
-  const diagnostics: TemplateCatalogDiagnostic[] = []
-  const entries = resolveCatalogEntries(context, diagnostics)
-  const choices = resolveCatalogChoices(context, entries, diagnostics)
+  const diagnostics: TemplateCatalogDiagnostic[] = [...context.diagnostics ?? []]
+  const blocked = diagnostics.some(diagnostic => diagnostic.status === 'fail')
+  const entries: ReturnType<typeof resolveCatalogEntries> = blocked ? new Map() : resolveCatalogEntries(context, diagnostics)
+  const choices = blocked ? [] : resolveCatalogChoices(context, entries, diagnostics)
   return {
     workspaceDir: context.workspaceDir,
     configFile: context.configFile,

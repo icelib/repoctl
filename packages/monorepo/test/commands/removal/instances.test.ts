@@ -2,7 +2,7 @@ import { access, readFile, writeFile } from 'node:fs/promises'
 import path from 'pathe'
 import { expect, it } from 'vitest'
 // eslint-disable-next-line antfu/no-import-dist -- Exercise creation and removal through shipped exports.
-import { applyWorkspaceRemovalPlan, createNewProject, listTemplateInstances, planWorkspaceRemoval, rebuildTemplateInstanceBaseline } from '../../../dist/index.mjs'
+import { applyWorkspaceRemovalPlan, checkTemplateDrift, createNewProject, listTemplateInstances, planWorkspaceRemoval, rebuildTemplateInstanceBaseline } from '../../../dist/index.mjs'
 import { commit, fixture, git, snapshot, writeJson } from './fixture'
 
 it('keeps created instance history through removal, explains reserved paths, and restores the same identity', async () => {
@@ -29,6 +29,10 @@ it('keeps created instance history through removal, explains reserved paths, and
   expect(result.nextSteps).toEqual(plan.nextSteps)
   expect(result.status).toBe('applied')
   expect(await listTemplateInstances(h.workspace)).toEqual([{ ...before!, targetStatus: 'missing' }])
+  const removed = await checkTemplateDrift(h.workspace)
+  const removedOwner = removed.owners.find(owner => owner.id === before!.instance.id)!
+  expect(removedOwner).toMatchObject({ path: 'packages/generated', baseline: { status: 'available' }, local: 'drifted' })
+  expect(removedOwner.files).toContainEqual(expect.objectContaining({ path: 'packages/generated', state: 'deleted' }))
   expect(await snapshot(metadata)).toEqual(retained)
   expect((await applyWorkspaceRemovalPlan(h.workspace, plan)).nextSteps).toEqual(plan.nextSteps)
   await expect(createNewProject({ cwd: h.workspace, name: 'packages/generated', type: 'minimal' })).rejects.toThrow(`retained instance ${before!.instance.id} at packages/generated`)
@@ -40,6 +44,10 @@ it('keeps created instance history through removal, explains reserved paths, and
   await git(h.workspace, ['restore', '--source=HEAD', '--worktree', '--', 'packages/generated'])
   expect(await readFile(path.join(h.workspace, 'packages/generated/index.js'), 'utf8')).toContain('"business"')
   expect(await listTemplateInstances(h.workspace)).toEqual([before!])
+  const restored = await checkTemplateDrift(h.workspace)
+  const restoredOwner = restored.owners.find(owner => owner.id === before!.instance.id)!
+  expect(restoredOwner.files.some(file => file.state === 'deleted')).toBe(false)
+  expect(restoredOwner.files).toContainEqual(expect.objectContaining({ path: 'packages/generated/index.js', state: 'modified' }))
   expect(await snapshot(metadata)).toEqual(retained)
 })
 

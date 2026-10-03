@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process'
 import process from 'node:process'
 
 const TRACKED_BUILD_ARTIFACT_PATTERNS = [
+  /^(?:templates|apps|packages)\/[^/]+\/\.next\//u,
+  /^(?:templates|apps|packages)\/[^/]+\/next-env\.d\.ts$/u,
   /^packages\/[^/]+\/dist\//u,
   /^apps\/[^/]+\/dist\//u,
   /^packages\/monorepo-templates\/(?:assets|skeleton|templates)\//u,

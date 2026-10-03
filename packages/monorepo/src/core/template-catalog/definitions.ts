@@ -8,13 +8,15 @@ interface BuiltinTemplatePaths {
   'vue-lib': ['vue-lib', 'packages/vue-lib']
   'hono-server': ['server', 'apps/server']
   'react-vite': ['react-vite', 'apps/react-vite']
+  'next': ['next', 'apps/next']
   'vue-hono': ['client', 'apps/client']
   'vitepress': ['vitepress', 'apps/website']
   'cli': ['cli', 'apps/cli']
   'nimbus': ['nimbus', 'apps/docs']
+  'react-lib': ['react-lib', 'packages/react-lib']
 }
 
-const legacyOrder = new Map<string, number>(['tsdown', 'vue-lib', 'hono-server', 'react-vite', 'vue-hono', 'vitepress', 'cli', 'nimbus'].map((key, index) => [key, index]))
+const legacyOrder = new Map<string, number>(['tsdown', 'vue-lib', 'hono-server', 'react-vite', 'next', 'vue-hono', 'vitepress', 'cli', 'nimbus', 'react-lib'].map((key, index) => [key, index]))
 const legacyChoices = [...templateChoices].sort((left, right) => (legacyOrder.get(left.key) ?? Infinity) - (legacyOrder.get(right.key) ?? Infinity))
 
 export const templateMap = Object.fromEntries(legacyChoices.map(({ key, source, target }) => [key, { source, target }])) as {

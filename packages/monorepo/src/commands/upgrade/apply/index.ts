@@ -6,6 +6,8 @@ import { assetsDir } from '../../../constants'
 import { withOperationLock } from '../../../core/operation-lock'
 import { clearWorkspaceCache } from '../../../core/workspace'
 import { upgradeOperations } from '../baseline/apply'
+import { applyMigrationFiles } from '../migrations/apply'
+import { ledgerPath, migrationGroup } from '../migrations/record'
 import { canonicalDirectory, hash, readOptional } from '../plan/files'
 import { writeUpgradeTransaction } from './transaction'
 import { cleanDirectories, ensureParent } from './transaction/state'
@@ -70,7 +72,18 @@ async function applyLocked(cwd: string, plan: UpgradePlan, options: UpgradeApply
     return { status: 'unchanged', changed: [], ...report }
   }
   try {
-    await writeUpgradeTransaction(plan.rootDir, files)
+    if (plan.migrations?.ledger && selected.has(ledgerPath)) {
+      await applyMigrationFiles(plan, files.filter(file => file.group === migrationGroup))
+      try {
+        await writeUpgradeTransaction(plan.rootDir, files.filter(file => file.group !== migrationGroup))
+      }
+      catch (error) {
+        throw new Error(`Migrations completed, but remaining selected assets failed. Preserve local edits and regenerate the upgrade plan to continue: ${error instanceof Error ? error.message : String(error)}`, { cause: error })
+      }
+    }
+    else {
+      await writeUpgradeTransaction(plan.rootDir, files)
+    }
   }
   finally {
     clearWorkspaceCache()
