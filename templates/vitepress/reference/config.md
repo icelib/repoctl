@@ -101,9 +101,11 @@ Outside paths, symbolic-link targets or parent paths, linked root manifests,
 and deletion of unselected nested packages fail validation before any writes.
 The command does not update consumer dependency declarations.
 
-The `init` inspection context describes the top-level CLI: its default preset is `standard`, while project configuration and explicit CLI options take precedence. The public `init()` API and `workspace init` retain their metadata-only defaults. Origin paths escape dots and backslashes in dynamic keys with a backslash. Runtime validation checks all repoctl-owned configuration blocks before execution, including blocks unrelated to the selected command.
+The `init` inspection context describes the top-level CLI: its default preset is `standard`, while project configuration and explicit CLI options take precedence. The public `init()` API and `workspace init` retain their metadata-only defaults. Origin paths escape dots and backslashes in dynamic keys with a backslash. Commands that load repoctl configuration validate all repoctl-owned blocks before execution, including blocks unrelated to the selected command.
 
 ## `commands.doctor`
+
+Doctor first validates the schema of the whole configuration, then executes only the selected rules. Unselected policies can contain violations without contributing findings, but malformed configuration is always rejected. Omit `rules` to run all rules; use `rules: []` to run none. `config inspect --command doctor` explains the same workspace-root policy that doctor executes, including when invoked from a package directory; explicit CLI selection overrides that policy.
 
 Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs `id` and a nonempty `reason`; optional `path` matches an exact workspace-relative finding path. Optional `expires` is an inclusive UTC date (`YYYY-MM-DD`). JSON retains the original finding status, `suppression`, `rawSummary`, and every waiver with its matched count. Only active waivers are excluded from effective `summary` and strict exit status; expired and unmatched waivers remain visible.
 

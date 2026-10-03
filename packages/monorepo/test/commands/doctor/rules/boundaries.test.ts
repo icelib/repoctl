@@ -13,6 +13,7 @@ it('registers stable boundary IDs and filters findings without exposing custom r
   await fs.outputFile(path.join(h.root, 'repoctl.config.mjs'), 'export default { boundaries: { rules: [{ id: "my-architecture-rule", from: { packages: ["app"] }, allow: [] }] } }')
   expect(getDoctorRuleIds()).toEqual(expect.arrayContaining(boundaryIds))
   expect(getDoctorRuleIds()).not.toContain('my-architecture-rule')
+  expect((await runDoctor(h.cwd, { rules: ['package-json'] })).checks).toEqual([expect.objectContaining({ id: 'package-json', status: 'pass' })])
   const selected = await runDoctor(h.cwd, { rules: ['boundary-rule'] })
   expect(selected.checks).toHaveLength(1)
   expect(selected.checks[0]).toMatchObject({ id: 'boundary-rule', status: 'fail' })

@@ -7,6 +7,7 @@ export * from './knip'
 export * from './package-json'
 export * from './presets'
 export * from './project-references'
+export * from './removal'
 export * from './upgrade'
 export * from './workspace'
 

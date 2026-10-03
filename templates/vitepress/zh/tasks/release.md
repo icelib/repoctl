@@ -144,6 +144,8 @@ repo release snapshot --kind nightly --commit <完整-HEAD-SHA> --build-id <run-
 
 候选解释与基础版本复用 pnpm 原生发布计划，全部公开包共同生成快照。临时版本包含完整源码 SHA 和 PR/nightly 构建身份的确定性摘要；目标 tag 固定为 `snapshot-pr-<编号>` 或 `snapshot-nightly`，没有指定正式 tag 的入口。只在恢复同一源码、同一产物时复用 build identity。报告提供精确版本的 `pnpm add` 安装命令。
 
+CLI 和 API 的快照计划均不加载或执行 `repoctl.config.*`，仅根据已提交的 pnpm 元数据生成计划，独立于正式发布配置。普通发布命令仍在执行前校验配置。
+
 不带 `--publish` 时只准备可安装 tarball。流程在仓库以外提取已提交 HEAD，使用 frozen lockfile 安装依赖，改写内部引用为精确快照版本，执行根 `build`，再通过 publint、Are the Types Wrong 与隔离消费者验证真实产物。成功、失败或中断都不回写原仓库清单、intents、ledger、changelog 或 Git refs。成功与失败均保留报告目录下的 `snapshot-report.json`、tarball 和消费者诊断。强制中断可能留下未完成的临时目录；用相同身份重跑会核验 registry 证据。当前拒绝源码符号链接、Git submodule 和 `publishConfig.directory`；要求根 build 脚本与 frozen lockfile。
 
 仅在显式授权的 GitHub Actions job 中使用 `--publish` 并设置 `REPOCTL_SNAPSHOT_PUBLISH=1`。`GITHUB_SHA` 必须与请求提交一致，event 仓库必须匹配 `GITHUB_REPOSITORY`。PR 仅允许同仓库 `pull_request`，拒绝 fork 与 `pull_request_target`；nightly 仅允许 `schedule` 或 `workflow_dispatch`。fork job 只准备产物，凭据限定在可信发布 job。现有 stable 与 prerelease workflow 不会被修改。

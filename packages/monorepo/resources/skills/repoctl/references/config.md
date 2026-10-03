@@ -73,6 +73,8 @@ Key areas:
 
 ## `commands.doctor`
 
+Validate the schema of the whole configuration before executing selected doctor rules. Omitted `rules` selects every rule; explicit `rules: []` selects none. Valid but unsatisfied unselected policies do not contribute findings. `config inspect --command doctor` and doctor both consume workspace-root policy from package directories, with explicit CLI selection taking precedence.
+
 ```ts
 export default defineMonorepoConfig({
   commands: {

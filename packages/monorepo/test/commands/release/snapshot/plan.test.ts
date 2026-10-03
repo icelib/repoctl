@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { symlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
@@ -55,6 +56,30 @@ it('keeps snapshot planning independent of executable release configuration and 
   h.run('git', ['add', '.'])
   h.run('git', ['-c', 'commit.gpgsign=false', 'commit', '-qm', 'outside workspace pattern'])
   await expect(createSnapshotPlan({ ...options, identity: { ...options.identity, commit: h.run('git', ['rev-parse', 'HEAD']) } })).rejects.toThrow('inside the source')
+})
+
+it('never executes release configuration from the built snapshot CLI while ordinary release commands validate it', async () => {
+  const h = await fixture()
+  const marker = path.join(h.root, 'config-executed')
+  await h.write('repoctl.config.mjs', `import { writeFileSync } from 'node:fs'
+writeFileSync(new URL('../config-executed', import.meta.url), 'executed')
+throw new Error('Snapshot must not execute stable release configuration')`)
+  h.run('git', ['add', '.'])
+  h.run('git', ['-c', 'commit.gpgsign=false', 'commit', '-qm', 'unrelated executable config'])
+  const commit = h.run('git', ['rev-parse', 'HEAD'])
+  const before = await snapshot(h.cwd)
+  const cli = path.resolve(import.meta.dirname, '../../../../bin/repo.js')
+  const result = crossSpawn.sync(process.execPath, [cli, 'release', 'snapshot', '--kind', 'pr', '--pr', '12', '--commit', commit, '--build-id', h.options.identity.buildId, '--dry-run', '--json'], { cwd: h.cwd, env: h.options.env, encoding: 'utf8' })
+  expect(result.status, result.stderr).toBe(0)
+  expect(JSON.parse(result.stdout)).toMatchObject({ status: 'planned', identity: { commit } })
+  expect(existsSync(marker)).toBe(false)
+  expect(await snapshot(h.cwd)).toEqual(before)
+
+  const ordinary = crossSpawn.sync(process.execPath, [cli, 'release', 'plan', '--json'], { cwd: h.cwd, env: h.options.env, encoding: 'utf8' })
+  expect(ordinary.status).toBe(1)
+  expect(JSON.parse(ordinary.stderr)).toMatchObject({ valid: false, diagnostics: [{ id: 'config.load-failed' }] })
+  expect(existsSync(marker)).toBe(true)
+  expect(await snapshot(h.cwd)).toEqual(before)
 })
 
 it('rejects unauthorized, fork and pull_request_target publishers before installation or upload', async () => {

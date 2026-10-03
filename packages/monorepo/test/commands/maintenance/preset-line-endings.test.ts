@@ -43,7 +43,7 @@ it.each([
   expect(await readFile(path.join(cwd, presetTarget), 'utf8')).toBe(crlf ? canonical.replaceAll('\n', '\r\n') : canonical)
 })
 
-it('uses the authorized next attributes when converting the resulting preset bytes', async () => {
+it.each(['false', 'true'])('uses the authorized next attributes when converting preset bytes with autocrlf=%s', async (autocrlf) => {
   const h = await presetFixture({ lineEnding: 'crlf', attributes: true })
   const report = await prepareMaintenanceUpgrade(h.options)
   expect(report.status, report.errors.join()).toBe('ready')
@@ -51,11 +51,15 @@ it('uses the authorized next attributes when converting the resulting preset byt
   expect(operation.beforeHash).toBe(report.files.find(file => file.path === presetTarget)?.beforeHash)
   expect(operation.afterHash).not.toBe(report.files.find(file => file.path === presetTarget)?.afterHash)
   const cwd = path.join(h.root, 'publisher')
-  h.git(['clone', '-q', '--no-hardlinks', h.cwd, cwd], h.root)
+  h.git(['clone', '-q', '--no-hardlinks', '--config', `core.autocrlf=${autocrlf}`, h.cwd, cwd], h.root)
   const result = await validateMaintenanceArtifact({ cwd, directory: h.options.outputDirectory, expected: h.expected, request: h.request })
   expect(result.ready).toBe(true)
   const canonical = presetBytes.replace('first = 1', 'first = 10').replace('fourth = 4', 'fourth = 40')
   expect(h.gitBytes(['show', `:${presetTarget}`], cwd).toString()).toBe(canonical)
   expect(h.gitBytes(['show', ':.gitattributes'], cwd).toString()).toBe('scripts/*.mjs text eol=crlf\n')
+  // Applying an attribute transition can leave Git-equivalent LF working bytes.
+  expect(h.git(['diff', '--exit-code', '--', presetTarget], cwd)).toBe('')
+  await rm(path.join(cwd, presetTarget))
+  h.git(['checkout', '--', presetTarget], cwd)
   expect(await readFile(path.join(cwd, presetTarget), 'utf8')).toBe(canonical.replaceAll('\n', '\r\n'))
 })
