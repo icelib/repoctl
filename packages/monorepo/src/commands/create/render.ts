@@ -118,7 +118,7 @@ async function rewriteTemplateRootReferences(targetDir: string, workspaceDir: st
   }))
 }
 
-export async function renderCreateNewProject(plan: CreateNewProjectPlan, gitMetadata = true) {
+export async function renderCreateNewProject(plan: Pick<CreateNewProjectPlan, 'sourceDir' | 'targetDir' | 'cwd' | 'hasPackageJson' | 'packageName' | 'packageJsonFileName'>, gitMetadata = true) {
   await scaffoldTemplate({
     sourceDir: plan.sourceDir,
     targetDir: plan.targetDir,

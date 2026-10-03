@@ -1,5 +1,7 @@
 # 命令速查
 
+[`repo workspace prepare`](./artifacts.md) 可预览原生 Turbo prune 构建上下文或锁定 pnpm deploy 生产目录，再显式应用已审查的 JSON 计划。必须选择唯一包和工作区外的空输出目录。
+
 这一页只保留 repoctl 高频、实用、容易记错的命令。
 
 ## 最推荐入口
