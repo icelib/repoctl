@@ -47,7 +47,7 @@ describe('runDoctor', () => {
     expect(report.workspaceDir).toBe(normalizedWorkspaceDir)
     expect(report.packageCount).toBe(1)
     expect(report.summary).toEqual({
-      pass: 19,
+      pass: 23,
       warn: 0,
       fail: 0,
     })
@@ -93,7 +93,7 @@ describe('runDoctor', () => {
     const report = await runDoctor(pkgDir)
 
     expect(report.summary).toEqual({
-      pass: 19,
+      pass: 23,
       warn: 0,
       fail: 0,
     })
@@ -154,7 +154,7 @@ describe('runDoctor', () => {
     const report = await runDoctor(workspaceDir)
 
     expect(report.summary).toEqual({
-      pass: 10,
+      pass: 14,
       warn: 6,
       fail: 3,
     })
