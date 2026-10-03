@@ -44,7 +44,7 @@ export async function refreshRegistry(state: PublishState, options: ReleaseOptio
   return unknown
 }
 
-export async function confirmVisibility(state: PublishState, options: ReleaseOptions, packages: PublishedPackage[], initialDelay = 0) {
+export async function confirmVisibility(state: PublishState, options: ReleaseOptions & { quiet?: boolean }, packages: PublishedPackage[], initialDelay = 0) {
   let remaining = visibilityBudget
   let delay = initialDelay
   while (state.unconfirmed(packages).length && remaining > 0) {
@@ -65,7 +65,7 @@ export async function confirmVisibility(state: PublishState, options: ReleaseOpt
   if (pending.length) {
     throw new ReleaseCommandError(`npm registry visibility confirmation timed out after 5 minutes; pending versions: ${pending.map(packageKey).join(', ')}`)
   }
-  if (packages.length) {
+  if (packages.length && !options.quiet) {
     logger.info('npm registry visibility confirmed for all requested versions.')
   }
 }
