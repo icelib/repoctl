@@ -2,7 +2,8 @@ import type { DoctorCheck, DoctorContext } from './types'
 import { localize } from '../../i18n'
 import { createCheck, isWorkspacePatternCovered } from './helpers'
 
-export function collectWorkspaceChecks(context: DoctorContext) {
+export function collectWorkspaceChecks(context: DoctorContext, selected?: ReadonlySet<string>) {
+  const includes = (id: string) => !selected || selected.has(id)
   const rootManifest = context.manifests.find(entry => entry.directory === context.workspaceDir)
   const {
     hasPackageJson,
@@ -16,85 +17,95 @@ export function collectWorkspaceChecks(context: DoctorContext) {
     workspacePackageDirs,
     workspacePatterns,
   } = context
-  const checks: DoctorCheck[] = [
-    hasPackageJson || rootManifest
-      ? createCheck({
-          id: 'package-json',
-          title: rootManifest?.path ?? 'package.json',
-          status: 'pass',
-          detail: localize(`Found root package manifest: ${workspaceDir}/${rootManifest?.path ?? 'package.json'}`, `已找到根包清单：${workspaceDir}/${rootManifest?.path ?? 'package.json'}`),
-        })
-      : createCheck({
-          id: 'package-json',
-          title: 'package.json',
-          status: 'fail',
-          detail: localize('The current directory does not contain a root package.json.', '当前目录缺少根 package.json。'),
-          fix: localize('Run the command from the monorepo root or initialize the workspace first.', '请在 monorepo 根目录执行命令，或先完成工作区初始化。'),
-        }),
-    hasWorkspaceManifest
-      ? createCheck({
-          id: 'workspace-manifest',
-          title: 'pnpm workspace',
-          status: 'pass',
-          detail: localize(`Found a pnpm workspace with ${packageCount} package(s).`, `已找到 pnpm workspace，当前识别到 ${packageCount} 个 workspace 包。`),
-        })
-      : createCheck({
-          id: 'workspace-manifest',
-          title: 'pnpm workspace',
-          status: 'fail',
-          detail: localize('pnpm-workspace.yaml is missing; this directory is not a complete pnpm monorepo root.', '缺少 pnpm-workspace.yaml，当前目录不是完整的 pnpm monorepo 根目录。'),
-          fix: localize('Run repo init --yes or switch to the workspace root.', '运行 repo init --yes，或切换到 workspace 根目录。'),
-        }),
-  ]
-
-  if (hasLegacyMonorepoConfig) {
-    checks.push(createCheck({
-      id: 'config-file',
-      title: localize('Configuration file', '配置文件'),
-      status: 'fail',
-      detail: localize('Found deprecated monorepo.config.ts; repoctl no longer loads it.', '检测到已废弃的 monorepo.config.ts；repoctl 不再加载该文件。'),
-      fix: localize('Rename it to repoctl.config.ts and keep only the repoctl config.', '将其重命名为 repoctl.config.ts，并只保留 repoctl 配置。'),
-    }))
+  const checks: DoctorCheck[] = []
+  if (includes('package-json')) {
+    checks.push(
+      hasPackageJson || rootManifest
+        ? createCheck({
+            id: 'package-json',
+            title: rootManifest?.path ?? 'package.json',
+            status: 'pass',
+            detail: localize(`Found root package manifest: ${workspaceDir}/${rootManifest?.path ?? 'package.json'}`, `已找到根包清单：${workspaceDir}/${rootManifest?.path ?? 'package.json'}`),
+          })
+        : createCheck({
+            id: 'package-json',
+            title: 'package.json',
+            status: 'fail',
+            detail: localize('The current directory does not contain a root package.json.', '当前目录缺少根 package.json。'),
+            fix: localize('Run the command from the monorepo root or initialize the workspace first.', '请在 monorepo 根目录执行命令，或先完成工作区初始化。'),
+          }),
+    )
   }
-  else if (hasRepoctlConfig) {
-    checks.push(createCheck({
-      id: 'config-file',
-      title: localize('Configuration file', '配置文件'),
-      status: 'pass',
-      detail: localize('Found repoctl.config.ts.', '已检测到 repoctl.config.ts。'),
-    }))
-  }
-  else {
-    checks.push(createCheck({
-      id: 'config-file',
-      title: localize('Configuration file', '配置文件'),
-      status: 'warn',
-      detail: localize('No custom configuration file was found; the CLI will use defaults.', '未找到自定义配置文件；CLI 将使用默认配置。'),
-      fix: localize('Run repo upgrade --yes or add repoctl.config.ts manually.', '运行 repo upgrade --yes，或手动添加 repoctl.config.ts。'),
-    }))
+  if (includes('workspace-manifest')) {
+    checks.push(
+      hasWorkspaceManifest
+        ? createCheck({
+            id: 'workspace-manifest',
+            title: 'pnpm workspace',
+            status: 'pass',
+            detail: localize(`Found a pnpm workspace with ${packageCount} package(s).`, `已找到 pnpm workspace，当前识别到 ${packageCount} 个 workspace 包。`),
+          })
+        : createCheck({
+            id: 'workspace-manifest',
+            title: 'pnpm workspace',
+            status: 'fail',
+            detail: localize('pnpm-workspace.yaml is missing; this directory is not a complete pnpm monorepo root.', '缺少 pnpm-workspace.yaml，当前目录不是完整的 pnpm monorepo 根目录。'),
+            fix: localize('Run repo init --yes or switch to the workspace root.', '运行 repo init --yes，或切换到 workspace 根目录。'),
+          }),
+    )
   }
 
-  if (hasHuskyPreCommit && hasLintStagedConfig) {
-    checks.push(createCheck({
-      id: 'commit-hooks',
-      title: localize('Commit hooks', '提交钩子'),
-      status: 'pass',
-      detail: localize('Found .husky/pre-commit and lint-staged.config.js.', '已检测到 .husky/pre-commit 和 lint-staged.config.js。'),
-    }))
+  if (includes('config-file')) {
+    if (hasLegacyMonorepoConfig) {
+      checks.push(createCheck({
+        id: 'config-file',
+        title: localize('Configuration file', '配置文件'),
+        status: 'fail',
+        detail: localize('Found deprecated monorepo.config.ts; repoctl no longer loads it.', '检测到已废弃的 monorepo.config.ts；repoctl 不再加载该文件。'),
+        fix: localize('Rename it to repoctl.config.ts and keep only the repoctl config.', '将其重命名为 repoctl.config.ts，并只保留 repoctl 配置。'),
+      }))
+    }
+    else if (hasRepoctlConfig) {
+      checks.push(createCheck({
+        id: 'config-file',
+        title: localize('Configuration file', '配置文件'),
+        status: 'pass',
+        detail: localize('Found repoctl.config.ts.', '已检测到 repoctl.config.ts。'),
+      }))
+    }
+    else {
+      checks.push(createCheck({
+        id: 'config-file',
+        title: localize('Configuration file', '配置文件'),
+        status: 'warn',
+        detail: localize('No custom configuration file was found; the CLI will use defaults.', '未找到自定义配置文件；CLI 将使用默认配置。'),
+        fix: localize('Run repo upgrade --yes or add repoctl.config.ts manually.', '运行 repo upgrade --yes，或手动添加 repoctl.config.ts。'),
+      }))
+    }
   }
-  else {
-    checks.push(createCheck({
-      id: 'commit-hooks',
-      title: localize('Commit hooks', '提交钩子'),
-      status: 'warn',
-      detail: localize('Husky and lint-staged are not both configured.', 'Husky 和 lint-staged 尚未同时配置。'),
-      fix: localize('Run repo upgrade --yes to synchronize the default hooks.', '运行 repo upgrade --yes 同步默认钩子。'),
-    }))
+  if (includes('commit-hooks')) {
+    if (hasHuskyPreCommit && hasLintStagedConfig) {
+      checks.push(createCheck({
+        id: 'commit-hooks',
+        title: localize('Commit hooks', '提交钩子'),
+        status: 'pass',
+        detail: localize('Found .husky/pre-commit and lint-staged.config.js.', '已检测到 .husky/pre-commit 和 lint-staged.config.js。'),
+      }))
+    }
+    else {
+      checks.push(createCheck({
+        id: 'commit-hooks',
+        title: localize('Commit hooks', '提交钩子'),
+        status: 'warn',
+        detail: localize('Husky and lint-staged are not both configured.', 'Husky 和 lint-staged 尚未同时配置。'),
+        fix: localize('Run repo upgrade --yes to synchronize the default hooks.', '运行 repo upgrade --yes 同步默认钩子。'),
+      }))
+    }
   }
+  if (hasWorkspaceManifest && includes('workspace-patterns')) {
+    const existingBases = ['apps', 'packages', 'examples'].filter(base => workspacePackageDirs.some(dir => dir.startsWith(`${base}/`)))
+    const missingPatterns = existingBases.map(base => `${base}/*`).filter(pattern => !workspacePatterns.includes(pattern))
 
-  const existingBases = ['apps', 'packages', 'examples'].filter(base => workspacePackageDirs.some(dir => dir.startsWith(`${base}/`)))
-  const missingPatterns = existingBases.map(base => `${base}/*`).filter(pattern => !workspacePatterns.includes(pattern))
-  if (hasWorkspaceManifest) {
     checks.push(createCheck(missingPatterns.length === 0
       ? {
           id: 'workspace-patterns',
@@ -109,7 +120,8 @@ export function collectWorkspaceChecks(context: DoctorContext) {
           detail: localize(`pnpm-workspace.yaml is missing: ${missingPatterns.join(', ')}.`, `pnpm-workspace.yaml 缺少：${missingPatterns.join(', ')}。`),
           fix: localize('Run repo init --yes to append missing workspace patterns.', '运行 repo init --yes 追加缺失的 workspace 匹配规则。'),
         }))
-
+  }
+  if (hasWorkspaceManifest && includes('workspace-package-coverage')) {
     const uncovered = workspacePackageDirs.filter(dir => !isWorkspacePatternCovered(dir, workspacePatterns))
     checks.push(createCheck(uncovered.length === 0
       ? {

@@ -108,6 +108,25 @@ repo cfg i --markdown --redact --out reports/config.md
 工作区之外的目录、符号链接目标或父路径、链接的根 package.json，以及
 会连带删除未选嵌套包的目标会在写入前被拒绝。此命令不修改消费者的依赖声明。
 
+## `commands.doctor`
+
+在 `commands.doctor.suppressions` 配置有理由的抑制。每项必须提供 `id` 与非空 `reason`，可选 `path` 精确匹配 workspace 相对文件路径。可选 `expires` 使用 UTC 日期 `YYYY-MM-DD`，到期当天仍有效。JSON 保留原始发现的状态、`suppression`、`rawSummary`，以及全部抑制记录及命中数量。仅有效抑制从 `summary` 和 strict 退出码中排除；过期与未命中的记录仍会展示。
+
+```ts
+export default defineMonorepoConfig({
+  commands: {
+    doctor: {
+      rules: ['root-scripts', 'commit-hooks'],
+      suppressions: [{
+        id: 'commit-hooks',
+        reason: 'CI validates commits while the hooks migration is scheduled',
+        expires: '2026-12-31',
+      }],
+    },
+  },
+})
+```
+
 ## TypeScript project references
 
 无需启用写入，即可检查现有引用图：
