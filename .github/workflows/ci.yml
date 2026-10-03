@@ -22,9 +22,8 @@ concurrency:
 jobs:
   build:
     name: Build and Test
-    # Ubuntu runs serial packaged-consumer checks after the matrix validation.
-    # Windows Node 22 serializes typechecking; leave time for tests and cache upload.
-    timeout-minutes: ${{ matrix.os == 'ubuntu-latest' && 35 || matrix.os == 'windows-latest' && 25 || 15 }}
+    # Ubuntu runs serial packaged checks; Windows and macOS need full validation and upload time.
+    timeout-minutes: ${{ matrix.os == 'ubuntu-latest' && 35 || 25 }}
     strategy:
       fail-fast: false
       matrix:
