@@ -6,6 +6,7 @@ import { logger } from '../../../core/logger'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
 import { createDoctorReportOutput, createInteractiveDoctorReportOutput, hasDoctorBlockingIssues } from './output'
+import { registerInstallSecurityCommand } from './security'
 
 interface DoctorCliOptions {
   json?: boolean
@@ -40,7 +41,7 @@ async function emitDoctorReport(report: DoctorReport, opts: DoctorCliOptions, cw
 }
 
 export function registerDoctorCommand(program: Command, cwd: string) {
-  program.command('doctor')
+  const doctor = program.command('doctor')
     .description(localize('Diagnose whether the current repository is ready to use', '诊断当前仓库是否适合直接开始使用'))
     .option('--json', localize('Output JSON for CI or scripts', '输出 JSON 报告，方便 CI 或脚本消费'))
     .option('--markdown', localize('Output Markdown for an issue or pull request', '输出 Markdown 报告，方便粘贴到 issue 或 PR'))
@@ -102,4 +103,5 @@ export function registerDoctorCommand(program: Command, cwd: string) {
       }
       logger.success(localize('Doctor finished.', 'Doctor 诊断完成。'))
     })
+  registerInstallSecurityCommand(doctor, cwd)
 }
