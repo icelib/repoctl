@@ -23,7 +23,7 @@ jobs:
   build:
     name: Build and Test
     # Allow packaged consumers and all platform checks to finish before cache upload.
-    timeout-minutes: ${{ matrix.os == 'ubuntu-latest' && 35 || 25 }}
+    timeout-minutes: ${{ (matrix.os == 'ubuntu-latest' || matrix.os == 'windows-latest') && 35 || 25 }}
     strategy:
       fail-fast: false
       matrix:
