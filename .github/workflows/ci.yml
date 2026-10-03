@@ -34,6 +34,7 @@ jobs:
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      NEXT_TELEMETRY_DISABLED: '1'
 
     steps:
       - name: Check out code
@@ -105,6 +106,10 @@ jobs:
       - name: Check packaged React application
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-react
+
+      - name: Check packaged Next.js application
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-next
 
       - name: Check packaged Playwright capability
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}

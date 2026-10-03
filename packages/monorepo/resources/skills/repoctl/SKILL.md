@@ -29,6 +29,7 @@ pnpm exec repo doctor
 | User intent              | `--templates` key  |
 | ------------------------ | ------------------ |
 | Vue / full-stack web app | `vue-hono`         |
+| React SSR / App Router   | `next`             |
 | API / Hono service       | `hono-server`      |
 | TypeScript library / SDK | `tsdown`           |
 | Vue component library    | `vue-lib`          |

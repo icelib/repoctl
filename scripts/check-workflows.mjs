@@ -149,6 +149,7 @@ function checkCiWorkflow() {
   assert.ok(commands.includes('pnpm test:packaged-create'))
   assert.ok(commands.includes('pnpm test:packaged-nimbus'))
   assert.ok(commands.includes('pnpm test:packaged-react'))
+  assert.ok(commands.includes('pnpm test:packaged-next'))
   assert.ok(commands.includes('pnpm test:packaged-capability'))
   assert.ok(commands.includes('pnpm test:packaged-storybook'))
   assert.ok(commands.includes('pnpm test:packaged-react-lib'))

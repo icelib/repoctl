@@ -36,6 +36,7 @@ Built-in template map:
 - vue-lib -> templates/vue-lib => packages/vue-lib
 - hono-server -> templates/server => apps/server
 - vue-hono -> templates/client => apps/client
+- next -> templates/next => apps/next (Next.js App Router, server page, client state and health route)
 - nimbus -> templates/nimbus => apps/docs (default documentation template)
 - vitepress -> templates/vitepress => apps/website (explicit alternative)
 - cli -> templates/cli => apps/cli
@@ -45,6 +46,8 @@ Notes:
 - The command prompts for template selection unless defaults are set in
   repoctl.config.ts or monorepo.config.ts.
 - Override mappings with `commands.create.templateMap` and `commands.create.templatesDir`.
+
+For `next`, run `typecheck` to generate Next route types before `tsc`. Its local Turbo config caches production output and excludes `.next/cache`. Compiled workspace libraries use public package exports and `^build`; source-exporting libraries must be named in `transpilePackages`. Never copy `.next`, `next-env.d.ts` or an independent pnpm lockfile into the template.
 
 ## Custom catalog
 

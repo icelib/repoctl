@@ -13,6 +13,7 @@ repoctl 的模板由 `@icebreakers/monorepo-templates` 维护。CLI、脚手架�
 | `vue-hono`    | app      | `apps/client`        | Vue 3 + Hono 前后端一体应用          |
 | `react-vite`  | app      | `apps/react-vite`    | React + Vite + TypeScript 单页应用   |
 | `react-lib`   | library  | `packages/react-lib` | 含类型声明和 CSS 出口的 React 组件库 |
+| `next`        | app      | `apps/next`          | Next.js App Router 与 TypeScript SSR |
 | `hono-server` | service  | `apps/server`        | Hono API 服务                        |
 | `vitepress`   | docs     | `apps/website`       | VitePress 文档站                     |
 | `nimbus`      | docs     | `apps/docs`          | Nimbus + Astro，默认中英双语文档     |
@@ -229,6 +230,26 @@ repo templates --check --json
 - [把校验加入 CI](/zh/tasks/ci)
 - [配置文件](./config.md)
 - [模板资产治理](/zh/reference/template-assets)
+
+## Next.js App Router
+
+```sh
+pnpm create repoctl@latest my-workspace -- --yes --templates next,tsdown
+cd my-workspace
+corepack enable
+pnpm install
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm --dir apps/next start
+```
+
+已有工作区可运行 `repo new portal --template next`，交互式 **Web App** 也可选择 Next.js。模板使用 Next 16.3.8、TypeScript，包含服务端页面、客户端计数器和 `GET /api/health`，不附带认证、数据库或托管平台。App Router 目录以同版本[官方脚手架](https://nextjs.org/docs/app/api-reference/cli/create-next-app)为参照。
+
+`typecheck` 先执行 `next typegen`，再运行 `tsc --noEmit`；ESLint、Stylelint 独立执行。包内 Turbo 配置缓存 `.next/**`，排除 `.next/cache/**`，将全部应用源文件纳入输入；服务任务与路由类型生成不使用缓存。分发的模板不包含 `.next`、`next-env.d.ts`、build info 或独立锁文件。
+
+对已经编译并导出 JavaScript/声明文件的内部库，声明 `workspace:*` 依赖并从公开包名导入，继承的 `^build` 会先构建依赖。对明确直接导出 TypeScript 源码的库，将包名加入 Next 的 [`transpilePackages`](https://nextjs.org/docs/app/api-reference/config/next-config-js/transpilePackages)，并保证 exports 与服务端/客户端边界兼容；不要通过相对路径访问其他包的私有源码。打包验收在生产构建中消费这两类库，再通过无头浏览器检查服务端 HTML、客户端交互、移动端布局和健康接口。
 
 ## 实例来源登记与历史关联
 

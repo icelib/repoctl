@@ -11,6 +11,7 @@ const skipDirs = new Set([
   '.wrangler',
   '.astro',
   '.nimbus',
+  '.next',
 ])
 
 const skipFiles = new Set([
@@ -18,6 +19,7 @@ const skipFiles = new Set([
   'CHANGELOG.md',
   'route-map.d.ts',
   'worker-configuration.d.ts',
+  'next-env.d.ts',
 ])
 
 export function shouldSkipTemplatePath(rootDir: string, targetPath: string) {
