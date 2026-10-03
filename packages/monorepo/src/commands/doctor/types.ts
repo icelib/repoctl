@@ -1,3 +1,4 @@
+import type { DoctorSuppression } from '../../types/doctor'
 import type { DoctorManifest } from './manifest/types'
 
 export type DoctorStatus = 'pass' | 'warn' | 'fail'
@@ -8,6 +9,7 @@ export interface DoctorCheck {
   status: DoctorStatus
   detail: string
   fix?: string
+  suppression?: DoctorSuppression & { state: 'active' | 'expired' }
   /** Workspace-relative manifest path, when the rule targets a package. */
   path?: string
   /** Stable manifest field name; never translated. */
@@ -20,12 +22,21 @@ export interface DoctorSummary {
   fail: number
 }
 
+export interface DoctorSuppressionReport extends DoctorSuppression {
+  state: 'active' | 'expired'
+  matched: number
+}
+
 export interface DoctorReport {
   cwd: string
   workspaceDir: string
   packageCount: number
   checks: DoctorCheck[]
+  /** Effective counts, excluding actively suppressed findings. */
   summary: DoctorSummary
+  /** Original counts, retained even when findings are suppressed. */
+  rawSummary?: DoctorSummary
+  suppressions?: DoctorSuppressionReport[]
 }
 
 export interface DoctorPackageJson {
