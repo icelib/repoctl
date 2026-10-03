@@ -273,3 +273,22 @@ Doctor 修复在输入校验、应用、验证、回滚和清理期间持有 `.r
 ## `repo tooling references`
 
 `check --json` 无需启用即可检查已有引用；`plan` 和 `sync --dry-run` 只读输出稳定 JSON。显式配置 `tooling.projectReferences.enabled: true` 后，使用 `sync` 或 `apply <plan.json>` 同步受管引用。保留手工引用及 TypeScript/Vue 原有验证入口；不兼容编译选项、循环、缺失目标和过期计划会阻止应用。[配置参考](./config#typescript-project-references)说明了发现规则、显式编译关系、归属和恢复方式。
+
+### 增量接入 Playwright
+
+为已有 Vue/React Vite 应用添加浏览器测试；应用需包含 `build` 和 `preview` 脚本：
+
+```sh
+repo tooling capability list --json
+repo tooling capability plan playwright --target web --route / --role button --name Increment --expect-text 'Count: 1' --json > e2e-plan.json
+repo tooling capability apply e2e-plan.json --json
+pnpm install
+pnpm --filter @repoctl-e2e/web test:e2e:install
+pnpm test:e2e
+```
+
+使用 `--test-id` 可替代 `--role`/`--name`。路由、点击目标和预期文本必须对应应用中的真实交互。计划展示文件 diff、依赖、脚本、冲突和后续操作，预览不安装依赖。应用时使用已审阅的内容，检查过期输入和文件冲突；写入失败会回滚，重复应用不产生额外修改。首次接入请选择空目录（可用 `--directory` 指定）。应用业务文件及与生成内容不同的文件均受保护。
+
+能力包生成独立 E2E 工作区、无头 Chromium 测试、Turbo 构建依赖、CI 工作流、HTML 报告及失败 trace。浏览器需显式安装。`--port` 与 `--ci-port` 分别指定本地和 CI 端口且不能相同；CI 始终启动独立服务。本地只有显式添加 `--reuse-existing-server` 才复用服务。Playwright 在成功、失败和中断后清理自己启动的服务，保留借用的服务。安装后需提交 lockfile。
+
+公开 API：`listToolingCapabilities()`、`planToolingCapability(cwd, options)`、`applyToolingCapability(plan)`。JSON 使用 schemaVersion 1，字段名不随 CLI 语言变化。

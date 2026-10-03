@@ -135,6 +135,7 @@ export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus,
 export { applyDependencyFixPlan, checkDependencies, planDependencyFix } from './deps'
 export { checkDependencyAdmission } from './deps/admission'
 export type { AdmissionDeclaration, DependencyAdmissionConfig, DependencyAdmissionException, DependencyAdmissionFinding, DependencyAdmissionOptions, DependencyAdmissionReport, DependencyAdmissionRule } from './deps/admission'
+export { applyCatalogMigrationPlan, checkCatalogs, planCatalogMigration } from './deps/catalog'
 export { checkPeerDependencies } from './deps/peers'
 export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport } from './deps/peers'
 export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
@@ -172,6 +173,9 @@ export * from './template-instances'
 export { planTemplateValidation, validateTemplate } from './template-validation'
 
 export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
+
+export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
+export type { PlaywrightInteraction, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
 export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
 export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'

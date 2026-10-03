@@ -22,8 +22,8 @@ concurrency:
 jobs:
   build:
     name: Build and Test
-    # Ubuntu runs serial packaged checks; Windows and macOS need full validation and upload time.
-    timeout-minutes: ${{ matrix.os == 'ubuntu-latest' && 35 || 25 }}
+    # Preserve time for full validation and packaged checks on every platform.
+    timeout-minutes: ${{ matrix.os == 'macos-latest' && 25 || 35 }}
     strategy:
       fail-fast: false
       matrix:
@@ -117,6 +117,10 @@ jobs:
       - name: Check packaged remote template sources
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-template-sources
+
+      - name: Check packaged Playwright capability
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-capability
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
