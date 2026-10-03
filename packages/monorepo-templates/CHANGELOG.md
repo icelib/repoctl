@@ -1,5 +1,147 @@
 # @icebreakers/monorepo-templates
 
+## 2.2.0
+
+### Minor Changes
+
+- 新增 react-lib 组件库模板，提供 ESM、公开 props 类型和显式 CSS 出口，保留 React peer 外置，并验证独立 tarball 消费方的类型、样式与交互。
+
+- 新增只读工作区依赖图与 why/impact 查询，支持私有包、workspace 别名、稳定 JSON 和 Mermaid 输出，并诊断缺失或歧义引用。
+
+- Support fixed npm and Git template assets with verified offline caches, explicit asset fetching, reproducible creation plans and recorded remote provenance.
+
+- Add the react-vite application template with React, TypeScript, Vite, interaction tests, shared linting and workspace library consumption. Include it in initial workspace selection and the Web App creation flow.
+
+  Keep generated lint, test and CI commands independent of source repository build and check scripts.
+
+- 新增可解释的 affected 校验计划，按 Git 变更和消费者闭包选择任务，保守处理缺失历史与未解析依赖，并兼容预览和执行报告。
+
+- Add dependency consistency reports and explicit reviewed fix plans with conflict checks and rollback.
+
+- Export affected checks as deterministic GitHub Actions matrices with dependency builds, safe argument arrays, empty-result handling and bounded sharding.
+
+- Add a Next.js App Router template with server and client components, a health route, generated route type checks, Turbo cache boundaries and packaged production browser acceptance.
+
+  Keep Next.js in the shared template catalog, interactive application choices and literal template path API so discovery, previews and creation resolve the same definition.
+
+- Upgrade explicitly selected template instances with retained three-way baselines, persistent unmanaged paths, conflict previews, atomic registry updates and recoverable file transactions.
+
+- Preview and apply safe workspace moves and package renames with dependency aliases, TypeScript path updates, located manual source review, stale-input checks and coordinated file/directory recovery.
+
+  Move registered template instance targets in the same transaction while preserving business edits, source identity, generation parameters and retained baselines for future drift checks and upgrades.
+
+  Allocate independent IDs when a generated project reuses a moved instance's original path, and report committed moves accurately when registry lock cleanup needs attention.
+
+- Register exact template origins and original/rendered baselines after successful creation. Add read-only instance inventory, explicit historical linking with difference previews, guarded relocation and offline baseline reconstruction. Keep instance provenance separate from managed root assets and never execute historical template scripts.
+
+- Add complete read-only upgrade plans with per-file diffs, guarded application and recoverable migrations.
+
+- Inspect pnpm default and named catalogs and migrate reviewed compatible dependency cohorts with coordinated YAML/manifest previews, conflict checks and transactional recovery.
+
+- Share typed template parameters between interactive and JSON inputs, preview conditional files and package entries, and keep sensitive values out of generation reports and provenance.
+
+  Verify historical parameter contracts before linking, reject secret values and unavailable sources, and retain validated nonsensitive defaults for later upgrades.
+
+  参数化创建在工作区移动后可复用原路径，为新实例分配独立 ID，保持敏感文件排除与事务回滚，并支持两份实例各自漂移检查和升级。
+
+### Patch Changes
+
+- 增加公共 API 报告与显式基线更新入口，复用本地 API Extractor 分析构建声明，提供可审核的签名 diff、change intent 建议及带冲突检测和事务恢复的更新计划。
+
+- Add previewable component and Hono route generators for existing workspace packages, with typed parameters, framework checks, conflict protection, structured export edits and transactional rollback.
+
+  Support generation inside moved parameterized packages while retaining independent template instances and sensitive-file exclusions.
+
+- Cancel superseded CI runs for the same pull request so current commits can complete their full verification matrix without obsolete jobs occupying runners.
+
+- Add offline third-party dependency admission policies, explicit exceptions and expiry reminders, reviewed baseline comparison, stable JSON and opt-in doctor checks.
+
+- Validate repoctl-owned configuration before command side effects, explain shared defaults and overrides, and redact sensitive report values. Correct the generated lint-staged repoCommand field.
+
+  Validate public API report settings and keep configuration loading free of filesystem cache writes during read-only commands.
+
+- Add read-only internal dependency cycle and architecture boundary checks, typed rule exceptions, stable diagnostics and opt-in doctor integration.
+
+- Validate doctor configuration through the shared runtime schema and explain workspace-root policy consistently from package directories. Preserve omitted rule selection as all rules and explicit empty selection as none, while validating the full configuration before executing selected doctor checks.
+
+- Add offline doctor checks for runtime versions, manifest/lockfile consistency, and recorded pnpm installation state.
+
+- Document environment cache checks and their read-only scan limits.
+
+- 支持隔离构建与校验 PR/nightly 快照包，使用精确临时版本、独立 tag 和可恢复发布，不改变正式发布状态。
+
+- Add per-package manifest health diagnostics to doctor, with tolerant discovery and stable file/field locations.
+
+- Add previewable, conflict-aware Playwright capabilities for existing Vue and React Vite applications, including headless interaction tests, CI reports and explicit browser setup.
+
+- Preserve snapshot planning's configuration independence through the CLI: do not load or execute repoctl configuration for release snapshot, while ordinary release commands retain strict preflight validation.
+
+- 同步 doctor 规则选择、抑制和安全修复计划的双语命令与配置文档。
+
+- 提供可信默认分支上的 repoctl 根资产升级报告与补丁，以及分离校验和写凭据的官方升级 PR 工作流。
+
+- Allow macOS CI jobs 35 minutes to finish the complete validation matrix and cache cleanup. A macOS Node 22 job completed its 17m27s test step at 24m35s elapsed, then the 25-minute job limit canceled the following packaged Worker check. Preserve Linux and Windows budgets, every verification step, and individual test timeouts.
+
+- Analyze saved Turbo run summaries with task timings, cache outcomes, digested comparison evidence, and a measured dependency critical path without running tasks or modifying caches.
+
+- Add explicit workspace-local Knip checks with native configuration recommendations, severity-preserving reports and reviewed baselines for incremental unused-code and dependency governance.
+
+- Add optional isolated Storybook workspaces with reviewed plans, Vue/React state stories, headless play tests, static builds and unchanged library publication contents.
+
+- 修复 pre-push 使用固定源码目录导致新工作区漏测：按 pnpm 清单动态发现私有和嵌套工作区，保留显式覆盖，并校验删除及跨包重命名的两侧文件。同步中英文校验文档，并兼容 Windows 的 pnpm 命令包装器。
+
+- Document root asset baseline merging and explicit adoption for generated repoctl skill references.
+
+- 支持固定版本的组织预设 npm 包，以纯 JSON 组合配置、模板、能力建议和有独立归属记录的工程资产。配置检查显示分层来源，资产应用提供只读计划、三方合并、冲突检查和事务回滚。
+
+  组织预设精确依赖升级可接入维护 PR 工作流：仅合并已有归属文件，发布阶段按工作流固定策略、提交中的包版本及基线 hash 独立校验，兼容既有 repoctl 维护报告。
+
+  组织预设维护的公共元数据缓存仅用于源码验收，生成项目会排除该工具依赖及相关测试脚本。
+
+- Add read-only peer compatibility reports using development declarations, pnpm catalogs, workspace versions, and supported lockfile evidence.
+
+- Add an opt-in pnpm workspace Dev Container preset with reviewed previews, protected existing configurations, pinned Node/Corepack setup and non-root dependency caching.
+
+- 发布模板时按 YAML 结构移除源码仓库专用 CI 步骤，避免相邻步骤、额外字段或多行命令漏删；复用源码专用脚本分类，防止生成项目调用不存在的打包检查。
+
+- 更新受管 repoctl 技能文档，说明版本化迁移账本、版本来源和中断恢复流程。
+
+- Limit workspace clean to selected packages, preview dependency changes, and reject unsafe paths before deletion.
+
+- Diagnose registered template versions, trustworthy root asset baselines and managed file drift independently, with offline defaults, explicit remote evidence, strict reports and reasoned doctor suppressions.
+
+- 统一根包与私有包的发布 intent 识别和版本预览边界，仅对可发布包校验发布说明；通过已提交账本与第一父提交历史定位首次发布来源，并严格校验恢复时 changelog 的存在性。
+
+- 支持自定义正式发布分支与维护版本线，统一原生版本计划、发布 PR、npm 标签、受管 CI 和原提交恢复的分支映射，并在消费 intent 前检查维护范围。
+
+- Explain retained template origins when removing a generated workspace package, and identify the owning instance when its reserved path prevents a new project from being created.
+
+- Preview and apply safe removal of one workspace package with consumer dependency plans, stale-input checks, bounded reference review, coordinated directory/manifest recovery, and operation locks covering replay checks through rollback and cleanup.
+
+- 文档补充 check 实际执行报告与预览模式的用法和边界。
+
+- Add read-only pnpm installation security diagnostics, version-aware organization expectations, and reviewed additive presets with conflict detection and recovery.
+
+- Add a read-only native pnpm release plan with version reasons, release-note previews, and JSON output before change intents are consumed.
+
+- Add workspace owner queries and explicit CODEOWNERS previews with conflict-checked, atomic managed-block synchronization.
+
+- Unify built-in and custom template discovery across creation, interactive choices, list/detail output and read-only health checks. Resolve template roots relative to the configuration file and report overrides and invalid declarations with configuration locations.
+
+- Allow Ubuntu CI 35 minutes for matrix validation followed by serial packaged consumer checks, preserving Windows and macOS budgets and individual command timeouts.
+
+- Allow the Ubuntu Node 22 CI job 25 minutes to complete all packaged CLI, documentation, React/browser checks and post-job reporting after observed job-level budget exhaustion. Preserve the other platform budgets, every verification step, and individual test timeouts.
+
+- Discover workspace task scripts and locate packages with explicit ambiguity handling and machine-readable output.
+
+- 补充 TypeScript project references 显式同步、手工引用归属与故障恢复文档。
+
+- Allow Windows CI jobs 35 minutes to complete validation and coverage upload after observed exhaustion of the 25-minute job budget. Preserve Linux and macOS budgets, all verification steps, and individual test timeouts.
+
+- Allow Windows CI jobs 35 minutes to finish the full test matrix, packaged Worker validation, and reporting after successful tests exhausted the previous 25-minute budget.
+
+- Preview and prepare isolated Turbo prune build contexts and pinned pnpm deploy production directories with source fingerprints, private-file exclusions, exclusive output publication and recovery.
+
 ## 2.1.0
 
 ### Minor Changes
