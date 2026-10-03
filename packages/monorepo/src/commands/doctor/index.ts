@@ -8,6 +8,7 @@ import { collectManifestChecks } from './manifest'
 import { collectReleaseChecks } from './release'
 import { checkNodeVersion, checkNodeVersionFiles } from './runtime/node'
 import { collectPnpmChecks } from './runtime/pnpm'
+import { collectInstallSecurityChecks } from './security'
 import { collectToolingChecks } from './tooling'
 import { collectWorkspaceChecks } from './workspace'
 
@@ -24,6 +25,7 @@ export async function runDoctor(cwd: string) {
     await checkNodeVersionFiles(context),
     ...await collectPnpmChecks(context),
     ...await collectInstallationChecks(context),
+    ...await collectInstallSecurityChecks(context),
     ...await collectToolingChecks(context),
     ...await collectReleaseChecks(context.workspaceDir, context.packageJson),
   ]
