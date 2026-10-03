@@ -6,6 +6,7 @@ import { collectManifestChecks } from './manifest'
 import { collectReleaseChecks } from './release'
 import { checkNodeVersion, checkNodeVersionFiles } from './runtime/node'
 import { collectPnpmChecks } from './runtime/pnpm'
+import { collectInstallSecurityChecks, installSecurityRuleIds } from './security'
 import { collectToolingChecks } from './tooling'
 import { collectWorkspaceChecks } from './workspace'
 
@@ -54,6 +55,7 @@ const collectors: DoctorCollector[] = [
   { ids: ['node-version-files'], collect: async context => [await checkNodeVersionFiles(context)] },
   { ids: ['package-manager', 'pnpm-version'], collect: collectPnpmChecks },
   { ids: ['lockfile-sync', 'installation-state'], collect: collectInstallationChecks },
+  { ids: installSecurityRuleIds, collect: collectInstallSecurityChecks },
   { ids: ['tool-package', 'root-scripts', 'tooling-imports'], collect: collectToolingChecks },
   { ids: ['release-workflow', 'release-prerelease-state', 'release-changeset-config', 'release-cli-version', 'release-versioning-config'], collect: (context, selected) => collectReleaseChecks(context.workspaceDir, context.packageJson, selected) },
 ]

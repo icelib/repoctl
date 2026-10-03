@@ -23,7 +23,7 @@ jobs:
   build:
     name: Build and Test
     # Windows Node 22 serializes typechecking; leave time for tests and cache upload.
-    timeout-minutes: ${{ matrix.os == 'windows-latest' && 25 || 15 }}
+    timeout-minutes: ${{ matrix.os == 'ubuntu-latest' && 15 || 25 }}
     strategy:
       fail-fast: false
       matrix:
