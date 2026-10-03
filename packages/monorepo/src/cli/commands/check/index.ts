@@ -6,6 +6,7 @@ import path from 'pathe'
 import { logger } from '../../../core/logger'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
+import { registerCacheAnalysis } from './cache'
 import { registerKnipCheck } from './knip'
 import { createCheckPlanOutput, redactCheckOutput } from './output'
 
@@ -142,5 +143,6 @@ export function registerCheckCommand(program: Command, cwd: string) {
       await runRecommendedCheck(options)
       logger.success(localize('Checks finished.', '检查完成。'))
     })
+  registerCacheAnalysis(check, cwd)
   registerKnipCheck(check, cwd)
 }

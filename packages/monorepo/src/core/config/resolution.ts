@@ -21,6 +21,7 @@ const defaults = {
   clean: { autoConfirm: false, dryRun: false, ignorePackages: [], includePrivate: true },
   create: { renameJson: false, defaultTemplate: 'tsdown' },
   deps: { groups: [] },
+  env: { tasks: ['build'], frameworkInference: true },
   init: { skipReadme: false, skipPkgJson: false, skipChangeset: false, skipIssueTemplateConfig: false, tooling: [], force: false },
   mirror: { env: chinaMirrorsEnvs },
   release: { qualityScripts: ['build', 'lint', 'test'], hooks: { verify: [], beforeVersion: [], afterVersion: [], beforePublish: [], afterPublish: [] } },
