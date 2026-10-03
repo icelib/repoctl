@@ -3,8 +3,8 @@ import path from 'pathe'
 import { checkedFile, hash } from '../../plan/files'
 
 export interface Identity {
-  ino: number
-  dev: number
+  ino: bigint
+  dev: bigint
 }
 
 export interface OwnedFile {
@@ -21,7 +21,7 @@ export interface OwnedDirectory {
 
 export async function ensureParent(directory: string, created: OwnedDirectory[]): Promise<void> {
   try {
-    const info = await lstat(directory)
+    const info = await lstat(directory, { bigint: true })
     if (!info.isDirectory() || info.isSymbolicLink()) {
       throw new Error(`Unsafe parent directory: ${directory}`)
     }
@@ -33,14 +33,14 @@ export async function ensureParent(directory: string, created: OwnedDirectory[])
     await ensureParent(path.dirname(directory), created)
     try {
       await mkdir(directory)
-      const info = await lstat(directory)
+      const info = await lstat(directory, { bigint: true })
       created.push({ path: directory, identity: { ino: info.ino, dev: info.dev } })
     }
     catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
         throw error
       }
-      const info = await lstat(directory)
+      const info = await lstat(directory, { bigint: true })
       if (!info.isDirectory() || info.isSymbolicLink()) {
         throw error
       }
@@ -52,7 +52,7 @@ export async function ensureParent(directory: string, created: OwnedDirectory[])
 export async function cleanDirectories(created: OwnedDirectory[]) {
   for (const directory of [...created].reverse()) {
     try {
-      const info = await lstat(directory.path)
+      const info = await lstat(directory.path, { bigint: true })
       if (info.isDirectory() && !info.isSymbolicLink() && info.ino === directory.identity.ino && info.dev === directory.identity.dev && path.normalize(await realpath(directory.path)) === directory.path) {
         await rmdir(directory.path)
       }
@@ -66,7 +66,7 @@ export async function stageOwnedFile(root: string, file: OwnedFile, content: Uin
   const handle = await open(file.path, 'wx', mode ?? 0o666)
   file.owned = true
   try {
-    const info = await handle.stat()
+    const info = await handle.stat({ bigint: true })
     file.identity = { ino: info.ino, dev: info.dev }
     if (mode !== undefined) {
       await handle.chmod(mode)
@@ -83,7 +83,7 @@ export async function verifyOwnedFile(root: string, file: OwnedFile) {
     throw new Error(`Unowned upgrade recovery file: ${file.path}`)
   }
   const target = await checkedFile(root, path.relative(root, file.path), file.identity)
-  const info = await lstat(target)
+  const info = await lstat(target, { bigint: true })
   if (info.ino !== file.identity.ino || info.dev !== file.identity.dev || hash(await readFile(target)) !== file.hash) {
     throw new Error(`Upgrade recovery file changed: ${file.path}`)
   }
