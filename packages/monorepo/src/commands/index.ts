@@ -149,7 +149,11 @@ export { applyInstallSecurityPreset, planInstallSecurityPreset } from './doctor/
 export { checkEnvironmentCache } from './env-cache'
 
 export type * from './env-cache'
+
 export { formatEnvironmentCache } from './env-cache/format'
+
+export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
+export type { MaintenanceFile, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 
@@ -168,5 +172,6 @@ export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport
 export * from './template-drift'
 export * from './template-instances'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
-
 export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
+export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
+export { planWorkspaceRemoval } from './workspace/remove/plan'

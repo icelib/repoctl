@@ -230,6 +230,10 @@ Usage:
 - Built-in tooling targets: commitlint, eslint, stylelint, lint-staged, tsconfig, vitest
 - Generated files also update root package.json devDependencies
 
+## workspace remove
+
+For removal of one specific existing package, prefer `workspace remove <exact-name-or-./directory> --json`. It always previews, including root/private/transitive consumers. Save the JSON outside the selected directory. Consumers block by default; `--remove-references` plans only exact manifest dependency fields and matching metadata. Review source/configuration candidates manually: the scan covers only Git-tracked text literal matches and is not an exhaustive import analysis. Git HEAD and a clean selected directory are required; ignored files are inventoried. Root/outside/linked/nested-workspace boundaries and uncertain dependency relationships cannot be forced. Apply only a reviewed plan with `workspace remove --apply <plan.json>`. The `.repoctl/workspace-remove.lock` serializes replay checks through verification, rollback and cleanup; after interruption, verify no writer is active and recover retained originals before removing it. Before commit, failures restore manifests and the directory when safe, preserving concurrent edits and reporting recovery paths; after commit, `cleanupPending` reports retained operation files. Run `pnpm install --lockfile-only`, `pnpm install --frozen-lockfile`, workspace checks, and review Git diff explicitly afterward. Do not hand-edit the lockfile or remove user documentation/global skills.
+
 ## workspace clean (alias: ws clean)
 
 Remove explicitly selected workspace package directories. Nothing is preselected.
@@ -370,6 +374,13 @@ Use `repo doctor security --json` for a read-only, version-aware pnpm policy rep
 ## `repo tooling references`
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config.md#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
+
+## Maintenance
+
+- `repo maintenance upgrade --base <full-sha> --head <full-sha> --out <external-empty-directory>` prepares a root-asset upgrade report and validated patch in a disposable clean checkout, only when the locked root repoctl version changes. Conflicts/failed checks block PR publication.
+- `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` exports an opt-in two-job recipe without overwriting files. Use only the trusted default branch; keep project execution in the read-only job and acquire the GitHub App write token only after immutable artifact, SHA, path, mode and hash verification. App permissions must include contents, pull requests and workflows write.
+
+Maintenance report hashes describe exact Git blobs; planned working-file bytes are validated before staging. The isolated publisher verifies index bytes and Git-equivalent checkout contents across line-ending conversions, with hooks, executable filters and filesystem monitors disabled through PR creation.
 
 ## release snapshot
 
