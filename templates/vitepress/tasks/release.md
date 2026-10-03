@@ -129,6 +129,8 @@ The managed Release workflow exposes the same `source-sha` input for `publish` a
 
 Recovery preserves GitHub's workflow environment for trusted publishing and provenance: its signed identity refers to the workflow run's commit. The isolated checkout, release checkpoint, Git tags, and Release targets refer to `source-sha`. Do not overwrite `GITHUB_SHA` to recover an older source; npm rejects provenance that disagrees with the signed workflow identity.
 
+Validation scripts (`qualityScripts` and `hooks.verify`) do not inherit control inputs for the current release, such as its mode or recovery source. They retain ordinary CI and authentication environment variables. Other lifecycle hooks keep their release context.
+
 ## PR and nightly snapshots
 
 Use a snapshot for downstream validation before a stable release. Commit the source first and preview the complete set of public workspace packages:

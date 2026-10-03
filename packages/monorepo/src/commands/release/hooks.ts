@@ -34,11 +34,30 @@ function runScripts(scripts: string[], options: ReleaseOptions, extraEnv?: NodeJ
   }
 }
 
+function verificationEnvironment(options: ReleaseOptions) {
+  const env = { ...(options.env ?? process.env) }
+  // Release routing and recovery decisions belong to the orchestrator, not
+  // validation scripts that may exercise release commands in other workspaces.
+  for (const variable of [
+    'REPO_RELEASE_MODE',
+    'REPO_RELEASE_PACKAGE',
+    'REPO_RELEASE_VERSION',
+    'REPO_RELEASE_DRY_RUN',
+    'REPO_RELEASE_RECOVERY_SOURCE_SHA',
+    'REPO_RELEASE_SOURCE_SHA',
+    'REPO_RELEASE_ACKNOWLEDGE_HOOKS',
+  ]) {
+    delete env[variable]
+  }
+  return env
+}
+
 export async function runQualityScripts(options: ReleaseOptions) {
   await assertWorkspaceDependencyProtocols(options.cwd)
   const config = resolveCommandValues('release', options.config).values
-  runScripts(config.qualityScripts!, options)
-  runScripts(config.hooks?.verify ?? [], options)
+  const verificationOptions = { ...options, env: verificationEnvironment(options) }
+  runScripts(config.qualityScripts!, verificationOptions)
+  runScripts(config.hooks?.verify ?? [], verificationOptions)
 }
 
 export function runReleaseHooks(phase: ReleaseHookPhase, options: ReleaseOptions) {

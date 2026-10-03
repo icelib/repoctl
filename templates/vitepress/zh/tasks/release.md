@@ -135,6 +135,8 @@ repo release ci --mode prepare
 
 恢复保留 GitHub 工作流环境，供可信发布和 provenance 使用：签名身份对应运行工作流的提交；独立检出的源码、发布检查点、Git tag 和 Release 目标则对应 `source-sha`。不要通过覆盖 `GITHUB_SHA` 恢复旧源码，npm 会拒绝与工作流签名身份不一致的 provenance。
 
+验证脚本（`qualityScripts` 和 `hooks.verify`）不继承本次发布的控制参数，例如发布模式或恢复来源；普通 CI 与认证环境变量仍会保留。其他生命周期 hook 继续使用原有发布上下文。
+
 ## 下一步
 
 阅读[发包与变更日志](/zh/learn/monorepo/publish)，再查看[报告与输出](/zh/tasks/reports)了解 CI 产物。
