@@ -373,6 +373,13 @@ Use `repo doctor security --json` for a read-only, version-aware pnpm policy rep
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config.md#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
 
+## Maintenance
+
+- `repo maintenance upgrade --base <full-sha> --head <full-sha> --out <external-empty-directory>` prepares a root-asset upgrade report and validated patch in a disposable clean checkout, only when the locked root repoctl version changes. Conflicts/failed checks block PR publication.
+- `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` exports an opt-in two-job recipe without overwriting files. Use only the trusted default branch; keep project execution in the read-only job and acquire the GitHub App write token only after immutable artifact, SHA, path, mode and hash verification. App permissions must include contents, pull requests and workflows write.
+
+Maintenance report hashes describe exact Git blobs; planned working-file bytes are validated before staging. The isolated publisher verifies index bytes and Git-equivalent checkout contents across line-ending conversions, with hooks, executable filters and filesystem monitors disabled through PR creation.
+
 ## release snapshot
 
 `repo release snapshot --kind pr --pr <number> --commit <full-HEAD-sha> --build-id <run-attempt> --dry-run --json` previews deterministic temporary versions. Use `--kind nightly` without `--pr` for nightly packages. Without dry-run, archive committed HEAD outside the repository, install frozen dependencies, build, pack and validate isolated consumers. `--output` chooses an external artifact parent. Every public package receives an exact snapshot version and internal references follow those versions. Source manifests/intents/ledger/changelogs/Git refs stay unchanged.

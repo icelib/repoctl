@@ -149,7 +149,11 @@ export { applyInstallSecurityPreset, planInstallSecurityPreset } from './doctor/
 export { checkEnvironmentCache } from './env-cache'
 
 export type * from './env-cache'
+
 export { formatEnvironmentCache } from './env-cache/format'
+
+export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
+export type { MaintenanceFile, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 
