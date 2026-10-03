@@ -2,6 +2,7 @@ import type { Command } from '@icebreakers/monorepo-templates'
 import type { ReleaseOptions } from '../../commands/release/types'
 import process from 'node:process'
 import { resolveCommandConfig } from '../../core/config'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import { registerReleasePlan } from './release/plan'
@@ -18,7 +19,7 @@ async function runReleaseAction(action: () => void | Promise<void>) {
 }
 
 async function resolveReleaseOptions(cwd: string): Promise<ReleaseOptions> {
-  const config = await resolveCommandConfig('release', cwd)
+  const config = resolveCommandValues('release', await resolveCommandConfig('release', cwd)).values
   return {
     cwd,
     ...(config ? { config } : {}),

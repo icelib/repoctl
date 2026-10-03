@@ -31,7 +31,7 @@ export function writeJson(file, data) {
   writeFileSync(file, `${JSON.stringify(data, null, 2)}\n`)
 }
 
-function packDependencies(packDir) {
+export function packDependencies(packDir) {
   const packages = new Map(readdirSync(path.join(repoRoot, 'packages')).flatMap((dir) => {
     const manifest = json(path.join(repoRoot, 'packages', dir, 'package.json'))
     return [[manifest.name, manifest]]

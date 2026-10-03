@@ -152,6 +152,13 @@ function checkCiWorkflow() {
   assert.ok(commands.includes('pnpm test:packaged-next'))
   assert.ok(commands.includes('pnpm test:packaged-capability'))
   assert.ok(commands.includes('pnpm test:packaged-storybook'))
+  assert.ok(commands.includes('pnpm test:packaged-react-lib'))
+  assert.ok(commands.includes('pnpm test:packaged-template-validation'))
+  assert.ok(commands.includes('pnpm test:packaged-template-sources'))
+  assert.ok(commands.includes('pnpm test:packaged-presets'))
+  assert.ok(commands.includes('pnpm test:packaged-maintenance-presets'))
+  assert.ok(commands.includes('pnpm test:packaged-generators'))
+  assert.ok(commands.includes('pnpm test:packaged-template-parameters'))
   assertPinnedActions(steps, 'CI')
 }
 

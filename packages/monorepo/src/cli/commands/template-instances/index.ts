@@ -3,6 +3,7 @@ import type { TemplateLinkOptions } from '../../../commands/template-instances'
 import type { OutputOptions } from './output'
 import path from 'pathe'
 import { localize } from '../../../i18n'
+import { registerTemplateDriftCommand } from './drift'
 import { emitTemplateReport as output, templateWorkspaceRoot as root } from './output'
 import { registerTemplateUpgradeCommands } from './upgrade'
 
@@ -18,6 +19,7 @@ interface LinkOptions extends OutputOptions {
 }
 
 export function registerTemplateInstanceCommands(templates: Command) {
+  registerTemplateDriftCommand(templates)
   registerTemplateUpgradeCommands(templates)
   templates.command('instances')
     .description(localize('Inspect registered template instances without changing files', '只读查询已登记模板实例'))

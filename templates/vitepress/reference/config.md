@@ -61,13 +61,25 @@ export default defineMonorepoConfig({
 
 ## Inspect Config
 
+Share fixed configuration across repositories with [organization preset packages](./organization-presets.md). They contribute JSON configuration, templates, capability recommendations and explicitly managed engineering assets.
+
 ```bash
 repo config inspect
 repo cfg i --json --out reports/config.json
 repo cfg i --markdown --redact --out reports/config.md
+repo config validate --json
+repo config inspect --command ai --set 'format="json"' --set 'force=false' --json
 ```
 
-Use `--redact` before sharing reports in issues, PRs, or external support channels.
+Runtime loading validates repoctl-owned fields before CLI actions and before config-consuming APIs write files. Unknown fields, wrong types, invalid enums and conflicting overwrite policies fail with stable diagnostic IDs and field paths. Omit optional fields instead of setting them to `null`. Native ESLint, Stylelint, Commitlint and Vitest overrides, plugin functions and lint-staged callbacks retain their extension boundary. C12 config factories, inherited configurations and environment layers remain supported.
+
+`config validate` is read-only and exits with code 1 on failure. JSON includes `schemaVersion`, `valid`, `file` and `diagnostics`; each diagnostic has `id`, `path`, `actualType`, `expected` and `suggestion`. Evaluation/import failures use `config.load-failed` and do not include arbitrary thrown values. Config files are trusted JavaScript and are evaluated to load them; this command does not sandbox their own code.
+
+`inspect --command` supports `ai`, `clean`, `create`, `deps`, `doctor`, `init`, `mirror`, `release` and `upgrade`. It uses the same option resolver as command execution and adds `effective.values` and per-field `effective.origins` (`default`, `project`, `cli`). Repeated `--set field=JSON` previews config-field overrides without executing the command. Arrays replace the previous array; explicit `false` and empty arrays are retained. These values explain command configuration; use the command's own plan for discovered files, selected packages and runtime-only flags such as `--all`.
+
+Config CLI reports always hide environment maps, scripts, native tool payloads and sensitive keys. `--redact` additionally replaces cwd, config directory and home paths. The programmatic `explainMonorepoConfig` and `validateConfigFile` APIs return safe reports; `loadMonorepoConfigDetails` and the existing `inspectMonorepoConfig` retain runtime objects for code that consumes callbacks. Avoid serializing those raw objects for support reports.
+
+Older generated configs may use `tooling.lintStaged.monorepoCommand`; replace that field with `tooling.lintStaged.repoCommand`. The old name was ignored by the runtime and is now diagnosed instead of silently falling back.
 
 ## Cleaning workspace packages
 
@@ -89,7 +101,11 @@ Outside paths, symbolic-link targets or parent paths, linked root manifests,
 and deletion of unselected nested packages fail validation before any writes.
 The command does not update consumer dependency declarations.
 
+The `init` inspection context describes the top-level CLI: its default preset is `standard`, while project configuration and explicit CLI options take precedence. The public `init()` API and `workspace init` retain their metadata-only defaults. Origin paths escape dots and backslashes in dynamic keys with a backslash. Commands that load repoctl configuration validate all repoctl-owned blocks before execution, including blocks unrelated to the selected command.
+
 ## `commands.doctor`
+
+Doctor first validates the schema of the whole configuration, then executes only the selected rules. Unselected policies can contain violations without contributing findings, but malformed configuration is always rejected. Omit `rules` to run all rules; use `rules: []` to run none. `config inspect --command doctor` explains the same workspace-root policy that doctor executes, including when invoked from a package directory; explicit CLI selection overrides that policy.
 
 Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs `id` and a nonempty `reason`; optional `path` matches an exact workspace-relative finding path. Optional `expires` is an inclusive UTC date (`YYYY-MM-DD`). JSON retains the original finding status, `suppression`, `rawSummary`, and every waiver with its matched count. Only active waivers are excluded from effective `summary` and strict exit status; expired and unmatched waivers remain visible.
 

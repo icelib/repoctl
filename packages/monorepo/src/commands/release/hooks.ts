@@ -2,12 +2,11 @@ import type { ReleaseCommandConfig } from '../../types/config'
 import type { PublishedPackage, ReleaseOptions } from './types'
 import process from 'node:process'
 import path from 'pathe'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { logger } from '../../core/logger'
 import { ReleaseCommandError } from './errors'
 import { run } from './shared'
 import { assertWorkspaceDependencyProtocols } from './workspace-protocol'
-
-const defaultQualityScripts = ['build', 'lint', 'test']
 
 type ReleaseHookPhase = Exclude<keyof NonNullable<ReleaseCommandConfig['hooks']>, 'afterPublish' | 'verify'>
 
@@ -37,8 +36,9 @@ function runScripts(scripts: string[], options: ReleaseOptions, extraEnv?: NodeJ
 
 export async function runQualityScripts(options: ReleaseOptions) {
   await assertWorkspaceDependencyProtocols(options.cwd)
-  runScripts(options.config?.qualityScripts ?? defaultQualityScripts, options)
-  runScripts(options.config?.hooks?.verify ?? [], options)
+  const config = resolveCommandValues('release', options.config).values
+  runScripts(config.qualityScripts!, options)
+  runScripts(config.hooks?.verify ?? [], options)
 }
 
 export function runReleaseHooks(phase: ReleaseHookPhase, options: ReleaseOptions) {

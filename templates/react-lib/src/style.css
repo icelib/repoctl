@@ -1,0 +1,36 @@
+.repoctl-counter {
+  display: inline-flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 1rem;
+  font: inherit;
+  color: #14283a;
+  border: 1px solid #ccd4dc;
+  border-radius: 0.75rem;
+}
+
+.repoctl-counter output {
+  min-width: 2ch;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.repoctl-counter button {
+  padding: 0.5rem 0.75rem;
+  font: inherit;
+  color: #fff;
+  cursor: pointer;
+  background: #14283a;
+  border: 0;
+  border-radius: 0.375rem;
+}
+
+.repoctl-counter button:focus-visible {
+  outline: 2px solid #176bb4;
+  outline-offset: 3px;
+}
+
+.repoctl-counter button:disabled {
+  cursor: default;
+  opacity: 0.5;
+}

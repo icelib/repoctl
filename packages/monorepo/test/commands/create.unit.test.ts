@@ -1,5 +1,6 @@
 import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { loadedConfigFixture } from '../helpers/config'
 
 interface TemplateMapSubset {
   custom: TemplateDefinition
@@ -78,7 +79,7 @@ beforeEach(async () => {
 
   vi.doMock('@/core/config', () => ({
     resolveCommandConfig: resolveCommandConfigMock,
-    loadMonorepoConfigDetails: async () => ({ file: '/repo/repoctl.config.mjs', rawLayers: [], config: { commands: { create: await resolveCommandConfigMock() } } }),
+    loadMonorepoConfigDetails: async () => loadedConfigFixture({ commands: { create: await resolveCommandConfigMock() } }),
   }))
 
   vi.doMock('@/core/logger', () => ({
@@ -105,14 +106,15 @@ beforeEach(async () => {
     },
   }))
 
-  vi.doMock('@icebreakers/monorepo-templates', () => ({
+  vi.doMock('@icebreakers/monorepo-templates', async () => ({
+    ...await vi.importActual<typeof import('@icebreakers/monorepo-templates')>('@icebreakers/monorepo-templates'),
     scaffoldTemplate: scaffoldTemplateMock,
-    isTemplateCategory: (value: string) => ['app', 'docs', 'library', 'service', 'tool'].includes(value),
     instanceRelativePath: vi.fn(() => 'demo'),
     createTemplateInstanceTarget: ensureDirMock,
     prepareTemplateInstanceSource: vi.fn(async () => ({ snapshot: { schemaVersion: 1, files: [] } })),
     snapshotDigest: vi.fn(() => 'unchanged'),
     recordGeneratedTemplateInstance: vi.fn(async () => {}),
+    isTemplateCategory: (value: string) => ['app', 'docs', 'library', 'service', 'tool'].includes(value),
     suggestTemplateKey: vi.fn((key: string) => key === 'unknown-template' ? undefined : 'tsdown'),
     templateChoices: [
       { key: 'tsdown', label: 'tsdown 打包', source: 'tsdown', target: 'packages/tsdown', description: 'TypeScript library' },

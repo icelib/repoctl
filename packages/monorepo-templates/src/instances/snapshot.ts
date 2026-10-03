@@ -7,7 +7,7 @@ import { shouldSkipTemplatePath } from '../utils/template-filter'
 import { portableRelativePath } from './paths'
 
 const ignoredDirectories = new Set(['.git', '.repoctl'])
-const maxSnapshotBytes = 32 * 1024 * 1024
+export const maxSnapshotBytes = 32 * 1024 * 1024
 
 export function snapshotDigest(snapshot: TemplateSnapshot) {
   return createHash('sha256').update(JSON.stringify(snapshot)).digest('hex')
@@ -29,6 +29,7 @@ export function validateSnapshot(value: unknown): asserts value is TemplateSnaps
     previous = directory
   }
   previous = ''
+  let bytes = 0
   for (const file of snapshot.files) {
     portableRelativePath(file.path)
     if (typeof file.content !== 'string' || typeof file.executable !== 'boolean' || Buffer.from(file.content, 'base64').toString('base64') !== file.content
@@ -37,6 +38,10 @@ export function validateSnapshot(value: unknown): asserts value is TemplateSnaps
     }
     seen.add(file.path)
     previous = file.path
+    bytes += Buffer.byteLength(file.content, 'base64')
+    if (bytes > maxSnapshotBytes) {
+      throw new Error('Template baseline exceeds the supported snapshot size.')
+    }
   }
 }
 

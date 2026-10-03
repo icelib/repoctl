@@ -70,8 +70,11 @@ async function rollback(root: string, staged: StagedFile[]) {
   return recovery
 }
 
-export async function writeFileTransaction(root: string, files: FileTransactionChange[], options: { verify?: () => Promise<void> } = {}) {
-  const id = randomUUID()
+export async function writeFileTransaction(root: string, files: FileTransactionChange[], options: { verify?: () => Promise<void>, id?: string } = {}) {
+  const id = options.id ?? randomUUID()
+  if (!/^[a-f0-9-]+$/.test(id)) {
+    throw new Error('Invalid file transaction recovery identifier.')
+  }
   const staged: StagedFile[] = []
   const directories: OwnedDirectory[] = []
   try {
@@ -160,4 +163,5 @@ export async function writeFileTransaction(root: string, files: FileTransactionC
   if (retained.length) {
     throw new Error(`Upgrade applied; remove retained backups after review: ${retained.join(', ')}`)
   }
+  return new Map(staged.flatMap(item => item.appliedIdentity ? [[item.file.path, item.appliedIdentity] as const] : []))
 }

@@ -5,7 +5,7 @@ import { renderHistoricalTemplate } from '../source'
 
 /** Retain the original generation identity rather than sampling the current machine's Git configuration. */
 function preserveGenerationMetadata(snapshot: TemplateSnapshot, previous: TemplateSnapshot, instance: TemplateInstance) {
-  if (instance.generator.profile !== 'repo-new-v1') {
+  if (!['repo-new-v1', 'repo-new-parameters-v1'].includes(instance.generator.profile)) {
     return snapshot
   }
   const filename = instance.parameters.renameJson ? 'package.mock.json' : 'package.json'
@@ -33,6 +33,7 @@ export async function renderTemplateUpgradeSource(options: TemplateUpgradeOption
     version: options.version,
     profile: instance.generator.profile,
     parameters: instance.parameters,
+    ...((options.exclude ?? instance.excludedPaths) ? { excludedPaths: options.exclude ?? instance.excludedPaths } : {}),
     ...(options.sourceDir ? { sourceDir: options.sourceDir } : {}),
   })
   if (!rendered) {

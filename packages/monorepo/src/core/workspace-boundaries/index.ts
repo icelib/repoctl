@@ -1,4 +1,5 @@
 import type { WorkspaceBoundariesConfig, WorkspaceBoundariesReport } from './types'
+import { ConfigValidationError } from '../config/validation'
 import { getWorkspaceGraph } from '../workspace-graph'
 import { BoundaryConfigError, parseBoundariesConfig } from './config'
 import { evaluateBoundaries } from './evaluate'
@@ -26,7 +27,8 @@ export async function checkWorkspaceBoundaries(cwd: string, options: { config?: 
     evaluateBoundaries(graph, config, report)
   }
   catch (error) {
-    report.findings.push({ id: 'boundary-config', status: 'fail', field: error instanceof BoundaryConfigError ? error.field : 'boundaries', detail: error instanceof BoundaryConfigError ? error.message : 'Unable to load boundary configuration. Review repoctl.config and its imports.' })
+    const diagnostic = error instanceof ConfigValidationError ? error.diagnostics[0] : undefined
+    report.findings.push({ id: 'boundary-config', status: 'fail', field: diagnostic?.path ?? (error instanceof BoundaryConfigError ? error.field : 'boundaries'), detail: error instanceof ConfigValidationError || error instanceof BoundaryConfigError ? error.message : 'Unable to load boundary configuration. Review repoctl.config and its imports.' })
   }
   for (const finding of report.findings) {
     report.summary[finding.status]++
