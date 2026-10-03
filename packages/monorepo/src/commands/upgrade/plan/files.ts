@@ -22,7 +22,8 @@ export async function canonicalDirectory(directory: string): Promise<string> {
       throw error
     }
     const parent = path.dirname(requested)
-    if (parent === requested || path.parse(requested).root === requested) {
+    const networkRoot = /^\/\/[^/]+(?:\/[^/]+)?\/?$/.test(requested)
+    if (parent === requested || path.parse(requested).root === requested || networkRoot) {
       throw error
     }
     return path.join(await canonicalDirectory(parent), path.basename(requested))

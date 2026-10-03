@@ -4,7 +4,10 @@ import { promisify } from 'node:util'
 import { expect, it } from 'vitest'
 import { fixture } from './fixture'
 
-async function probe(root: string, setup: string) {
+async function probe(root: string, setup: string, action = `
+  const plan = await planUpgrade({ cwd: root, targets: ['.editorconfig'] })
+  process.stdout.write(JSON.stringify(plan.blockers))
+`) {
   const script = `
     import fs from 'node:fs/promises'
     import path from 'node:path'
@@ -12,9 +15,8 @@ async function probe(root: string, setup: string) {
     const [root, entry] = process.argv.slice(1)
     ${setup}
     syncBuiltinESMExports()
-    const { planUpgrade } = await import(entry)
-    const plan = await planUpgrade({ cwd: root, targets: ['.editorconfig'] })
-    process.stdout.write(JSON.stringify(plan.blockers))
+    const { planUpgrade, applyUpgradePlan } = await import(entry)
+    ${action}
   `
   const entry = new URL('../../../../dist/index.mjs', import.meta.url).href
   return (await promisify(execFile)(process.execPath, ['--input-type=module', '-e', script, root, entry], { timeout: 15_000 })).stdout
@@ -59,4 +61,29 @@ it('returns a blocked plan when every ancestor including the filesystem root is 
   `)
   expect(output).toContain('Injected missing filesystem root')
   expect(output).not.toContain('Unbounded canonical traversal')
+})
+
+it('rejects an unavailable UNC share without searching the local filesystem root', async () => {
+  const h = await fixture()
+  const output = await probe(h.cwd, `
+    const realpath = fs.realpath
+    let visitedNetwork = false
+    fs.realpath = async (filename, ...args) => {
+      if (String(filename).startsWith('//repoctl-missing-server')) {
+        visitedNetwork = true
+        throw Object.assign(new Error('Unavailable UNC share'), { code: 'ENOENT' })
+      }
+      if (visitedNetwork && filename === '/') throw new Error('Escaped UNC share root')
+      return realpath(filename, ...args)
+    }
+  `, `
+    const plan = await planUpgrade({ cwd: root, targets: [] })
+    plan.rootDir = '//repoctl-missing-server/share/missing'
+    try {
+      await applyUpgradePlan(root, plan)
+      throw new Error('Unexpected success')
+    } catch (error) { process.stdout.write(error.message) }
+  `)
+  expect(output).toContain('Unavailable UNC share')
+  expect(output).not.toContain('Escaped UNC share root')
 })
