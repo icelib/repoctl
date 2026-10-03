@@ -84,6 +84,8 @@ export function createWorkspace(tempRoot, templateKeys = ['nimbus', 'vitepress']
   const workspace = path.join(tempRoot, 'workspace')
   const cli = path.join(bootstrap, 'node_modules/create-repoctl/bin/create-repoctl.js')
   run(process.execPath, [cli, workspace, '--yes', '--templates', templateKeys.join(',')], bootstrap)
+  const generatedWorkflow = readFileSync(path.join(workspace, '.github/workflows/ci.yml'), 'utf8')
+  assert.ok(!/\bpnpm(?:\s+run)?\s+test:packaged-/u.test(generatedWorkflow), 'Generated CI must exclude every source packaged check')
   const workspaceFile = path.join(workspace, 'pnpm-workspace.yaml')
   const manifest = YAML.parse(readFileSync(workspaceFile, 'utf8'))
   manifest.overrides = { ...manifest.overrides, ...overrides }
