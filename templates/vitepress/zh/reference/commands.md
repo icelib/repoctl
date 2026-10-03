@@ -1,5 +1,7 @@
 # 命令速查
 
+[`repo workspace move`](./move.md) 用 `--to`、`--name` 分别预览目录移动、包名修改或两者同时变更。审查 JSON 计划与源码人工任务后，再通过 `--apply` 显式应用。
+
 [`repo workspace remove`](./removal.md) 可按准确包名或目录预览移除单个包，检查消费者与待人工复核引用，再显式应用已审查的 JSON 计划。预览不删除文件；消费者默认阻止移除，只有明确指定 `--remove-references` 才计划删除对应清单依赖字段。
 
 [`repo workspace prepare`](./artifacts.md) 可预览原生 Turbo prune 构建上下文或锁定 pnpm deploy 生产目录，再显式应用已审查的 JSON 计划。必须选择唯一包和工作区外的空输出目录。

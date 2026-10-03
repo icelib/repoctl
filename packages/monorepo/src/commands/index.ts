@@ -175,5 +175,7 @@ export { applyToolingCapability, listToolingCapabilities, planToolingCapability 
 export type { PlaywrightInteraction, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
 export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
+export { applyWorkspaceMovePlan } from './workspace/move/apply'
+export { planWorkspaceMove } from './workspace/move/plan'
 export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
 export { planWorkspaceRemoval } from './workspace/remove/plan'

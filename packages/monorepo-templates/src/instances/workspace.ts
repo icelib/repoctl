@@ -31,7 +31,7 @@ export async function recordWorkspaceTemplateInstances(workspaceDir: string, tem
     if (!drafts.length) {
       return []
     }
-    return await registerTemplateInstances(workspaceDir, drafts)
+    return await registerTemplateInstances(workspaceDir, drafts, undefined, { allocateIdOnConflict: true })
   }
   catch (error) {
     throw new Error(`Scaffolded files remain at ${workspaceDir}, but template registration did not complete. Registry recovery path: ${path.join(workspaceDir, '.repoctl/template-instances.json')}. Inspect the error and use repo templates link for each generated target.`, { cause: error })
