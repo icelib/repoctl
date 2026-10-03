@@ -97,6 +97,8 @@ Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs
 
 Apply checks the canonical workspace and original file contents, rejects links and modified operations, reuses the staged file transaction with rollback, and reruns the root-script check without suppression. A changed input stops the fix; regenerate the plan. Reapplying an already applied plan is unchanged. Textual `fix` suggestions are never executed, and dependency installation or release workflow modification is outside this fixer.
 
+Doctor fix application holds `.repoctl/doctor-fix.lock` through validation, verification, rollback and cleanup. After a crash, confirm no writer remains and reconcile backups before manually removing the lock.
+
 ## upgrade
 
 Preview the complete operation with `repo upgrade --dry-run`, `--json` or `--markdown`; these modes never write or prepare missing assets. Save JSON and review every add/modify/delete/skip/conflict before `repo upgrade --apply <plan.json>`. Plans contain exact bytes and input hashes, including semantic merges and legacy prerelease metadata migration. Application rejects stale inputs, keeps migration groups together and rolls back recoverable failures. Retained `.repoctl-upgrade-*.bak` originals support manual recovery after interruption or a concurrent edit. `--no-overwrite` protects existing assets and legacy metadata; custom release workflows still require `--overwrite-release`. Public APIs: `planUpgrade`, `formatUpgradePlan`, `applyUpgradePlan`, and `upgradeMonorepo({ dryRun: true })`.
@@ -104,6 +106,8 @@ Preview the complete operation with `repo upgrade --dry-run`, `--json` or `--mar
 Root assets use old-upstream/local/new-upstream three-way merging. Commit `.repoctl/baselines/root/` to preserve the upstream records across clones; record updates are reviewed in each file's `baseline` plan entry and applied atomically with that file. Independent changes merge automatically, while conflicting files and their baselines stay unchanged. Local deletion is never undone. API results expose unresolved `conflicts`; CLI preview and apply exit with code 1 when conflicts remain. Saved plans are reviewed write payloads; their hashes detect stale inputs and inconsistent content, not authorship. Generated app/package directories are outside this feature.
 
 Upgrade apply holds `.repoctl/upgrade.lock` through validation, no-op detection, writes, rollback and cleanup. It never removes colliding recovery files, changed recovery bytes or replacement directories. After an interruption, confirm no writer is active and recover retained backups before removing the lock and regenerating the plan.
+
+Versioned migrations appear in `migrations` with stable IDs and affected files. The Changesets-to-pnpm migration starts at template 1.1.0. Use `--from-version <exact-semver>` only when the old version is known; dependency ranges are not version evidence. Unknown sources adopt only recognized legacy formats. Commit `.repoctl/migrations/ledger.json` when created; its cursor covers migrations, not all assets. Preview writes nothing. Pending/failed bytes and completed diffs are reviewed together; migration groups cannot be split, and completed is written only at the end of a successful migration transaction. Re-preview pending/failed attempts to see already-applied versus remaining files; third-state local edits block recovery and retain attempt-specific backups. The shared `.repoctl/upgrade.lock` is never stolen by age; confirm no writer is active and recover pending backups before clearing it. Recovery performs no network/publish actions or historical script execution.
 
 Purpose: sync repo assets and scripts into the workspace.
 Usage:
@@ -214,6 +218,19 @@ Catalogs and unsupported specifiers with local candidates retain `unresolved_spe
 inspect diagnostics before treating the graph as complete or computing affected checks.
 JSON has schema version 1, stable directory IDs and unresolved/ambiguous reference diagnostics.
 Mermaid uses the same graph. Queries do not write files; JSON and Mermaid flags are mutually exclusive.
+
+## deps catalog check / plan / apply
+
+Inspect default/named catalog references, missing or unused entries, direct-version bypasses,
+and migration candidates with `repo deps catalog check --json`. Integrity checks cover all catalogs;
+`--catalog <name>` selects the policy for direct declarations and migration candidates.
+
+Preview one dependency section/cohort with
+`repo deps catalog plan <dependency> --section devDependencies --json > catalog-plan.json`,
+review the linked YAML/manifest changes, then run `repo deps catalog apply catalog-plan.json`.
+`--catalog`, `--group` and `--to` choose a named catalog, configured cohort and explicit common
+subrange. Planning never writes; apply rejects stale inputs and preserves peer ranges.
+See [dependency governance](./dependencies.md) for migration boundaries and pnpm verification.
 
 ## tooling init (alias: tg init)
 
@@ -369,7 +386,9 @@ Usage:
 
 `repo check --affected --matrix` previews a versioned GitHub Actions matrix without running checks. `--shards N` deterministically groups workspaces into at most 1–256 jobs. Reuse base/head, filters and global inputs from affected mode. Pass only `matrix` to Actions `fromJSON`, gate strategy expansion with `hasWork`, and execute each row's non-skipped executable/args arrays in order from the checkout root. Each job builds dependencies itself. Full fallbacks stay in one job and retain diagnostics. No workflow is changed or triggered; only explicit `--out` writes a report.
 
-Doctor fix application holds `.repoctl/doctor-fix.lock` through validation, verification, rollback and cleanup. After a crash, confirm no writer remains and reconcile backups before manually removing the lock.
+### Public API baselines
+
+Use `repoctl package api check --json` after building opted-in `tooling.apiReports` library declarations. Local API Extractor >=7.52.12 <8 is required. `package api update --json` produces a read-only plan; explicitly review it before `package api update --apply <plan.json>`. Preserve existing baselines on check, report failures, review change intents, and never claim API signature differences determine complete SemVer compatibility. Baseline paths are workspace-relative; entries/tsconfig are package-relative.
 
 ### Installation security
 
@@ -379,12 +398,41 @@ Use `repo doctor security --json` for a read-only, version-aware pnpm policy rep
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config.md#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
 
+### Incremental Playwright capability
+
+Add browser tests to an existing Vue/React Vite application with `build` and `preview` scripts:
+
+```sh
+repo tooling capability list --json
+repo tooling capability plan playwright --target web --route / --role button --name Increment --expect-text 'Count: 1' --json > e2e-plan.json
+repo tooling capability apply e2e-plan.json --json
+pnpm install
+pnpm --filter @repoctl-e2e/web test:e2e:install
+pnpm test:e2e
+```
+
+Use `--test-id` instead of `--role`/`--name` for a test-id locator. The route, click and expected text describe a real interaction in your application. The plan shows file diffs, dependencies, scripts, conflicts and next steps, without installing anything. Apply uses those exact reviewed bytes, rejects stale inputs and conflicts, and rolls back failed writes. A repeated unchanged apply has no effect. Choose an empty destination (`--directory`) for the new E2E workspace. Existing application sources and differing generated files are protected.
+
+The capability creates an independent E2E workspace, headless Chromium tests, Turbo build dependencies, a dedicated CI workflow, HTML reports and failure traces. Browser installation is explicit. `--port` and `--ci-port` set distinct local and CI ports. CI never reuses a running service. `--reuse-existing-server` opts into local reuse; Playwright cleans up its own service after success, failure or interruption, and leaves a borrowed service running. Commit the lockfile after installation.
+
+Public APIs: `listToolingCapabilities()`, `planToolingCapability(cwd, options)` and `applyToolingCapability(plan)`. JSON uses schema version 1 and stable English keys regardless of CLI language.
+
+### Optional Storybook for a component library
+
+`repo tooling capability plan storybook --target <exact-workspace> --framework vue|react --component <named-export> --example example.json --json` previews a separate `stories/<slug>` workspace. Apply the reviewed JSON with `repo tooling capability apply plan.json`. The first version supports Vue 3 and React 18/19 libraries with a build script, public entry and an explicit runtime version range. Install dependencies after applying and commit the resulting lockfile. Discovery and planning do not install Storybook or a browser.
+
+A Vue prop-update example is `{"kind":"prop-update","prop":"msg","initial":"Hello Storybook","updated":"Updated component"}`. For a React counter use `{"kind":"click","args":{"initialCount":0},"alternateArgs":{"initialCount":4},"click":{"role":"button","name":"Increase"},"expectText":"1"}`. Component props must be JSON primitives; interaction assertions exercise the selected component. `Default`, `Alternate` and `Interaction` stories provide two states and a play test.
+
+Run `pnpm build:storybook` for the static site, then `pnpm --filter @repoctl-stories/<slug> test:storybook:install` and `pnpm test:storybook` for headless Chromium tests. Turbo builds library dependencies first and records `storybook-static/**`; play tests run without caching and write a JUnit report. Use the generated workspace's `storybook` script for local development. Its independent Vitest and Vite configurations leave the library's existing tests, package exports, runtime dependencies and tarball contents unchanged. Existing stories and configuration are preserved; differing generated files block application and require a new review. No hosted visual testing service is enabled.
+
 ## Maintenance
 
 - `repo maintenance upgrade --base <full-sha> --head <full-sha> --out <external-empty-directory>` prepares a root-asset upgrade report and validated patch in a disposable clean checkout, only when the locked root repoctl version changes. Conflicts/failed checks block PR publication.
 - `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` exports an opt-in two-job recipe without overwriting files. Use only the trusted default branch; keep project execution in the read-only job and acquire the GitHub App write token only after immutable artifact, SHA, path, mode and hash verification. App permissions must include contents, pull requests and workflows write.
 
 Maintenance report hashes describe exact Git blobs; planned working-file bytes are validated before staging. The isolated publisher verifies index bytes and Git-equivalent checkout contents across line-ending conversions, with hooks, executable filters and filesystem monitors disabled through PR creation.
+
+Automatic maintenance can complete the built-in Changesets migration and update only its exact `.repoctl/migrations/ledger.json` metadata path. Preparation and publication share the same fixed migration identity, committed legacy-source, journal and completed-history checks; the target template version comes from the committed root repoctl → monorepo → templates lockfile dependency chain, not the repoctl version number. The publisher binds every migration output to the verified Git patch and checks public-package prerelease lanes against committed workspace membership. Interrupted journals, ambiguous lockfiles, noncanonical workspace patterns, and YAML/JSON5 workspace manifests require a reviewed manual `repo upgrade`; no broader `.repoctl` path is authorized. Refresh the trusted exported workflow to adopt this migration policy.
 
 ## release snapshot
 
