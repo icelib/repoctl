@@ -78,6 +78,8 @@ repo doctor --apply plans/doctor-fix.json --json
 
 应用时复核规范化 workspace 与原始文件内容，拒绝链接文件和篡改的操作，复用暂存写入及回滚事务，再无抑制地运行根脚本检查。输入内容改变会停止修复，需要重新生成计划。重复应用已完成计划不会再改文件。文字 `fix` 建议不会作为 shell 执行，也不会自动安装依赖或修改 release workflow。
 
+Doctor 修复在输入校验、应用、验证、回滚和清理期间持有 `.repoctl/doctor-fix.lock`，防止并发写入使成功修复被另一事务回退。进程异常退出后，先确认没有活动写入者并处理保留备份，再手动移除锁。
+
 ## `repo env check`
 
 ```bash
@@ -270,7 +272,9 @@ repo skills sync --codex
 - [报告与自动化输出](/zh/tasks/reports)
 - [命令别名](./aliases.md)
 
-Doctor 修复在输入校验、应用、验证、回滚和清理期间持有 `.repoctl/doctor-fix.lock`，防止并发写入使成功修复被另一事务回退。进程异常退出后，先确认没有活动写入者并处理保留备份，再手动移除锁。
+### 公共 API 基线
+
+`repoctl package api check [--package <selectors...>] [--json]` 比较已构建公开声明与显式配置的 API Extractor 报告。通过 `tooling.apiReports` 声明相对包目录的声明入口和相对工作区的 `.api.md` 基线，先安装本地稳定版 `@microsoft/api-extractor >=7.52.12 <8` 并构建。`package api update --json` 只预览；审核后使用 `package api update --apply <plan.json>` 更新。执行重新验证输入并使用文件事务，保留冲突与恢复提示。签名 diff 和未消费 change intents 仅作建议，不自动推断完整 SemVer 或发布。
 
 ## `repo tooling references`
 

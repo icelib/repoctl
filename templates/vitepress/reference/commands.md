@@ -65,6 +65,8 @@ Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs
 
 Apply checks the canonical workspace and original file contents, rejects links and modified operations, reuses the staged file transaction with rollback, and reruns the root-script check without suppression. A changed input stops the fix; regenerate the plan. Reapplying an already applied plan is unchanged. Textual `fix` suggestions are never executed, and dependency installation or release workflow modification is outside this fixer.
 
+Doctor fix application holds `.repoctl/doctor-fix.lock` from input validation through verification, rollback and cleanup, preventing overlapping writers from undoing a successful fix. After a crash, verify no writer remains and reconcile any retained backups before manually removing the lock.
+
 ## `repo env check`
 
 ```bash
@@ -223,7 +225,9 @@ repo skills sync --codex
 - [Troubleshoot](/tasks/troubleshooting)
 - [Command Aliases](./aliases.md)
 
-Doctor fix application holds `.repoctl/doctor-fix.lock` from input validation through verification, rollback and cleanup, preventing overlapping writers from undoing a successful fix. After a crash, verify no writer remains and reconcile any retained backups before manually removing the lock.
+### Public API baselines
+
+`repoctl package api check [--package <selectors...>] [--json]` compares built public declarations with explicitly configured API Extractor reports. Set `tooling.apiReports` with package-relative declaration entries and workspace-relative `.api.md` baselines; install a local stable `@microsoft/api-extractor >=7.52.12 <8` and build first. `package api update --json` only previews; review its output, then pass it to `package api update --apply <plan.json>`. Updates revalidate inputs and use guarded transactions. Signature diffs and pending change intents are advisory; no complete SemVer inference or release is performed.
 
 ## `repo tooling references`
 
