@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises'
+import nativePath from 'node:path'
 import { loadTemplateBaseline, writeTemplateSnapshot } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 // eslint-disable-next-line antfu/no-import-dist -- Exercise real creation and the delivered instance registry.
@@ -16,7 +17,10 @@ export async function registeredFixture() {
   await fs.writeFile(path.join(targetDir, 'business.txt'), 'Keep the business implementation\n')
   await fs.appendFile(path.join(targetDir, 'src/index.ts'), '\n// Business customization remains local.\n')
   await commit(h.workspace)
-  return { ...h, instance, targetDir, registryFile: path.join(h.workspace, '.repoctl/template-instances.json') }
+  // Registry I/O uses canonical native paths, including backslashes on Windows.
+  const registryFile = await fs.realpath(path.join(h.workspace, '.repoctl/template-instances.json'))
+  const registryLock = nativePath.join(nativePath.dirname(registryFile), 'template-instances.lock')
+  return { ...h, instance, targetDir, registryFile, registryLock }
 }
 
 export async function nextSource(h: Awaited<ReturnType<typeof registeredFixture>>) {

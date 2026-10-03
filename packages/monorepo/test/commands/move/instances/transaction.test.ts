@@ -16,7 +16,7 @@ it('rolls the directory and manifest bytes back when the registry cannot commit'
     if (String(to) === h.registryFile) {
       failed = true
       await fs.access(path.join(h.workspace, 'libs/core/business.txt'))
-      await fs.access(path.join(h.workspace, '.repoctl/template-instances.lock'))
+      await fs.access(h.registryLock)
       throw new Error('Injected registry commit failure')
     }
     return rename(from, to)
@@ -32,7 +32,7 @@ it('rolls the directory and manifest bytes back when the registry cannot commit'
   expect(await fs.readFile(path.join(h.targetDir, 'package.json'), 'utf8')).toBe(beforeManifest)
   expect(await fs.readFile(path.join(h.targetDir, 'business.txt'), 'utf8')).toContain('business implementation')
   await expect(fs.access(path.join(h.workspace, 'libs'))).rejects.toThrow()
-  await expect(fs.access(path.join(h.workspace, '.repoctl/template-instances.lock'))).rejects.toThrow()
+  await expect(fs.access(h.registryLock)).rejects.toThrow()
   expect((await listTemplateInstances(h.workspace))[0]!.targetStatus).toBe('present')
 })
 
@@ -52,8 +52,11 @@ it('holds the instance lock through directory mutation and rollback', async () =
   })
   const operation = applyWorkspaceMovePlan(h.workspace, plan).catch((error: Error) => error)
   try {
-    await staged.promise
-    await expect(fs.open(path.join(h.workspace, '.repoctl/template-instances.lock'), 'wx')).rejects.toThrow('EEXIST')
+    await Promise.race([
+      staged.promise,
+      operation.then(() => { throw new Error('Move settled without reaching registry commit interception') }),
+    ])
+    await expect(fs.open(h.registryLock, 'wx')).rejects.toThrow('EEXIST')
     expect(await fs.readFile(path.join(h.workspace, 'libs/core/business.txt'), 'utf8')).toContain('business implementation')
   }
   finally {
@@ -97,7 +100,7 @@ it('retains concurrent edits and recovery backups if registry failure prevents a
 it('reports a committed move and the exact retained registry lock when lock cleanup fails', async () => {
   const h = await registeredFixture()
   const plan = await planWorkspaceMove(h.workspace, { target: 'old', to: 'libs/core', name: 'core' })
-  const lock = path.join(h.workspace, '.repoctl/template-instances.lock')
+  const lock = h.registryLock
   const rm = fs.rm.bind(fs)
   const spy = vi.spyOn(fs, 'rm').mockImplementation(async (filename, options) => {
     if (String(filename) === lock) {
