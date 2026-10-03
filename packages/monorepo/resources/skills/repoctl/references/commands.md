@@ -344,6 +344,10 @@ Usage:
 
 `repo check --affected --matrix` previews a versioned GitHub Actions matrix without running checks. `--shards N` deterministically groups workspaces into at most 1–256 jobs. Reuse base/head, filters and global inputs from affected mode. Pass only `matrix` to Actions `fromJSON`, gate strategy expansion with `hasWork`, and execute each row's non-skipped executable/args arrays in order from the checkout root. Each job builds dependencies itself. Full fallbacks stay in one job and retain diagnostics. No workflow is changed or triggered; only explicit `--out` writes a report.
 
+### Installation security
+
+Use `repo doctor security --json` for a read-only, version-aware pnpm policy report. `--expectations policy.json --strict` checks organization requirements. `--preset balanced` previews only absent supported keys; save the JSON and explicitly use `--apply plan.json` after review. Preserve explicit policies, including release age zero and build approvals. Do not run lifecycle scripts or approve dependencies as part of inspection. Unknown versions/configuration are reported, not treated as safe.
+
 ## `repo tooling references`
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config.md#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
@@ -374,6 +378,12 @@ Public APIs: `listToolingCapabilities()`, `planToolingCapability(cwd, options)` 
 A Vue prop-update example is `{"kind":"prop-update","prop":"msg","initial":"Hello Storybook","updated":"Updated component"}`. For a React counter use `{"kind":"click","args":{"initialCount":0},"alternateArgs":{"initialCount":4},"click":{"role":"button","name":"Increase"},"expectText":"1"}`. Component props must be JSON primitives; interaction assertions exercise the selected component. `Default`, `Alternate` and `Interaction` stories provide two states and a play test.
 
 Run `pnpm build:storybook` for the static site, then `pnpm --filter @repoctl-stories/<slug> test:storybook:install` and `pnpm test:storybook` for headless Chromium tests. Turbo builds library dependencies first and records `storybook-static/**`; play tests run without caching and write a JUnit report. Use the generated workspace's `storybook` script for local development. Its independent Vitest and Vite configurations leave the library's existing tests, package exports, runtime dependencies and tarball contents unchanged. Existing stories and configuration are preserved; differing generated files block application and require a new review. No hosted visual testing service is enabled.
+
+## release snapshot
+
+`repo release snapshot --kind pr --pr <number> --commit <full-HEAD-sha> --build-id <run-attempt> --dry-run --json` previews deterministic temporary versions. Use `--kind nightly` without `--pr` for nightly packages. Without dry-run, archive committed HEAD outside the repository, install frozen dependencies, build, pack and validate isolated consumers. `--output` chooses an external artifact parent. Every public package receives an exact snapshot version and internal references follow those versions. Source manifests/intents/ledger/changelogs/Git refs stay unchanged.
+
+`--publish` requires `REPOCTL_SNAPSHOT_PUBLISH=1` in a trusted same-repository GitHub Actions event whose SHA matches HEAD: `pull_request` for PRs; `schedule` or `workflow_dispatch` for nightly. Fork and `pull_request_target` publication is rejected. Only snapshot tags are used; no GitHub Releases or Git tags are created. Repeat the same identity only for identical artifacts; metadata and tarball integrity are checked before skipping existing versions. Unknown registry state fails closed. Reports retain exact install instructions, artifact paths and validation errors.
 
 ## Build contexts and production directories
 
