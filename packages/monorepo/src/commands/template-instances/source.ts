@@ -1,3 +1,4 @@
+import type { TemplateGenerationParameters } from '@icebreakers/monorepo-templates'
 import type { TemplateLinkOptions } from './types'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -30,6 +31,7 @@ export async function renderHistoricalTemplate(options: TemplateLinkOptions & { 
     return undefined
   }
   const original = await prepareTemplateInstanceSource(sourceDir, sourcePackageDir)
+  let retainedParameters: TemplateGenerationParameters | undefined
   const isolated = await mkdtemp(path.join(tmpdir(), 'repoctl-template-baseline-'))
   try {
     const targetDir = path.join(isolated, options.target)
@@ -45,12 +47,16 @@ export async function renderHistoricalTemplate(options: TemplateLinkOptions & { 
         if (!manifest) {
           throw new Error('Parameterized template upgrades require an explicit repoctl.template.json contract.')
         }
+        if (Object.entries(manifest.parameters).some(([name, definition]) => definition.sensitive && Object.hasOwn(options.parameters?.templateValues ?? {}, name))) {
+          throw new Error('Historical template parameters must not contain sensitive values. Retain names and excluded output paths only.')
+        }
         const omitted = (file: string) => {
           const generated = file.replace(/(^|\/)gitignore$/u, '$1.gitignore')
           return options.excludedPaths?.some(item => generated === item || generated.startsWith(`${item}/`)) ?? false
         }
         const parameters = Object.fromEntries(Object.entries(manifest.parameters).map(([name, definition]) => [name, definition.sensitive && options.parameters?.sensitiveParameters?.includes(name) ? { ...definition, required: false } : definition]))
         const values = resolveTemplateParameters(parameters, options.parameters?.templateValues ?? {})
+        retainedParameters = { ...options.parameters, templateValues: values.retained }
         const prepared = rewriteTemplateSnapshotReferences(original.snapshot, targetDir, isolated)
         snapshot = renderTemplateParameters({ ...prepared, files: prepared.files.filter(file => !omitted(file.path)), directories: prepared.directories.filter(directory => !omitted(directory)) }, {
           ...manifest,
@@ -73,7 +79,7 @@ export async function renderHistoricalTemplate(options: TemplateLinkOptions & { 
     if (snapshotDigest(after) !== snapshotDigest(original.snapshot)) {
       throw new Error('Historical template source changed during baseline rendering.')
     }
-    return { original, rendered: await captureTemplateSnapshot(targetDir) }
+    return { original, rendered: await captureTemplateSnapshot(targetDir), ...(retainedParameters ? { parameters: retainedParameters } : {}) }
   }
   finally {
     await rm(isolated, { recursive: true, force: true })
