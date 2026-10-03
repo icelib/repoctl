@@ -183,6 +183,67 @@
   intents:
     - olive-apes-rescue
     - silly-spoons-shave
+"@icebreakers/monorepo-templates@2.2.0":
+  dir: packages/monorepo-templates
+  intents:
+    - api-reports-reviewed
+    - calm-package-generators
+    - calm-react-libraries
+    - cancel-superseded-ci-runs
+    - chilly-horses-rest
+    - clear-admission-policy
+    - clear-config-contracts
+    - clear-workspace-boundaries
+    - doctor-config-contracts
+    - dry-poets-hide
+    - early-rice-compare
+    - fixed-template-sources
+    - fluffy-monkeys-start
+    - fresh-react-workspace
+    - gentle-cooks-run
+    - great-ducks-remember
+    - happy-birds-travel
+    - healthy-manifests-speak
+    - incremental-playwright-capability
+    - isolated-snapshot-config-preflight
+    - little-trains-call
+    - lucky-tools-update
+    - macos-ci-verification-budget
+    - measured-cache-evidence
+    - native-knip-baselines
+    - next-app-router-template
+    - olive-chairs-pretend
+    - optional-storybook-capability
+    - orange-hounds-punch
+    - orange-poets-jam
+    - organization-preset-packages
+    - peer-promises-match
+    - pinned-devcontainer-preset
+    - published-ci-step-boundaries
+    - quick-flowers-lick
+    - quiet-tigers-repair
+    - quiet-turtles-study
+    - rare-eagles-decide
+    - release-branch-lines
+    - retained-template-removals
+    - safe-workspace-move
+    - safe-workspace-removal
+    - spicy-grapes-grin
+    - stable-template-origins
+    - steady-install-policy
+    - sweet-pots-grow
+    - tidy-native-plan
+    - tidy-owners-sync
+    - tidy-templates-unite
+    - tiny-catalogs-bloom
+    - typed-template-parameters
+    - ubuntu-packaged-ci-budget
+    - ubuntu-packaged-ci-verification-budget
+    - warm-task-directory
+    - wet-jeans-type
+    - windows-ci-verification-budget
+    - windows-packaged-validation-budget
+    - workspace-artifact-preparation
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -295,6 +356,79 @@
   intents:
     - auto-pr-933
     - silly-spoons-shave
+"@icebreakers/monorepo@5.7.0":
+  dir: packages/monorepo
+  intents:
+    - api-reports-reviewed
+    - big-bears-fold
+    - bright-template-validation
+    - calm-package-generators
+    - calm-react-libraries
+    - canonical-directory-roots
+    - canonical-maintenance-checkout
+    - catalog-config-diagnostic-bridge
+    - chilly-horses-rest
+    - clear-admission-policy
+    - clear-config-contracts
+    - clear-workspace-boundaries
+    - compatible-command-schemas
+    - create-invocation-parameter-boundary
+    - doctor-config-contracts
+    - dry-poets-hide
+    - exact-baseline-placeholder-identities
+    - exact-file-transaction-identities
+    - exact-workspace-inventory-identities
+    - fair-suns-stay
+    - fixed-template-sources
+    - fluffy-monkeys-start
+    - fresh-react-workspace
+    - gentle-cooks-run
+    - giant-shirts-wave
+    - great-ducks-remember
+    - happy-birds-travel
+    - healthy-manifests-speak
+    - incremental-playwright-capability
+    - installation-security-config-contract
+    - isolated-snapshot-config-preflight
+    - lucky-tools-update
+    - maintenance-git-blob-identity
+    - maintenance-migration-ledger
+    - measured-cache-evidence
+    - native-knip-baselines
+    - next-app-router-template
+    - olive-chairs-pretend
+    - optional-storybook-capability
+    - orange-hounds-punch
+    - organization-preset-packages
+    - peer-promises-match
+    - pinned-devcontainer-preset
+    - polite-packs-consume
+    - portable-owned-directory-cleanup
+    - preset-resolution-empty-inputs
+    - quiet-tigers-repair
+    - quiet-turtles-study
+    - rare-eagles-decide
+    - release-branch-lines
+    - retained-template-removals
+    - safe-workspace-move
+    - safe-workspace-removal
+    - selected-installation-security
+    - shared-reviewed-file-transactions
+    - shared-template-config-diagnostics
+    - small-forks-ask
+    - spicy-lamps-explain
+    - stable-template-origins
+    - steady-install-policy
+    - sweet-pots-grow
+    - template-validation-parameter-matrix
+    - tidy-native-plan
+    - tidy-owners-sync
+    - tidy-templates-unite
+    - tiny-catalogs-bloom
+    - typed-template-parameters
+    - warm-task-directory
+    - wise-tools-attack
+    - workspace-artifact-preparation
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -338,6 +472,12 @@ create-icebreaker@2.0.3:
   dir: packages/create-icebreaker
   intents:
     - steady-pnpm-alignment
+create-icebreaker@2.1.0:
+  dir: packages/create-icebreaker
+  intents:
+    - calm-react-libraries
+    - fresh-react-workspace
+    - stable-template-origins
 create-repoctl@0.1.0:
   dir: packages/create-repoctl
   intents:
@@ -367,6 +507,13 @@ create-repoctl@1.1.0:
   dir: packages/create-repoctl
   intents:
     - silly-spoons-shave
+create-repoctl@1.2.0:
+  dir: packages/create-repoctl
+  intents:
+    - calm-react-libraries
+    - fresh-react-workspace
+    - next-app-router-template
+    - stable-template-origins
 eslint-plugin-better-stylelint@2.0.4:
   dir: packages/eslint-plugin-better-stylelint
   intents:
@@ -485,6 +632,72 @@ repoctl@5.6.0:
   dir: packages/repoctl
   intents:
     - silly-spoons-shave
+repoctl@5.7.0:
+  dir: packages/repoctl
+  intents:
+    - api-reports-reviewed
+    - big-bears-fold
+    - bright-template-validation
+    - calm-package-generators
+    - calm-react-libraries
+    - chilly-horses-rest
+    - clear-admission-policy
+    - clear-config-contracts
+    - clear-workspace-boundaries
+    - create-invocation-parameter-boundary
+    - doctor-config-contracts
+    - dry-poets-hide
+    - exact-file-transaction-identities
+    - exact-workspace-inventory-identities
+    - fair-suns-stay
+    - fixed-template-sources
+    - fluffy-monkeys-start
+    - fresh-react-workspace
+    - gentle-cooks-run
+    - giant-shirts-wave
+    - great-ducks-remember
+    - happy-birds-travel
+    - healthy-manifests-speak
+    - incremental-playwright-capability
+    - installation-security-config-contract
+    - isolated-snapshot-config-preflight
+    - lucky-tools-update
+    - maintenance-migration-ledger
+    - measured-cache-evidence
+    - native-knip-baselines
+    - next-app-router-template
+    - olive-chairs-pretend
+    - optional-storybook-capability
+    - orange-hounds-punch
+    - organization-preset-packages
+    - peer-promises-match
+    - pinned-devcontainer-preset
+    - polite-packs-consume
+    - preset-resolution-empty-inputs
+    - quiet-tigers-repair
+    - quiet-turtles-study
+    - rare-eagles-decide
+    - release-branch-lines
+    - retained-template-removals
+    - safe-workspace-move
+    - safe-workspace-removal
+    - selected-installation-security
+    - shared-reviewed-file-transactions
+    - shared-template-config-diagnostics
+    - small-forks-ask
+    - spicy-lamps-explain
+    - stable-template-origins
+    - steady-install-policy
+    - sweet-pots-grow
+    - template-validation-parameter-matrix
+    - tidy-native-plan
+    - tidy-owners-sync
+    - tidy-templates-unite
+    - tiny-catalogs-bloom
+    - typed-template-parameters
+    - warm-task-directory
+    - wise-tools-attack
+    - workspace-artifact-preparation
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:

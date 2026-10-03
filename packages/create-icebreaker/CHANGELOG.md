@@ -1,5 +1,22 @@
 # create-icebreaker
 
+## 2.1.0
+
+### Minor Changes
+
+- Add the react-vite application template with React, TypeScript, Vite, interaction tests, shared linting and workspace library consumption. Include it in initial workspace selection and the Web App creation flow.
+
+  Keep generated lint, test and CI commands independent of source repository build and check scripts.
+
+- Register exact template origins and original/rendered baselines after successful creation. Add read-only instance inventory, explicit historical linking with difference previews, guarded relocation and offline baseline reconstruction. Keep instance provenance separate from managed root assets and never execute historical template scripts.
+
+### Patch Changes
+
+- 新增 react-lib 组件库模板，提供 ESM、公开 props 类型和显式 CSS 出口，保留 React peer 外置，并验证独立 tarball 消费方的类型、样式与交互。
+
+- Updated dependencies:
+  - create-repoctl@1.2.0
+
 ## 2.0.8
 
 ### Patch Changes

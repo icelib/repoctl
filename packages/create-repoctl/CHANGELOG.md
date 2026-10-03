@@ -1,5 +1,26 @@
 # create-repoctl
 
+## 1.2.0
+
+### Minor Changes
+
+- Add the react-vite application template with React, TypeScript, Vite, interaction tests, shared linting and workspace library consumption. Include it in initial workspace selection and the Web App creation flow.
+
+  Keep generated lint, test and CI commands independent of source repository build and check scripts.
+
+- Register exact template origins and original/rendered baselines after successful creation. Add read-only instance inventory, explicit historical linking with difference previews, guarded relocation and offline baseline reconstruction. Keep instance provenance separate from managed root assets and never execute historical template scripts.
+
+### Patch Changes
+
+- 新增 react-lib 组件库模板，提供 ESM、公开 props 类型和显式 CSS 出口，保留 React peer 外置，并验证独立 tarball 消费方的类型、样式与交互。
+
+- Add a Next.js App Router template with server and client components, a health route, generated route type checks, Turbo cache boundaries and packaged production browser acceptance.
+
+  Keep Next.js in the shared template catalog, interactive application choices and literal template path API so discovery, previews and creation resolve the same definition.
+
+- Updated dependencies:
+  - @icebreakers/monorepo-templates@2.2.0
+
 ## 1.1.0
 
 ### Minor Changes
