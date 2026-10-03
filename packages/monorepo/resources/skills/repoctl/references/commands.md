@@ -247,6 +247,10 @@ Usage:
 - Built-in tooling targets: commitlint, eslint, stylelint, lint-staged, tsconfig, vitest
 - Generated files also update root package.json devDependencies
 
+## tooling devcontainer
+
+Preview an optional root Dev Container with `repo tooling devcontainer --json --out ../plan.json`, review it, then apply with `repo tooling devcontainer --apply ../plan.json`. Preview and application never start Docker or install dependencies. Existing custom configuration blocks application and stays unchanged; a fully applied plan replays without writes. Root engines.node and an exact pnpm packageManager are required. `--node-version` selects an exact compatible Node image version. Start the container explicitly with the Dev Containers extension or CLI. Its setup enables Corepack, checks the exact pnpm version and installs with a frozen lockfile when present. The non-root node user and an external pnpm store volume are configured; customize forwardPorts for the app. Do not add a business package for this preset.
+
 ## workspace move
 
 Use `workspace move <exact-name-or-./directory> --to <relative-directory> --name <npm-name> --json` to preview moving, renaming, or both; either option may be omitted. Save the plan outside the target and review consumers, before/after files, blockers and file/line manual tasks. It updates manifest dependencies/aliases/metadata, workspace patterns and explicit supported TypeScript paths while preserving source code. Git-tracked text scanning is bounded, not complete import analysis; resolve manual source/configuration tasks before building. Dirty targets/updated files, existing destinations, duplicate names, symlinks in ancestry, nested workspaces/repos and stale inputs are blocked. Apply only the saved plan with `workspace move --apply <plan.json>`. Failures preserve concurrent edits and report retained recovery files; committed cleanup failures return `cleanupPending`. Run explicit lockfile-only/frozen pnpm installs and affected checks afterward. Published-package renames create a new npm identity; never publish or deprecate as a side effect.

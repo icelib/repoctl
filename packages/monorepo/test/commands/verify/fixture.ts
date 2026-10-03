@@ -63,6 +63,9 @@ export async function createFixture(patterns = ['packages/*', 'apps/*', 'domains
   // Explicit arguments avoid Windows case-insensitive lifecycle environment collisions.
   await write('record-task.cjs', String.raw`require('node:fs').appendFileSync(process.env.REPOCTL_VERIFY_FIXTURE_LOG, JSON.stringify({ cwd: process.cwd(), task: process.argv[2] }) + '\n')`)
   git('init', '-q')
+  // A synchronous commit can detach maintenance that outlives fixture cleanup.
+  git('config', 'maintenance.auto', 'false')
+  git('config', 'gc.auto', '0')
   git('config', 'user.email', 'fixture@example.invalid')
   git('config', 'user.name', 'Fixture')
   git('config', 'core.hooksPath', path.join(cwd, 'disabled-hooks'))

@@ -244,6 +244,8 @@ JSON 使用 schema version `1`、目录节点 ID 和稳定排序，字段名及�
 
 ## 分组命令
 
+可选根目录开发环境参阅 [Dev Container 预设](./devcontainer.md)：先运行 `repo tooling devcontainer --json --out ../plan.json`，审阅后使用 `repo tooling devcontainer --apply ../plan.json`。
+
 ```bash
 repo ws ls
 repo ws ls --json --out reports/workspaces.json

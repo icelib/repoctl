@@ -86,6 +86,7 @@
     "--------": "----------------",
     "test:packaged-nimbus": "node scripts/nimbus/index.mjs",
     "test:packaged-react": "node scripts/react/index.mjs",
+    "test:packaged-devcontainer": "node scripts/devcontainer/index.mjs",
     "test:packaged-next": "node scripts/next/index.mjs",
     "test:packaged-capability": "node scripts/capabilities/index.mjs",
     "test:packaged-storybook": "node scripts/storybook/index.mjs",

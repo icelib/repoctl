@@ -182,6 +182,7 @@ async function removeSourceRepoReleaseToolingBuildStep() {
 }
 
 async function removeSourceRepoChecks() {
+  await fs.rm(path.join(assetsDir, '.github/workflows/devcontainer.yml'), { force: true })
   const workflowPath = path.join(assetsDir, '.github/workflows/ci.yml')
   if (await pathExists(workflowPath)) {
     const workflow = await fs.readFile(workflowPath, 'utf8')

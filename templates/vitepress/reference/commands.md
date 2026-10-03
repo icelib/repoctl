@@ -211,6 +211,8 @@ Programmatic users can call `getWorkspaceGraph(cwd, options)`, `filterWorkspaceG
 
 ## Grouped Commands
 
+For an optional root development environment, see the [Dev Container preset](./devcontainer.md): `repo tooling devcontainer --json --out ../plan.json`, then `repo tooling devcontainer --apply ../plan.json` after review.
+
 Use [`repo workspace remove`](./removal.md) to preview removal of one exact package, inspect consumers and manual reference candidates, then explicitly apply a reviewed JSON plan. Preview does not delete anything; dependencies block removal unless their exact manifest fields are included with `--remove-references`.
 
 ```bash

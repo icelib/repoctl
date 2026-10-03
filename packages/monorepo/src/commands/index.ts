@@ -157,6 +157,8 @@ export { formatEnvironmentCache } from './env-cache/format'
 
 export * from './generate'
 
+export { applyDevContainerPlan, planDevContainer } from './init/devcontainer'
+
 export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
 
 export type { MaintenanceFile, MaintenancePresetChange, MaintenancePresetUpgrade, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
@@ -168,6 +170,7 @@ export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseSta
 export { resolveReleaseBranches } from './release/lines'
 
 export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
+
 export { createReleasePlan } from './release/plan'
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
 export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'

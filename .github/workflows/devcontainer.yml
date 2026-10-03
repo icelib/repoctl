@@ -1,0 +1,53 @@
+name: Dev Container
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/devcontainer.yml
+      - 'scripts/devcontainer/**'
+      - 'scripts/packaged-template/**'
+      - 'packages/monorepo/src/commands/init/devcontainer/**'
+      - 'packages/monorepo/src/cli/commands/tooling/**'
+      - 'packages/monorepo/resources/devcontainer/**'
+      - 'packages/monorepo/src/core/file-transaction/**'
+      - 'packages/monorepo/src/core/operation-lock/**'
+      - packages/monorepo/src/types/devcontainer.ts
+      - packages/monorepo/src/cli/commands/tooling.ts
+      - packages/monorepo/src/commands/index.ts
+      - 'templates/react-vite/**'
+      - 'templates/tsdown/**'
+      - package.json
+      - pnpm-workspace.yaml
+      - 'packages/monorepo-templates/**'
+      - pnpm-lock.yaml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  devcontainer:
+    name: Linux ${{ matrix.arch }}
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Install and build source packages
+        run: pnpm install --frozen-lockfile
+      - name: Check packaged Dev Container
+        env:
+          DEVCONTAINER_SMOKE_ARCH: ${{ matrix.arch }}
+        run: pnpm test:packaged-devcontainer
