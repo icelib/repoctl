@@ -137,11 +137,17 @@ export { checkDependencyAdmission } from './deps/admission'
 export type { AdmissionDeclaration, DependencyAdmissionConfig, DependencyAdmissionException, DependencyAdmissionFinding, DependencyAdmissionOptions, DependencyAdmissionReport, DependencyAdmissionRule } from './deps/admission'
 export { checkPeerDependencies } from './deps/peers'
 export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport } from './deps/peers'
-export { checkPackages } from './package-check'
+export { checkEnvironmentCache } from './env-cache'
 
+export type * from './env-cache'
+export { formatEnvironmentCache } from './env-cache/format'
+export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+export { resolveReleaseBranches } from './release/lines'
+
+export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
 export { createReleasePlan } from './release/plan'
 
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
