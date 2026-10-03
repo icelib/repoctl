@@ -78,6 +78,7 @@ beforeEach(async () => {
 
   vi.doMock('@/core/config', () => ({
     resolveCommandConfig: resolveCommandConfigMock,
+    loadMonorepoConfigDetails: async () => ({ file: '/repo/repoctl.config.mjs', rawLayers: [], config: { commands: { create: await resolveCommandConfigMock() } } }),
   }))
 
   vi.doMock('@/core/logger', () => ({
@@ -106,6 +107,7 @@ beforeEach(async () => {
 
   vi.doMock('@icebreakers/monorepo-templates', () => ({
     scaffoldTemplate: scaffoldTemplateMock,
+    isTemplateCategory: (value: string) => ['app', 'docs', 'library', 'service', 'tool'].includes(value),
     instanceRelativePath: vi.fn(() => 'demo'),
     createTemplateInstanceTarget: ensureDirMock,
     prepareTemplateInstanceSource: vi.fn(async () => ({ snapshot: { schemaVersion: 1, files: [] } })),
