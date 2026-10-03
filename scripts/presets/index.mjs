@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict'
 import { fork } from 'node:child_process'
 import { once } from 'node:events'
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import YAML from 'yaml'
+import { archiveFixturePackage } from '../packaged-template/archive.mjs'
 import { createWorkspace, json, registry, run, writeJson } from '../packaged-template/workspace.mjs'
 
 const root = mkdtempSync(path.join(tmpdir(), 'repoctl-packaged-presets-'))
@@ -42,8 +43,8 @@ try {
   writeFileSync(path.join(source, 'templates/sdk/index.js'), 'export const answer = 42\n')
   const baseAsset = 'export const first = 1\nexport const second = 2\nexport const third = 3\nexport const fourth = 4\n'
   writeFileSync(path.join(source, 'assets/check.mjs'), baseAsset)
-  run('npm', ['pack', '--ignore-scripts', '--pack-destination', packs], source)
-  const archive = path.join(packs, readdirSync(packs).find(file => file.endsWith('.tgz')))
+  const archive = archiveFixturePackage(source, path.join(packs, 'fixture-templates-1.2.3.tgz'), ['package.json', 'entry.cjs', 'repoctl.preset.json', 'assets/check.mjs', 'templates/sdk/package.json', 'templates/sdk/index.js'])
+  assert.ok(!existsSync(marker), 'Fixture archive construction must not execute preset scripts')
   server = fork(path.join(import.meta.dirname, '../template-sources/registry.mjs'), [archive], { stdio: ['ignore', 'inherit', 'inherit', 'ipc'] })
   const [{ port }] = await once(server, 'message')
   const registryUrl = `http://127.0.0.1:${port}/`
@@ -65,6 +66,7 @@ try {
     workspaceConfig.overrides['@fixture/templates'] = `file:${archive}`
     writeFileSync(workspaceFile, YAML.stringify(workspaceConfig))
     run('pnpm', ['install', '--no-frozen-lockfile', '--ignore-scripts', '--registry', registry], workspace)
+    assert.ok(!existsSync(marker), 'Installing the fixture must not execute preset scripts')
     writeFileSync(path.join(workspace, '.npmrc'), `@fixture:registry=${registryUrl}\n//127.0.0.1:${port}/:_authToken=packaged-template-secret\n`)
     const configuration = {
       presets: [{ packageName: '@fixture/templates', version: '1.2.3' }],

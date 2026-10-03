@@ -7,6 +7,7 @@ import { planUpgrade } from '../upgrade'
 import { isRootAsset } from '../upgrade/baseline/record'
 import { applyMaintenancePlans } from './apply'
 import { createMaintenancePatch, maintenanceBody } from './artifacts'
+import { maintenanceMigrationPath } from './migrations'
 import { assertMaintenancePresetLocks, planMaintenancePresets } from './presets'
 import { maintenanceCommand, maintenanceGit } from './process'
 import { detectMaintenanceVersionChange } from './versions'
@@ -53,7 +54,8 @@ async function generate(options: MaintenanceUpgradeOptions, report: MaintenanceU
       throw new Error(`Root asset upgrade has conflicts: ${plan.blockers.map(blocker => blocker.detail).join('; ')}`)
     }
     // Upgrade plans use portable separators; compare the actual native directory identity.
-    if (await realpath(plan.rootDir) !== options.cwd || plan.files.some(file => !isRootAsset(file.path))) {
+    const migrationPath = await maintenanceMigrationPath(options.cwd, report.head, report.versions.to!, plan)
+    if (await realpath(plan.rootDir) !== options.cwd || plan.files.some(file => !isRootAsset(file.path) && file.path !== migrationPath)) {
       throw new Error('Maintenance supports only managed root assets in the checked-out repository.')
     }
   }

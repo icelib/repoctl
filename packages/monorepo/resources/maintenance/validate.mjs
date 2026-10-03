@@ -1,8 +1,12 @@
+import { validateMaintenanceLanes } from './migration-lanes.mjs'
+import { maintenanceTemplateVersion } from './migration-lock.mjs'
+import { validateMaintenanceMigration } from './migrations.mjs'
 import { validatePresetMaintenance } from './presets.mjs'
 
 /** This exact function is embedded into the exported workflow; it uses only Node built-ins. */
 export async function validateMaintenanceArtifact({ cwd, directory, expected, request }) {
   const { Buffer } = await import('node:buffer')
+  const { isDeepStrictEqual } = await import('node:util')
   const fs = await import('node:fs/promises')
   const path = await import('node:path')
   const { createHash } = await import('node:crypto')
@@ -71,13 +75,29 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
   }
   const safePath = filename => typeof filename === 'string' && /^[\w./-]+$/.test(filename)
     && !filename.startsWith('/') && !filename.split('/').some(part => ['', '.', '..', '.git'].includes(part))
+  const sourcePaths = new Set(git(['ls-tree', '-r', '--name-only', expected.head]).toString().trim().split('\n'))
+  const readSource = filename => sourcePaths.has(filename) ? git(['show', `${expected.head}:${filename}`]) : null
+  const migration = validateMaintenanceMigration({
+    plan: report.plan,
+    policy: expected.migrationPolicy,
+    read: readSource,
+    templateVersion: () => maintenanceTemplateVersion({ lock: readSource('pnpm-lock.yaml'), toolVersion: report.versions.to, fail }),
+    validateLanes: (operation, tag) => validateMaintenanceLanes({ read: readSource, sourcePaths, operation, tag, Buffer, fail }),
+    hash,
+    equal: isDeepStrictEqual,
+    Buffer,
+    fail,
+  })
+  if (migration && !report.files.some(file => file.path === migration.path)) {
+    fail('migration ledger is missing from the reviewed patch')
+  }
   const presets = validatePresetMaintenance({ report, expected, git, hash, fail, Buffer })
   const owned = new Set(git(['ls-tree', '-r', '--name-only', expected.head]).toString().split('\n').filter(name => /^\.repoctl\/baselines\/presets\/[a-f0-9]{64}\.json$/.test(name)))
   const presetOwned = filename => owned.has(`.repoctl/baselines/presets/${hash(filename)}.json`)
     || (filename.startsWith('.repoctl/baselines/root/') && owned.has(filename.replace('/root/', '/presets/')))
   const allowed = filename => presets.paths.has(filename) || (!presetOwned(filename) && (filename === 'pnpm-lock.yaml'
     || (report.versions.status === 'changed' && (expected.targets.some(target => filename === target || filename.startsWith(`${target}/`))
-      || /^\.repoctl\/baselines\/root\/[a-f0-9]{64}\.json$/.test(filename)))))
+      || /^\.repoctl\/baselines\/root\/[a-f0-9]{64}\.json$/.test(filename) || filename === migration?.path))))
   const names = report.files.map(file => file.path)
   if (new Set(names).size !== names.length || names.some(filename => !safePath(filename) || !allowed(filename))) {
     fail('patch includes an unapproved or duplicate path')
@@ -173,6 +193,19 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
     }
   }
   presets.verify()
+  // Bind every completed migration output to the verified patch using its resulting attributes.
+  for (const operation of migration?.operations ?? []) {
+    let afterHash = null
+    if (operation.content !== null) {
+      const object = git(['-c', 'core.safecrlf=false', 'hash-object', '-w', `--path=${operation.path}`, '--stdin'], Buffer.from(operation.content, 'base64')).toString().trim()
+      afterHash = hash(git(['cat-file', 'blob', object]))
+    }
+    const entry = report.files.find(file => file.path === operation.path)
+    const previous = entry ? null : readSource(operation.path)
+    if (afterHash !== (entry ? entry.afterHash : previous === null ? null : hash(previous))) {
+      fail('migration output differs from the completed journal')
+    }
+  }
   // Git blob identity is exact; checkout bytes may differ through built-in EOL/encoding rules.
   try {
     git(['diff', '--exit-code', '--no-ext-diff', '--no-textconv', '--ignore-submodules=none', '--', ...names])

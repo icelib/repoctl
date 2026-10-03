@@ -122,6 +122,8 @@ export {
   verifyStagedTypecheck,
 }
 
+export { applyPublicApiUpdate, checkPublicApi, formatPublicApiReport, planPublicApiUpdate } from './api-report'
+export type { PublicApiConfig, PublicApiDiagnostic, PublicApiEntryConfig, PublicApiEntryReport, PublicApiOptions, PublicApiPackageConfig, PublicApiReport, PublicApiUpdatePlan, PublicApiUpdateResult } from './api-report'
 export { resolveAffectedCheckPlan } from './check/affected'
 export type { AffectedCheckCommand, AffectedCheckOptions, AffectedCheckPlan, AffectedCheckSettings, AffectedFallback, AffectedFile, AffectedGitRange, AffectedPackage } from './check/affected'
 export { analyzeTurboRuns } from './check/cache'
@@ -130,11 +132,11 @@ export { runCheckWithReport } from './check/execute'
 export { getKnipConfigurationSuggestions, planKnipCheck, runKnipCheck, saveKnipBaseline } from './check/knip'
 export { resolveAffectedCheckMatrix } from './check/matrix'
 export type { AffectedCheckMatrix, AffectedCheckMatrixJob, AffectedCheckMatrixOptions } from './check/matrix'
-
 export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus, CheckExecutionTask } from './check/types'
 export { applyDependencyFixPlan, checkDependencies, planDependencyFix } from './deps'
 export { checkDependencyAdmission } from './deps/admission'
 export type { AdmissionDeclaration, DependencyAdmissionConfig, DependencyAdmissionException, DependencyAdmissionFinding, DependencyAdmissionOptions, DependencyAdmissionReport, DependencyAdmissionRule } from './deps/admission'
+export { applyCatalogMigrationPlan, checkCatalogs, planCatalogMigration } from './deps/catalog'
 export { checkPeerDependencies } from './deps/peers'
 export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport } from './deps/peers'
 export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
@@ -167,6 +169,7 @@ export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './rele
 export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
 
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
+
 export * from './template-drift'
 
 export * from './template-instances'
@@ -177,5 +180,7 @@ export { applyToolingCapability, listToolingCapabilities, planToolingCapability 
 export type { PlaywrightCapabilityOptions, PlaywrightInteraction, StorybookArgs, StorybookCapabilityOptions, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
 export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
+export { applyWorkspaceMovePlan } from './workspace/move/apply'
+export { planWorkspaceMove } from './workspace/move/plan'
 export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
 export { planWorkspaceRemoval } from './workspace/remove/plan'

@@ -1,6 +1,7 @@
 import type { Command } from '@icebreakers/monorepo-templates'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
+import { registerPublicApiCommands } from './package/api-report'
 import { registerPackageCheckCommand } from './package/check'
 
 interface PackageCreateCliOptions {
@@ -15,6 +16,8 @@ interface PackageCreateCliOptions {
 export function registerPackageCommands(program: Command, cwd: string) {
   const packageCommand = program.command('package').alias('pkg').description(localize('Package commands', '子包命令'))
   registerPackageCheckCommand(packageCommand, cwd)
+
+  registerPublicApiCommands(packageCommand, cwd)
 
   packageCommand.command('create')
     .description(localize('Create a new workspace package', '创建一个新的子包'))

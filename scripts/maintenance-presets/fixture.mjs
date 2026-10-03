@@ -1,8 +1,10 @@
+import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
 import YAML from 'yaml'
+import { archiveFixturePackage } from '../packaged-template/archive.mjs'
 import { json, packDependencies, repoRoot, run, writeJson } from '../packaged-template/workspace.mjs'
 
 export const name = '@fixture/maintenance-preset'
@@ -26,8 +28,9 @@ export function archives(root) {
     const manifest = { name, version, exports: { '.': './entry.cjs' }, files: ['assets', 'repoctl.preset.json', 'entry.cjs'], scripts: { prepare: 'node entry.cjs', postinstall: 'node entry.cjs' } }
     writeJson(path.join(source, 'package.json'), manifest)
     writeFileSync(path.join(source, 'assets/check.mjs'), version === '1.0.0' ? baseAsset : baseAsset.replace('first = 1', 'first = 10'))
-    run('npm', ['pack', '--ignore-scripts', '--pack-destination', packs], source)
-    catalog.push({ metadata: manifest, archive: path.join(packs, `fixture-maintenance-preset-${version}.tgz`) })
+    const archive = archiveFixturePackage(source, path.join(packs, `fixture-maintenance-preset-${version}.tgz`), ['package.json', 'entry.cjs', 'repoctl.preset.json', 'assets/check.mjs'])
+    assert.ok(!existsSync(marker), 'Fixture archive construction must not execute preset scripts')
+    catalog.push({ metadata: manifest, archive })
   }
   const catalogFile = path.join(root, 'catalog.json')
   writeJson(catalogFile, catalog)
@@ -55,6 +58,7 @@ export function consumer(root, fixture, registry, localValue) {
   configure('1.0.0')
   run('corepack', ['enable'], root)
   run('pnpm', ['install', '--ignore-scripts'], root)
+  assert.ok(!existsSync(fixture.marker), 'Installing the fixture must not execute preset scripts')
   const cli = path.join(root, 'node_modules/repoctl/bin/repoctl.js')
   const invoke = args => execFileSync(process.execPath, [cli, ...args], { cwd: root, encoding: 'utf8', timeout: 240_000, env: { ...process.env, CI: 'true', GITHUB_REPOSITORY: 'acme/example', GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '1' } })
   const planFile = path.join(path.dirname(root), `plan-${localValue}.json`)
@@ -77,6 +81,7 @@ export function consumer(root, fixture, registry, localValue) {
   writeJson(packageFile, manifest)
   configure('2.0.0')
   run('pnpm', ['install', '--no-frozen-lockfile', '--ignore-scripts'], root)
+  assert.ok(!existsSync(fixture.marker), 'Updating the fixture must not execute preset scripts')
   const head = commit('upgrade fixed preset')
   return { root, invoke, git, commit, base, head, workflow }
 }

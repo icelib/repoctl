@@ -124,6 +124,7 @@ jobs:
                 appConfigured: process.env.APP_CONFIGURED === 'true',
                 targets: __TARGETS__,
                 presetAssets: __PRESET_ASSETS__,
+                migrationPolicy: __MIGRATION_POLICY__,
               },
             });
             core.setOutput('ready', String(result.ready));

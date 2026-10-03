@@ -97,6 +97,8 @@ Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs
 
 Apply checks the canonical workspace and original file contents, rejects links and modified operations, reuses the staged file transaction with rollback, and reruns the root-script check without suppression. A changed input stops the fix; regenerate the plan. Reapplying an already applied plan is unchanged. Textual `fix` suggestions are never executed, and dependency installation or release workflow modification is outside this fixer.
 
+Doctor fix application holds `.repoctl/doctor-fix.lock` through validation, verification, rollback and cleanup. After a crash, confirm no writer remains and reconcile backups before manually removing the lock.
+
 ## upgrade
 
 Preview the complete operation with `repo upgrade --dry-run`, `--json` or `--markdown`; these modes never write or prepare missing assets. Save JSON and review every add/modify/delete/skip/conflict before `repo upgrade --apply <plan.json>`. Plans contain exact bytes and input hashes, including semantic merges and legacy prerelease metadata migration. Application rejects stale inputs, keeps migration groups together and rolls back recoverable failures. Retained `.repoctl-upgrade-*.bak` originals support manual recovery after interruption or a concurrent edit. `--no-overwrite` protects existing assets and legacy metadata; custom release workflows still require `--overwrite-release`. Public APIs: `planUpgrade`, `formatUpgradePlan`, `applyUpgradePlan`, and `upgradeMonorepo({ dryRun: true })`.
@@ -104,6 +106,8 @@ Preview the complete operation with `repo upgrade --dry-run`, `--json` or `--mar
 Root assets use old-upstream/local/new-upstream three-way merging. Commit `.repoctl/baselines/root/` to preserve the upstream records across clones; record updates are reviewed in each file's `baseline` plan entry and applied atomically with that file. Independent changes merge automatically, while conflicting files and their baselines stay unchanged. Local deletion is never undone. API results expose unresolved `conflicts`; CLI preview and apply exit with code 1 when conflicts remain. Saved plans are reviewed write payloads; their hashes detect stale inputs and inconsistent content, not authorship. Generated app/package directories are outside this feature.
 
 Upgrade apply holds `.repoctl/upgrade.lock` through validation, no-op detection, writes, rollback and cleanup. It never removes colliding recovery files, changed recovery bytes or replacement directories. After an interruption, confirm no writer is active and recover retained backups before removing the lock and regenerating the plan.
+
+Versioned migrations appear in `migrations` with stable IDs and affected files. The Changesets-to-pnpm migration starts at template 1.1.0. Use `--from-version <exact-semver>` only when the old version is known; dependency ranges are not version evidence. Unknown sources adopt only recognized legacy formats. Commit `.repoctl/migrations/ledger.json` when created; its cursor covers migrations, not all assets. Preview writes nothing. Pending/failed bytes and completed diffs are reviewed together; migration groups cannot be split, and completed is written only at the end of a successful migration transaction. Re-preview pending/failed attempts to see already-applied versus remaining files; third-state local edits block recovery and retain attempt-specific backups. The shared `.repoctl/upgrade.lock` is never stolen by age; confirm no writer is active and recover pending backups before clearing it. Recovery performs no network/publish actions or historical script execution.
 
 Purpose: sync repo assets and scripts into the workspace.
 Usage:
@@ -215,6 +219,19 @@ inspect diagnostics before treating the graph as complete or computing affected 
 JSON has schema version 1, stable directory IDs and unresolved/ambiguous reference diagnostics.
 Mermaid uses the same graph. Queries do not write files; JSON and Mermaid flags are mutually exclusive.
 
+## deps catalog check / plan / apply
+
+Inspect default/named catalog references, missing or unused entries, direct-version bypasses,
+and migration candidates with `repo deps catalog check --json`. Integrity checks cover all catalogs;
+`--catalog <name>` selects the policy for direct declarations and migration candidates.
+
+Preview one dependency section/cohort with
+`repo deps catalog plan <dependency> --section devDependencies --json > catalog-plan.json`,
+review the linked YAML/manifest changes, then run `repo deps catalog apply catalog-plan.json`.
+`--catalog`, `--group` and `--to` choose a named catalog, configured cohort and explicit common
+subrange. Planning never writes; apply rejects stale inputs and preserves peer ranges.
+See [dependency governance](./dependencies.md) for migration boundaries and pnpm verification.
+
 ## tooling init (alias: tg init)
 
 Purpose: generate tooling config files plus matching devDependencies.
@@ -229,6 +246,10 @@ Usage:
   Notes:
 - Built-in tooling targets: commitlint, eslint, stylelint, lint-staged, tsconfig, vitest
 - Generated files also update root package.json devDependencies
+
+## workspace move
+
+Use `workspace move <exact-name-or-./directory> --to <relative-directory> --name <npm-name> --json` to preview moving, renaming, or both; either option may be omitted. Save the plan outside the target and review consumers, before/after files, blockers and file/line manual tasks. It updates manifest dependencies/aliases/metadata, workspace patterns and explicit supported TypeScript paths while preserving source code. Git-tracked text scanning is bounded, not complete import analysis; resolve manual source/configuration tasks before building. Dirty targets/updated files, existing destinations, duplicate names, symlinks in ancestry, nested workspaces/repos and stale inputs are blocked. Apply only the saved plan with `workspace move --apply <plan.json>`. Failures preserve concurrent edits and report retained recovery files; committed cleanup failures return `cleanupPending`. Run explicit lockfile-only/frozen pnpm installs and affected checks afterward. Published-package renames create a new npm identity; never publish or deprecate as a side effect.
 
 ## workspace remove
 
@@ -365,7 +386,9 @@ Usage:
 
 `repo check --affected --matrix` previews a versioned GitHub Actions matrix without running checks. `--shards N` deterministically groups workspaces into at most 1–256 jobs. Reuse base/head, filters and global inputs from affected mode. Pass only `matrix` to Actions `fromJSON`, gate strategy expansion with `hasWork`, and execute each row's non-skipped executable/args arrays in order from the checkout root. Each job builds dependencies itself. Full fallbacks stay in one job and retain diagnostics. No workflow is changed or triggered; only explicit `--out` writes a report.
 
-Doctor fix application holds `.repoctl/doctor-fix.lock` through validation, verification, rollback and cleanup. After a crash, confirm no writer remains and reconcile backups before manually removing the lock.
+### Public API baselines
+
+Use `repoctl package api check --json` after building opted-in `tooling.apiReports` library declarations. Local API Extractor >=7.52.12 <8 is required. `package api update --json` produces a read-only plan; explicitly review it before `package api update --apply <plan.json>`. Preserve existing baselines on check, report failures, review change intents, and never claim API signature differences determine complete SemVer compatibility. Baseline paths are workspace-relative; entries/tsconfig are package-relative.
 
 ### Installation security
 
@@ -410,6 +433,10 @@ Run `pnpm build:storybook` for the static site, then `pnpm --filter @repoctl-sto
 Maintenance report hashes describe exact Git blobs; planned working-file bytes are validated before staging. The isolated publisher verifies index bytes and Git-equivalent checkout contents across line-ending conversions, with hooks, executable filters and filesystem monitors disabled through PR creation. Preset reports carry exact raw preconditions and restricted checkout settings; the independent publisher uses Git built-in conversion to bind raw plans to committed and patched blobs while preserving fixed preset ownership. Preset before bytes use HEAD attributes; after bytes use the authorized patched attributes, including .gitattributes updates. Patch/report path mismatches are rejected before apply; final plan checks can still reject the isolated checkout before any write token is obtained.
 
 Preset authorization is embedded as fixed package/source/target triples at workflow export from validated installed manifests. The publisher independently verifies committed exact dependencies and existing baseline identity/content hashes before acquiring credentials; report-supplied paths never grant ownership. Refresh a reviewed workflow after explicit new asset adoption. Inherited-only preset changes and provider transfers remain manual. Report schema 1 adds optional `presets`; original root `versions` and `plan` stay compatible.
+
+Automatic maintenance can complete the built-in Changesets migration and update only its exact `.repoctl/migrations/ledger.json` metadata path. Preparation and publication share the same fixed migration identity, committed legacy-source, journal and completed-history checks; the target template version comes from the committed root repoctl → monorepo → templates lockfile dependency chain, not the repoctl version number. The publisher binds every migration output to the verified Git patch and checks public-package prerelease lanes against committed workspace membership. Interrupted journals, ambiguous lockfiles, noncanonical workspace patterns, and YAML/JSON5 workspace manifests require a reviewed manual `repo upgrade`; no broader `.repoctl` path is authorized. Refresh the trusted exported workflow to adopt this migration policy.
+
+Automatic maintenance can complete the built-in Changesets migration and update only its exact `.repoctl/migrations/ledger.json` metadata path. Preparation and publication share the same fixed migration identity, committed legacy-source, journal and completed-history checks; the target template version comes from the committed root repoctl → monorepo → templates lockfile dependency chain, not the repoctl version number. The publisher binds every migration output to the verified Git patch and checks public-package prerelease lanes against committed workspace membership. Interrupted journals, ambiguous lockfiles, noncanonical workspace patterns, and YAML/JSON5 workspace manifests require a reviewed manual `repo upgrade`; no broader `.repoctl` path is authorized. Refresh the trusted exported workflow to adopt this migration policy.
 
 ## release snapshot
 
