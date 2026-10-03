@@ -7,6 +7,8 @@ export interface UpgradeOptions extends CliOpts {
   targets?: string[]
   /** Attest an exact previous template version when no migration history exists. */
   fromVersion?: string
+  /** Whether configured targets extend the default asset selection. */
+  mergeTargets?: boolean
 }
 
 export type UpgradeFileStatus = 'add' | 'modify' | 'delete' | 'identical' | 'skip' | 'conflict'

@@ -69,11 +69,45 @@ describe('built template catalog health', () => {
 
   it('does not fall back to a built-in when its override is invalid', async () => {
     const cwd = await fixture({ templateMap: { tsdown: { source: 42, target: 'packages/broken' } } })
-    await expect(repo.resolveCreateNewProjectPlan({ cwd, type: 'tsdown' })).rejects.toThrow('commands.create.templateMap["tsdown"]')
+    await expect(repo.resolveCreateNewProjectPlan({ cwd, type: 'tsdown' })).rejects.toThrow('commands.create.templateMap.tsdown.source')
     expect((await cli(cwd, ['templates', '--json'])).exitCode).toBe(1)
     const result = await cli(cwd, ['templates', 'tsdown', '--json'])
     expect(result.exitCode).toBe(1)
     expect(result.stderr).toContain('repoctl.config.mjs')
+  })
+
+  it('returns the shared validator diagnostic in CLI JSON without restoring built-ins', async () => {
+    const cwd = await fixture({ templateMap: { 'team.docs': { source: 42, target: 'apps/team' } } })
+    const before = await snapshot(cwd)
+    const catalog = await repo.resolveTemplateCatalog({ cwd })
+    expect(catalog.entries).toEqual([])
+    expect(catalog.choices).toEqual([])
+    expect(catalog.diagnostics).toContainEqual(expect.objectContaining({
+      id: 'config.invalid-type',
+      configPath: 'commands.create.templateMap.team\\.docs.source',
+      configDiagnostic: expect.objectContaining({ actualType: 'number', expected: 'nonempty string' }),
+    }))
+    const result = await cli(cwd, ['templates', '--check', '--json'])
+    expect(result.exitCode).toBe(1)
+    const report = JSON.parse(result.stdout)
+    expect(report.templateCount).toBe(0)
+    expect(report.checks).toContainEqual(expect.objectContaining({ id: 'config.invalid-type', configPath: 'commands.create.templateMap.team\\.docs.source' }))
+    await expect(repo.createNewProject({ cwd, type: 'team.docs' })).rejects.toThrow('commands.create.templateMap.team\\.docs.source')
+    const creation = await cli(cwd, ['new', 'apps/rejected', '--template', 'team.docs', '--json'])
+    expect(creation.exitCode).toBe(1)
+    expect(JSON.parse(creation.stderr).diagnostics).toContainEqual(expect.objectContaining({ id: 'config.invalid-type', path: 'commands.create.templateMap.team\\.docs.source' }))
+    expect(await snapshot(cwd)).toEqual(before)
+  })
+
+  it('keeps config evaluation failures structured and redacted', async () => {
+    const cwd = await fixture()
+    await writeFile(path.join(cwd, 'repoctl.config.mjs'), 'throw new Error("token=must-not-appear")\n')
+    const before = await snapshot(cwd)
+    const result = await cli(cwd, ['templates', '--check', '--json'])
+    expect(result.exitCode).toBe(1)
+    expect(JSON.parse(result.stdout).checks).toContainEqual(expect.objectContaining({ id: 'config.load-failed', status: 'fail' }))
+    expect(`${result.stdout}${result.stderr}`).not.toContain('must-not-appear')
+    expect(await snapshot(cwd)).toEqual(before)
   })
 
   it('honors an explicit inspection root and detects filtered files', async () => {

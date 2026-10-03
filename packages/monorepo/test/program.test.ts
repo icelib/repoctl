@@ -160,6 +160,7 @@ describe('commander program', () => {
       runCreateFlow: runCreateFlowMock,
     }))
     vi.doMock('@/core/config', () => ({
+      loadMonorepoConfig: vi.fn(async () => ({})),
       resolveCommandConfig: resolveCommandConfigMock,
     }))
     vi.doMock('@/core/workspace', () => ({

@@ -132,7 +132,11 @@ describe('built internal workspace boundary policies', () => {
     const cwd = await setup(diamond)
     await writeFile(path.join(cwd, 'repoctl.config.mjs'), 'export default { boundaries: null }')
     expect((await checkWorkspaceBoundaries(cwd)).findings).toMatchObject([{ id: 'boundary-config', status: 'fail' }])
-    expect((await runDoctor(cwd)).checks.find(item => item.id === 'boundary-config')?.status).toBe('fail')
+    await expect(runDoctor(cwd)).rejects.toMatchObject({
+      code: 'REPOCTL_CONFIG_INVALID',
+      message: expect.not.stringContaining(cwd),
+      diagnostics: [{ id: 'config.invalid-type', path: 'boundaries', actualType: 'null' }],
+    })
     await writeFile(path.join(cwd, 'repoctl.config.mjs'), 'export default { boundaries: { cycles: { severity: null } } }')
     expect((await checkWorkspaceBoundaries(cwd)).findings[0]?.field).toBe('boundaries.cycles.severity')
   })

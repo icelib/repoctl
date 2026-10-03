@@ -5,6 +5,7 @@ import process from 'node:process'
 import { suggestTemplateKey } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import fs from '@/utils/fs'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { createTemplateCatalog } from '../../core/template-catalog'
 import { loadTemplateCatalogContext } from '../../core/template-catalog/config'
 
@@ -72,10 +73,11 @@ export async function resolveCreateNewProjectPlan(options?: CreateNewProjectOpti
   const createConfig = context.createConfig
   const catalog = createTemplateCatalog(context)
 
-  const renameJson = options?.renameJson ?? createConfig?.renameJson ?? false
-  const rawName = options?.name ?? createConfig?.name
+  const effective = resolveCommandValues('create', createConfig, { renameJson: options?.renameJson, name: options?.name, type: options?.type }).values
+  const renameJson = effective.renameJson!
+  const rawName = effective.name
   const name = typeof rawName === 'string' ? rawName.trim() : undefined
-  const requestedTemplate = options?.type ?? createConfig?.type ?? createConfig?.defaultTemplate ?? defaultTemplate
+  const requestedTemplate = effective.type ?? effective.defaultTemplate ?? defaultTemplate
 
   const requestedTemplateName = String(requestedTemplate)
   const invalid = catalog.diagnostics.find(item => item.status === 'fail' && (!item.template || item.template === requestedTemplateName))

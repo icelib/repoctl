@@ -4,6 +4,8 @@ import { getWorkspacePackageManager } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import YAML from 'yaml'
 import fs from '@/utils/fs'
+import { loadMonorepoConfig } from '../../core/config'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { createContext } from '../../core/context'
 import setChangeset from './setChangeset'
 import setIssueTemplateConfig from './setIssueTemplateConfig'
@@ -87,11 +89,12 @@ async function ensureWorkspaceManifest(cwd: string) {
 }
 
 async function runInitMetadata(cwd: string, options: InitCommandRuntimeOptions = {}) {
+  await loadMonorepoConfig(cwd)
   await ensureRootPackageJson(cwd)
   await ensureWorkspaceManifest(cwd)
   const ctx = await createContext(cwd)
-  const initConfig = ctx.config.commands?.init ?? {}
-  const overwrite = options.overwrite ?? options.force ?? initConfig.force ?? false
+  const initConfig = resolveCommandValues('init', ctx.config.commands?.init, { force: options.overwrite ?? options.force, preset: options.preset, tooling: options.tooling?.length ? [...options.tooling] : undefined }).values
+  const overwrite = initConfig.force!
 
   if (!initConfig.skipChangeset) {
     await setChangeset(ctx)
@@ -119,7 +122,7 @@ export async function initMetadata(cwd: string) {
 export async function init(cwd: string, options: InitCommandRuntimeOptions = {}) {
   const { initConfig } = await runInitMetadata(cwd, options)
 
-  const preset = options.preset ?? initConfig.preset
+  const preset = initConfig.preset
   const presetTargets = preset ? presetToolingMap[preset] : undefined
   const configuredTargets = initConfig.tooling ?? []
   const runtimeTargets = options.tooling?.length
@@ -131,7 +134,7 @@ export async function init(cwd: string, options: InitCommandRuntimeOptions = {})
 
   await initTooling(cwd, {
     targets,
-    force: options.force ?? options.overwrite ?? initConfig.force ?? false,
+    force: initConfig.force!,
     ...(options.all !== undefined ? { all: options.all } : {}),
   })
 }

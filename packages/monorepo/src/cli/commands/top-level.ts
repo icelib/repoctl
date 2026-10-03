@@ -1,4 +1,6 @@
 import type { Command } from '@icebreakers/monorepo-templates'
+import { loadMonorepoConfig } from '../../core/config'
+import { resolveCommandValues } from '../../core/config/resolution'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import { registerCheckCommand } from './check'
@@ -22,14 +24,16 @@ interface NewCliOptions {
 export function registerTopLevelCommands(program: Command, cwd: string) {
   program.command('init')
     .description(localize('Initialize the current workspace with recommended configuration', '初始化当前 workspace，并生成推荐配置'))
-    .option('--preset <preset>', localize('Initialization preset: minimal or standard', '初始化预设：minimal / standard'), 'standard')
+    .option('--preset <preset>', localize('Initialization preset: minimal or standard', '初始化预设：minimal / standard'))
     .option('-f, --force', localize('Overwrite existing tooling configuration files', '覆盖已存在的 tooling 配置文件'))
     .option('--overwrite', localize('Overwrite existing managed files', '覆盖受管的已存在文件'))
     .option('-y, --yes', localize('Use defaults without prompting; suitable for CI', '使用默认值跳过所有交互，适合 CI'))
     .action(async (opts: InitCliOptions) => {
       const { init } = await import('@/commands')
+      const config = await loadMonorepoConfig(cwd)
+      const { preset } = resolveCommandValues('init', config.commands?.init, { preset: opts.preset }, { entry: 'cli' }).values
       await init(cwd, {
-        ...(opts.preset !== undefined ? { preset: opts.preset } : {}),
+        ...(preset !== undefined ? { preset } : {}),
         ...(opts.force !== undefined ? { force: opts.force } : {}),
         ...(opts.overwrite !== undefined ? { overwrite: opts.overwrite } : {}),
         ...(opts.yes !== undefined ? { yes: opts.yes } : {}),
