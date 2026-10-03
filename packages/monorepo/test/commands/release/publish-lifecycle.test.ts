@@ -33,6 +33,23 @@ describe('built public release lifecycle with visibility confirmation', () => {
     expect(github.ensureRelease.mock.invocationCallOrder.at(-1)).toBeLessThan(h.spawn.mock.invocationCallOrder.at(-1)!)
   })
 
+  it('keeps metadata and post-publish hooks pending while an accepted version propagates beyond five minutes', async () => {
+    const github = { ensurePullRequest: vi.fn(), ensureRelease: vi.fn(), ensureTag: vi.fn() }
+    const h = await publishHarness([{ status: 0, summary: [a, b] }], (spec, { elapsed }) => {
+      expect(github.ensureTag).not.toHaveBeenCalled()
+      expect(github.ensureRelease).not.toHaveBeenCalled()
+      expect(h.calls.some(call => call.command === 'pnpm' && call.args[1] === 'after')).toBe(false)
+      return spec === `${a.name}@${a.version}` || elapsed >= 310_000 ? '1.0.0' : ''
+    })
+
+    await expect(releaseCi({ ...h.options, mode: 'publish', github })).resolves.toEqual([a, b])
+    expect(h.uploads()).toHaveLength(1)
+    expect(h.sleep.mock.calls.reduce((sum, [ms]) => sum + ms, 0)).toBe(310_000)
+    expect(github.ensureTag).toHaveBeenCalledTimes(2)
+    expect(github.ensureRelease).toHaveBeenCalledTimes(2)
+    expect(h.calls.filter(call => call.command === 'pnpm' && call.args[1] === 'after')).toHaveLength(1)
+  })
+
   it('does not run metadata or post-publish hooks after confirmation times out', async () => {
     const h = await publishHarness([{ status: 0, summary: [a, b] }], () => '')
     const github = { ensurePullRequest: vi.fn(), ensureRelease: vi.fn(), ensureTag: vi.fn() }

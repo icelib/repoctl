@@ -19,6 +19,43 @@ it('persists partial acceptance and uploads only the missing version on a new ru
   expect(remote.releases.size).toBe(2)
 })
 
+it('recovers a visibility timeout from accepted evidence without uploading while propagation continues', async () => {
+  const remote = recoveryRemote()
+  const first = await recoveryRunner(remote)
+  const originalSpawn = first.spawn.getMockImplementation()!
+  first.spawn.mockImplementation((command, args, options) => {
+    const result = originalSpawn(command, args, options)
+    if (command === 'pnpm' && args[0] === 'publish') {
+      remote.versions.delete(keyOf(b))
+    }
+    return result
+  })
+
+  await expect(releaseCi(first.options)).rejects.toThrow('visibility confirmation timed out')
+  expect(remote.state()).toMatchObject({ npm: 'failed', accepted: [a, b], metadata: [], complete: false })
+  expect(first.uploads()).toHaveLength(1)
+
+  const next = await recoveryRunner(remote, [])
+  let elapsed = 0
+  const originalSleep = next.sleep.getMockImplementation()!
+  next.sleep.mockImplementation(async (milliseconds) => {
+    expect(remote.releases.size).toBe(0)
+    expect(next.calls.some(call => call.command === 'pnpm' && call.args[1] === 'after')).toBe(false)
+    elapsed += milliseconds
+    await originalSleep(milliseconds)
+    if (elapsed >= 310_000) {
+      remote.versions.add(keyOf(b))
+    }
+  })
+
+  await expect(releaseCi(next.options)).resolves.toEqual([a, b])
+  expect(elapsed).toBe(310_000)
+  expect(next.uploads()).toHaveLength(0)
+  expect(remote.state()).toMatchObject({ npm: 'complete', accepted: [a, b], complete: true })
+  expect(remote.releases.size).toBe(2)
+  expect(next.calls.filter(call => call.command === 'pnpm' && call.args[1] === 'after')).toHaveLength(1)
+})
+
 it('recovers a lost runner after upload before any acceptance response was persisted', async () => {
   const remote = recoveryRemote()
   remote.github.ensureRelease.mockRejectedValueOnce(new Error('interrupted'))

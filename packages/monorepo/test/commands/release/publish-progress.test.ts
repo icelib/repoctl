@@ -67,12 +67,24 @@ describe('built public publishStable progress', () => {
     expect(h.sleep.mock.calls.map(([ms]) => ms)).toEqual([10_000, 10_000])
   })
 
+  it('allows accepted versions to propagate beyond five minutes without reuploading or querying confirmed versions', async () => {
+    const h = await publishHarness([{ status: 0, summary: [a, b] }], (spec, { elapsed }) => spec === `${a.name}@${a.version}` || elapsed >= 310_000 ? '1.0.0' : '')
+
+    await expect(publishStable(h.options)).resolves.toEqual([a, b])
+    expect(h.uploads()).toHaveLength(1)
+    expect(h.calls.filter(call => call.command === 'npm' && call.args[1] === `${a.name}@${a.version}`)).toHaveLength(1)
+    expect(h.sleep.mock.calls.reduce((sum, [ms]) => sum + ms, 0)).toBe(310_000)
+    expect(await h.report()).toMatchObject({ status: 'complete', acceptedPackages: [a, b], confirmedPackages: [a, b] })
+  })
+
   it('fails within the visibility budget and preserves accepted but unavailable versions', async () => {
     const h = await publishHarness([{ status: 0, summary: [a, b] }], () => '')
-    await expect(publishStable(h.options)).rejects.toThrow('pending versions: repoctl@1.0.0, @scope/b@1.0.0')
+    const release = publishStable(h.options)
+    await expect(release).rejects.toThrow(/timed out after 15 minutes; pending versions: repoctl@1\.0\.0, @scope\/b@1\.0\.0/)
+    await expect(release).rejects.toThrow('resume confirmation without re-uploading accepted versions')
     expect(h.uploads()).toHaveLength(1)
-    expect(h.sleep.mock.calls.reduce((sum, [ms]) => sum + ms, 0)).toBeLessThanOrEqual(300_000)
-    expect(h.sleep).toHaveBeenCalledTimes(30)
+    expect(h.sleep.mock.calls.reduce((sum, [ms]) => sum + ms, 0)).toBeLessThanOrEqual(900_000)
+    expect(h.sleep).toHaveBeenCalledTimes(90)
     expect(h.calls.filter(call => call.command === 'npm').every(call => call.options?.timeout && call.options.timeout <= 10_000)).toBe(true)
     expect(await h.report()).toMatchObject({ status: 'failed', acceptedPackages: [a, b], confirmedPackages: [] })
     expect(await h.summary()).toEqual({ publishedPackages: [a, b] })
@@ -139,10 +151,10 @@ describe('built public publishStable progress', () => {
     expect(h.uploads()[1]?.args.slice(-2)).toEqual(['--filter', b.name])
   })
 
-  it('counts slow registry queries against the five-minute confirmation budget', async () => {
+  it('counts slow registry queries against the fifteen-minute budget and bounds the final query to its remainder', async () => {
     let elapsed = 0
     const h = await publishHarness([{ status: 0, summary: [a, b] }], () => {
-      elapsed += 10_000
+      elapsed += Math.min(7_000, 900_000 - elapsed)
       return ''
     })
     vi.spyOn(performance, 'now').mockImplementation(() => elapsed)
@@ -150,8 +162,10 @@ describe('built public publishStable progress', () => {
       elapsed += milliseconds
     })
     await expect(publishStable(h.options)).rejects.toThrow('visibility confirmation timed out')
-    expect(elapsed).toBe(300_000)
-    expect(h.calls.filter(call => call.command === 'npm')).toHaveLength(20)
+    expect(elapsed).toBe(900_000)
+    const queries = h.calls.filter(call => call.command === 'npm')
+    expect(queries).toHaveLength(76)
+    expect(queries.at(-1)?.options?.timeout).toBe(5_000)
     expect(h.uploads()).toHaveLength(1)
   })
 })

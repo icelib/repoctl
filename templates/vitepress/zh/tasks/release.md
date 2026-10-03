@@ -73,7 +73,7 @@ Release PR 以所选分支为 base。主正式线保留 `release/pnpm-version`�
 
 发布器最多尝试上传 3 次，重试前分别等待 20、40 秒并重新查询 registry。明确上传成功的精确版本不会再次上传，即使此时 `npm view` 暂不可查询。普通权限错误和没有瞬时故障依据的 404 会直接失败；冲突只能通过只读对账确认，不能当作成功。
 
-已接收上传的版本需要确认可查询后，才会执行后置 hooks、Git tag 和 GitHub Release。确认期间每 10 秒查询待确认版本，最多等待 5 分钟；超时会非零退出并列出待确认版本。
+上传已接收表示 npm 已收到该版本，registry 查询仍可能延迟数分钟才能看到它。已接收上传的版本需要确认可查询后，才会执行后置 hooks、Git tag 和 GitHub Release。确认期间每 10 秒查询待确认版本，最多等待 15 分钟；超时会非零退出并列出待确认版本，同时保留上传已接收的证据。
 
 工作区根目录保留两份文件：
 
@@ -81,6 +81,8 @@ Release PR 以所选分支为 base。主正式线保留 `release/pnpm-version`�
 - `repoctl-publish-progress.json`：`schemaVersion: 1`，记录 `candidates`、`acceptedPackages`、`confirmedPackages` 及 `status`（`publishing`、`confirming`、`complete`、`failed`）。已接收但未确认的版本是前两种成功状态之差。
 
 受管 Release 工作流会在发布成功或失败后上传 `npm-publish-progress-<run_id>-<run_attempt>` artifact，保留 14 天；没有清单时跳过上传。现有项目升级 repoctl 后运行 `repo upgrade` 更新受管工作流；自定义工作流可自行添加相同上传步骤。
+
+可见性确认超时后，保留 `repoctl-release-state` 分支中的持久化检查点，使用 `repo release ci --mode publish --source-sha <完整的发布线提交-SHA>` 恢复，并先加 `--dry-run` 预演。恢复会读取原提交准备的版本和已保存的接收证据，继续确认可见性并补齐缺失元数据，不重复上传已接收的版本。
 
 ## 跨 runner 恢复与完成判定
 
@@ -111,7 +113,7 @@ const hook = { script: 'publish:extension', idempotent: true }
 
 如果外部系统已确认脚本成功，可显式设置 `REPO_RELEASE_ACKNOWLEDGE_HOOKS=publish:extension` 后恢复；多个脚本用逗号分隔。该操作表示人工确认完成，不会再次执行脚本。确认失败或未知时，不应使用此开关。
 
-如果 runner 在上传期间消失，检查点可能只有 `running`，而响应尚未持久化。恢复会先进行最多 5 分钟的只读可见性确认；仍不能确认时失败，保留证据，不盲目重传。真正未上传的版本经人工核实后，可用已有 `publish-unpublished` 精确恢复入口，再重跑原发布目标完成其 hook。对任意外部 hook 不承诺 exactly-once。
+如果 runner 在上传期间消失，检查点可能只有 `running`，而响应尚未持久化。恢复会先进行最多 15 分钟的只读可见性确认；仍不能确认时失败，保留证据，不盲目重传。真正未上传的版本经人工核实后，可用已有 `publish-unpublished` 精确恢复入口，再重跑原发布目标完成其 hook。对任意外部 hook 不承诺 exactly-once。
 
 程序化注入的旧 `GitHubOperations` adapter 保留原行为；要启用跨 runner 恢复，需要实现 `readReleaseState`、`writeReleaseState`、`listReleases`、`ensureTag`，并建议提供 `readTagTarget`。写入必须校验 revision，查询错误必须抛出。仅有本地 summary 不能代替远端检查点。
 

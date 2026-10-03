@@ -73,7 +73,7 @@ After changing the mapping, preview `repo upgrade --dry-run --json` and apply th
 
 The publisher attempts uploads at most three times, waiting 20 and 40 seconds before refreshing registry state and selecting retry packages. An exact version with explicit upload acceptance is never uploaded again during that invocation, even if `npm view` cannot find it yet. Ordinary permission errors and 404 responses without transient-failure evidence fail immediately. Conflicts require read-only registry confirmation.
 
-Accepted uploads must become queryable before post-publish hooks, Git tags, GitHub Releases, or prerelease pushes proceed. Visibility checks query pending versions every 10 seconds for up to five minutes. A timeout exits unsuccessfully and lists pending versions.
+Upload acceptance means npm received the version; registry queries can still take several minutes to show it. Accepted uploads must become queryable before post-publish hooks, Git tags, GitHub Releases, or prerelease pushes proceed. Visibility checks query pending versions every 10 seconds for up to 15 minutes. A timeout exits unsuccessfully and lists pending versions while preserving the acceptance evidence.
 
 Two files remain in the workspace root:
 
@@ -81,6 +81,8 @@ Two files remain in the workspace root:
 - `repoctl-publish-progress.json`: `schemaVersion: 1`, `candidates`, `acceptedPackages`, `confirmedPackages`, and `status` (`publishing`, `confirming`, `complete`, or `failed`). Accepted versions missing from `confirmedPackages` still need visibility confirmation.
 
 The managed Release workflow uploads both files as `npm-publish-progress-<run_id>-<run_attempt>` on success or failure, retained for 14 days. Missing reports are ignored. After upgrading repoctl, run `repo upgrade` to refresh managed workflows; custom workflows can add the same upload step.
+
+After a visibility timeout, keep the durable checkpoint on `repoctl-release-state` and resume with `repo release ci --mode publish --source-sha <full-release-line-commit-sha>`, previewing with `--dry-run` first. Recovery uses the original prepared versions and saved acceptance evidence to confirm visibility and finish missing metadata without uploading accepted versions again.
 
 ## Recovery across runners
 
@@ -105,7 +107,7 @@ Dry-run queries remote state and shows versions, original commits, npm stage, mi
 
 Hook script names must be unique; retain the original script set when recovering. Each hook is checkpointed as `running` before execution and `complete` after success. Optional failures become `ignored`. Unknown non-idempotent outcomes require manual review. Set `idempotent: true` on an `afterPublish` hook only when repeated execution is safe. After verifying external completion, `REPO_RELEASE_ACKNOWLEDGE_HOOKS=script-name` acknowledges it without execution (comma-separated for multiple scripts).
 
-If a runner disappears during upload before responses are persisted, recovery performs read-only visibility confirmation for up to five minutes. It fails with evidence if versions remain unknown, rather than blindly uploading again. After manually verifying that a version was never uploaded, use the existing exact `publish-unpublished` entry, then rerun the original target set to finish its hooks. Arbitrary external hooks cannot be guaranteed exactly-once.
+If a runner disappears during upload before responses are persisted, recovery performs read-only visibility confirmation for up to 15 minutes. It fails with evidence if versions remain unknown, rather than blindly uploading again. After manually verifying that a version was never uploaded, use the existing exact `publish-unpublished` entry, then rerun the original target set to finish its hooks. Arbitrary external hooks cannot be guaranteed exactly-once.
 
 Legacy injected `GitHubOperations` adapters retain their previous behavior. Recovery-capable adapters must implement `readReleaseState`, `writeReleaseState`, `listReleases`, and `ensureTag`; `readTagTarget` is recommended. Enforce revision comparison on writes and throw on query errors. A local summary is not a remote checkpoint.
 
