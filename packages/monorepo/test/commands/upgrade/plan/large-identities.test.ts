@@ -88,14 +88,13 @@ it.each(['dev', 'ino'] as const)('does not restore over a same-byte concurrent o
     ${identities(field, `path.resolve(filename) === path.resolve(root, '.editorconfig') || path.resolve(filename) === path.resolve(root, '.editorconfig.repoctl-upgrade-${transactionId}.tmp')`)}
     const rename = fs.rename
     fs.rename = async (source, target) => {
+      await rename(source, target)
       if (source.endsWith('.tmp') && target.endsWith('Dockerfile')) {
         const editor = path.join(root, '.editorconfig')
         await rename(editor, editor + '.retained')
         await fs.copyFile(editor + '.retained', editor)
         replaced = true
-        throw new Error('Injected commit failure after concurrent replacement')
       }
-      await rename(source, target)
     }
   `)
   expect(output).toContain('recover original files')

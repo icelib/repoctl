@@ -38,7 +38,7 @@ export function parseTemplateParameterManifest(value: unknown): TemplateParamete
         || Object.keys(item['when']).some(key => !['parameter', 'equals'].includes(key)) || typeof item['when']['parameter'] !== 'string') {
         parameterError(field, 'expected a parameter equality condition')
       }
-      const definition = value['parameters'][item['when']['parameter']]
+      const definition = Object.hasOwn(value['parameters'], item['when']['parameter']) ? value['parameters'][item['when']['parameter']] : undefined
       if (!definition || definition.sensitive || !parameterValueMatches(definition, item['when']['equals'])) {
         parameterError(`${field}.when`, 'condition must compare a declared nonsensitive parameter with a value of its type')
       }

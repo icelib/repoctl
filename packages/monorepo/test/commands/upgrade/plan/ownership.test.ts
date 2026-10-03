@@ -74,6 +74,26 @@ it('still applies plans whose output root does not exist', async () => {
   expect(await readFile(path.join(plan.rootDir, '.editorconfig'), 'utf8')).toContain('root = true')
 })
 
+it('preserves a concurrent edit to an earlier output before removing recovery backups', async () => {
+  const h = await fixture()
+  await h.write('.editorconfig', 'original editor\n')
+  await h.write('Dockerfile', 'original docker\n')
+  const plan = await planUpgrade({ cwd: h.cwd, targets: ['.editorconfig', 'Dockerfile'], overwrite: true })
+  const output = await instrument(plan, `
+    const rename = fs.rename
+    fs.rename = async (source, target) => {
+      await rename(source, target)
+      if (source.endsWith('.tmp') && target.endsWith('Dockerfile')) {
+        await fs.writeFile(path.join(root, '.editorconfig'), 'concurrent editor\\n')
+      }
+    }
+  `)
+  expect(output).toContain('recover original files')
+  expect(await readFile(path.join(h.cwd, '.editorconfig'), 'utf8')).toBe('concurrent editor\n')
+  expect(await readFile(path.join(h.cwd, `.editorconfig.repoctl-upgrade-${transactionId}.bak`), 'utf8')).toBe('original editor\n')
+  expect(await readFile(path.join(h.cwd, 'Dockerfile'), 'utf8')).toBe('original docker\n')
+})
+
 it.skipIf(process.platform === 'win32')('retains original permissions even when the process umask would narrow them', async () => {
   const h = await fixture()
   await h.write('.editorconfig', 'original\n')

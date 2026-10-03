@@ -18,6 +18,13 @@ const manifest: TemplateParameterManifest = {
   conditions: [{ when: { parameter: 'test', equals: true }, files: ['test'], package: { scripts: { test: 'vitest run' }, devDependencies: { vitest: '5.0.3' } } }],
 }
 
+it('bounds repeated substitutions before allocating an oversized rendered file', () => {
+  const contract: TemplateParameterManifest = { schemaVersion: 1, parameters: { token: { type: 'string', sensitive: true } }, interpolate: ['output.txt'] }
+  const repeated: TemplateSnapshot = { schemaVersion: 1, directories: [], files: [{ path: 'output.txt', content: Buffer.from('{{repoctl:token}}'.repeat(1024)).toString('base64'), executable: false }] }
+  const parameters = resolveTemplateParameters(contract.parameters, { token: 'private'.repeat(9000) })
+  expect(() => renderTemplateParameters(repeated, contract, parameters)).toThrow('rendered snapshot exceeds 32 MiB')
+})
+
 it('renders both combinations with one file/script/dependency condition and preserves binary bytes', () => {
   for (const enabled of [false, true]) {
     const parameters = resolveTemplateParameters(manifest.parameters, { label: 'quoted "value"', test: enabled, token: 'private-value' })

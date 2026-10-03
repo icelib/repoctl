@@ -105,7 +105,8 @@ beforeEach(async () => {
     },
   }))
 
-  vi.doMock('@icebreakers/monorepo-templates', () => ({
+  vi.doMock('@icebreakers/monorepo-templates', async () => ({
+    ...await vi.importActual<typeof import('@icebreakers/monorepo-templates')>('@icebreakers/monorepo-templates'),
     scaffoldTemplate: scaffoldTemplateMock,
     instanceRelativePath: vi.fn(() => 'demo'),
     createTemplateInstanceTarget: ensureDirMock,

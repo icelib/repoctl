@@ -15,7 +15,7 @@ import { createTimestampFolderName, defaultAgenticBaseDir, generateAgenticTempla
 import { getKnownRepoCheckCommands, resolveFullWorkspaceCheckPlan, resolveRecommendedCheckPlan, runRecommendedCheck } from './check'
 import { cleanProjects } from './clean'
 import { inspectMonorepoConfig } from './config'
-import { createNewProject, getCreateChoices, getTemplateMap, resolveCreateNewProjectPlan, templateMap } from './create'
+import { applyCreateNewProjectPlan, createNewProject, getCreateChoices, getTemplateMap, resolveCreateNewProjectPlan, templateMap } from './create'
 import { runDoctor } from './doctor'
 import { collectEnvInfo, collectEnvPaths, collectEnvSnapshot, collectEnvSupportBundle } from './env'
 import { init, initMetadata, initTooling, initToolingTargets, normalizeInitToolingTargets } from './init'
@@ -67,6 +67,7 @@ export type {
 }
 
 export {
+  applyCreateNewProjectPlan,
   checkTemplates,
   cleanProjects,
   collectEnvInfo,
@@ -154,3 +155,7 @@ export { planTemplateValidation, validateTemplate } from './template-validation'
 export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
 
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
+export { applyWorkspaceMovePlan } from './workspace/move/apply'
+export { planWorkspaceMove } from './workspace/move/plan'
+export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
+export { planWorkspaceRemoval } from './workspace/remove/plan'

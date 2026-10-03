@@ -19,13 +19,16 @@ function normalizeOptions(input: TemplateLinkOptions): TemplateLinkOptions {
     throw new Error('Template linking requires a stable template key.')
   }
   const profile = input.profile ?? 'repo-new-v1'
-  if (!['workspace-copy-v1', 'repo-new-v1'].includes(profile)) {
+  if (!['workspace-copy-v1', 'repo-new-v1', 'repo-new-parameters-v1'].includes(profile)) {
     throw new Error('Unsupported template generation profile.')
   }
   const cwd = path.resolve(input.cwd)
   const target = instanceRelativePath(cwd, path.resolve(cwd, input.target))
   const parameters = generationParameters(input.parameters)
-  if (profile === 'repo-new-v1') {
+  if (profile !== 'repo-new-parameters-v1' && (parameters.templateValues !== undefined || parameters.sensitiveParameters !== undefined)) {
+    throw new Error('Template parameter values require the parameterized generation profile and a verified historical contract.')
+  }
+  if (profile === 'repo-new-v1' || profile === 'repo-new-parameters-v1') {
     parameters.packageName ??= path.basename(target)
     parameters.renameJson ??= false
   }
@@ -52,6 +55,12 @@ async function prepareLink(input: TemplateLinkOptions) {
   }
   else {
     const baseline = await renderHistoricalTemplate(options)
+    if (options.profile === 'repo-new-parameters-v1') {
+      if (!baseline) {
+        throw new Error('Parameterized template linking requires the exact historical source to verify nonsensitive inputs; unverified registration is unavailable.')
+      }
+      options.parameters = generationParameters(baseline.parameters!)
+    }
     const originalDigest = baseline ? snapshotDigest(baseline.original.snapshot) : undefined
     const renderedDigest = baseline ? snapshotDigest(baseline.rendered) : undefined
     draft = {
@@ -116,6 +125,6 @@ export async function applyTemplateLinkPlan(plan: TemplateLinkPlan) {
     if (digest(registry) !== current.plan.registryDigest || snapshotDigest(target) !== current.plan.targetDigest) {
       throw new Error('Template link plan became stale before metadata commit; preview again.')
     }
-  })
+  }, { allocateIdOnConflict: true })
   return { ...current.plan, applied: true }
 }

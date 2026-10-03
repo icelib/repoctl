@@ -1,3 +1,4 @@
+export { moveTemplateInstances, planTemplateInstanceMove } from './move'
 export { createTemplateInstanceTarget, listTemplateInstances, prepareGeneratedTemplateInstance, rebuildTemplateInstanceBaseline, recordGeneratedTemplateInstance, relocateTemplateInstance, templateInstanceId } from './operations'
 export { instanceRelativePath, safeInstancePath, templateBaselineDirectory, templateRegistryPath } from './paths'
 export { replaceTemplateInstance } from './replace'
@@ -5,5 +6,5 @@ export { generationParameters, isExactTemplateVersion, normalizeTemplateExclusio
 export { captureTemplateSnapshot, compareTemplateSnapshots, snapshotDigest, writeTemplateSnapshot } from './snapshot'
 export { prepareTemplateInstanceSource, readTemplatePackageVersion } from './source'
 export { canVerifyTemplateInstance, loadTemplateBaseline, loadTemplateInstanceRegistry, registerTemplateInstances } from './store'
-export type { GeneratedTemplateInstanceOptions, PreparedTemplateSource, TemplateFileDifference, TemplateGenerationParameters, TemplateGenerationProfile, TemplateInstance, TemplateInstanceBaseline, TemplateInstanceDraft, TemplateInstanceInfo, TemplateInstanceRegistry, TemplateInstanceReplacementHooks, TemplateInstanceSource, TemplateSnapshot, TemplateSnapshotFile } from './types'
+export type { GeneratedTemplateInstanceOptions, PreparedTemplateSource, TemplateFileDifference, TemplateGenerationParameters, TemplateGenerationProfile, TemplateInstance, TemplateInstanceBaseline, TemplateInstanceDraft, TemplateInstanceInfo, TemplateInstanceMovePlan, TemplateInstanceRegistrationOptions, TemplateInstanceRegistry, TemplateInstanceReplacementHooks, TemplateInstanceSource, TemplateSnapshot, TemplateSnapshotFile } from './types'
 export { recordWorkspaceTemplateInstances } from './workspace'

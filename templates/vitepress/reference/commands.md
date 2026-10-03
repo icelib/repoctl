@@ -1,5 +1,7 @@
 # Command Reference
 
+Use [`repo workspace move`](./move.md) with `--to`, `--name`, or both to preview workspace refactoring. Review the JSON plan and located source tasks, then explicitly apply it with `--apply`.
+
 This page focuses on high-value repoctl commands and options.
 
 ## Main Entry
@@ -180,6 +182,8 @@ JSON uses schema version `1`, directory-based node IDs and stable sorting; field
 Programmatic users can call `getWorkspaceGraph(cwd, options)`, `filterWorkspaceGraph(graph, options)`, `whyWorkspaceDependency(graph, from, to, options)` and `getWorkspaceImpact(graph, package, options)`. Discovery refreshes its cache for each graph read. Query APIs accept the same public graph model without exposing pnpm implementation types.
 
 ## Grouped Commands
+
+Use [`repo workspace remove`](./removal.md) to preview removal of one exact package, inspect consumers and manual reference candidates, then explicitly apply a reviewed JSON plan. Preview does not delete anything; dependencies block removal unless their exact manifest fields are included with `--remove-references`.
 
 ```bash
 repo ws ls

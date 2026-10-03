@@ -433,3 +433,48 @@ Stylelint for SFC styles, typecheck, and tests after generation.
 `new` continues to create a whole package and rejects existing target directories.
 The public API exposes `planGenerate(options)` and `applyGeneratePlan(plan)`; both
 operate on the same validated file plan.
+
+## Typed parameters and conditional generation
+
+Place `repoctl.template.json` at the template root to declare typed inputs and conditional files, scripts and dependency entries. Conditions compare declared values without executing code.
+
+```json
+{
+  "schemaVersion": 1,
+  "parameters": {
+    "label": { "type": "string", "default": "demo" },
+    "tests": { "type": "boolean", "default": false },
+    "flavor": { "type": "enum", "options": ["plain", "bold"], "default": "plain" },
+    "token": { "type": "string", "required": true, "sensitive": true }
+  },
+  "interpolate": ["src/settings.ts", "credentials.local"],
+  "conditions": [{
+    "when": { "parameter": "tests", "equals": true },
+    "files": ["test"],
+    "package": {
+      "scripts": { "test": "vitest run" },
+      "devDependencies": { "vitest": "catalog:" }
+    }
+  }]
+}
+```
+
+Paths are exact template-relative paths; directory conditions include descendants. Globs, filename interpolation and path traversal are rejected. Only declared UTF-8 text expands <code v-pre>{{repoctl:label}}</code> (raw text) or <code v-pre>{{repoctl-json:label}}</code> (a JSON literal); binary bytes remain unchanged. Engineering references are rewritten before inserting input values. Choose placeholders appropriate for the destination syntax: raw values are not automatically escaped as code or HTML. The contract is omitted from generated projects.
+
+Conditional package entries must have one owner and be absent from the base manifest. Supported sections are scripts, dependencies, devDependencies, peerDependencies and optionalDependencies. Catalog references require a matching workspace catalog. Sensitive parameters cannot drive conditions or enter package entries.
+
+```sh
+repo new api --template team --data ./answers.json --json
+repo new api --template team --data ./answers.json
+repo package create api --template team --data ./answers.json
+```
+
+The data file is a UTF-8 JSON object up to 1 MiB. Unknown keys, invalid types/enums and missing required inputs fail before writes without echoing input values. Booleans are not coerced from strings. Interactive terminals prompt for omitted values and mask sensitive strings; JSON and noninteractive callers never prompt. Both input paths use the same validation. Templates without a contract keep their existing output and reject extra parameters.
+
+The optional preview `parameterization` field reports redacted values and selected files/package entries. Sensitive values remain in memory for rendering; reports, retained parameters and baselines never contain them. Files containing sensitive values become persistent unmanaged exclusions and cannot be restored from baselines. Upgrades retain those local files and reuse nonsensitive inputs. New secret interpolation paths require explicit exclusion before other files can upgrade.
+
+Historical linking through the API accepts parameter values only with `repo-new-parameters-v1` and an available exact source contract. It validates and retains nonsensitive defaults, rejects supplied sensitive values before producing a plan, and cannot create an unverified parameterized registration. Secret output files cannot be reconstructed by supplying their values to the link API.
+
+Use `resolveCreateNewProjectPlan({ parameters, parameterPrompt? })` and `applyCreateNewProjectPlan(plan)` for programmatic planning and execution. Apply accepts the original unchanged in-memory object; serialized reports require a fresh plan with the original data. Changed sources/plans and existing targets fail before writes. Parameterized creation stages output and commits files, workspace configuration and provenance together. Failures restore owned files; concurrent edits or replacements are preserved with recovery locations. Repeating creation never overwrites an existing project.
+
+Moving a parameterized instance retains its identity, inputs and sensitive-file exclusions. Creating the same template again at the freed original path allocates a separate identity; both instances can be diagnosed and upgraded independently. A failed registration rolls back only the new creation.

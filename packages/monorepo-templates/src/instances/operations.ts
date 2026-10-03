@@ -1,12 +1,17 @@
-import type { GeneratedTemplateInstanceOptions, TemplateInstanceDraft, TemplateInstanceInfo } from './types'
+import type { GeneratedTemplateInstanceOptions, TemplateInstanceDraft, TemplateInstanceInfo, TemplateSnapshot } from './types'
 import { createHash } from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { exists, instanceRelativePath, safeInstancePath } from './paths'
-import { generationParameters } from './schema'
+import { generationParameters, normalizeTemplateExclusions } from './schema'
 import { captureTemplateSnapshot, snapshotDigest, writeTemplateSnapshot } from './snapshot'
 import { readTemplatePackageVersion } from './source'
 import { loadTemplateBaseline, loadTemplateInstanceRegistry, mutateTemplateRegistry, registerTemplateInstances } from './store'
+
+function excludeSnapshotPaths(snapshot: TemplateSnapshot, excludedPaths: string[]) {
+  const excluded = (file: string) => excludedPaths.some(item => file === item || file.startsWith(`${item}/`))
+  return { ...snapshot, files: snapshot.files.filter(file => !excluded(file.path)), directories: snapshot.directories.filter(directory => !excluded(directory)) }
+}
 
 export function templateInstanceId(target: string, template: string) {
   return createHash('sha256').update(JSON.stringify([target, template])).digest('hex').slice(0, 24)
@@ -16,8 +21,9 @@ export function templateInstanceId(target: string, template: string) {
 export async function createTemplateInstanceTarget(workspaceDir: string, relative: string) {
   const target = await safeInstancePath(workspaceDir, relative)
   const registry = await loadTemplateInstanceRegistry(workspaceDir)
-  if (registry.instances.some(instance => instance.target === relative || instance.target.startsWith(`${relative}/`) || relative.startsWith(`${instance.target}/`))) {
-    throw new Error(`Template target is already owned by a registered instance: ${relative}. Use templates instances and explicitly relocate a moved instance before creating another project.`)
+  const owner = registry.instances.find(instance => instance.target === relative || instance.target.startsWith(`${relative}/`) || relative.startsWith(`${instance.target}/`))
+  if (owner) {
+    throw new Error(`Template target is already owned by retained instance ${owner.id} at ${owner.target}: ${relative}. Inspect it with repo templates instances ${owner.id} --json. Removing a directory retains its provenance and baselines. Restore the original project from version control or a backup, explicitly relocate a verified moved instance, or choose a different unowned path for a new project.`)
   }
   await fs.mkdir(path.dirname(target), { recursive: true })
   // An exclusive leaf prevents a concurrent creator from overwriting an existing project.
@@ -29,7 +35,8 @@ export async function prepareGeneratedTemplateInstance(options: GeneratedTemplat
   const requested = instanceRelativePath(options.workspaceDir, options.targetDir)
   const safeTarget = await safeInstancePath(options.workspaceDir, requested)
   const target = instanceRelativePath(await fs.realpath(options.workspaceDir), await fs.realpath(safeTarget))
-  const rendered = await captureTemplateSnapshot(safeTarget)
+  const excludedPaths = normalizeTemplateExclusions(options.excludedPaths ?? [])
+  const rendered = excludeSnapshotPaths(await captureTemplateSnapshot(safeTarget), excludedPaths)
   const originalDigest = snapshotDigest(options.preparedSource.snapshot)
   const renderedDigest = snapshotDigest(rendered)
   return {
@@ -42,6 +49,7 @@ export async function prepareGeneratedTemplateInstance(options: GeneratedTemplat
       generator: { profile: options.profile, version: options.generatorVersion ?? await readTemplatePackageVersion() },
       parameters: generationParameters(options.parameters),
       baseline: { status: 'available', original: originalDigest, rendered: renderedDigest },
+      ...(excludedPaths.length ? { excludedPaths } : {}),
     },
     snapshots: { [originalDigest]: options.preparedSource.snapshot, [renderedDigest]: rendered },
   }
@@ -49,7 +57,7 @@ export async function prepareGeneratedTemplateInstance(options: GeneratedTemplat
 
 export async function recordGeneratedTemplateInstance(options: GeneratedTemplateInstanceOptions) {
   const draft = await prepareGeneratedTemplateInstance(options)
-  return (await registerTemplateInstances(options.workspaceDir, [draft]))[0]!
+  return (await registerTemplateInstances(options.workspaceDir, [draft], undefined, { allocateIdOnConflict: true }))[0]!
 }
 
 export async function listTemplateInstances(workspaceDir: string): Promise<TemplateInstanceInfo[]> {
@@ -107,9 +115,9 @@ export async function relocateTemplateInstance(workspaceDir: string, id: string,
     if (instance.baseline.status !== 'available') {
       throw new Error('Cannot verify relocation without an available baseline.')
     }
-    await loadTemplateBaseline(workspaceDir, instance.baseline.rendered)
-    const destination = await captureTemplateSnapshot(await safeInstancePath(workspaceDir, target))
-    if (snapshotDigest(destination) !== instance.baseline.rendered) {
+    const baseline = excludeSnapshotPaths(await loadTemplateBaseline(workspaceDir, instance.baseline.rendered), instance.excludedPaths ?? [])
+    const destination = excludeSnapshotPaths(await captureTemplateSnapshot(await safeInstancePath(workspaceDir, target)), instance.excludedPaths ?? [])
+    if (snapshotDigest(destination) !== snapshotDigest(baseline)) {
       throw new Error('Relocation cannot verify this destination as the same instance: its files differ from the retained baseline.')
     }
     if (registry.instances.some(item => item.id !== instance.id && (item.target === target || item.target.startsWith(`${target}/`) || target.startsWith(`${item.target}/`)))) {
