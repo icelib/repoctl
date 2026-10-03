@@ -9,6 +9,7 @@ import { localize } from '../../i18n'
 import fs from '../../utils/fs'
 import { registerCheckCommand } from './check'
 import { createDoctorReportOutput, createInteractiveDoctorReportOutput, hasDoctorBlockingIssues } from './doctor/output'
+import { registerInstallSecurityCommand } from './doctor/security'
 import { registerUpgradeCommand } from './upgrade'
 
 interface InitCliOptions {
@@ -133,5 +134,6 @@ export function registerTopLevelCommands(program: Command, cwd: string) {
       logger.success(localize('Doctor finished.', 'Doctor 诊断完成。'))
     })
 
+  registerInstallSecurityCommand(program.commands.find(command => command.name() === 'doctor')!, cwd)
   registerUpgradeCommand(program, cwd)
 }
