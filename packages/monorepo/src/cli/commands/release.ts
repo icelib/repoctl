@@ -34,7 +34,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
     .option('--mode <mode>', localize('auto / prepare / publish / publish-unpublished / reconcile', 'auto / prepare / publish / publish-unpublished / reconcile'), 'auto')
     .option('--package <name>', localize('Package used by publish-unpublished mode', 'publish-unpublished 使用的 package'))
     .option('--version <version>', localize('Version used by publish-unpublished mode', 'publish-unpublished 使用的版本'))
-    .option('--source-sha <sha>', localize('Recover a prepared release from its original main commit', '从 main 原始提交恢复整批发布'))
+    .option('--source-sha <sha>', localize('Recover a prepared release from the selected line history', '从所选发布线的历史提交恢复整批发布'))
     .option('--dry-run', localize('Preview reconcile changes without updating GitHub', '只预览 reconcile 变更，不更新 GitHub'))
     .action(async (opts: { mode?: 'auto' | 'prepare' | 'publish' | 'publish-unpublished' | 'reconcile', package?: string, version?: string, sourceSha?: string, dryRun?: boolean }) => {
       await runReleaseAction(async () => {
@@ -77,7 +77,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
     })
 
   const stableCommand = releaseCommand.command('stable')
-    .description(localize('Run a stable release from main', '在 main 分支执行正式发布'))
+    .description(localize('Run a stable release from the configured release line', '在配置的正式发布线执行发布'))
     .action(async () => {
       await runReleaseAction(async () => {
         const { releaseCi } = await import('@/commands')
@@ -97,7 +97,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
     })
 
   stableCommand.command('publish')
-    .description(localize('Publish versions on main that are not yet on npm', '发布 main 分支上尚未发布的包'))
+    .description(localize('Publish prepared versions from the configured release line', '发布所选发布线已经准备的包版本'))
     .action(async () => {
       await runReleaseAction(async () => {
         const { releaseCi } = await import('@/commands')
@@ -110,7 +110,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
 
   preCommand.command('publish')
     .alias('run')
-    .description(localize('Publish a prerelease from an alpha, beta, rc, or next lane', '在 alpha/beta/rc/next 分支发布 prerelease'))
+    .description(localize('Publish from a configured prerelease branch', '在已配置的预发布分支发布 prerelease'))
     .action(async () => {
       await runReleaseAction(async () => {
         const { releaseCi } = await import('@/commands')
@@ -121,7 +121,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
 
   preCommand.command('enter')
     .description(localize('Enter a pnpm prerelease lane', '进入 pnpm prerelease lane'))
-    .argument('<tag>', localize('alpha / beta / rc / next', 'alpha / beta / rc / next'))
+    .argument('<tag>', localize('Configured pnpm prerelease lane', '已配置的 pnpm 预发布 lane'))
     .action(async (tag: string) => {
       await runReleaseAction(async () => {
         const { enterPrerelease } = await import('@/commands')
@@ -135,8 +135,8 @@ export function registerReleaseCommands(program: Command, cwd: string) {
     .action(async () => {
       await runReleaseAction(async () => {
         const { exitPrerelease } = await import('@/commands')
-        await exitPrerelease({ cwd })
-        logger.success(localize('Exited prerelease mode.', '已退出预发布模式。'))
+        const target = await exitPrerelease({ cwd })
+        logger.success(localize(`Exited prerelease mode. Stable target: ${target.branch}.`, `已退出预发布模式，正式目标分支：${target.branch}。`))
       })
     })
 }
