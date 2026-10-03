@@ -25,10 +25,11 @@ interface Call {
   options?: { cwd?: string, env?: NodeJS.ProcessEnv, timeout?: number, shell?: boolean }
 }
 
-export async function publishHarness(attempts: Attempt[], query: (spec: string, context: { attempts: number, elapsed: number, queries: number }) => string = spec => spec.slice(spec.lastIndexOf('@') + 1)) {
+export async function publishHarness(attempts: Attempt[], query: (spec: string, context: { attempts: number, elapsed: number, queries: number }) => string = spec => spec.slice(spec.lastIndexOf('@') + 1), packages = [a, b]) {
   const cwd = await createTempWorkspace('main')
   await mkdir(path.join(cwd, 'packages', 'zz-b'))
-  await writeFile(path.join(cwd, 'packages', 'zz-b', 'package.json'), JSON.stringify(b))
+  await writeFile(path.join(cwd, 'packages', 'zz-b', 'package.json'), JSON.stringify(packages[1]))
+  await writeFile(path.join(cwd, 'packages', 'repoctl', 'package.json'), JSON.stringify(packages[0]))
   const calls: Call[] = []
   let attemptCount = 0
   let elapsed = 0
@@ -50,10 +51,10 @@ export async function publishHarness(attempts: Attempt[], query: (spec: string, 
       return { status: version ? 0 : 1, stdout: version, stderr: version ? '' : 'E404 Not Found' }
     }
     if (command === 'pnpm' && args[0] === '--filter') {
-      return { status: 0, stdout: a.version }
+      return { status: 0, stdout: packages[0]!.version }
     }
     if (command === 'pnpm' && args[0] === 'version') {
-      return { status: 0, stdout: JSON.stringify([a, b].map(pkg => ({ name: pkg.name, currentVersion: pkg.version, newVersion: pkg.version }))) }
+      return { status: 0, stdout: JSON.stringify(packages.map(pkg => ({ name: pkg.name, currentVersion: pkg.version, newVersion: pkg.version }))) }
     }
     if (command === 'git' && args[0] === 'diff') {
       return { status: 1, stdout: '' }

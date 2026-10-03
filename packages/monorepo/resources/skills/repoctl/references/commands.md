@@ -63,6 +63,10 @@ Usage:
   duration, exit code and actual command arguments. `--redact` replaces cwd/home prefixes.
   Environment values and child output are not persisted. Abrupt termination cannot guarantee a report.
 
+## check cache
+
+`repo check cache <current-summary.json> [previous-summary.json] --json` analyzes existing Turbo run summaries without running tasks or mutating caches. Use `--markdown` and redirect stdout for a CI artifact; `--slowest` accepts 1–100. Schema 1 compares stable task IDs and digested input/global/dependency/environment/configuration evidence. Missing evidence or unsupported schemas remain unknown; cache misses are not assigned a speculative cause. Actual durations and a verifiable dependency critical path are reported separately from observed wall span. Environment values and commands never appear in output. Parent execution and file-output flags are rejected; regular check JSON remains preview-only.
+
 ## doctor
 
 Purpose: diagnose whether the current workspace is ready to use.
@@ -121,6 +125,20 @@ baseline remains a `baseline-missing` conflict, including a legacy release
 workflow. Review an explicit `--overwrite --json` plan before applying it;
 `--yes` alone does not resolve conflicts. Unmarked custom release workflows
 remain protected unless `--overwrite-release` is supplied.
+
+## release plan and branch mapping
+
+Use `repo release plan --branch 1.x --json` to inspect native versions before consuming intents.
+`commands.release.branches` maps a primary `stable` branch (default `main`), bounded non-overlapping
+`maintenance: [{ branch, range, tag }]`, and optional `prerelease: [{ branch, lane, tag, target }]`.
+Stable and maintenance use pnpm's `main` lane; `branchRule` reports the Git branch, native lane,
+allowed range, maintenance exclusions, npm dist-tag and target. Private versions are not publication
+candidates. Maintenance ranges apply to every public package; latest excludes those ranges.
+Names and tags must be unique; use `legacy-1`, not a SemVer-like npm tag. `snapshot-` is reserved.
+Preview/apply `repo upgrade` after configuration changes to synchronize managed workflow branches.
+Preparation, PR base, publish tag and original-source recovery all use the selected rule. Recovery
+SHA must belong to `origin/<selected-branch>`. `pre exit` returns the target lane and reports the
+stable/maintenance branch without switching Git branches.
 
 ## release ci
 
@@ -243,6 +261,12 @@ An already-correct manifest is not rewritten. All targets are validated before
 execution: workspace root/outside paths, symbolic-link targets or parent paths,
 linked root manifests, and unselected nested workspaces are rejected. Dependency
 references from consuming packages are not rewritten by this command.
+
+## env check
+
+Use `repo env check [tasks...]` to compare static source/example variable names with Turbo hash, passthrough and inferred declarations. Default task: `build`; private packages are included. `--json` and `--markdown` show source locations without values or snippets; `--strict` fails warnings and `--no-framework-inference` disables dependency-based prefix assumptions. The command is always read-only and does not run tasks or load actual dotenv values.
+
+Root/package JSONC configuration, array replacement, `$TURBO_EXTENDS$`, wildcard exclusions and environment-file input coverage are resolved explicitly. Configure `commands.env` task/include/exclude options and reasoned `suppressions` with rule/package/task/variable/path selectors. Dynamic reads and unsupported source syntax remain visible; unused exceptions warn. Static task reachability, aliases, shadowed globals, template expressions, generated code and cross-package source imports are not resolved. Never suggest placing every discovered variable in `globalEnv`; review task-local hash declarations and intentional passthrough separately.
 
 ## env info (alias: e i)
 
@@ -376,3 +400,9 @@ Run `pnpm build:storybook` for the static site, then `pnpm --filter @repoctl-sto
 - `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` exports an opt-in two-job recipe without overwriting files. Use only the trusted default branch; keep project execution in the read-only job and acquire the GitHub App write token only after immutable artifact, SHA, path, mode and hash verification. App permissions must include contents, pull requests and workflows write.
 
 Preset authorization is embedded as fixed package/source/target triples at workflow export from validated installed manifests. The publisher independently verifies committed exact dependencies and existing baseline identity/content hashes before acquiring credentials; report-supplied paths never grant ownership. Refresh a reviewed workflow after explicit new asset adoption. Inherited-only preset changes and provider transfers remain manual. Report schema 1 adds optional `presets`; original root `versions` and `plan` stay compatible.
+
+## Build contexts and production directories
+
+Preview `repo workspace prepare <exact-name-or-./directory> --mode prune|deploy --out ../empty-output --json`; save the plan outside the source workspace. Apply only after review with `repo workspace prepare --apply ../plan.json`. Prune uses local Turbo 2 and optional `--docker`; deploy uses exact pinned pnpm 10/11/12 with production dependencies, frozen lockfile, disabled lifecycle/pnpmfile hooks, optional `--offline`/explicit `--legacy`, and an existing built `--entry` or manifest main/single bin. Native version-specific injection and peer behavior remains authoritative. No application, image publishing or cloud deployment is executed.
+
+Native commands receive an isolated copy without node_modules, Git/operation/cache directories, real env files or named authentication files. Public .env.example/.env.sample remain. Source symlinks/special files, source-directed native write settings and inventories above 100,000 entries/1 GiB are unsupported. Output must be outside the workspace; links must remain inside the artifact. Publish files exclusively and commit the receipt last. Replays verify source/tool/config fingerprints and complete output; failures preserve concurrent edits and report retained paths. Review cleanupPending and recover partial output before removing a stale .repoctl/workspace-artifacts.lock. Do not hand-edit lockfiles or overwrite nonempty output. On Windows, transfer junction contents with an appropriate copy/archive mode.

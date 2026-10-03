@@ -10,6 +10,7 @@ import type { CliOpts } from './cli'
 import type { ToolingConfig } from './config/tooling'
 import type { DependenciesCommandConfig } from './dependencies'
 import type { DoctorCommandConfig } from './doctor'
+import type { EnvCacheConfig } from './env-cache'
 import type { OrganizationPresetReference } from './presets'
 import type { ReleaseCommandConfig } from './release'
 
@@ -199,6 +200,7 @@ export interface MonorepoConfig {
     clean?: CleanCommandConfig
     deps?: DependenciesCommandConfig
     doctor?: DoctorCommandConfig
+    env?: EnvCacheConfig
     upgrade?: UpgradeCommandConfig
     init?: InitCommandConfig
     mirror?: MirrorCommandConfig

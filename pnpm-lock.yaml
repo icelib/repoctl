@@ -452,6 +452,9 @@ importers:
       '@arethetypeswrong/core':
         specifier: 0.18.5
         version: 0.18.5
+      '@babel/parser':
+        specifier: ^7.29.8
+        version: 7.29.8
       '@commitlint/cli':
         specifier: 'catalog:'
         version: 21.2.3(@types/node@26.6.3)(typescript@6.0.3)

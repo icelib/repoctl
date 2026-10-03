@@ -124,6 +124,8 @@ export {
 
 export { resolveAffectedCheckPlan } from './check/affected'
 export type { AffectedCheckCommand, AffectedCheckOptions, AffectedCheckPlan, AffectedCheckSettings, AffectedFallback, AffectedFile, AffectedGitRange, AffectedPackage } from './check/affected'
+export { analyzeTurboRuns } from './check/cache'
+export type { TurboAnalysisLimitation, TurboAnalysisOptions, TurboCriticalPath, TurboHashEvidence, TurboRunAnalysis, TurboTaskAnalysis } from './check/cache'
 export { runCheckWithReport } from './check/execute'
 export { getKnipConfigurationSuggestions, planKnipCheck, runKnipCheck, saveKnipBaseline } from './check/knip'
 export { resolveAffectedCheckMatrix } from './check/matrix'
@@ -138,6 +140,10 @@ export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport }
 export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
 
 export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
+export { checkEnvironmentCache } from './env-cache'
+
+export type * from './env-cache'
+export { formatEnvironmentCache } from './env-cache/format'
 export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
 
 export type { MaintenanceFile, MaintenancePresetChange, MaintenancePresetUpgrade, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
@@ -145,7 +151,9 @@ export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+export { resolveReleaseBranches } from './release/lines'
 
+export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
 export { createReleasePlan } from './release/plan'
 
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
@@ -158,3 +166,5 @@ export { applyToolingCapability, listToolingCapabilities, planToolingCapability 
 
 export type { PlaywrightCapabilityOptions, PlaywrightInteraction, StorybookArgs, StorybookCapabilityOptions, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
+
+export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
