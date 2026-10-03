@@ -39,13 +39,13 @@ export async function saveKnipBaseline(cwd: string, report: KnipCheckReport, fil
   }
   const temporary = `${target}.repoctl-knip-${randomUUID()}.tmp`
   const handle = await open(temporary, 'wx', 0o600)
-  let owned: { ino: number, dev: number } | undefined
+  let owned: { ino: bigint, dev: bigint } | undefined
   let wrote = false
   const cleanup = async () => {
     if (parent !== root) {
       await assertSafePath(root, parent, 'directory')
     }
-    const metadata = await lstat(temporary)
+    const metadata = await lstat(temporary, { bigint: true })
     if (!owned || !metadata.isFile() || metadata.ino !== owned.ino || metadata.dev !== owned.dev
       || !wrote || await readFile(temporary, 'utf8') !== content) {
       throw new Error('The baseline temporary file changed; preserve it for review.')
@@ -53,7 +53,7 @@ export async function saveKnipBaseline(cwd: string, report: KnipCheckReport, fil
     await unlink(temporary)
   }
   try {
-    owned = await handle.stat()
+    owned = await handle.stat({ bigint: true })
     await handle.writeFile(content, 'utf8')
     await handle.close()
     wrote = true
