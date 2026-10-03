@@ -73,4 +73,17 @@ export default { tooling: { eslint: { extra: plugin }, lintStaged: { config: { '
     expect(result.stderr).toContain('commands.clean.autoConfrm')
     expect(await files(cwd)).toEqual(before)
   })
+
+  it.each([
+    ['release', 'plan', '--json'],
+    ['release', 'stable'],
+    ['release', 'pre', 'publish'],
+  ])('still rejects invalid configuration before ordinary release actions: %j', async (...args) => {
+    const cwd = await fixture('export default { commands: { release: { branches: { stable: false } } } }')
+    const before = await files(cwd)
+    const result = invoke(cwd, args)
+    expect(result.status).toBe(1)
+    expect(result.stderr).toContain('commands.release.branches.stable')
+    expect(await files(cwd)).toEqual(before)
+  })
 })
