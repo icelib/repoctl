@@ -48,3 +48,9 @@ Notes:
 - Override mappings with `commands.create.templateMap` and `commands.create.templatesDir`.
 
 For `next`, run `typecheck` to generate Next route types before `tsc`. Its local Turbo config caches production output and excludes `.next/cache`. Compiled workspace libraries use public package exports and `^build`; source-exporting libraries must be named in `transpilePackages`. Never copy `.next`, `next-env.d.ts` or an independent pnpm lockfile into the template.
+
+## Custom catalog
+
+Creation, list/detail, interactive choices and `repo templates --check` share `resolveTemplateCatalog({ cwd })`. Object entries in `commands.create.templateMap` accept `source`, `target`, optional `label`, `description`, and `category` (`app`, `docs`, `library`, `service`, `tool`); string entries still map the same source and target. Absolute sources coexist with installed templates. `templatesDir` replaces the root for all relative sources, including built-ins, and is relative to the configuration file, including when invoked in a nested workspace package. A non-empty `choices` array preserves explicit ordering/inclusion and supplies the same labels/descriptions shown by discovery.
+
+Detail/JSON include `origin`, `overridesBuiltin`, `sourceDir`, `configFile` and `configPath`; create JSON includes `templateInfo`. Health checks report invalid declarations, duplicate choices, sources and targets, missing directories/manifests and metadata. Checks are read-only and do not execute template code. Prefer `--check --json` for diagnostic locations; listing JSON keeps the array shape.

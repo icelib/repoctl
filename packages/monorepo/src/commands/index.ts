@@ -153,3 +153,5 @@ export { createReleasePlan } from './release/plan'
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
 export * from './template-instances'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
+
+export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'

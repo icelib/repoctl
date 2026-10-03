@@ -1,11 +1,13 @@
 import type { CreateNewProjectOptions, CreateNewProjectPlan } from '../../../commands'
+import type { getTemplateMap } from '../../../core/template-catalog/definitions'
 import process from 'node:process'
 import { input, select } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
-import { createNewProject, getCreateChoices, getTemplateMap, resolveCreateNewProjectPlan } from '../../../commands'
+import { createNewProject, resolveCreateNewProjectPlan } from '../../../commands'
 import { defaultTemplate } from '../../../commands/create'
-import { resolveCommandConfig } from '../../../core/config'
 import { logger } from '../../../core/logger'
+import { createTemplateCatalog } from '../../../core/template-catalog'
+import { loadTemplateCatalogContext } from '../../../core/template-catalog/config'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
 import { createIntentChoices } from './intents'
@@ -67,7 +69,7 @@ function printCreatePlan(plan: CreateNewProjectPlan) {
 }
 
 function printCreatePlanJson(plan: CreateNewProjectPlan) {
-  logger.log(JSON.stringify(plan, null, 2))
+  process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`)
 }
 
 function formatCreatePlan(plan: CreateNewProjectPlan) {
@@ -108,7 +110,7 @@ async function emitCreatePlan(plan: CreateNewProjectPlan, options: RunCreateFlow
 function handleCreateFlowError(error: unknown, json = false): RunCreateFlowResult {
   const message = error instanceof Error ? error.message : String(error)
   if (json) {
-    logger.log(JSON.stringify({ error: message }, null, 2))
+    process.stdout.write(`${JSON.stringify({ error: message }, null, 2)}\n`)
   }
   else {
     logger.error(message)
@@ -119,9 +121,22 @@ function handleCreateFlowError(error: unknown, json = false): RunCreateFlowResul
 
 export async function runCreateFlow(cwd: string, inputName: string | undefined, options: RunCreateFlowOptions = {}) {
   try {
-    const createConfig = await resolveCommandConfig('create', cwd)
-    const explicitTemplate = options.template ?? createConfig?.type ?? createConfig?.defaultTemplate
-    const templates = getTemplateMap(createConfig?.templateMap)
+    const context = await loadTemplateCatalogContext({ cwd })
+    const createConfig = context.createConfig
+    const catalog = createTemplateCatalog(context)
+    const templates = Object.fromEntries(catalog.entries.map(entry => [entry.key, entry]))
+    let explicitTemplate = options.template ?? createConfig?.type ?? createConfig?.defaultTemplate
+    if (!explicitTemplate && canPrompt() && (catalog.entries.some(entry => entry.origin === 'custom') || createConfig.choices?.length)) {
+      const enabled = catalog.choices.filter(choice => !choice.disabled)
+      if (!enabled.length) {
+        throw new Error(localize('No enabled templates are available; check commands.create.choices.', '没有可选模板，请检查 commands.create.choices。'))
+      }
+      explicitTemplate = await select({
+        message: localize('Select a template type', '请选择模板类型'),
+        choices: catalog.choices,
+        default: enabled.find(choice => choice.value === defaultTemplate)?.value ?? enabled[0]!.value,
+      })
+    }
 
     let packageName = inputName
 
@@ -162,26 +177,13 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
       }
 
       let type: CreateNewProjectOptions['type'] = intentChoice.defaultTemplate
-      if (intent === 'library') {
+      const categories = { 'library': 'library', 'web-app': 'app', 'api-service': 'service', 'docs-site': 'docs', 'cli-tool': 'tool' }
+      const choices = catalog.choices.filter(choice => catalog.entries.find(entry => entry.key === choice.value)?.category === categories[intent])
+      if ((intent === 'library' || intent === 'web-app') && choices.length > 1) {
         type = await select({
-          message: localize('Select a library template', '请选择库模板'),
-          choices: [
-            { name: 'TypeScript Library', value: 'tsdown', description: localize('General-purpose TypeScript library', '通用 TypeScript 库') },
-            { name: 'Vue Component Library', value: 'vue-lib', description: localize('Vue component library', 'Vue 组件库') },
-          ],
-          default: 'tsdown',
-        })
-      }
-
-      if (intent === 'web-app') {
-        type = await select({
-          message: localize('Select an application template', '请选择应用模板'),
-          choices: [
-            { name: 'Vue + Hono', value: 'vue-hono', description: localize('Full-stack Vue application', 'Vue 前后端一体应用') },
-            { name: 'React + Vite', value: 'react-vite', description: localize('React and TypeScript SPA', 'React 和 TypeScript 单页应用') },
-            { name: 'Next.js App Router', value: 'next', description: localize('React server rendering and route handlers', 'React 服务端渲染与路由接口') },
-          ],
-          default: 'vue-hono',
+          message: localize('Select a template type', '请选择模板类型'),
+          choices,
+          default: intentChoice.defaultTemplate,
         })
       }
 
@@ -213,7 +215,7 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
 
     const type: CreateNewProjectOptions['type'] = explicitTemplate ?? await select({
       message: localize('Select a template type', '请选择模板类型'),
-      choices: getCreateChoices(createConfig?.choices),
+      choices: catalog.choices,
       default: defaultTemplate,
     })
 

@@ -30,6 +30,45 @@ repo templates --json
 repo templates --markdown --out docs/templates.md
 ```
 
+## 发现自定义模板
+
+在 `commands.create.templateMap` 声明本地模板后，创建、交互选择、列表、详情和健康检查会使用同一份目录结果，包含 key、名称、说明、分类、源目录和默认目标。
+
+```ts
+import { fileURLToPath } from 'node:url'
+import { defineMonorepoConfig } from 'repoctl'
+
+export default defineMonorepoConfig({
+  commands: {
+    create: {
+      templateMap: {
+        'internal-service': {
+          source: fileURLToPath(new URL('./templates/internal-service', import.meta.url)),
+          target: 'apps/internal-service',
+          label: 'Internal service',
+          category: 'service',
+          description: 'Company API service',
+        },
+      },
+    },
+  },
+})
+```
+
+```bash
+repo templates internal-service --json
+repo templates --check --json
+repo new payments --template internal-service --dry-run
+```
+
+绝对 `source` 路径可让内置模板和本地模板同时可用。相对 `source` 按 `templatesDir` 解析；默认根目录是已安装模板包。设置 `templatesDir: './templates'` 会替换所有模板（包括内置模板）的根目录，相对路径按配置文件所在目录解析。从 pnpm 子包目录运行时会查找工作区根配置，不会把模板路径移到子包内；生成目标仍按调用目录解析。
+
+字符串映射保持兼容：`templateMap: { custom: 'custom' }` 等价于 `{ source: 'custom', target: 'custom' }`。对象定义可补充 `label`、`description`、`category`。非空 `choices` 数组继续控制交互顺序和可选范围，其名称与说明也会显示在列表和详情中；未配置时列出全部模板。内置创建意图的默认模板不变；登记自定义模板后交互会直接展示模板目录。
+
+同名覆盖通过 `origin: 'custom'`、`overridesBuiltin: true` 及 `configFile` / `configPath` 显示。无效定义和重复交互 key 会定位到配置字段；`repo templates --check` 还会检查重复 source/target、失效目录和缺失 `package.json`。列表 JSON 仍为数组、详情 JSON 仍为对象，只增加目录字段；创建 JSON 的 `templateInfo` 携带所选模板的相同信息。
+
+列表与健康检查只读取声明和文件，不生成项目，也不执行模板代码；显式 `--out` 才写出报告。程序调用可使用 `resolveTemplateCatalog({ cwd })` 和 `checkTemplates({ cwd })`。
+
 ## 创建模板
 
 ```bash
