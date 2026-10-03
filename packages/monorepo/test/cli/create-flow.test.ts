@@ -1,10 +1,12 @@
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import process from 'node:process'
 import path from 'pathe'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createNewProjectMock, errorMock, infoMock, inputMock, logMock, resolveCommandConfigMock, resolveCreateNewProjectPlanMock, selectMock, setTty, successMock } from './create-flow/fixtures'
 
 describe('runCreateFlow', () => {
+  afterEach(() => vi.restoreAllMocks())
   it('uses intent flow for library creation by default', async () => {
     setTty(true)
     selectMock
@@ -19,6 +21,19 @@ describe('runCreateFlow', () => {
       cwd: '/repo',
       type: 'tsdown',
     })
+  })
+
+  it('offers custom templates from the shared catalog and preserves choice metadata', async () => {
+    setTty(true)
+    resolveCommandConfigMock.mockResolvedValueOnce({
+      templateMap: { internal: { source: 'service', target: 'apps/internal', category: 'service', description: 'Internal API' } },
+      choices: [{ value: 'internal', name: 'Company service', description: 'Company API' }],
+    })
+    selectMock.mockResolvedValueOnce('internal')
+    const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
+    await runCreateFlow('/repo', 'service')
+    expect(selectMock).toHaveBeenCalledWith(expect.objectContaining({ choices: [{ value: 'internal', name: 'Company service', description: 'Company API' }] }))
+    expect(createNewProjectMock).toHaveBeenCalledWith({ cwd: '/repo', name: 'apps/service', type: 'internal' })
   })
 
   it('maps web-app intent to apps directory', async () => {
@@ -118,6 +133,7 @@ describe('runCreateFlow', () => {
   })
 
   it('prints a create preview as json without writing files', async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
     const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
     const result = await runCreateFlow('/repo', 'demo', { template: 'tsdown', dryRun: true, json: true })
 
@@ -128,7 +144,7 @@ describe('runCreateFlow', () => {
       cwd: '/repo',
       type: 'tsdown',
     })
-    expect(logMock).toHaveBeenCalledWith(expect.stringContaining('"template": "tsdown"'))
+    expect(JSON.parse(String(stdout.mock.calls[0]?.[0]))).toMatchObject({ template: 'tsdown' })
     expect(infoMock).not.toHaveBeenCalledWith('Dry run only; no files were written.')
   })
 
@@ -188,6 +204,7 @@ describe('runCreateFlow', () => {
   })
 
   it('prints create errors as json when json mode is enabled', async () => {
+    const stdout = vi.spyOn(process.stdout, 'write').mockReturnValue(true)
     createNewProjectMock.mockRejectedValueOnce(new Error('未知模板：tsdwon。你是不是想用 tsdown？'))
 
     const previousExitCode = process.exitCode
@@ -197,7 +214,7 @@ describe('runCreateFlow', () => {
     const result = await runCreateFlow('/repo', 'demo', { template: 'tsdwon', json: true })
 
     expect(result).toEqual({ dryRun: false, failed: true })
-    expect(logMock).toHaveBeenCalledWith(expect.stringContaining('"error": "未知模板：tsdwon。你是不是想用 tsdown？"'))
+    expect(JSON.parse(String(stdout.mock.calls[0]?.[0]))).toEqual({ error: '未知模板：tsdwon。你是不是想用 tsdown？' })
     expect(errorMock).not.toHaveBeenCalled()
     expect(process.exitCode).toBe(1)
 
