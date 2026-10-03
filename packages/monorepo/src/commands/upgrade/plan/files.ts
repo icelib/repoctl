@@ -1,3 +1,4 @@
+import type { Identity } from '../apply/transaction/state'
 import { createHash } from 'node:crypto'
 import { lstat, readFile, realpath } from 'node:fs/promises'
 import path from 'pathe'
@@ -7,8 +8,10 @@ export function hash(content: Uint8Array) {
 }
 
 export async function canonicalDirectory(directory: string): Promise<string> {
+  const requested = path.normalize(directory)
   try {
-    const resolved = path.resolve(await realpath(directory))
+    // realpath is already absolute; resolving a bare Windows drive root corrupts it.
+    const resolved = path.normalize(await realpath(requested))
     if (!(await lstat(resolved)).isDirectory()) {
       throw new Error(`Not a directory: ${directory}`)
     }
@@ -18,7 +21,12 @@ export async function canonicalDirectory(directory: string): Promise<string> {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
       throw error
     }
-    return path.join(await canonicalDirectory(path.dirname(directory)), path.basename(directory))
+    const parent = path.dirname(requested)
+    const networkRoot = /^\/\/[^/]+(?:\/[^/]+)?\/?$/.test(requested)
+    if (parent === requested || path.parse(requested).root === requested || networkRoot) {
+      throw error
+    }
+    return path.join(await canonicalDirectory(parent), path.basename(requested))
   }
 }
 
@@ -30,7 +38,7 @@ export function relativeFile(relative: string) {
 }
 
 /** Reject linked components and non-files; missing parents are valid planned additions. */
-export async function checkedFile(root: string, relative: string, owned?: { ino: number, dev: number }) {
+export async function checkedFile(root: string, relative: string, owned?: Identity) {
   relativeFile(relative)
   if (await canonicalDirectory(root) !== root) {
     throw new Error(`Upgrade root changed: ${root}`)
@@ -40,9 +48,9 @@ export async function checkedFile(root: string, relative: string, owned?: { ino:
   for (const [index, part] of parts.entries()) {
     current = path.join(current, part)
     try {
-      const info = await lstat(current)
+      const info = await lstat(current, { bigint: true })
       const ownLink = owned && info.ino === owned.ino && info.dev === owned.dev
-      if (info.isSymbolicLink() || (index < parts.length - 1 ? !info.isDirectory() : !info.isFile() || (info.nlink !== 1 && !ownLink))) {
+      if (info.isSymbolicLink() || (index < parts.length - 1 ? !info.isDirectory() : !info.isFile() || (info.nlink !== 1n && !ownLink))) {
         throw new Error(`Linked or non-file upgrade target: ${relative}`)
       }
     }
@@ -55,7 +63,7 @@ export async function checkedFile(root: string, relative: string, owned?: { ino:
   return path.join(root, relative)
 }
 
-export async function readOptional(root: string, relative: string, owned?: { ino: number, dev: number }) {
+export async function readOptional(root: string, relative: string, owned?: Identity) {
   const filename = await checkedFile(root, relative, owned)
   try {
     return await readFile(filename)
