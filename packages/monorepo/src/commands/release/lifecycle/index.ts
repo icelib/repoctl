@@ -3,9 +3,11 @@ import type { ReleaseLifecycleState, ReleaseTarget } from './types'
 import { randomUUID } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 import path from 'pathe'
+import semver from 'semver'
 import { logger } from '../../../core/logger'
 import { ReleaseCommandError } from '../errors'
 import { runReleaseHooks } from '../hooks'
+import { assertReleaseLineVersions, resolveReleaseBranch } from '../lines'
 import { publishMetadata, resolveGitHub } from '../metadata'
 import { getPublishCandidates, publishWithRetry } from '../publish'
 import { confirmVisibility } from '../publish/registry'
@@ -27,6 +29,13 @@ export async function publishLifecycle(options: ReleaseCiOptions, selected?: Pub
     throw new ReleaseCommandError('GITHUB_REPOSITORY is required for durable release recovery')
   }
   const candidates = selected ?? await getPublishCandidates(options.cwd)
+  const rule = options.config?.branches ? await resolveReleaseBranch(options) : undefined
+  if (rule) {
+    assertReleaseLineVersions(rule, candidates)
+    if (rule.distTag !== distTag) {
+      throw new ReleaseCommandError('Publish tag does not match the configured release line')
+    }
+  }
   const key = releaseStateKey(repository, distTag, candidates)
   const snapshot = await github.readReleaseState(key)
   let revision = snapshot?.revision
@@ -56,7 +65,7 @@ export async function publishLifecycle(options: ReleaseCiOptions, selected?: Pub
       const published = registry.get(packageKey(pkg))
       const release = releases.get(packageKey(pkg))
       const tagTarget = tags.get(packageKey(pkg))
-      if (published && release && !release.draft && Boolean(release.prerelease) === (distTag !== 'latest')
+      if (published && release && !release.draft && Boolean(release.prerelease) === Boolean(semver.prerelease(pkg.version))
         && (!github.readTagTarget || tagTarget)) {
         if (published.gitHead && tagTarget && published.gitHead !== tagTarget) {
           throw new ReleaseCommandError(`Tag target conflict for ${packageKey(pkg)}`)
@@ -137,6 +146,13 @@ export async function publishLifecycle(options: ReleaseCiOptions, selected?: Pub
   const missing = packages.filter(pkg => !confirmed.acceptedPackages.some(item => packageKey(item) === packageKey(pkg)))
   if (missing.length) {
     runReleaseHooks('beforePublish', options)
+    const actual = await getPublishCandidates(options.cwd)
+    if (missing.some(pkg => !actual.some(item => packageKey(item) === packageKey(pkg)))) {
+      throw new ReleaseCommandError('Publish candidates changed during beforePublish hooks; no upload started')
+    }
+    if (rule) {
+      assertReleaseLineVersions(rule, actual)
+    }
     await clearPublishSummary(options.cwd)
     state.npm = 'running'
     state.complete = false
@@ -175,8 +191,8 @@ export async function publishLifecycle(options: ReleaseCiOptions, selected?: Pub
   for (const pkg of state.packages) {
     await github.ensureTag({ tag: packageKey(pkg), target: pkg.target })
     const release = releases.get(packageKey(pkg))
-    if (!release || release.draft || Boolean(release.prerelease) !== (distTag !== 'latest')) {
-      await publishMetadata([pkg], { ...options, env: { ...env, GITHUB_SHA: pkg.target } }, distTag !== 'latest')
+    if (!release || release.draft || Boolean(release.prerelease) !== Boolean(semver.prerelease(pkg.version))) {
+      await publishMetadata([pkg], { ...options, env: { ...env, GITHUB_SHA: pkg.target } }, Boolean(semver.prerelease(pkg.version)))
     }
     if (!state.metadata.includes(packageKey(pkg))) {
       state.metadata.push(packageKey(pkg))

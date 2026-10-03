@@ -24,6 +24,43 @@ After review, use the separate preparation entry `repo release ci --mode=prepare
 
 JSON and Markdown describe the same native version decisions. Notes use the existing release renderer and exclude already consumed intent entries. Private packages may change version but are marked as non-publish candidates. The public `createReleasePlan({ cwd })` API returns the same report without writing it to disk.
 
+## Stable and maintenance branches
+
+Configure `commands.release.branches` in `repoctl.config.*`:
+
+```ts
+export default {
+  commands: {
+    release: {
+      branches: {
+        stable: 'master',
+        maintenance: [{ branch: '1.x', range: '1.x', tag: 'legacy-1' }],
+        prerelease: [
+          { branch: 'preview/1.x', lane: 'beta', tag: 'legacy-beta', target: '1.x' },
+        ],
+      },
+    },
+  },
+}
+```
+
+Omitting this configuration preserves `main` plus `alpha`, `beta`, `rc`, and `next`. `stable` defaults to `main`; omitting `prerelease` keeps those four lanes targeting the stable branch, while `prerelease: []` disables them. Stable and maintenance branches both use pnpm's native `main` lane. Git branch names and npm tags are separate values.
+
+Maintenance ranges must have finite upper bounds and cannot overlap. The primary stable line owns versions outside all maintenance ranges. These ranges apply to every publishable package in the repository; packages with independent major versions must fit the chosen line together. Private packages remain native versioning participants but are not publish candidates. Branches, npm tags, and prerelease lanes must be unique. Semver-like tags such as `1.x` are invalid npm tags; use `legacy-1`. The `snapshot-` tag prefix is reserved for temporary packages.
+
+```bash
+repo release plan --branch 1.x --markdown
+repo release plan --branch master --json
+```
+
+Plans expose `branchRule` with `branch`, `kind`, `lane`, `range`, `excludedRanges`, `distTag`, and `target`. An explicit `--branch` (or API `branch`) takes precedence; a matching `GITHUB_REF_NAME` is used next; otherwise a read-only plan targets the primary stable branch. Execution uses the actual Git branch or CI ref and rejects unconfigured branches. `resolveReleaseBranches(config)` exposes the same validated mapping to API callers.
+
+Preparation checks native pnpm's dry-run before release hooks or version writes, then checks again after verification hooks. Invalid ranges block without consuming intents. Native applied manifests and final publication candidates are rechecked; a hook that changes versions must leave them within the selected line. Arbitrary hook side effects cannot be rolled back by repoctl. The existing pnpm ledger and release checkpoints govern continuation after an interrupted preparation or publication.
+
+Release PRs target the selected branch. The primary head remains `release/pnpm-version`; maintenance heads use `release/pnpm-version-<encoded-branch>` so multiple lines can coexist. Maintenance publication uses its own dist-tag and stable GitHub Release metadata. `repo release pre enter beta` selects a declared native lane. `repo release pre exit` returns to the target's native `main` lane and prints the stable/maintenance target; it does not switch Git branches.
+
+After changing the mapping, preview `repo upgrade --dry-run --json` and apply the reviewed upgrade to synchronize managed Release workflow push branches. Saved plans detect changed configuration, repeated upgrades are unchanged, and custom workflows remain protected unless explicitly replaced. Workflow dispatch and source recovery must run on the intended configured branch. Keep publish workflows serialized and retain their checkpoints.
+
 ## Common branches
 
 - Missing intent: add a changeset and rerun the plan.
@@ -77,12 +114,12 @@ Release PRs use the applied package list returned by pnpm, not arbitrary Git cha
 If an existing prepared version has not completed publication, new version preparation stops before consuming intents and prints its source commit and recovery command. Finish that release first, then run preparation again:
 
 ```bash
-repo release ci --mode publish --source-sha <full-main-commit-sha> --dry-run
-repo release ci --mode publish --source-sha <full-main-commit-sha>
+repo release ci --mode publish --source-sha <full-release-line-commit-sha> --dry-run
+repo release ci --mode publish --source-sha <full-release-line-commit-sha>
 repo release ci --mode prepare
 ```
 
-The managed Release workflow exposes the same `source-sha` input for `publish` and `publish-unpublished`. Current tooling checks out the original commit into an isolated directory, installs its locked dependencies, builds and verifies that source, and recovers the full set of versions introduced by its manifests or ledger, including dependency propagation. Package/version inputs validate membership; they do not split the original release. The SHA must belong to `origin/main`. Dry-run only inspects the source and remote release state; it does not install, upload, run hooks, or write checkpoints. Later changes stay pending for a new version. The original source must already include all intended version changes; no versions are changed during recovery.
+The managed Release workflow exposes the same `source-sha` input for `publish` and `publish-unpublished`. Current tooling checks out the original commit into an isolated directory, installs its locked dependencies, builds and verifies that source, and recovers the full set of versions introduced by its manifests or ledger, including dependency propagation. Package/version inputs validate membership; they do not split the original release. The SHA must belong to `origin/<selected-branch>`; the dispatch configuration determines the line, including when the historical source had a different configuration. Dry-run only inspects the source and remote release state; it does not install, upload, run hooks, or write checkpoints. Later changes stay pending for a new version. The original source must already include all intended version changes; no versions are changed during recovery.
 
 Recovery preserves GitHub's workflow environment for trusted publishing and provenance: its signed identity refers to the workflow run's commit. The isolated checkout, release checkpoint, Git tags, and Release targets refer to `source-sha`. Do not overwrite `GITHUB_SHA` to recover an older source; npm rejects provenance that disagrees with the signed workflow identity.
 

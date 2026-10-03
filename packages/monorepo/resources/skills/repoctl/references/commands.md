@@ -63,6 +63,10 @@ Usage:
   duration, exit code and actual command arguments. `--redact` replaces cwd/home prefixes.
   Environment values and child output are not persisted. Abrupt termination cannot guarantee a report.
 
+## check cache
+
+`repo check cache <current-summary.json> [previous-summary.json] --json` analyzes existing Turbo run summaries without running tasks or mutating caches. Use `--markdown` and redirect stdout for a CI artifact; `--slowest` accepts 1–100. Schema 1 compares stable task IDs and digested input/global/dependency/environment/configuration evidence. Missing evidence or unsupported schemas remain unknown; cache misses are not assigned a speculative cause. Actual durations and a verifiable dependency critical path are reported separately from observed wall span. Environment values and commands never appear in output. Parent execution and file-output flags are rejected; regular check JSON remains preview-only.
+
 ## doctor
 
 Purpose: diagnose whether the current workspace is ready to use.
@@ -104,6 +108,20 @@ baseline remains a `baseline-missing` conflict, including a legacy release
 workflow. Review an explicit `--overwrite --json` plan before applying it;
 `--yes` alone does not resolve conflicts. Unmarked custom release workflows
 remain protected unless `--overwrite-release` is supplied.
+
+## release plan and branch mapping
+
+Use `repo release plan --branch 1.x --json` to inspect native versions before consuming intents.
+`commands.release.branches` maps a primary `stable` branch (default `main`), bounded non-overlapping
+`maintenance: [{ branch, range, tag }]`, and optional `prerelease: [{ branch, lane, tag, target }]`.
+Stable and maintenance use pnpm's `main` lane; `branchRule` reports the Git branch, native lane,
+allowed range, maintenance exclusions, npm dist-tag and target. Private versions are not publication
+candidates. Maintenance ranges apply to every public package; latest excludes those ranges.
+Names and tags must be unique; use `legacy-1`, not a SemVer-like npm tag. `snapshot-` is reserved.
+Preview/apply `repo upgrade` after configuration changes to synchronize managed workflow branches.
+Preparation, PR base, publish tag and original-source recovery all use the selected rule. Recovery
+SHA must belong to `origin/<selected-branch>`. `pre exit` returns the target lane and reports the
+stable/maintenance branch without switching Git branches.
 
 ## release ci
 
@@ -234,6 +252,12 @@ An already-correct manifest is not rewritten. All targets are validated before
 execution: workspace root/outside paths, symbolic-link targets or parent paths,
 linked root manifests, and unselected nested workspaces are rejected. Dependency
 references from consuming packages are not rewritten by this command.
+
+## env check
+
+Use `repo env check [tasks...]` to compare static source/example variable names with Turbo hash, passthrough and inferred declarations. Default task: `build`; private packages are included. `--json` and `--markdown` show source locations without values or snippets; `--strict` fails warnings and `--no-framework-inference` disables dependency-based prefix assumptions. The command is always read-only and does not run tasks or load actual dotenv values.
+
+Root/package JSONC configuration, array replacement, `$TURBO_EXTENDS$`, wildcard exclusions and environment-file input coverage are resolved explicitly. Configure `commands.env` task/include/exclude options and reasoned `suppressions` with rule/package/task/variable/path selectors. Dynamic reads and unsupported source syntax remain visible; unused exceptions warn. Static task reachability, aliases, shadowed globals, template expressions, generated code and cross-package source imports are not resolved. Never suggest placing every discovered variable in `globalEnv`; review task-local hash declarations and intentional passthrough separately.
 
 ## env info (alias: e i)
 

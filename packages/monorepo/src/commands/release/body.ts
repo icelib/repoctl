@@ -41,14 +41,14 @@ async function readPackageRelease(name: string, version: string, rootDir: string
   }
 
   const section = readVersionSection(changelog, version)
-  if (!section?.content) {
+  if (!section) {
     return undefined
   }
   return {
     name,
     version,
     ...(section.previousVersion ? { previousVersion: section.previousVersion } : {}),
-    content: section.content,
+    content: section.content ?? '',
   }
 }
 
@@ -95,8 +95,8 @@ export async function readPendingIntentCommits(options: ReleaseOptions) {
   return uniqueCommits(commits)
 }
 
-export async function readWorkspaceVersions(cwd: string) {
-  const packages = await getWorkspacePackages(cwd)
+export async function readWorkspaceVersions(cwd: string, options: { includePrivate?: boolean, includeRoot?: boolean } = {}) {
+  const packages = await getWorkspacePackages(cwd, { ignorePrivatePackage: !options.includePrivate, ignoreRootPackage: !options.includeRoot })
   const versions = new Map<string, string>()
   for (const pkg of packages) {
     try {
@@ -129,7 +129,16 @@ function buildReleasePackage(release: PackageRelease) {
 }
 
 function buildReleaseNoteDocumentFromReleases(releases: PackageRelease[], metadata: ReleaseBodyMetadata) {
-  const entries = releases.flatMap(release => buildEntries(release, metadata.commits ?? []))
+  // pnpm emits an empty version heading for packages bumped only by fixed groups.
+  // Keep that native release visible without attributing another package's changes.
+  const entries = releases.flatMap(release => buildEntries(release.content
+    ? release
+    : {
+        ...release,
+        content: metadata.locale === 'zh-CN'
+          ? '### Maintenance\n\n- 仅更新版本；未记录该包的独立变更说明。'
+          : '### Maintenance\n\n- Version-only release; no package-specific changelog entries.',
+      }, release.content ? metadata.commits ?? [] : []))
   const contributors = uniqueContributors([
     ...(metadata.contributors ?? []),
     ...entries.flatMap(entry => entry.authors),
@@ -152,7 +161,7 @@ export async function buildReleaseNoteDocument(
   metadata: ReleaseBodyMetadata = {},
   packageNames?: ReadonlySet<string>,
 ) {
-  const workspacePackages = await getWorkspacePackages(cwd)
+  const workspacePackages = await getWorkspacePackages(cwd, { ignorePrivatePackage: !packageNames, ignoreRootPackage: !packageNames })
   const releases: PackageRelease[] = []
   for (const pkg of workspacePackages) {
     let manifest: PackageJsonVersion
@@ -194,7 +203,7 @@ export function buildGitHubReleaseBodyFromChangelog(
   metadata: ReleaseBodyMetadata = {},
 ) {
   const section = readVersionSection(changelog, packageVersion)
-  if (!section?.content) {
+  if (!section) {
     return renderGitHubRelease({ packages: [], entries: [], contributors: [], compareUrls: [] }, metadata)
   }
   const release: PackageRelease = {
@@ -202,7 +211,7 @@ export function buildGitHubReleaseBodyFromChangelog(
     version: packageVersion,
     ...(section.previousVersion ? { previousVersion: section.previousVersion } : {}),
     npmUrl: buildNpmPackageUrl(packageName, packageVersion),
-    content: section.content,
+    content: section.content ?? '',
   }
   return renderGitHubRelease(buildReleaseNoteDocumentFromReleases([release], metadata), metadata)
 }
