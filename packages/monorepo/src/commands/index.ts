@@ -172,8 +172,10 @@ export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport
 export * from './template-instances'
 
 export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
-export type { PlaywrightInteraction, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
+export type { PlaywrightCapabilityOptions, PlaywrightInteraction, StorybookArgs, StorybookCapabilityOptions, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
 export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
+export { applyWorkspaceMovePlan } from './workspace/move/apply'
+export { planWorkspaceMove } from './workspace/move/plan'
 export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
 export { planWorkspaceRemoval } from './workspace/remove/plan'

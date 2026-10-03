@@ -7,7 +7,7 @@ import { withOperationLock } from '../../core/operation-lock'
 import { planToolingCapability } from './plan'
 
 export async function applyToolingCapability(plan: ToolingCapabilityPlan): Promise<ToolingCapabilityResult> {
-  if (!plan || plan.schemaVersion !== 1 || plan.capability?.id !== 'playwright' || !Array.isArray(plan.files)) {
+  if (!plan || plan.schemaVersion !== 1 || !['playwright', 'storybook'].includes(plan.capability?.id) || !Array.isArray(plan.files)) {
     throw new Error('Unsupported tooling capability plan')
   }
   if (plan.status === 'blocked') {
@@ -27,7 +27,7 @@ export async function applyToolingCapability(plan: ToolingCapabilityPlan): Promi
     const verify = async () => {
       const target = await readOptional(plan.rootDir, `${plan.target.directory}/package.json`)
       if (!target || hash(target) !== plan.target.manifestHash) {
-        throw new Error('Target application changed during capability application')
+        throw new Error('Target workspace changed during capability application')
       }
       for (const file of fresh.files.filter(file => file.status === 'identical')) {
         const current = await readOptional(plan.rootDir, file.path)
