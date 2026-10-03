@@ -1,5 +1,7 @@
 # 命令速查
 
+[`repo workspace remove`](./removal.md) 可按准确包名或目录预览移除单个包，检查消费者与待人工复核引用，再显式应用已审查的 JSON 计划。预览不删除文件；消费者默认阻止移除，只有明确指定 `--remove-references` 才计划删除对应清单依赖字段。
+
 [`repo workspace prepare`](./artifacts.md) 可预览原生 Turbo prune 构建上下文或锁定 pnpm deploy 生产目录，再显式应用已审查的 JSON 计划。必须选择唯一包和工作区外的空输出目录。
 
 这一页只保留 repoctl 高频、实用、容易记错的命令。
@@ -58,6 +60,21 @@ repo doctor --markdown --redact --out reports/doctor.md
 - `--strict` 会把 warning 也视为失败，适合 CI 门禁。
 - `--json` 和 `--markdown` 适合自动化、PR、issue 和外部协作。
 - `--redact` 会脱敏 workspace、cwd、home 等绝对路径。
+
+```bash
+repo doctor --list-rules
+repo doctor --rules root-scripts,package-manager --strict
+repo doctor --rules root-scripts --fix --out plans/doctor-fix.json
+repo doctor --apply plans/doctor-fix.json --json
+```
+
+`--rules` 在执行前选择精确、稳定的检查 ID；未知 ID 会失败并列出可用规则。CLI 会替换 `commands.doctor.rules`；省略规则时执行全部检查，配置中显式空数组表示不执行检查。共享的文件发现和规则前置读取仍会执行。`manifest-health` 是静态清单检查的汇总规则。架构边界与第三方依赖准入同样使用稳定的 `boundary-*` / `admission-*` ID；单选 `boundary-policy` 或 `admission-policy` 时汇总仍保留实际失败状态，必要的配置失败不会被过滤。自定义策略名只出现在诊断详情中。
+
+在 `commands.doctor.suppressions` 配置有理由的抑制。每项必须提供 `id` 与非空 `reason`，可选 `path` 精确匹配 workspace 相对文件路径。可选 `expires` 使用 UTC 日期 `YYYY-MM-DD`，到期当天仍有效。JSON 保留原始发现的状态、`suppression`、`rawSummary`，以及全部抑制记录及命中数量。仅有效抑制从 `summary` 和 strict 退出码中排除；过期与未命中的记录仍会展示。
+
+`--fix` 仅输出 JSON 预览，不修改项目文件。首批修复器只补根 `package.json` 中缺失的 `repo:init`、`repo:new`、`repo:check`、`repo:doctor` 键。已有值（包括空值和自定义脚本）保留，由用户人工核查。未选择或有效抑制的规则不会生成修复。审核新增脚本、完整前后内容、哈希、风险与 diff 后，用 `--apply` 应用。计划包含原始清单内容，不支持脱敏或 Markdown 转换后执行。
+
+应用时复核规范化 workspace 与原始文件内容，拒绝链接文件和篡改的操作，复用暂存写入及回滚事务，再无抑制地运行根脚本检查。输入内容改变会停止修复，需要重新生成计划。重复应用已完成计划不会再改文件。文字 `fix` 建议不会作为 shell 执行，也不会自动安装依赖或修改 release workflow。
 
 ## `repo env check`
 
@@ -257,6 +274,27 @@ repo skills sync --codex
 - [报告与自动化输出](/zh/tasks/reports)
 - [命令别名](./aliases.md)
 
+Doctor 修复在输入校验、应用、验证、回滚和清理期间持有 `.repoctl/doctor-fix.lock`，防止并发写入使成功修复被另一事务回退。进程异常退出后，先确认没有活动写入者并处理保留备份，再手动移除锁。
+
 ## `repo tooling references`
 
 `check --json` 无需启用即可检查已有引用；`plan` 和 `sync --dry-run` 只读输出稳定 JSON。显式配置 `tooling.projectReferences.enabled: true` 后，使用 `sync` 或 `apply <plan.json>` 同步受管引用。保留手工引用及 TypeScript/Vue 原有验证入口；不兼容编译选项、循环、缺失目标和过期计划会阻止应用。[配置参考](./config#typescript-project-references)说明了发现规则、显式编译关系、归属和恢复方式。
+
+### 增量接入 Playwright
+
+为已有 Vue/React Vite 应用添加浏览器测试；应用需包含 `build` 和 `preview` 脚本：
+
+```sh
+repo tooling capability list --json
+repo tooling capability plan playwright --target web --route / --role button --name Increment --expect-text 'Count: 1' --json > e2e-plan.json
+repo tooling capability apply e2e-plan.json --json
+pnpm install
+pnpm --filter @repoctl-e2e/web test:e2e:install
+pnpm test:e2e
+```
+
+使用 `--test-id` 可替代 `--role`/`--name`。路由、点击目标和预期文本必须对应应用中的真实交互。计划展示文件 diff、依赖、脚本、冲突和后续操作，预览不安装依赖。应用时使用已审阅的内容，检查过期输入和文件冲突；写入失败会回滚，重复应用不产生额外修改。首次接入请选择空目录（可用 `--directory` 指定）。应用业务文件及与生成内容不同的文件均受保护。
+
+能力包生成独立 E2E 工作区、无头 Chromium 测试、Turbo 构建依赖、CI 工作流、HTML 报告及失败 trace。浏览器需显式安装。`--port` 与 `--ci-port` 分别指定本地和 CI 端口且不能相同；CI 始终启动独立服务。本地只有显式添加 `--reuse-existing-server` 才复用服务。Playwright 在成功、失败和中断后清理自己启动的服务，保留借用的服务。安装后需提交 lockfile。
+
+公开 API：`listToolingCapabilities()`、`planToolingCapability(cwd, options)`、`applyToolingCapability(plan)`。JSON 使用 schemaVersion 1，字段名不随 CLI 语言变化。

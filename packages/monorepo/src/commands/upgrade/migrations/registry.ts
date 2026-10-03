@@ -6,6 +6,8 @@ export interface MigrationDefinition {
   id: string
   version: string
   adoptUnknown: boolean
+  /** Fixed paths whose successful migration may be proposed by automatic maintenance. */
+  maintenance?: { paths: string[], legacyPaths: string[] }
   detect: (context: UpgradeContext) => Promise<boolean>
   check?: (context: UpgradeContext) => Promise<{ id: string, path: string, retain: string[], reason: string, detail: string } | null>
   plan: (context: UpgradeContext) => Promise<string[]>

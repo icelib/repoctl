@@ -64,3 +64,12 @@ export default await defineEslintConfig()
 - Documentation: https://repoctl.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/repoctl
 - Issues: https://github.com/icelib/repoctl/issues
+
+Doctor supports precise rule selection, reasoned suppression, and reviewed safe script fixes:
+
+```bash
+repo doctor --list-rules
+repo doctor --rules root-scripts,package-manager --strict
+repo doctor --rules root-scripts --fix --out plans/doctor-fix.json
+repo doctor --apply plans/doctor-fix.json --json
+```

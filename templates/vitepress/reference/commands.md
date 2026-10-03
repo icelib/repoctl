@@ -48,6 +48,21 @@ Use it to check root workspace files, Node compatibility, CLI dependency presenc
 
 `--strict` treats warnings as failures. `--redact` removes local absolute paths from shareable reports.
 
+```bash
+repo doctor --list-rules
+repo doctor --rules root-scripts,package-manager --strict
+repo doctor --rules root-scripts --fix --out plans/doctor-fix.json
+repo doctor --apply plans/doctor-fix.json --json
+```
+
+`--rules` selects exact stable check IDs before execution; unknown IDs fail and list the available rules. The CLI replaces `commands.doctor.rules`; omitted rules run all checks, while an explicit empty config array runs none. Shared discovery and rule prerequisites still run. `manifest-health` is an aggregate over the static manifest checks. Workspace boundaries and dependency admission use stable `boundary-*` / `admission-*` IDs; selecting only `boundary-policy` or `admission-policy` preserves the actual aggregate failure status, and prerequisite configuration failures remain visible. Custom policy names appear only in diagnostic details.
+
+Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs `id` and a nonempty `reason`; optional `path` matches an exact workspace-relative finding path. Optional `expires` is an inclusive UTC date (`YYYY-MM-DD`). JSON retains the original finding status, `suppression`, `rawSummary`, and every waiver with its matched count. Only active waivers are excluded from effective `summary` and strict exit status; expired and unmatched waivers remain visible.
+
+`--fix` previews JSON without modifying project files. Only missing `repo:init`, `repo:new`, `repo:check`, and `repo:doctor` keys in the root `package.json` are supported. Existing values, including empty/custom scripts, are preserved for manual review. An actively suppressed or unselected rule produces no fix. Review the additions, complete before/after content, hashes, risk, and diff before using `--apply`. Plans contain original manifest content and cannot be redacted or rendered as Markdown for execution.
+
+Apply checks the canonical workspace and original file contents, rejects links and modified operations, reuses the staged file transaction with rollback, and reruns the root-script check without suppression. A changed input stops the fix; regenerate the plan. Reapplying an already applied plan is unchanged. Textual `fix` suggestions are never executed, and dependency installation or release workflow modification is outside this fixer.
+
 ## `repo env check`
 
 ```bash
@@ -192,6 +207,8 @@ Programmatic users can call `getWorkspaceGraph(cwd, options)`, `filterWorkspaceG
 
 ## Grouped Commands
 
+Use [`repo workspace remove`](./removal.md) to preview removal of one exact package, inspect consumers and manual reference candidates, then explicitly apply a reviewed JSON plan. Preview does not delete anything; dependencies block removal unless their exact manifest fields are included with `--remove-references`.
+
 ```bash
 repo ws ls
 repo ws ls --json --out reports/workspaces.json
@@ -210,6 +227,27 @@ repo skills sync --codex
 - [Troubleshoot](/tasks/troubleshooting)
 - [Command Aliases](./aliases.md)
 
+Doctor fix application holds `.repoctl/doctor-fix.lock` from input validation through verification, rollback and cleanup, preventing overlapping writers from undoing a successful fix. After a crash, verify no writer remains and reconcile any retained backups before manually removing the lock.
+
 ## `repo tooling references`
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
+
+### Incremental Playwright capability
+
+Add browser tests to an existing Vue/React Vite application with `build` and `preview` scripts:
+
+```sh
+repo tooling capability list --json
+repo tooling capability plan playwright --target web --route / --role button --name Increment --expect-text 'Count: 1' --json > e2e-plan.json
+repo tooling capability apply e2e-plan.json --json
+pnpm install
+pnpm --filter @repoctl-e2e/web test:e2e:install
+pnpm test:e2e
+```
+
+Use `--test-id` instead of `--role`/`--name` for a test-id locator. The route, click and expected text describe a real interaction in your application. The plan shows file diffs, dependencies, scripts, conflicts and next steps, without installing anything. Apply uses those exact reviewed bytes, rejects stale inputs and conflicts, and rolls back failed writes. A repeated unchanged apply has no effect. Choose an empty destination (`--directory`) for the new E2E workspace. Existing application sources and differing generated files are protected.
+
+The capability creates an independent E2E workspace, headless Chromium tests, Turbo build dependencies, a dedicated CI workflow, HTML reports and failure traces. Browser installation is explicit. `--port` and `--ci-port` set distinct local and CI ports. CI never reuses a running service. `--reuse-existing-server` opts into local reuse; Playwright cleans up its own service after success, failure or interruption, and leaves a borrowed service running. Commit the lockfile after installation.
+
+Public APIs: `listToolingCapabilities()`, `planToolingCapability(cwd, options)` and `applyToolingCapability(plan)`. JSON uses schema version 1 and stable English keys regardless of CLI language.

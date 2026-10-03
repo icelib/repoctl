@@ -7,6 +7,10 @@ export const legacyVersioningMigration: MigrationDefinition = {
   // monorepo-templates/CHANGELOG.md: 1.1.0 introduced pnpm native versioning.
   version: '1.1.0',
   adoptUnknown: true,
+  maintenance: {
+    paths: ['.changeset/config.json', '.changeset/pre.json', 'pnpm-workspace.yaml', 'package.json', '.github/workflows/release.yml'],
+    legacyPaths: ['.changeset/config.json', '.changeset/pre.json'],
+  },
   detect: async ({ read }) => await read('target', '.changeset/pre.json') !== null || await read('target', '.changeset/config.json') !== null,
   check: async ({ read }) => {
     const files = ['.changeset/pre.json', '.changeset/config.json']
