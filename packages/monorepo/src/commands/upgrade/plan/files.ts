@@ -8,8 +8,10 @@ export function hash(content: Uint8Array) {
 }
 
 export async function canonicalDirectory(directory: string): Promise<string> {
+  const requested = path.normalize(directory)
   try {
-    const resolved = path.resolve(await realpath(directory))
+    // realpath is already absolute; resolving a bare Windows drive root corrupts it.
+    const resolved = path.normalize(await realpath(requested))
     if (!(await lstat(resolved)).isDirectory()) {
       throw new Error(`Not a directory: ${directory}`)
     }
@@ -19,7 +21,12 @@ export async function canonicalDirectory(directory: string): Promise<string> {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
       throw error
     }
-    return path.join(await canonicalDirectory(path.dirname(directory)), path.basename(directory))
+    const parent = path.dirname(requested)
+    const networkRoot = /^\/\/[^/]+(?:\/[^/]+)?\/?$/.test(requested)
+    if (parent === requested || path.parse(requested).root === requested || networkRoot) {
+      throw error
+    }
+    return path.join(await canonicalDirectory(parent), path.basename(requested))
   }
 }
 
