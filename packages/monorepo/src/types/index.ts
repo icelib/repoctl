@@ -1,5 +1,6 @@
 export type { RepoctlLocale } from '../i18n/types'
 export type { ArtifactFile, WorkspaceArtifactApplyOptions, WorkspaceArtifactOptions, WorkspaceArtifactPlan, WorkspaceArtifactResult } from './artifact'
+export * from './catalogs'
 export * from './cli'
 export * from './config'
 export * from './dependencies'
