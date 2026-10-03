@@ -65,10 +65,15 @@ export default { tooling: { eslint: { extra: plugin }, lintStaged: { config: { '
     expect(result.stdout + result.stderr).not.toContain('private-credential-value')
   })
 
-  it('blocks side effects in the real CLI even when an unrelated command field is invalid', async () => {
+  it.each([
+    ['ai', 'prompt', 'create', '--output', 'prompt.md'],
+    ['workspace', 'remove', 'old', '--json'],
+    ['maintenance', 'workflow', '--out', 'workflow.yml'],
+    ['maintenance', 'upgrade', '--base', 'a'.repeat(40), '--out', 'artifacts'],
+  ])('blocks side effects in the real CLI when unrelated configuration is invalid: %j', async (...args) => {
     const cwd = await fixture(`export default { commands: { clean: { autoConfrm: true } } }`)
     const before = await files(cwd)
-    const result = invoke(cwd, ['ai', 'prompt', 'create', '--output', 'prompt.md'])
+    const result = invoke(cwd, args)
     expect(result.status).toBe(1)
     expect(result.stderr).toContain('commands.clean.autoConfrm')
     expect(await files(cwd)).toEqual(before)
