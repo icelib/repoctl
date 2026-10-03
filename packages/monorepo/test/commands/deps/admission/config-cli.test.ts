@@ -31,7 +31,11 @@ describe('admission configuration and built CLI', () => {
     expect((await checkDependencyAdmission(h.workspace)).summary.fail).toBe(0)
     await writeFile(path.join(h.workspace, 'policy.mjs'), 'export default null')
     await expect(checkDependencyAdmission(h.workspace)).rejects.toMatchObject({ code: 'REPOCTL_CONFIG_INVALID', diagnostics: [{ path: 'dependencyPolicy' }] })
-    expect((await runDoctor(h.workspace)).checks.find(item => item.id === 'admission-config')?.status).toBe('fail')
+    await expect(runDoctor(h.workspace)).rejects.toMatchObject({
+      code: 'REPOCTL_CONFIG_INVALID',
+      message: expect.not.stringContaining(h.workspace),
+      diagnostics: [{ id: 'config.invalid-type', path: 'dependencyPolicy', actualType: 'null' }],
+    })
   })
 
   it('validates every owned config block before running admission policy', async () => {
