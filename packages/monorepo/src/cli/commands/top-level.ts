@@ -17,6 +17,7 @@ interface InitCliOptions {
 interface NewCliOptions {
   offline?: boolean
   cacheDir?: string
+  data?: string
   template?: string
   dryRun?: boolean
   json?: boolean
@@ -48,6 +49,7 @@ export function registerTopLevelCommands(program: Command, cwd: string) {
     .description(localize('Create a new package or application', '创建新的 package / app'))
     .argument('[name]')
     .option('--offline', localize('Use only verified cached remote assets', '只使用通过校验的远程资产缓存'))
+    .option('--data <file>', localize('Read typed template parameters from a JSON file', '从 JSON 文件读取类型化模板参数'))
     .option('--cache-dir <directory>', localize('Template asset cache directory', '模板资产缓存目录'))
     .option('-t, --template <template>', localize('Use a template key without prompting', '直接使用指定模板，跳过模板选择'))
     .option('--dry-run', localize('Preview directories and package metadata without writing', '预览将要创建的目录与 package 信息，不写入文件'))
@@ -58,6 +60,7 @@ export function registerTopLevelCommands(program: Command, cwd: string) {
       const result = await runCreateFlow(cwd, inputName, {
         ...(opts.offline !== undefined ? { offline: opts.offline } : {}),
         ...(opts.cacheDir ? { cacheDir: opts.cacheDir } : {}),
+        ...(opts.data ? { data: opts.data } : {}),
         ...(opts.template !== undefined ? { template: opts.template } : {}),
         ...(opts.dryRun || opts.json || opts.out ? { dryRun: true } : {}),
         ...(opts.json ? { json: true } : {}),

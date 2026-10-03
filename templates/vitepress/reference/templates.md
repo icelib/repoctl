@@ -330,22 +330,24 @@ browser hydration and interaction. Storybook is optional.
 
 ```bash
 repo templates validate internal --fixture ./fixtures/workspace --name basic --name renamed --json
-repo templates validate react-lib --dry-run --json
+repo templates validate internal --fixture ./fixtures/workspace --parameter-matrix matrix.json --dry-run --json
 repo templates validate internal --fixture ./fixtures/workspace --keep-failed --timeout 240000
 ```
 
-The optional fixture is an author-owned workspace skeleton with `package.json`, an exact `packageManager: "pnpm@..."`, workspace settings, and any companion packages. It is copied through normal template filtering; it is never modified. Without a fixture, the installed repoctl workspace assets supply the root. Each name receives its own workspace. Names currently test package renaming; arbitrary template feature parameters are not supported yet.
+The optional fixture is an author-owned workspace skeleton with `package.json`, an exact `packageManager: "pnpm@..."`, workspace settings, and any companion packages. It is copied through normal template filtering; it is never modified. Without a fixture, the installed repoctl workspace assets supply the root. Each name is crossed with each typed parameter object from `--parameter-matrix matrix.json` (a JSON array), with at most 20 samples in total. Without a matrix, the template defaults form one parameter set. Every combination receives its own workspace; required scripts are selected from its rendered files and conditional package entries. This uses the same `repoctl.template.json` contract as `repo new`.
 
 Library validation removes `private` only from its disposable copy, packs a tarball, checks exports and declared runtime dependencies (including `imports` mappings), then installs and imports the tarball in an independent consumer. Type declarations are checked with strict NodeNext resolution. Application/service/browser behavior belongs in the template's finite `test`/`test:e2e` scripts; those scripts own their normal service lifecycle, with timeout/interruption cleanup as a backstop. Browser installation is an explicit author setup step.
 
 Commands and output are returned with stable stages and diagnostic codes. Successful and failed samples are removed by default; `--keep-failed` preserves failed samples with `report.json`, and `--keep-temp` preserves all samples. The report includes the retained directory. Execution never happens during `repo templates` or `--check`. Validation executes trusted author scripts; it is not an untrusted-code sandbox.
+
+Parameter values marked `sensitive` stay out of plans and reports. Child command output and diagnostic messages are hidden for sensitive combinations; stage, exit code and diagnostic code remain available. Retained generated workspaces can contain the supplied secrets in their intended files, so protect or remove those directories after debugging. Parameter input files are read without printing their contents.
 
 The same contract is public API:
 
 ```ts
 import { planTemplateValidation, validateTemplate } from 'repoctl'
 
-const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace' }
+const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace', parameterSets: [{ enabled: false }, { enabled: true }] }
 const controller = new AbortController()
 const plan = await planTemplateValidation(options)
 const report = await validateTemplate({ ...options, keep: 'failure', signal: controller.signal })
@@ -394,3 +396,87 @@ The first Git fetch records its resolved commit. That same request continues usi
 Creation records npm version/integrity or Git commit/integrity with its retained baseline. Remote instances support baseline reconstruction and drift inspection. `templates upgrade` currently accepts built-in template-package versions and rejects remote instances explicitly; changing a remote declaration does not upgrade existing generated projects.
 
 The public `resolveRemoteTemplateSource(remote, source, { cwd, cacheDir, offline })` helper returns verified `sourceDir`, normalized `request`, fixed `resolved` identity, asset `digest`, and `cache: 'hit' | 'downloaded'`.
+
+## Generate inside an existing package
+
+Use `generate` for a component or route inside a selected workspace package:
+
+```sh
+repo generate react-component action-button --package @acme/ui --json
+repo generate react-component action-button --package @acme/ui --export
+repo generate vue-component action-button --package packages/vue-ui --export
+repo generate hono-route health --package apps/api
+```
+
+The built-in generators are `vue-component`, `react-component`, and `hono-route`.
+They require the target package to declare Vue, React, or Hono respectively. Every
+generator creates a source file and meaningful Vitest tests. Names use kebab case;
+`--directory` changes the package-relative source directory. Component defaults
+are `src/components`, route defaults are `src/routes`, and tests live under `test`.
+
+`--json` and `--dry-run` are read-only previews. `--export` explicitly adds a named
+export to `src/index.ts`, or the `.ts` file selected by `--barrel`. Existing comments
+are retained. Ambiguous wildcard exports or conflicting symbols require manual
+review. JSON `--params '{"export":true}'` uses the same strict parameter contract;
+unknown parameters and string booleans fail before any write.
+
+Identical generated files are unchanged on repeat runs. Modified files, linked
+paths, outputs outside the package, and stale plans are rejected. Multi-file writes
+hold a package operation lock and restore previous contents on failure; concurrent
+business edits and recovery backups are retained with explicit recovery paths.
+
+Hono generators return an isolated sub-router. Follow the printed `app.route(...)`
+instruction after reviewing your entry point, mount path and middleware order.
+The generator does not guess where to register it. Install missing test utilities
+and configure a compatible Vitest environment when prompted; dependencies and
+application configuration are not changed automatically. Run build, lint,
+Stylelint for SFC styles, typecheck, and tests after generation.
+
+`new` continues to create a whole package and rejects existing target directories.
+The public API exposes `planGenerate(options)` and `applyGeneratePlan(plan)`; both
+operate on the same validated file plan.
+
+## Typed parameters and conditional generation
+
+Place `repoctl.template.json` at the template root to declare typed inputs and conditional files, scripts and dependency entries. Conditions compare declared values without executing code.
+
+```json
+{
+  "schemaVersion": 1,
+  "parameters": {
+    "label": { "type": "string", "default": "demo" },
+    "tests": { "type": "boolean", "default": false },
+    "flavor": { "type": "enum", "options": ["plain", "bold"], "default": "plain" },
+    "token": { "type": "string", "required": true, "sensitive": true }
+  },
+  "interpolate": ["src/settings.ts", "credentials.local"],
+  "conditions": [{
+    "when": { "parameter": "tests", "equals": true },
+    "files": ["test"],
+    "package": {
+      "scripts": { "test": "vitest run" },
+      "devDependencies": { "vitest": "catalog:" }
+    }
+  }]
+}
+```
+
+Paths are exact template-relative paths; directory conditions include descendants. Globs, filename interpolation and path traversal are rejected. Only declared UTF-8 text expands <code v-pre>{{repoctl:label}}</code> (raw text) or <code v-pre>{{repoctl-json:label}}</code> (a JSON literal); binary bytes remain unchanged. Engineering references are rewritten before inserting input values. Choose placeholders appropriate for the destination syntax: raw values are not automatically escaped as code or HTML. The contract is omitted from generated projects.
+
+Conditional package entries must have one owner and be absent from the base manifest. Supported sections are scripts, dependencies, devDependencies, peerDependencies and optionalDependencies. Catalog references require a matching workspace catalog. Sensitive parameters cannot drive conditions or enter package entries.
+
+```sh
+repo new api --template team --data ./answers.json --json
+repo new api --template team --data ./answers.json
+repo package create api --template team --data ./answers.json
+```
+
+The data file is a UTF-8 JSON object up to 1 MiB. Unknown keys, invalid types/enums and missing required inputs fail before writes without echoing input values. Booleans are not coerced from strings. Interactive terminals prompt for omitted values and mask sensitive strings; JSON and noninteractive callers never prompt. Both input paths use the same validation. Templates without a contract keep their existing output and reject extra parameters.
+
+The optional preview `parameterization` field reports redacted values and selected files/package entries. Sensitive values remain in memory for rendering; reports, retained parameters and baselines never contain them. Files containing sensitive values become persistent unmanaged exclusions and cannot be restored from baselines. Upgrades retain those local files and reuse nonsensitive inputs. New secret interpolation paths require explicit exclusion before other files can upgrade.
+
+Historical linking through the API accepts parameter values only with `repo-new-parameters-v1` and an available exact source contract. It validates and retains nonsensitive defaults, rejects supplied sensitive values before producing a plan, and cannot create an unverified parameterized registration. Secret output files cannot be reconstructed by supplying their values to the link API.
+
+Use `resolveCreateNewProjectPlan({ parameters, parameterPrompt? })` and `applyCreateNewProjectPlan(plan)` for programmatic planning and execution. Apply accepts the original unchanged in-memory object; serialized reports require a fresh plan with the original data. Changed sources/plans and existing targets fail before writes. Parameterized creation stages output and commits files, workspace configuration and provenance together. Failures restore owned files; concurrent edits or replacements are preserved with recovery locations. Repeating creation never overwrites an existing project.
+
+Moving a parameterized instance retains its identity, inputs and sensitive-file exclusions. Creating the same template again at the freed original path allocates a separate identity; both instances can be diagnosed and upgraded independently. A failed registration rolls back only the new creation.

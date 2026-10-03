@@ -1,26 +1,27 @@
-import type { TemplateValidationOptions, TemplateValidationPlan, TemplateValidationSample, TemplateValidationStage } from './types'
+import type { TemplateValidationOptions, TemplateValidationParameterSet, TemplateValidationPlan, TemplateValidationSample, TemplateValidationStage } from './types'
 import path from 'node:path'
 import { isolatedProcessEnvironment } from '../../core/process-environment'
 import { execute } from '../package-check/process'
 import { validateLibraryArtifact } from './artifact'
 import { inspectGeneratedFiles } from './files'
 import { generateValidationSample } from './generate'
+import { sanitizeValidationSample } from './parameters'
 
-export async function runValidationSample(plan: TemplateValidationPlan, name: string, directory: string, options: TemplateValidationOptions): Promise<TemplateValidationSample> {
-  const sample: TemplateValidationSample = { name, directory, status: 'passed', steps: [] }
+export async function runValidationSample(plan: TemplateValidationPlan, name: string, directory: string, options: TemplateValidationOptions, parameterSet: TemplateValidationParameterSet): Promise<TemplateValidationSample> {
+  const sample: TemplateValidationSample = { name, parameterSet: parameterSet.index, parameters: parameterSet.parameters, directory, status: 'passed', steps: [] }
   let stage: TemplateValidationStage = 'generate'
   const timeout = options.timeoutMs ?? 240_000
   try {
     if (options.signal?.aborted) {
       throw new Error('Template validation interrupted.')
     }
-    const target = await generateValidationSample(plan, directory, name)
+    const target = await generateValidationSample(plan, directory, name, parameterSet)
     const diagnostics = await inspectGeneratedFiles(directory, directory, [plan.sourceDir, plan.fixtureDir])
     sample.steps.push({ stage, status: diagnostics.length ? 'failed' : 'passed', diagnostics })
     if (diagnostics.length) {
       throw new Error('Generated workspace contains external references.')
     }
-    for (const script of ['install', ...plan.scripts]) {
+    for (const script of ['install', ...parameterSet.scripts]) {
       stage = script as TemplateValidationStage
       const args = script === 'install'
         ? ['pnpm', 'install', '--ignore-scripts', '--no-frozen-lockfile']
@@ -51,5 +52,5 @@ export async function runValidationSample(plan: TemplateValidationPlan, name: st
       sample.steps.push({ stage, status: sample.status, diagnostics: [{ code: sample.status === 'interrupted' ? 'INTERRUPTED' : 'STAGE_FAILED', message: String(error) }] })
     }
   }
-  return sample
+  return sanitizeValidationSample(sample, parameterSet)
 }

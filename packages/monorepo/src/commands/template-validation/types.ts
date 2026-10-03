@@ -1,4 +1,4 @@
-import type { TemplateCategory } from '@icebreakers/monorepo-templates'
+import type { TemplateCategory, TemplateParameterValues } from '@icebreakers/monorepo-templates'
 import type { ResolvedTemplateSource } from '../../core/template-source'
 import type { PackageCheckCommand, PackageCheckReport } from '../package-check'
 
@@ -11,6 +11,8 @@ export interface TemplateValidationOptions {
   cacheDir?: string
   /** Each name is generated and validated in its own isolated workspace. */
   names?: string[]
+  /** Crossed with names; at most 20 isolated samples in total. */
+  parameterSets?: TemplateParameterValues[]
   /** Optional author-owned workspace fixture; copied, never modified in place. */
   fixtureDir?: string
   keep?: 'never' | 'failure' | 'always'
@@ -22,6 +24,15 @@ export interface TemplateValidationDiagnostic {
   code: string
   message: string
   file?: string
+  parameterSet?: number
+}
+
+export interface TemplateValidationParameterSet {
+  index: number
+  /** Resolved values, with sensitive inputs redacted. */
+  parameters: TemplateParameterValues
+  scripts: string[]
+  diagnostics: TemplateValidationDiagnostic[]
 }
 
 export interface TemplateValidationPlan {
@@ -33,6 +44,7 @@ export interface TemplateValidationPlan {
   fixtureDir: string
   packageManager: string
   names: string[]
+  parameterSets: TemplateValidationParameterSet[]
   scripts: string[]
   diagnostics: TemplateValidationDiagnostic[]
 }
@@ -46,6 +58,8 @@ export interface TemplateValidationStep {
 
 export interface TemplateValidationSample {
   name: string
+  parameterSet: number
+  parameters: TemplateParameterValues
   directory: string
   status: 'passed' | 'failed' | 'interrupted'
   failedStage?: TemplateValidationStage

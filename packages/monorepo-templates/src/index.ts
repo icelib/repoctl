@@ -30,6 +30,7 @@ export { areTemplateAssetsPrepared, ensureTemplateAssetsPrepared, prepareAssets 
 export { getWorkspacePackageManager }
 export { scaffoldTemplate, scaffoldWorkspace }
 export * from './instances'
+export * from './parameters'
 export {
   createTemplateCopyFilter,
   isGitignoreFile,
@@ -55,5 +56,6 @@ export {
 export { execaCommand } from './utils/command'
 export { default as checkbox } from '@inquirer/checkbox'
 export { default as input } from '@inquirer/input'
+export { default as password } from '@inquirer/password'
 export { default as select } from '@inquirer/select'
 export { Command, program } from 'commander'

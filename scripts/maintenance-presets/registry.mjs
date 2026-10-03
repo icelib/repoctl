@@ -2,6 +2,9 @@ import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import process from 'node:process'
+import { createMetadataRelay } from './metadata-relay.mjs'
+
+const relay = createMetadataRelay({ registry: process.argv[3], cachePath: process.argv[4] })
 
 const catalog = JSON.parse(readFileSync(process.argv[2], 'utf8')).map((entry, index) => {
   const bytes = readFileSync(entry.archive)
@@ -17,8 +20,7 @@ const server = createServer((request, response) => {
   }
   const packages = catalog.filter(entry => `/${entry.metadata.name}` === route)
   if (!packages.length) {
-    response.writeHead(302, { location: `${process.argv[3].replace(/\/$/, '')}${request.url}` })
-    response.end()
+    void relay(request, response)
     return
   }
   response.writeHead(200, { 'content-type': 'application/json' })

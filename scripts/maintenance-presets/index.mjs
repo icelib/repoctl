@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:f
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { registry } from '../packaged-template/workspace.mjs'
+import { registry, repoRoot } from '../packaged-template/workspace.mjs'
 import { archives, baseAsset, consumer, target } from './fixture.mjs'
 import { publish } from './publisher.mjs'
 
@@ -13,7 +13,8 @@ const root = mkdtempSync(path.join(tmpdir(), 'repoctl-packaged-maintenance-prese
 let server
 try {
   const fixture = archives(root)
-  server = fork(path.join(import.meta.dirname, 'registry.mjs'), [fixture.catalogFile, registry], { stdio: ['ignore', 'inherit', 'inherit', 'ipc'] })
+  const cachePath = path.join(repoRoot, 'node_modules/.cache/repoctl/maintenance-registry')
+  server = fork(path.join(import.meta.dirname, 'registry.mjs'), [fixture.catalogFile, registry, cachePath], { stdio: ['ignore', 'inherit', 'inherit', 'ipc'] })
   const [{ port }] = await once(server, 'message')
   for (const localValue of [40, 41]) {
     const parent = path.join(root, `consumer-${localValue}`)

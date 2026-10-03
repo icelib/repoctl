@@ -5,6 +5,8 @@ import pc from 'picocolors'
 import { version } from '../../constants'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
+import { applyParameterizedProject } from './parameters/apply'
+import { validateCreatePlan } from './parameters/prepare'
 import { resolveCreationPlan } from './plan'
 import { renderCreateNewProject } from './render'
 import { updateWorkspaceManifest } from './workspace'
@@ -14,11 +16,19 @@ export type { CreateNewProjectOptions, CreateNewProjectPlan, CreateNewProjectTyp
 
 /** Shared generation path for creation and disposable author validation. */
 export async function applyCreateNewProjectPlan(plan: CreateNewProjectPlan, includeGitMetadata = true) {
+  const plannedSource = validateCreatePlan(plan)
   if (plan.targetExists) {
     throw new Error(`${pc.red(localize('Target directory already exists', '目标目录已存在'))}: ${path.relative(plan.cwd, plan.targetDir)}`)
   }
+  if (plan.parameterization) {
+    await applyParameterizedProject(plan, includeGitMetadata)
+    return
+  }
   const target = instanceRelativePath(plan.cwd, plan.targetDir)
   const preparedSource = await prepareTemplateInstanceSource(plan.sourceDir)
+  if (snapshotDigest(preparedSource.snapshot) !== snapshotDigest(plannedSource.snapshot)) {
+    throw new Error('Template source changed after creation preview. Resolve a fresh plan.')
+  }
   if (plan.sourceResolution) {
     preparedSource.source = { kind: 'remote', templatePath: plan.templateDefinition.source, digest: snapshotDigest(preparedSource.snapshot), remote: plan.sourceResolution.resolved }
   }

@@ -92,7 +92,9 @@
     "test:packaged-template-validation": "node scripts/template-validation/index.mjs",
     "test:packaged-template-sources": "node scripts/template-sources/index.mjs",
     "test:packaged-presets": "node scripts/presets/index.mjs",
-    "test:packaged-maintenance-presets": "node scripts/maintenance-presets/index.mjs"
+    "test:packaged-maintenance-presets": "vitest run --config scripts/maintenance-presets/vitest.config.mjs && node scripts/maintenance-presets/index.mjs",
+    "test:packaged-generators": "node scripts/generate/index.mjs",
+    "test:packaged-template-parameters": "node scripts/template-parameters/index.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
@@ -107,6 +109,7 @@
     "execa": "^10.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
+    "make-fetch-happen": "15.0.6",
     "only-allow": "^1.2.2",
     "playwright": "^1.63.0",
     "repoctl": "workspace:*",

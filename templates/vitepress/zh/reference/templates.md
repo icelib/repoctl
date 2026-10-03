@@ -358,22 +358,24 @@ repo new ui --template react-lib
 
 ```bash
 repo templates validate internal --fixture ./fixtures/workspace --name basic --name renamed --json
-repo templates validate react-lib --dry-run --json
+repo templates validate internal --fixture ./fixtures/workspace --parameter-matrix matrix.json --dry-run --json
 repo templates validate internal --fixture ./fixtures/workspace --keep-failed --timeout 240000
 ```
 
-可选 fixture 是作者维护的工作区骨架，包含 `package.json`、精确的 `packageManager: "pnpm@..."`、工作区设置及配套包。工具使用正常模板过滤复制它，不会修改原目录；未提供时使用已安装的 repoctl 工作区资产。每个名称生成独立工作区，目前名称组合验证重命名行为，尚不支持任意模板功能参数。
+可选 fixture 是作者维护的工作区骨架，包含 `package.json`、精确的 `packageManager: "pnpm@..."`、工作区设置及配套包。工具使用正常模板过滤复制它，不会修改原目录；未提供时使用已安装的 repoctl 工作区资产。每个名称与 `--parameter-matrix matrix.json` 提供的类型化参数对象（JSON 数组）交叉验证，总计最多 20 个样本。未提供矩阵时，模板默认参数构成一组。每个组合生成独立工作区，按渲染后的文件和条件包字段确定必需脚本，复用 `repo new` 的 `repoctl.template.json` 契约。
 
 库模板仅在临时副本中移除 `private`，生成真实 tarball，检查 exports 与运行时依赖声明（含 `imports` 映射），再在独立消费者里安装并导入该包。声明文件通过严格 NodeNext 类型解析验证。应用、服务或浏览器行为由模板提供能正常结束的 `test`/`test:e2e` 脚本；脚本负责常规服务生命周期，工具提供超时和中断清理。浏览器安装由作者显式准备。
 
 报告使用稳定阶段和诊断代码记录命令及输出。默认清理成功和失败样本；`--keep-failed` 保留失败样本及 `report.json`，`--keep-temp` 保留全部样本，并返回保留目录。普通 `repo templates` 和 `--check` 不执行模板命令。验证会执行受信任的作者脚本，不是运行不受信任代码的沙箱。
+
+标记为 `sensitive` 的参数值不会进入计划和报告。含敏感值的组合隐藏子命令输出与诊断消息，保留阶段、退出码和诊断代码。保留的生成工作区可能在目标文件中包含输入密钥，调试后请妥善保护或删除目录。参数文件只读取，不打印内容。
 
 同一能力也通过公开 API 提供：
 
 ```ts
 import { planTemplateValidation, validateTemplate } from 'repoctl'
 
-const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace' }
+const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace', parameterSets: [{ enabled: false }, { enabled: true }] }
 const controller = new AbortController()
 const plan = await planTemplateValidation(options)
 const report = await validateTemplate({ ...options, keep: 'failure', signal: controller.signal })
@@ -422,3 +424,70 @@ npm 只接受精确版本，不接受标签或范围。registry 优先使用 `re
 创建记录 npm 版本与 integrity，或 Git commit 与 integrity，并保存可重建基线。远程实例支持基线重建与漂移检查。`templates upgrade` 当前接受内置模板包版本，对远程实例明确报错；修改远程声明不会升级已生成项目。
 
 公共函数 `resolveRemoteTemplateSource(remote, source, { cwd, cacheDir, offline })` 返回已验证的 `sourceDir`、规范化 `request`、固定的 `resolved` 身份、资产 `digest` 和 `cache: 'hit' | 'downloaded'`。
+
+## 在已有包内生成组件和路由
+
+使用独立的 `generate` 命令向指定 workspace 包添加组件或路由：
+
+```sh
+repo generate react-component action-button --package @acme/ui --json
+repo generate react-component action-button --package @acme/ui --export
+repo generate vue-component action-button --package packages/vue-ui --export
+repo generate hono-route health --package apps/api
+```
+
+首批生成器为 `vue-component`、`react-component` 和 `hono-route`，分别要求目标包声明 Vue、React 或 Hono。每次生成源文件及有行为断言的 Vitest 测试。名称使用 kebab-case；`--directory` 指定包内相对源目录。组件默认放入 `src/components`，路由默认放入 `src/routes`，测试放入 `test`。
+
+`--json` 和 `--dry-run` 只读预览真实文件内容。显式传入 `--export` 才向 `src/index.ts` 或 `--barrel` 指定的 `.ts` 文件添加具名导出。更新保留原注释，遇到无法确认的通配导出或同名符号时要求人工处理。`--params '{"export":true}'` 使用相同的严格参数契约；未知参数和字符串布尔值在写入前失败。
+
+重复运行时，相同的生成文件保持不变。修改过的文件、链接路径、包外输出及过期计划都会被拒绝。多个文件的写入由包级操作锁保护，失败时恢复原内容；遇到并发业务修改时保留修改和恢复备份，并列出需要处理的路径。
+
+Hono 生成器输出独立子路由，按打印的 `app.route(...)` 指引接入业务入口，并检查挂载路径与中间件顺序。工具不会猜测入口位置。缺少测试工具时按提示安装并配置合适的 Vitest 环境；生成器不会自动修改依赖或应用配置。生成后依次运行 build、ESLint/Stylelint、typecheck 和测试。
+
+`new` 继续负责创建整个包，仍然拒绝已存在的目标目录。公开 API 为 `planGenerate(options)` 和 `applyGeneratePlan(plan)`，使用相同的文件计划与边界校验。
+
+## 类型化参数与条件生成
+
+模板作者可在根目录放置 `repoctl.template.json`，声明参数、需要插值的文件，以及一起启用或省略的文件、scripts 和依赖。配置支持声明式等值条件，不执行脚本。
+
+```json
+{
+  "schemaVersion": 1,
+  "parameters": {
+    "label": { "type": "string", "default": "demo" },
+    "tests": { "type": "boolean", "default": false },
+    "flavor": { "type": "enum", "options": ["plain", "bold"], "default": "plain" },
+    "token": { "type": "string", "required": true, "sensitive": true }
+  },
+  "interpolate": ["src/settings.ts", "credentials.local"],
+  "conditions": [{
+    "when": { "parameter": "tests", "equals": true },
+    "files": ["test"],
+    "package": {
+      "scripts": { "test": "vitest run" },
+      "devDependencies": { "vitest": "catalog:" }
+    }
+  }]
+}
+```
+
+`interpolate` 和条件文件使用精确相对路径，目录包含其后代；不支持 glob、文件名插值和路径逃逸。只有声明的 UTF-8 文本会替换 <code v-pre>{{repoctl:label}}</code>（原值文本）和 <code v-pre>{{repoctl-json:label}}</code>（JSON 字面量），二进制保持原字节。工程路径引用在插值前转换。原值不自动做代码或 HTML 转义，作者须选择符合目标格式的占位方式。契约文件不进入生成项目。
+
+条件 package 条目只能有一个所有者，且不得已存在于基础清单。支持 scripts、dependencies、devDependencies、peerDependencies 和 optionalDependencies；示例的 catalog 引用须由消费工作区提供。条件不能使用敏感参数，package 条目不能插入敏感值。
+
+```bash
+# answers.json: {"label":"api","tests":true,"flavor":"bold","token":"..."}
+repo new api --template team --data ./answers.json --json
+repo new api --template team --data ./answers.json
+repo package create api --template team --data ./answers.json
+```
+
+数据文件为不超过 1 MiB 的 UTF-8 JSON 对象。未知字段、类型错误、无效枚举和缺少必填值在写入前失败，诊断不回显输入值。布尔值不能使用字符串。交互终端询问缺少的参数，敏感字符串使用掩码输入；JSON 和非交互调用不弹出问题。问答和文件使用同一校验规则。无参数契约的模板保持原输出，且拒绝额外参数。
+
+预览的可选 `parameterization` 包含脱敏值及文件/package 条目选择。敏感原值仅用于内存渲染，不进入报告、实例参数或留存基线。包含敏感值的文件成为持久排除项，由业务自行维护，基线重建不会恢复它们。升级复用非敏感参数并保留敏感文件；新版本新增敏感插值路径时，必须明确排除该路径才能升级其余文件。
+
+通过 API 关联历史项目时，参数值要求使用 `repo-new-parameters-v1` 且提供可验证的精确历史来源。关联会校验并留存非敏感默认值，在生成计划前拒绝传入敏感值，也不允许创建未验证的参数化登记。不能向 link API 提供秘密值来重建敏感输出文件。
+
+公开 API 为 `resolveCreateNewProjectPlan({ parameters, parameterPrompt? })` 和 `applyCreateNewProjectPlan(plan)`。执行接受同一进程中未修改的原始计划，JSON 报告不能直接执行，须用原数据重新规划。来源变化、已存在目标或计划修改会拒绝写入。参数化创建统一提交暂存输出、workspace 清单和实例记录；失败恢复本次文件，遇到并发编辑或文件替换则保留并报告恢复位置。重复创建不会覆盖项目。
+
+移动参数化模板实例会保留原 ID、参数与敏感文件排除。在腾出的原路径再次创建同一模板时，新实例获得独立 ID，两份实例可以分别检查漂移和升级；登记失败只回滚本次新建输出。

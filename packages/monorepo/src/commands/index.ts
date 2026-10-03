@@ -15,7 +15,7 @@ import { createTimestampFolderName, defaultAgenticBaseDir, generateAgenticTempla
 import { getKnownRepoCheckCommands, resolveFullWorkspaceCheckPlan, resolveRecommendedCheckPlan, runRecommendedCheck } from './check'
 import { cleanProjects } from './clean'
 import { inspectMonorepoConfig } from './config'
-import { createNewProject, getCreateChoices, getTemplateMap, resolveCreateNewProjectPlan, templateMap } from './create'
+import { applyCreateNewProjectPlan, createNewProject, getCreateChoices, getTemplateMap, resolveCreateNewProjectPlan, templateMap } from './create'
 import { runDoctor } from './doctor'
 import { collectEnvInfo, collectEnvPaths, collectEnvSnapshot, collectEnvSupportBundle } from './env'
 import { init, initMetadata, initTooling, initToolingTargets, normalizeInitToolingTargets } from './init'
@@ -67,6 +67,7 @@ export type {
 }
 
 export {
+  applyCreateNewProjectPlan,
   checkTemplates,
   cleanProjects,
   collectEnvInfo,
@@ -153,6 +154,9 @@ export { checkEnvironmentCache } from './env-cache'
 export type * from './env-cache'
 
 export { formatEnvironmentCache } from './env-cache/format'
+
+export * from './generate'
+
 export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
 
 export type { MaintenanceFile, MaintenancePresetChange, MaintenancePresetUpgrade, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
@@ -174,7 +178,9 @@ export * from './template-drift'
 
 export * from './template-instances'
 export { planTemplateValidation, validateTemplate } from './template-validation'
-export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
+
+export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationParameterSet, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
+
 export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
 
 export type { PlaywrightCapabilityOptions, PlaywrightInteraction, StorybookArgs, StorybookCapabilityOptions, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'

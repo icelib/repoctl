@@ -156,6 +156,8 @@ function checkCiWorkflow() {
   assert.ok(commands.includes('pnpm test:packaged-template-sources'))
   assert.ok(commands.includes('pnpm test:packaged-presets'))
   assert.ok(commands.includes('pnpm test:packaged-maintenance-presets'))
+  assert.ok(commands.includes('pnpm test:packaged-generators'))
+  assert.ok(commands.includes('pnpm test:packaged-template-parameters'))
   assertPinnedActions(steps, 'CI')
 }
 

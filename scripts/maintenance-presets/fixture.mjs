@@ -15,6 +15,10 @@ export function archives(root) {
   const packs = path.join(root, 'packs')
   mkdirSync(packs)
   const overrides = packDependencies(packs)
+  const templateArchive = overrides['@icebreakers/monorepo-templates'].slice(5)
+  const generatedManifest = JSON.parse(execFileSync('tar', ['-xOf', templateArchive, 'package/assets/package.json'], { encoding: 'utf8' }))
+  assert.equal(generatedManifest.devDependencies['make-fetch-happen'], undefined, 'Public metadata caching is source-only fixture tooling')
+  assert.equal(generatedManifest.scripts['test:packaged-maintenance-presets'], undefined, 'Source fixture checks must not enter generated projects')
   const tool = overrides.repoctl.slice(5)
   const metadata = JSON.parse(execFileSync('tar', ['-xOf', tool, 'package/package.json'], { encoding: 'utf8' }))
   const catalog = [{ metadata, archive: tool }]

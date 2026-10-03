@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
+import { Buffer } from 'node:buffer'
 import { fork } from 'node:child_process'
 import { once } from 'node:events'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -10,6 +11,27 @@ import { archiveFixturePackage } from '../packaged-template/archive.mjs'
 import { createWorkspace, json, registry, run, writeJson } from '../packaged-template/workspace.mjs'
 
 const root = mkdtempSync(path.join(tmpdir(), 'repoctl-packaged-presets-'))
+const parameterSecret = 'preset-parameter-private-input-984'
+function assertNoParameterSecret(value) {
+  if (typeof value === 'string') {
+    assert.ok(!value.includes(parameterSecret))
+    assert.ok(!Buffer.from(value, 'base64').toString('utf8').includes(parameterSecret))
+  }
+  else if (value && typeof value === 'object') {
+    Object.values(value).forEach(assertNoParameterSecret)
+  }
+}
+function inspectMetadata(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
+    const filename = path.join(directory, entry.name)
+    if (entry.isDirectory()) {
+      inspectMetadata(filename)
+    }
+    else {
+      assertNoParameterSecret(JSON.parse(readFileSync(filename, 'utf8')))
+    }
+  }
+}
 let server
 try {
   const source = path.join(root, 'preset')
@@ -40,10 +62,12 @@ try {
   writeJson(path.join(source, 'package.json'), metadata)
   writeJson(path.join(source, 'repoctl.preset.json'), preset)
   writeJson(path.join(source, 'templates/sdk/package.json'), { name: '@fixture/sdk', type: 'module', version: '0.0.0', main: './index.js' })
-  writeFileSync(path.join(source, 'templates/sdk/index.js'), 'export const answer = 42\n')
+  writeFileSync(path.join(source, 'templates/sdk/index.js'), 'export const answer = 42\nexport const label = {{repoctl-json:label}}\n')
+  writeFileSync(path.join(source, 'templates/sdk/credentials.local'), 'TOKEN={{repoctl:token}}\n')
+  writeJson(path.join(source, 'templates/sdk/repoctl.template.json'), { schemaVersion: 1, parameters: { label: { type: 'string', required: true }, token: { type: 'string', required: true, sensitive: true } }, interpolate: ['index.js', 'credentials.local'] })
   const baseAsset = 'export const first = 1\nexport const second = 2\nexport const third = 3\nexport const fourth = 4\n'
   writeFileSync(path.join(source, 'assets/check.mjs'), baseAsset)
-  const archive = archiveFixturePackage(source, path.join(packs, 'fixture-templates-1.2.3.tgz'), ['package.json', 'entry.cjs', 'repoctl.preset.json', 'assets/check.mjs', 'templates/sdk/package.json', 'templates/sdk/index.js'])
+  const archive = archiveFixturePackage(source, path.join(packs, 'fixture-templates-1.2.3.tgz'), ['package.json', 'entry.cjs', 'repoctl.preset.json', 'assets/check.mjs', 'templates/sdk/package.json', 'templates/sdk/index.js', 'templates/sdk/credentials.local', 'templates/sdk/repoctl.template.json'])
   assert.ok(!existsSync(marker), 'Fixture archive construction must not execute preset scripts')
   server = fork(path.join(import.meta.dirname, '../template-sources/registry.mjs'), [archive], { stdio: ['ignore', 'inherit', 'inherit', 'ipc'] })
   const [{ port }] = await once(server, 'message')
@@ -108,15 +132,31 @@ try {
   server.kill('SIGTERM')
   await once(server, 'exit')
   server = undefined
-  run(process.execPath, [firstCli, 'new', 'sdk', '--template', 'org-sdk', '--offline'], first)
+  const data = path.join(root, 'parameters.json')
+  writeJson(data, { label: 'Organization SDK', token: parameterSecret })
+  const createArgs = [firstCli, 'new', 'sdk', '--template', 'org-sdk', '--offline', '--data', data]
+  const preview = JSON.parse(run(process.execPath, [...createArgs, '--json'], first))
+  assert.equal(preview.templateInfo.preset.packageName, '@fixture/templates')
+  assert.equal(preview.parameterization.values.label, 'Organization SDK')
+  assert.equal(preview.parameterization.values.token, '[redacted]')
+  assertNoParameterSecret(preview)
+  assert.ok(!existsSync(path.join(first, 'packages/sdk')))
+  assertNoParameterSecret(run(process.execPath, createArgs, first))
   assert.equal(json(path.join(first, 'packages/sdk/package.json')).name, 'sdk')
-  assert.equal(readFileSync(path.join(first, 'packages/sdk/index.js'), 'utf8'), 'export const answer = 42\n')
+  assert.equal(readFileSync(path.join(first, 'packages/sdk/index.js'), 'utf8'), 'export const answer = 42\nexport const label = "Organization SDK"\n')
+  assert.equal(readFileSync(path.join(first, 'packages/sdk/credentials.local'), 'utf8'), `TOKEN=${parameterSecret}\n`)
+  assert.ok(!existsSync(path.join(first, 'packages/sdk/repoctl.template.json')))
   const provenance = json(path.join(first, '.repoctl/template-instances.json')).instances[0]
   assert.equal(provenance.source.remote.packageName, '@fixture/templates')
   assert.equal(provenance.source.remote.version, '1.2.3')
+  assert.equal(provenance.generator.profile, 'repo-new-parameters-v1')
+  assert.deepEqual(provenance.parameters.templateValues, { label: 'Organization SDK' })
+  assert.deepEqual(provenance.parameters.sensitiveParameters, ['token'])
+  assert.deepEqual(provenance.excludedPaths, ['credentials.local'])
+  inspectMetadata(path.join(first, '.repoctl'))
   assert.ok(!existsSync(path.join(second, 'packages/sdk')))
   assert.ok(!existsSync(marker))
-  console.log('Packaged organization presets passed: two independent consumers, exports-hidden manifests, exact identities, project/CLI precedence, recommendations, unified templates, explicit asset transactions, verified offline creation and no preset code execution.')
+  console.log('Packaged organization presets passed: two independent consumers, exports-hidden manifests, exact identities, project/CLI precedence, recommendations, unified templates, explicit asset transactions, verified offline parameterized creation, redacted secrets, exact provenance and no preset code execution.')
 }
 finally {
   if (server) {
