@@ -123,6 +123,8 @@ export {
   verifyStagedTypecheck,
 }
 
+export { applyPublicApiUpdate, checkPublicApi, formatPublicApiReport, planPublicApiUpdate } from './api-report'
+export type { PublicApiConfig, PublicApiDiagnostic, PublicApiEntryConfig, PublicApiEntryReport, PublicApiOptions, PublicApiPackageConfig, PublicApiReport, PublicApiUpdatePlan, PublicApiUpdateResult } from './api-report'
 export { resolveAffectedCheckPlan } from './check/affected'
 export type { AffectedCheckCommand, AffectedCheckOptions, AffectedCheckPlan, AffectedCheckSettings, AffectedFallback, AffectedFile, AffectedGitRange, AffectedPackage } from './check/affected'
 export { analyzeTurboRuns } from './check/cache'
@@ -131,7 +133,6 @@ export { runCheckWithReport } from './check/execute'
 export { getKnipConfigurationSuggestions, planKnipCheck, runKnipCheck, saveKnipBaseline } from './check/knip'
 export { resolveAffectedCheckMatrix } from './check/matrix'
 export type { AffectedCheckMatrix, AffectedCheckMatrixJob, AffectedCheckMatrixOptions } from './check/matrix'
-
 export type { CheckExecutionOptions, CheckExecutionReport, CheckExecutionStatus, CheckExecutionTask } from './check/types'
 export { applyDependencyFixPlan, checkDependencies, planDependencyFix } from './deps'
 export { checkDependencyAdmission } from './deps/admission'
@@ -169,6 +170,7 @@ export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './rele
 export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
 
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
+
 export * from './template-drift'
 export * from './template-instances'
 export { planTemplateValidation, validateTemplate } from './template-validation'
