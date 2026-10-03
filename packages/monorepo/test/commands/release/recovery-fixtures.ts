@@ -40,6 +40,10 @@ export function recoveryRemote() {
 
 export async function recoveryRunner(remote: ReturnType<typeof recoveryRemote>, uploaded = [a, b]) {
   const h = await publishHarness([{ status: 0, summary: uploaded }], spec => remote.versions.has(spec) ? '1.0.0' : '')
+  const committedFiles = new Map([
+    ['packages/repoctl/package.json', JSON.stringify(a)],
+    ['packages/zz-b/package.json', JSON.stringify(b)],
+  ])
   const original = h.spawn.getMockImplementation()!
   h.spawn.mockImplementation((command, args, options) => {
     if (command === 'npm' && args.includes('--json')) {
@@ -47,14 +51,19 @@ export async function recoveryRunner(remote: ReturnType<typeof recoveryRemote>, 
         ? { status: 0, stdout: JSON.stringify({ 'version': '1.0.0', 'gitHead': source, 'dist-tags': { latest: '1.0.0', alpha: '1.0.0' } }) }
         : { status: 1, stdout: '', stderr: 'E404 Not Found' }
     }
-    if (command === 'git' && args[0] === 'log') {
-      return { status: 0, stdout: source }
+    if (command === 'git' && args[0] === 'log' && args[1] === '--first-parent') {
+      return { status: 0, stdout: committedFiles.has(args[4]!) ? source : '' }
     }
     if (command === 'git' && args[1] === '--is-shallow-repository') {
       return { status: 0, stdout: 'false' }
     }
-    if (command === 'git' && args[0] === 'show') {
-      return { status: 0, stdout: JSON.stringify(args[1]!.includes('zz-b') ? b : a) }
+    if (command === 'git' && args[0] === 'ls-tree') {
+      const filename = args[3]!
+      return { status: 0, stdout: args[1] === source && committedFiles.has(filename) ? `100644 blob ${'b'.repeat(40)}\t${filename}` : '' }
+    }
+    if (command === 'git' && args[0] === 'show' && args[1]?.startsWith(`${source}:`)) {
+      const contents = committedFiles.get(args[1].slice(source.length + 1))
+      return { status: contents === undefined ? 128 : 0, stdout: contents ?? '' }
     }
     const result = original(command, args, options)
     if (command === 'pnpm' && args[0] === 'publish') {

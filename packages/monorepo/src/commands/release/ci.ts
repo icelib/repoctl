@@ -33,11 +33,14 @@ async function createReleasePullRequest(options: ReleaseCiOptions) {
     ...(releaseEnv['GITHUB_REPOSITORY'] ? { repository: releaseEnv['GITHUB_REPOSITORY'] } : {}),
     ...(releaseEnv['GITHUB_SERVER_URL'] ? { serverUrl: releaseEnv['GITHUB_SERVER_URL'] } : {}),
   }
-  const names = new Set(releases.map(release => release.name))
-  const previousVersions = new Map(releases.filter(release => release.currentVersion !== release.newVersion)
+  // Native versioning also updates root/private packages; only publish candidates need release notes.
+  const candidates = new Set((await getPublishCandidates(options.cwd)).map(pkg => pkg.name))
+  const noteReleases = releases.filter(release => candidates.has(release.name))
+  const names = new Set(noteReleases.map(release => release.name))
+  const previousVersions = new Map(noteReleases.filter(release => release.currentVersion !== release.newVersion)
     .map(release => [release.name, release.currentVersion]))
   let noteDocument = await buildReleaseNoteDocument(options.cwd, previousVersions, metadata, names)
-  for (const release of releases) {
+  for (const release of noteReleases) {
     const pkg = noteDocument.packages.find(pkg => pkg.name === release.name && pkg.version === release.newVersion)
     if (!pkg || !noteDocument.entries.some(entry => entry.packageName === pkg.name)) {
       throw new ReleaseCommandError(`Missing release notes for ${release.name}@${release.newVersion}; no PR pushed`)

@@ -5,7 +5,7 @@ import { isIntentConsumed, parseIntent, readLedger, readPendingIntents } from '.
 
 /** Advisory links only: no planner, hooks, intent consumption or version inference. */
 export async function publicApiIntents(root: string) {
-  const pending = await readPendingIntents(root, { includeRoot: true })
+  const pending = await readPendingIntents(root)
   if (!pending.length) {
     return () => [] as string[]
   }

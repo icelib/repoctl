@@ -24,6 +24,8 @@ repo release plan --markdown
 
 JSON 与 Markdown 表达相同的原生版本决策。说明条目复用已有发布 renderer，并排除已消费的 intent 条目。私有包可以升级版本，但标记为非发布候选。公共 `createReleasePlan({ cwd })` API 返回同一报告，不自行写入文件。
 
+计划、自动触发和版本准备统一识别根包与私有包的 intent，由 pnpm 在完整工作区内计算版本传播。Release PR 只为可发布的子包生成说明，并要求这些包具有对应版本的 changelog；根包或私有包缺少 changelog 不会阻断准备。根包即使未标记为 private，也不属于发布候选。不希望某个工作区包参与版本计算时，应配置 pnpm 的 `versioning.ignore`，不要只在实际写版本时改变工作区发现范围。
+
 ## 正式分支与维护版本线
 
 在 `repoctl.config.*` 中配置 `commands.release.branches`：
@@ -87,6 +89,8 @@ Release PR 以所选分支为 base。主正式线保留 `release/pnpm-version`�
 根目录的 `repoctl-release-progress.json` 是该记录的诊断副本，会与 npm 进度一起归档。只有 npm 精确版本和 dist-tag、指向原提交的标签、已发布的 GitHub Release、所有必要 hook 都完成后，生命周期记录才有 `complete: true`。`repoctl-publish-progress.json` 的 `complete` 仅表示 npm 阶段。
 
 重跑会读取远端检查点，核对 registry 和 GitHub，只补齐缺失阶段，不重新上传已接收的版本，也不重复已完成的 hook。预发布在上传前先推送版本提交，确保新 runner 能检出原版本。新发布从完整 Git 历史确定版本来源（checkout 必须 `fetch-depth: 0`）；恢复时还会核对原提交的 manifest 和 changelog。若后续提交修改了 changelog，请检出提示的原提交后恢复。
+
+如果 `.changeset/ledger.yaml` 已记录该包版本，以记录首次进入 Git 第一父提交历史的位置确定发布来源，包括沿用初始版本号的首次发布。普通合并对应主线上的合并提交。没有账本记录的版本（例如依赖传播升级）则沿同一条第一父提交历史回退到 manifest 的版本引入提交。尚未提交的账本记录不能建立发布来源。相对来源提交新增或删除 changelog 也会被拒绝；只有来源和当前工作区都不存在该文件时才允许缺失。
 
 旧版发布没有检查点时，可从 npm 的 `gitHead` 恢复原提交。缺失该字段时必须人工核对来源后显式设置 `REPO_RELEASE_SOURCE_SHA`，不能使用重跑 HEAD 猜测。所有目标已有 Release 的历史任务保持 no-op，不倒推重放历史 hook。无记录且缺失元数据的历史任务中，hook 结果按未知处理。
 
