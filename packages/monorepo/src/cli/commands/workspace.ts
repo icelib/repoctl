@@ -11,6 +11,7 @@ import { registerUpgradeCommand } from './upgrade'
 import { registerWorkspaceBoundaries } from './workspace/boundaries'
 import { registerWorkspaceGraphCommands } from './workspace/graph'
 import { registerWorkspaceOwnersCommand } from './workspace/owners'
+import { registerWorkspacePrepare } from './workspace/prepare'
 import { registerWorkspaceTasks } from './workspace/tasks'
 
 interface WorkspaceListCliOptions {
@@ -143,6 +144,7 @@ export function registerWorkspaceCommands(program: Command, cwd: string) {
   registerWorkspaceBoundaries(workspaceCommand, cwd)
   registerWorkspaceOwnersCommand(workspaceCommand, cwd)
 
+  registerWorkspacePrepare(workspaceCommand, cwd)
   registerWorkspaceTasks(workspaceCommand, cwd)
   registerUpgradeCommand(workspaceCommand, cwd, 'up')
 
