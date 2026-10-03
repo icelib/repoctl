@@ -1,4 +1,5 @@
 import YAML from 'yaml'
+import { parseWorkspaceLockfile } from '../../../core/lockfile'
 import fs from '../../../utils/fs'
 
 export type Data = Record<string, unknown>
@@ -22,16 +23,12 @@ export async function readYaml(path: string) {
 }
 
 export async function readLockfile(path: string) {
-  const docs = await readYaml(path)
-  // pnpm 12 prepends a separate package-manager/config dependency lock document.
-  const candidates = docs?.filter((doc) => {
-    const root = record(record(doc['importers'])?.['.'])
-    return root && !('packageManagerDependencies' in root || 'configDependencies' in root)
-  })
-  if (candidates?.length !== 1 || String(candidates[0]!['lockfileVersion']) !== '9.0') {
+  try {
+    return parseWorkspaceLockfile(await fs.readFile(path, 'utf8'))
+  }
+  catch {
     return undefined
   }
-  return candidates[0]!
 }
 
 function catalogSpecifier(specifier: string, name: string, workspace: Data) {
