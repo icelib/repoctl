@@ -1,72 +1,44 @@
-import { describe, expect, it, vi } from 'vitest'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
+import process from 'node:process'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createPackageManagerFixture } from '../../monorepo-templates/src/package-manager/test-support/fixture'
 
-describe('vitest setup coverage', () => {
-  it('prepares assets when license is missing and skips otherwise', async () => {
-    const pathExistsMock = vi.fn()
-    const prepareAssetsMock = vi.fn(async () => {})
-    const lockCloseMock = vi.fn(async () => {})
-    const openMock = vi.fn(async () => ({ close: lockCloseMock }))
-    const rmMock = vi.fn(async () => {})
+afterEach(() => {
+  vi.doUnmock('@icebreakers/monorepo-templates')
+  vi.unstubAllEnvs()
+})
 
+describe('test setup readiness', () => {
+  it('refreshes stale built assets even when LICENSE exists and isolates runner metadata', async () => {
+    const fixture = await createPackageManagerFixture()
+    try {
+      expect(await readFile(path.join(fixture.assetsDir, 'LICENSE'), 'utf8')).toBe('outdated cached asset\n')
+      for (const name of ['GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH', 'GITHUB_REF_NAME', 'GITHUB_SHA']) {
+        vi.stubEnv(name, 'runner-specific-value')
+      }
+      await vi.resetModules()
+      vi.doMock('@icebreakers/monorepo-templates', () => ({
+        ensureTemplateAssetsPrepared: async () => { await fixture.getPackageManager() },
+      }))
+      await import('../vitest.setup')
+      expect(JSON.parse(await readFile(path.join(fixture.assetsDir, 'package.json'), 'utf8')).packageManager).toBe(fixture.packageManager)
+      expect(await readFile(path.join(fixture.assetsDir, 'npmrc'), 'utf8')).toBe(fixture.npmrc)
+      expect(await readFile(path.join(fixture.assetsDir, 'pnpm-workspace.yaml'), 'utf8')).toContain('pmOnFail: error')
+      for (const name of ['GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH', 'GITHUB_REF_NAME', 'GITHUB_SHA']) {
+        expect(process.env[name]).toBeUndefined()
+      }
+    }
+    finally {
+      await fixture.cleanup()
+    }
+  })
+
+  it('stops test execution when asset preparation fails', async () => {
     await vi.resetModules()
-    vi.doMock('@/utils/fs', async () => {
-      const actual = await vi.importActual<typeof import('@/utils/fs')>('@/utils/fs')
-      return {
-        ...actual,
-        default: {
-          ...actual.default,
-          pathExists: pathExistsMock,
-        },
-        pathExists: pathExistsMock,
-      }
-    })
-    vi.doMock('node:fs/promises', async () => {
-      const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
-      return {
-        ...actual,
-        open: openMock,
-        rm: rmMock,
-      }
-    })
     vi.doMock('@icebreakers/monorepo-templates', () => ({
-      assetsDir: '/assets',
-      prepareAssets: prepareAssetsMock,
+      ensureTemplateAssetsPrepared: async () => { throw new Error('fixture preparation failed') },
     }))
-    pathExistsMock.mockResolvedValueOnce(false)
-    await import('../vitest.setup')
-    expect(prepareAssetsMock).toHaveBeenCalledWith({ silent: true, overwriteExisting: false })
-
-    await vi.resetModules()
-    pathExistsMock.mockReset()
-    prepareAssetsMock.mockReset()
-    lockCloseMock.mockReset()
-    openMock.mockReset()
-    rmMock.mockReset()
-    vi.doMock('@/utils/fs', async () => {
-      const actual = await vi.importActual<typeof import('@/utils/fs')>('@/utils/fs')
-      return {
-        ...actual,
-        default: {
-          ...actual.default,
-          pathExists: pathExistsMock,
-        },
-        pathExists: pathExistsMock,
-      }
-    })
-    vi.doMock('node:fs/promises', async () => {
-      const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises')
-      return {
-        ...actual,
-        open: openMock,
-        rm: rmMock,
-      }
-    })
-    vi.doMock('@icebreakers/monorepo-templates', () => ({
-      assetsDir: '/assets',
-      prepareAssets: prepareAssetsMock,
-    }))
-    pathExistsMock.mockResolvedValueOnce(true)
-    await import('../vitest.setup')
-    expect(prepareAssetsMock).not.toHaveBeenCalled()
+    await expect(import('../vitest.setup')).rejects.toThrow('fixture preparation failed')
   })
 })
