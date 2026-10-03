@@ -21,12 +21,12 @@ async function removeOwnedLock(lockPath: string, token: string) {
   }
 }
 
-async function removeOwnedTemporary(filename: string, owner: { dev: number, ino: number } | undefined) {
+async function removeOwnedTemporary(filename: string, owner: { dev: bigint, ino: bigint } | undefined) {
   if (!owner) {
     return
   }
   try {
-    const stat = await fs.lstat(filename)
+    const stat = await fs.lstat(filename, { bigint: true })
     if (stat.isFile() && stat.dev === owner.dev && stat.ino === owner.ino) {
       await fs.rm(filename)
     }
@@ -76,7 +76,7 @@ export async function mutateTemplateRegistry<T>(
   }
   const written: string[] = []
   const temporary = `${file}.${randomUUID()}.tmp`
-  let temporaryOwner: { dev: number, ino: number } | undefined
+  let temporaryOwner: { dev: bigint, ino: bigint } | undefined
   const lockToken = `${process.pid}:${randomUUID()}\n`
   let committed = false
   try {
@@ -113,7 +113,7 @@ export async function mutateTemplateRegistry<T>(
     }
     const handle = await fs.open(temporary, 'wx')
     try {
-      temporaryOwner = await handle.stat()
+      temporaryOwner = await handle.stat({ bigint: true })
       await handle.writeFile(`${JSON.stringify(registry, null, 2)}\n`)
     }
     finally {
@@ -164,7 +164,7 @@ export function canVerifyTemplateInstance(existing: TemplateInstance, next: Temp
   return existing.baseline.status === 'unverified' && next.baseline.status === 'available' && identity(existing) === identity(next)
 }
 
-export async function registerTemplateInstances(workspaceDir: string, drafts: TemplateInstanceDraft[], precondition?: (registry: TemplateInstanceRegistry) => Promise<void>) {
+export async function registerTemplateInstances(workspaceDir: string, drafts: TemplateInstanceDraft[], precondition?: (registry: TemplateInstanceRegistry) => Promise<void>, hooks?: Pick<TemplateInstanceReplacementHooks, 'rollback' | 'committed'>) {
   return mutateTemplateRegistry(workspaceDir, async (registry) => {
     await precondition?.(registry)
     const registered = []
@@ -207,5 +207,5 @@ export async function registerTemplateInstances(workspaceDir: string, drafts: Te
       }
     }
     return { result: registered, snapshots }
-  })
+  }, hooks)
 }

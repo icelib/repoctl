@@ -19,13 +19,13 @@ function normalizeOptions(input: TemplateLinkOptions): TemplateLinkOptions {
     throw new Error('Template linking requires a stable template key.')
   }
   const profile = input.profile ?? 'repo-new-v1'
-  if (!['workspace-copy-v1', 'repo-new-v1'].includes(profile)) {
+  if (!['workspace-copy-v1', 'repo-new-v1', 'repo-new-parameters-v1'].includes(profile)) {
     throw new Error('Unsupported template generation profile.')
   }
   const cwd = path.resolve(input.cwd)
   const target = instanceRelativePath(cwd, path.resolve(cwd, input.target))
   const parameters = generationParameters(input.parameters)
-  if (profile === 'repo-new-v1') {
+  if (profile === 'repo-new-v1' || profile === 'repo-new-parameters-v1') {
     parameters.packageName ??= path.basename(target)
     parameters.renameJson ??= false
   }

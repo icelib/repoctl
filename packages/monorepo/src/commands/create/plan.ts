@@ -1,7 +1,8 @@
-import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
+import type { TemplateDefinition, TemplateParameterPrompt, TemplateParameterValues } from '@icebreakers/monorepo-templates'
 import type { TemplateCatalogEntry } from '../../core/template-catalog'
 import type { templateMap } from '../../core/template-catalog/definitions'
 import type { ResolvedTemplateSource } from '../../core/template-source'
+import type { CreateParameterReport } from './parameters/prepare'
 import process from 'node:process'
 import { suggestTemplateKey } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
@@ -10,12 +11,17 @@ import { resolveCommandValues } from '../../core/config/resolution'
 import { createTemplateCatalog } from '../../core/template-catalog'
 import { loadTemplateCatalogContext } from '../../core/template-catalog/config'
 import { resolveRemoteTemplateSource } from '../../core/template-source'
+import { attachCreateParameters } from './parameters/prepare'
 
 export { getCreateChoices, getTemplateMap, templateMap } from '../../core/template-catalog/definitions'
 
 export type CreateNewProjectType = keyof typeof templateMap
 
 export interface CreateNewProjectOptions {
+  /** Strict values for repoctl.template.json; sensitive values stay in memory only. */
+  parameters?: TemplateParameterValues
+  /** Optional prompt adapter; programmatic callers are noninteractive by default. */
+  parameterPrompt?: TemplateParameterPrompt
   /** For remote sources, use only an exact verified cache entry. */
   offline?: boolean
   /** Asset cache directory; relative paths use cwd. */
@@ -45,6 +51,7 @@ export interface CreateNewProjectOptions {
 }
 
 export interface CreateNewProjectPlan {
+  parameterization?: CreateParameterReport
   cwd: string
   requestedTemplate: string
   template: string
@@ -113,7 +120,7 @@ async function resolvePlan(options: CreateNewProjectOptions | undefined, downloa
   const packageJsonFileName = renameJson ? 'package.mock.json' : 'package.json'
   const packageName = name?.startsWith('@') ? name : path.basename(targetName)
 
-  return {
+  return attachCreateParameters({
     cwd,
     requestedTemplate: requestedTemplateName,
     template,
@@ -129,7 +136,7 @@ async function resolvePlan(options: CreateNewProjectOptions | undefined, downloa
     templateDefinition,
     templateInfo,
     ...(sourceResolution ? { sourceResolution } : {}),
-  }
+  }, options?.parameters, options?.parameterPrompt)
 }
 
 /** Read-only creation preview; fetch remote assets explicitly before planning. */

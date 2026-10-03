@@ -1,7 +1,7 @@
 import type { TemplateSnapshot } from '../instances/types'
 import type { ResolvedTemplateParameters, TemplateParameterManifest } from './types'
 import { Buffer } from 'node:buffer'
-import { validateSnapshot } from '../instances/snapshot'
+import { maxSnapshotBytes, validateSnapshot } from '../instances/snapshot'
 import { packageSections, templateParameterManifestName } from './manifest'
 import { isParameterRecord, parameterError } from './schema'
 
@@ -34,8 +34,18 @@ export function renderTemplateParameters(source: TemplateSnapshot, manifest: Tem
       }
     }
   }
+  let outputBytes = source.files.filter(file => file.path !== templateParameterManifestName && ![...omitted].some(item => within(file.path, item))).reduce((total, file) => total + Buffer.byteLength(file.content, 'base64'), 0)
+  function checkSize() {
+    if (outputBytes > maxSnapshotBytes) {
+      parameterError('output', 'rendered snapshot exceeds 32 MiB')
+    }
+  }
   function interpolate(text: string, file: string, allowSensitive: boolean) {
-    return text.replace(/\{\{repoctl(-json)?:([a-z]\w*)\}\}/gu, (_token, json: string | undefined, name: string) => {
+    if (!allowSensitive) {
+      outputBytes += Buffer.byteLength(text)
+      checkSize()
+    }
+    return text.replace(/\{\{repoctl(-json)?:([a-z]\w*)\}\}/gu, (token, json: string | undefined, name: string) => {
       if (!Object.hasOwn(parameters.values, name)) {
         parameterError(`values.${name}`, 'an interpolated parameter is missing')
       }
@@ -45,7 +55,10 @@ export function renderTemplateParameters(source: TemplateSnapshot, manifest: Tem
         }
         result.sensitivePaths.push(file)
       }
-      return json ? JSON.stringify(parameters.values[name]) : String(parameters.values[name])
+      const replacement = json ? JSON.stringify(parameters.values[name]) : String(parameters.values[name])
+      outputBytes += Buffer.byteLength(replacement) - Buffer.byteLength(token)
+      checkSize()
+      return replacement
     })
   }
   for (const file of source.files) {

@@ -422,3 +422,45 @@ npm 只接受精确版本，不接受标签或范围。registry 优先使用 `re
 创建记录 npm 版本与 integrity，或 Git commit 与 integrity，并保存可重建基线。远程实例支持基线重建与漂移检查。`templates upgrade` 当前接受内置模板包版本，对远程实例明确报错；修改远程声明不会升级已生成项目。
 
 公共函数 `resolveRemoteTemplateSource(remote, source, { cwd, cacheDir, offline })` 返回已验证的 `sourceDir`、规范化 `request`、固定的 `resolved` 身份、资产 `digest` 和 `cache: 'hit' | 'downloaded'`。
+
+## 类型化参数与条件生成
+
+模板作者可在根目录放置 `repoctl.template.json`，声明参数、需要插值的文件，以及一起启用或省略的文件、scripts 和依赖。配置支持声明式等值条件，不执行脚本。
+
+```json
+{
+  "schemaVersion": 1,
+  "parameters": {
+    "label": { "type": "string", "default": "demo" },
+    "tests": { "type": "boolean", "default": false },
+    "flavor": { "type": "enum", "options": ["plain", "bold"], "default": "plain" },
+    "token": { "type": "string", "required": true, "sensitive": true }
+  },
+  "interpolate": ["src/settings.ts", "credentials.local"],
+  "conditions": [{
+    "when": { "parameter": "tests", "equals": true },
+    "files": ["test"],
+    "package": {
+      "scripts": { "test": "vitest run" },
+      "devDependencies": { "vitest": "catalog:" }
+    }
+  }]
+}
+```
+
+`interpolate` 和条件文件使用精确相对路径，目录包含其后代；不支持 glob、文件名插值和路径逃逸。只有声明的 UTF-8 文本会替换 <code v-pre>{{repoctl:label}}</code>（原值文本）和 <code v-pre>{{repoctl-json:label}}</code>（JSON 字面量），二进制保持原字节。工程路径引用在插值前转换。原值不自动做代码或 HTML 转义，作者须选择符合目标格式的占位方式。契约文件不进入生成项目。
+
+条件 package 条目只能有一个所有者，且不得已存在于基础清单。支持 scripts、dependencies、devDependencies、peerDependencies 和 optionalDependencies；示例的 catalog 引用须由消费工作区提供。条件不能使用敏感参数，package 条目不能插入敏感值。
+
+```bash
+# answers.json: {"label":"api","tests":true,"flavor":"bold","token":"..."}
+repo new api --template team --data ./answers.json --json
+repo new api --template team --data ./answers.json
+repo package create api --template team --data ./answers.json
+```
+
+数据文件为不超过 1 MiB 的 UTF-8 JSON 对象。未知字段、类型错误、无效枚举和缺少必填值在写入前失败，诊断不回显输入值。布尔值不能使用字符串。交互终端询问缺少的参数，敏感字符串使用掩码输入；JSON 和非交互调用不弹出问题。问答和文件使用同一校验规则。无参数契约的模板保持原输出，且拒绝额外参数。
+
+预览的可选 `parameterization` 包含脱敏值及文件/package 条目选择。敏感原值仅用于内存渲染，不进入报告、实例参数或留存基线。包含敏感值的文件成为持久排除项，由业务自行维护，基线重建不会恢复它们。升级复用非敏感参数并保留敏感文件；新版本新增敏感插值路径时，必须明确排除该路径才能升级其余文件。
+
+公开 API 为 `resolveCreateNewProjectPlan({ parameters, parameterPrompt? })` 和 `applyCreateNewProjectPlan(plan)`。执行接受同一进程中未修改的原始计划，JSON 报告不能直接执行，须用原数据重新规划。来源变化、已存在目标或计划修改会拒绝写入。参数化创建统一提交暂存输出、workspace 清单和实例记录；失败恢复本次文件，遇到并发编辑或文件替换则保留并报告恢复位置。重复创建不会覆盖项目。

@@ -12,12 +12,16 @@ export interface TemplateSnapshot {
   directories: string[]
 }
 
-export type TemplateGenerationProfile = 'workspace-copy-v1' | 'repo-new-v1'
+export type TemplateGenerationProfile = 'workspace-copy-v1' | 'repo-new-v1' | 'repo-new-parameters-v1'
 
 /** Only these non-secret inputs are retained; arbitrary config and environment are never serialized. */
 export interface TemplateGenerationParameters {
   packageName?: string
   renameJson?: boolean
+  /** Validated nonsensitive template inputs only. */
+  templateValues?: Record<string, string | boolean>
+  /** Names only; values are never retained. */
+  sensitiveParameters?: string[]
 }
 
 export interface TemplateInstanceSource {
@@ -70,6 +74,8 @@ export interface GeneratedTemplateInstanceOptions {
   profile: TemplateGenerationProfile
   parameters?: TemplateGenerationParameters
   generatorVersion?: string
+  /** Secret-bearing output files stay outside recorded baselines and later upgrades. */
+  excludedPaths?: string[]
 }
 
 export interface TemplateInstanceDraft {

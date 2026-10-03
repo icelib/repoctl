@@ -394,3 +394,44 @@ The first Git fetch records its resolved commit. That same request continues usi
 Creation records npm version/integrity or Git commit/integrity with its retained baseline. Remote instances support baseline reconstruction and drift inspection. `templates upgrade` currently accepts built-in template-package versions and rejects remote instances explicitly; changing a remote declaration does not upgrade existing generated projects.
 
 The public `resolveRemoteTemplateSource(remote, source, { cwd, cacheDir, offline })` helper returns verified `sourceDir`, normalized `request`, fixed `resolved` identity, asset `digest`, and `cache: 'hit' | 'downloaded'`.
+
+## Typed parameters and conditional generation
+
+Place `repoctl.template.json` at the template root to declare typed inputs and conditional files, scripts and dependency entries. Conditions compare declared values without executing code.
+
+```json
+{
+  "schemaVersion": 1,
+  "parameters": {
+    "label": { "type": "string", "default": "demo" },
+    "tests": { "type": "boolean", "default": false },
+    "flavor": { "type": "enum", "options": ["plain", "bold"], "default": "plain" },
+    "token": { "type": "string", "required": true, "sensitive": true }
+  },
+  "interpolate": ["src/settings.ts", "credentials.local"],
+  "conditions": [{
+    "when": { "parameter": "tests", "equals": true },
+    "files": ["test"],
+    "package": {
+      "scripts": { "test": "vitest run" },
+      "devDependencies": { "vitest": "catalog:" }
+    }
+  }]
+}
+```
+
+Paths are exact template-relative paths; directory conditions include descendants. Globs, filename interpolation and path traversal are rejected. Only declared UTF-8 text expands <code v-pre>{{repoctl:label}}</code> (raw text) or <code v-pre>{{repoctl-json:label}}</code> (a JSON literal); binary bytes remain unchanged. Engineering references are rewritten before inserting input values. Choose placeholders appropriate for the destination syntax: raw values are not automatically escaped as code or HTML. The contract is omitted from generated projects.
+
+Conditional package entries must have one owner and be absent from the base manifest. Supported sections are scripts, dependencies, devDependencies, peerDependencies and optionalDependencies. Catalog references require a matching workspace catalog. Sensitive parameters cannot drive conditions or enter package entries.
+
+```sh
+repo new api --template team --data ./answers.json --json
+repo new api --template team --data ./answers.json
+repo package create api --template team --data ./answers.json
+```
+
+The data file is a UTF-8 JSON object up to 1 MiB. Unknown keys, invalid types/enums and missing required inputs fail before writes without echoing input values. Booleans are not coerced from strings. Interactive terminals prompt for omitted values and mask sensitive strings; JSON and noninteractive callers never prompt. Both input paths use the same validation. Templates without a contract keep their existing output and reject extra parameters.
+
+The optional preview `parameterization` field reports redacted values and selected files/package entries. Sensitive values remain in memory for rendering; reports, retained parameters and baselines never contain them. Files containing sensitive values become persistent unmanaged exclusions and cannot be restored from baselines. Upgrades retain those local files and reuse nonsensitive inputs. New secret interpolation paths require explicit exclusion before other files can upgrade.
+
+Use `resolveCreateNewProjectPlan({ parameters, parameterPrompt? })` and `applyCreateNewProjectPlan(plan)` for programmatic planning and execution. Apply accepts the original unchanged in-memory object; serialized reports require a fresh plan with the original data. Changed sources/plans and existing targets fail before writes. Parameterized creation stages output and commits files, workspace configuration and provenance together. Failures restore owned files; concurrent edits or replacements are preserved with recovery locations. Repeating creation never overwrites an existing project.
