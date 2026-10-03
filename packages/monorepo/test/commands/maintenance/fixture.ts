@@ -21,7 +21,8 @@ export async function fixture() {
   roots.push(root)
   const cwd = path.join(root, 'source')
   await mkdir(cwd)
-  const git = (args: string[], directory = cwd) => execFileSync('git', args, { cwd: directory, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim()
+  const gitBytes = (args: string[], directory = cwd) => execFileSync('git', args, { cwd: directory, stdio: ['ignore', 'pipe', 'pipe'] })
+  const git = (args: string[], directory = cwd) => gitBytes(args, directory).toString('utf8').trim()
   const write = async (filename: string, content: string) => {
     await mkdir(path.dirname(path.join(cwd, filename)), { recursive: true })
     await writeFile(path.join(cwd, filename), content)
@@ -56,5 +57,5 @@ export async function fixture() {
   const options: MaintenanceUpgradeOptions = { cwd, base, head, outputDirectory: path.join(root, 'artifact'), spawn, env: { ...process.env, GITHUB_REPOSITORY: 'acme/example', GITHUB_RUN_ID: '123', GITHUB_RUN_ATTEMPT: '1' } }
   const expected = { repository: 'acme/example', coordinates: { owner: 'acme', repo: 'example' }, defaultBranch: 'main', head, base, runId: '123', runAttempt: '1', artifactId: '456', artifactDigest: 'a'.repeat(64), appConfigured: true, targets: ['.editorconfig'] }
   const request = async (route: string) => ({ data: route.endsWith('/branches/{branch}') ? { commit: { sha: head } } : route.endsWith('/actions/artifacts/{artifact_id}') ? { id: 456, name: 'repoctl-maintenance-123-1', expired: false, digest: `sha256:${'a'.repeat(64)}`, workflow_run: { id: 123, head_sha: head } } : { full_name: expected.repository, default_branch: 'main' } })
-  return { root, cwd, git, write, base, head, version, calls, spawn, options, expected, request }
+  return { root, cwd, git, gitBytes, write, base, head, version, calls, spawn, options, expected, request }
 }

@@ -230,6 +230,8 @@ repoctl workspace owners --file .github/CODEOWNERS --sync
 
 准备步骤应在一次性干净 checkout 中运行：应用完整根资产计划和三方合并，由 pnpm 更新锁文件，再执行 `--frozen-lockfile --ignore-scripts` 安装，随后按 build、lint、typecheck、tsd、test 顺序执行已声明的根脚本。生成的变更保留在该 checkout。冲突、源码漂移、不支持的路径和校验失败会留下 `blocked` 报告及日志；没有资产 diff 时为 `unchanged`，这两种状态均不创建 PR。报告包含逐文件计划、跳过/冲突项、来源/目标版本、检查结果、精确文件哈希与模式、补丁摘要。
 
+报告中的文件哈希针对精确的 Git blob 字节。准备阶段仍校验计划中的工作区文件原始字节；发布验证补丁索引及与其 Git 语义等价的工作区内容，允许 Git 内建的换行转换。隔离发布目录在检查文件前禁用 hooks、可执行的 clean/smudge/process 过滤器和文件系统监视器，并将这些设置保留至创建 PR。
+
 通过 `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` 导出需主动启用的工作流，已有文件不会被覆盖。配置仓库 GitHub App 的 `REPOCTL_APP_CLIENT_ID`、`REPOCTL_APP_PRIVATE_KEY`，授予 **Contents、Pull requests、Workflows 写权限**，随后提交工作流。Workflows 权限用于更新受管工作流；App token 也能让新 PR 正常触发 CI。不需要 registry token。
 
 第一个 job 仅有读取权限，可以运行可信 checkout 的配置、依赖和检查脚本，上传不可变产物。第二个 job 只下载精确 artifact ID，核验摘要、本次 run/attempt/仓库、源码 SHA、根资产路径、Git 文件模式和前后哈希，然后应用已审核补丁。它不执行项目脚本或已安装依赖，校验完成后才获取 App token，通过固定 SHA 的 `create-pull-request` action 管理专用 `repoctl/managed-assets` 分支。重复事件更新同一分支和 PR，请勿在该分支维护手工修改。默认分支推进或 App 权限缺失/不足会阻止发布；完整报告仍保留在 workflow artifact 中。

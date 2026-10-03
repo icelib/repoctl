@@ -21,7 +21,9 @@ export interface MaintenanceVersionChange {
 
 export interface MaintenanceFile {
   path: string
+  /** SHA-256 of committed Git blob bytes, before checkout conversions. */
   beforeHash: string | null
+  /** SHA-256 of the reviewed patch's Git blob bytes, before checkout conversions. */
   afterHash: string | null
   beforeMode: string | null
   afterMode: string | null

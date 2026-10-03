@@ -11,6 +11,6 @@ export async function getMaintenanceWorkflow(): Promise<string> {
     readFile(path.join(directory, 'validate.mjs'), 'utf8'),
   ])
   const script = validator.replace('export async function', 'async function').trimEnd()
-  return template.replace('            __VALIDATOR__', script.split('\n').map(line => `            ${line}`).join('\n'))
-    .replace('__TARGETS__', JSON.stringify(getAssetTargets()))
+  return template.replace('            __VALIDATOR__', () => script.split('\n').map(line => `            ${line}`).join('\n'))
+    .replace('__TARGETS__', () => JSON.stringify(getAssetTargets()))
 }
