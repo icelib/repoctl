@@ -49,7 +49,8 @@ async function generate(options: MaintenanceUpgradeOptions, report: MaintenanceU
   if (plan.status !== 'ready' || plan.files.some(file => file.status === 'conflict')) {
     throw new Error(`Root asset upgrade has conflicts: ${plan.blockers.map(blocker => blocker.detail).join('; ')}`)
   }
-  if (plan.rootDir !== options.cwd || plan.files.some(file => !isRootAsset(file.path))) {
+  // Upgrade plans use portable separators; compare the actual native directory identity.
+  if (await realpath(plan.rootDir) !== options.cwd || plan.files.some(file => !isRootAsset(file.path))) {
     throw new Error('Maintenance supports only managed root assets in the checked-out repository.')
   }
   const applied = await applyUpgradePlan(options.cwd, plan)
