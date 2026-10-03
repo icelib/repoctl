@@ -137,6 +137,10 @@ export { checkDependencyAdmission } from './deps/admission'
 export type { AdmissionDeclaration, DependencyAdmissionConfig, DependencyAdmissionException, DependencyAdmissionFinding, DependencyAdmissionOptions, DependencyAdmissionReport, DependencyAdmissionRule } from './deps/admission'
 export { checkPeerDependencies } from './deps/peers'
 export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport } from './deps/peers'
+export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
+
+export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
+
 export { inspectInstallSecurity } from './doctor/security'
 
 export type { InstallBuildDecision, InstallPolicyKey, InstallSecurityExpectations, InstallSecurityOptions, InstallSecurityPresetPlan, InstallSecurityReport, InstallSecuritySetting } from './doctor/security'
@@ -145,12 +149,17 @@ export { applyInstallSecurityPreset, planInstallSecurityPreset } from './doctor/
 export { checkEnvironmentCache } from './env-cache'
 
 export type * from './env-cache'
+
 export { formatEnvironmentCache } from './env-cache/format'
+
+export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
+export type { MaintenanceFile, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+
 export { resolveReleaseBranches } from './release/lines'
 
 export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
@@ -161,5 +170,6 @@ export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
 export * from './template-instances'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
-
 export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
+export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
+export { planWorkspaceRemoval } from './workspace/remove/plan'
