@@ -20,13 +20,13 @@ function stop(child: ChildProcess) {
   }
 }
 
-export async function execute(executable: string, args: string[], cwd: string, timeoutMs: number): Promise<PackageCheckCommand> {
+export async function execute(executable: string, args: string[], cwd: string, timeoutMs: number, options: { env?: NodeJS.ProcessEnv } = {}): Promise<PackageCheckCommand> {
   return new Promise((resolve) => {
     const child = spawn(executable, args, {
       cwd,
       detached: process.platform !== 'win32',
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, CI: 'true', NODE_PATH: '', REPOCTL_PACKAGE_CHECK_RUNNING: '1' },
+      env: { ...(options.env ?? process.env), CI: 'true', NODE_PATH: '', REPOCTL_PACKAGE_CHECK_RUNNING: '1' },
     })
     let output = ''
     let stdout = ''

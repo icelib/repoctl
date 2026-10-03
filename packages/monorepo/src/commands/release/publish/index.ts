@@ -27,7 +27,7 @@ export async function getPublishCandidates(cwd: string): Promise<PublishedPackag
 }
 
 /** Only pnpm uploads; accepted versions never re-enter its retry filters. */
-export async function publishWithRetry(args: string[], options: ReleaseOptions, candidates: PublishedPackage[], confirmAll = false, recovery?: { accepted: PublishedPackage[], save: (accepted: PublishedPackage[]) => Promise<void> }) {
+export async function publishWithRetry(args: string[], options: ReleaseOptions & { quiet?: boolean }, candidates: PublishedPackage[], confirmAll = false, recovery?: { accepted: PublishedPackage[], save: (accepted: PublishedPackage[]) => Promise<void> }) {
   const state = new PublishState(candidates, recovery?.save)
   state.accept(recovery?.accepted ?? [])
   let attemptArgs = args
@@ -64,7 +64,9 @@ export async function publishWithRetry(args: string[], options: ReleaseOptions, 
       }
 
       const delay = retryDelays[attempt - 1]!
-      logger.warn(`npm publish transient failure; reconciling before retry in ${delay / 1000}s (attempt ${attempt + 1}/${publishAttempts}).`)
+      if (!options.quiet) {
+        logger.warn(`npm publish transient failure; reconciling before retry in ${delay / 1000}s (attempt ${attempt + 1}/${publishAttempts}).`)
+      }
       await sleep(delay, options)
       const unknown = await refreshRegistry(state, options)
       await state.save(options.cwd, 'publishing')
@@ -77,13 +79,17 @@ export async function publishWithRetry(args: string[], options: ReleaseOptions, 
         await state.save(options.cwd, 'complete')
         return
       }
-      const unfilteredArgs = args.filter((arg, index) => arg !== '--filter' && args[index - 1] !== '--filter')
-      attemptArgs = [...unfilteredArgs, ...state.pendingUploads.flatMap(pkg => ['--filter', pkg.name])]
+      if (args.includes('-r') || args.includes('--recursive')) {
+        const unfilteredArgs = args.filter((arg, index) => arg !== '--filter' && args[index - 1] !== '--filter')
+        attemptArgs = [...unfilteredArgs, ...state.pendingUploads.flatMap(pkg => ['--filter', pkg.name])]
+      }
     }
   }
   catch (error) {
     await state.save(options.cwd, 'failed')
-    logger.error(`npm publish progress saved to repoctl-publish-progress.json; accepted but unconfirmed: ${state.unconfirmed().map(packageKey).join(', ') || '(none)'}; still requiring upload: ${state.pendingUploads.map(packageKey).join(', ') || '(none)'}`)
+    if (!options.quiet) {
+      logger.error(`npm publish progress saved to repoctl-publish-progress.json; accepted but unconfirmed: ${state.unconfirmed().map(packageKey).join(', ') || '(none)'}; still requiring upload: ${state.pendingUploads.map(packageKey).join(', ') || '(none)'}`)
+    }
     throw error
   }
 }
