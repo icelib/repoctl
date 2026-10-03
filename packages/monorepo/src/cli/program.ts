@@ -7,6 +7,7 @@ import { registerAiCommands } from './commands/ai'
 import { registerConfigCommands } from './commands/config'
 import { registerDepsCommands } from './commands/deps'
 import { registerEnvCommands } from './commands/env'
+import { registerGenerateCommand } from './commands/generate'
 import { registerMaintenanceCommands } from './commands/maintenance'
 import { registerPackageCommands } from './commands/package'
 import { registerReleaseCommands } from './commands/release'
@@ -90,6 +91,7 @@ registerSkillsCommands(program, cwd)
 registerVerifyCommands(program, cwd)
 registerAiCommands(program, cwd)
 registerPackageCommands(program, cwd)
+registerGenerateCommand(program, cwd)
 registerMaintenanceCommands(program, cwd)
 
 configureLocalizedHelp(program)

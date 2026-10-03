@@ -425,6 +425,27 @@ npm 只接受精确版本，不接受标签或范围。registry 优先使用 `re
 
 公共函数 `resolveRemoteTemplateSource(remote, source, { cwd, cacheDir, offline })` 返回已验证的 `sourceDir`、规范化 `request`、固定的 `resolved` 身份、资产 `digest` 和 `cache: 'hit' | 'downloaded'`。
 
+## 在已有包内生成组件和路由
+
+使用独立的 `generate` 命令向指定 workspace 包添加组件或路由：
+
+```sh
+repo generate react-component action-button --package @acme/ui --json
+repo generate react-component action-button --package @acme/ui --export
+repo generate vue-component action-button --package packages/vue-ui --export
+repo generate hono-route health --package apps/api
+```
+
+首批生成器为 `vue-component`、`react-component` 和 `hono-route`，分别要求目标包声明 Vue、React 或 Hono。每次生成源文件及有行为断言的 Vitest 测试。名称使用 kebab-case；`--directory` 指定包内相对源目录。组件默认放入 `src/components`，路由默认放入 `src/routes`，测试放入 `test`。
+
+`--json` 和 `--dry-run` 只读预览真实文件内容。显式传入 `--export` 才向 `src/index.ts` 或 `--barrel` 指定的 `.ts` 文件添加具名导出。更新保留原注释，遇到无法确认的通配导出或同名符号时要求人工处理。`--params '{"export":true}'` 使用相同的严格参数契约；未知参数和字符串布尔值在写入前失败。
+
+重复运行时，相同的生成文件保持不变。修改过的文件、链接路径、包外输出及过期计划都会被拒绝。多个文件的写入由包级操作锁保护，失败时恢复原内容；遇到并发业务修改时保留修改和恢复备份，并列出需要处理的路径。
+
+Hono 生成器输出独立子路由，按打印的 `app.route(...)` 指引接入业务入口，并检查挂载路径与中间件顺序。工具不会猜测入口位置。缺少测试工具时按提示安装并配置合适的 Vitest 环境；生成器不会自动修改依赖或应用配置。生成后依次运行 build、ESLint/Stylelint、typecheck 和测试。
+
+`new` 继续负责创建整个包，仍然拒绝已存在的目标目录。公开 API 为 `planGenerate(options)` 和 `applyGeneratePlan(plan)`，使用相同的文件计划与边界校验。
+
 ## 类型化参数与条件生成
 
 模板作者可在根目录放置 `repoctl.template.json`，声明参数、需要插值的文件，以及一起启用或省略的文件、scripts 和依赖。配置支持声明式等值条件，不执行脚本。

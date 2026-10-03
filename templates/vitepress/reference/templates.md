@@ -397,6 +397,45 @@ Creation records npm version/integrity or Git commit/integrity with its retained
 
 The public `resolveRemoteTemplateSource(remote, source, { cwd, cacheDir, offline })` helper returns verified `sourceDir`, normalized `request`, fixed `resolved` identity, asset `digest`, and `cache: 'hit' | 'downloaded'`.
 
+## Generate inside an existing package
+
+Use `generate` for a component or route inside a selected workspace package:
+
+```sh
+repo generate react-component action-button --package @acme/ui --json
+repo generate react-component action-button --package @acme/ui --export
+repo generate vue-component action-button --package packages/vue-ui --export
+repo generate hono-route health --package apps/api
+```
+
+The built-in generators are `vue-component`, `react-component`, and `hono-route`.
+They require the target package to declare Vue, React, or Hono respectively. Every
+generator creates a source file and meaningful Vitest tests. Names use kebab case;
+`--directory` changes the package-relative source directory. Component defaults
+are `src/components`, route defaults are `src/routes`, and tests live under `test`.
+
+`--json` and `--dry-run` are read-only previews. `--export` explicitly adds a named
+export to `src/index.ts`, or the `.ts` file selected by `--barrel`. Existing comments
+are retained. Ambiguous wildcard exports or conflicting symbols require manual
+review. JSON `--params '{"export":true}'` uses the same strict parameter contract;
+unknown parameters and string booleans fail before any write.
+
+Identical generated files are unchanged on repeat runs. Modified files, linked
+paths, outputs outside the package, and stale plans are rejected. Multi-file writes
+hold a package operation lock and restore previous contents on failure; concurrent
+business edits and recovery backups are retained with explicit recovery paths.
+
+Hono generators return an isolated sub-router. Follow the printed `app.route(...)`
+instruction after reviewing your entry point, mount path and middleware order.
+The generator does not guess where to register it. Install missing test utilities
+and configure a compatible Vitest environment when prompted; dependencies and
+application configuration are not changed automatically. Run build, lint,
+Stylelint for SFC styles, typecheck, and tests after generation.
+
+`new` continues to create a whole package and rejects existing target directories.
+The public API exposes `planGenerate(options)` and `applyGeneratePlan(plan)`; both
+operate on the same validated file plan.
+
 ## Typed parameters and conditional generation
 
 Place `repoctl.template.json` at the template root to declare typed inputs and conditional files, scripts and dependency entries. Conditions compare declared values without executing code.

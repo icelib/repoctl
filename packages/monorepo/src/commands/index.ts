@@ -155,6 +155,8 @@ export type * from './env-cache'
 
 export { formatEnvironmentCache } from './env-cache/format'
 
+export * from './generate'
+
 export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
 export type { MaintenanceFile, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
 export { checkPackages } from './package-check'
