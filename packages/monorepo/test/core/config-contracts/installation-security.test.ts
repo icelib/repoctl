@@ -38,3 +38,11 @@ it('rejects invalid root policy before doctor starts even with a workspace-only 
   const cwd = await fixture('export default { installationSecurity: {unknown: "private-value"} }')
   await expect(runDoctor(cwd, { rules: ['package-json'] })).rejects.toThrow('installationSecurity.unknown')
 })
+
+it('rejects invalid root policy in CLI preflight before doctor starts', async () => {
+  const cwd = await fixture('export default { installationSecurity: {unknown: "private-value"} }')
+  const result = invoke(cwd, ['doctor', '--json'])
+  expect(result.status).toBe(1)
+  expect(result.stderr).toContain('installationSecurity.unknown')
+  expect(result.stdout + result.stderr).not.toContain('private-value')
+})
