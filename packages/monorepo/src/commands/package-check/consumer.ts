@@ -24,8 +24,9 @@ function checkDependencyRanges(pkg: PackedPackage, packages: PackedPackage[], re
   }
 }
 
-export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[], entries: ConsumerEntry[], directory: string, timeout: number, options: { env?: NodeJS.ProcessEnv } = {}) {
+export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[], entries: ConsumerEntry[], directory: string, timeout: number, options: { env?: NodeJS.ProcessEnv, signal?: AbortSignal | undefined, packageManager?: string } = {}) {
   const { result } = pkg
+  const { packageManager } = options
   checkDependencyRanges(pkg, packages, results)
   if (result.diagnostics.some(item => item.severity === 'error')) {
     return
@@ -34,6 +35,7 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
   await writeFile(path.join(directory, 'package.json'), JSON.stringify({
     name: 'repoctl-package-consumer',
     private: true,
+    ...(packageManager ? { packageManager } : {}),
     dependencies: { [String(pkg.manifest.name)]: `file:${result.tarball}` },
   }, null, 2))
   // Overrides use packed files, never workspace source directories. Keep this consumer
@@ -48,7 +50,7 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
       })),
     ]),
   }))
-  const install = await execute('pnpm', ['install', '--ignore-scripts', '--no-frozen-lockfile', '--config.manage-package-manager-versions=false'], directory, timeout, options)
+  const install = await execute(packageManager ? 'corepack' : 'pnpm', [...(packageManager ? ['pnpm'] : []), 'install', '--ignore-scripts', '--no-frozen-lockfile', '--config.manage-package-manager-versions=false'], directory, timeout, options)
   result.commands.push(install)
   if (install.exitCode !== 0) {
     result.diagnostics.push({ source: 'repoctl', code: 'CONSUMER_INSTALL', severity: 'error', message: failureMessage(install) })

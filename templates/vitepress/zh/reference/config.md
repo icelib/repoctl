@@ -77,7 +77,7 @@ repo config inspect --command ai --set 'format="json"' --set 'force=false' --jso
 
 `config validate` 只读检查，失败退出码为 1。JSON 包含 `schemaVersion`、`valid`、`file` 和 `diagnostics`，诊断字段为 `id`、`path`、`actualType`、`expected`、`suggestion`。加载失败使用 `config.load-failed`，不输出配置代码抛出的任意内容。配置文件仍是受信任的 JavaScript，加载时会求值；本命令不会隔离配置代码自身的行为。
 
-`inspect --command` 支持 `ai`、`clean`、`create`、`deps`、`init`、`mirror`、`release`、`upgrade`，与命令执行复用同一个选项解析器。新增 `effective.values` 与逐字段 `effective.origins`，来源固定为 `default`、`project`、`cli`。重复传入 `--set 字段路径=JSON` 可只读预览配置覆盖；数组整体替换，显式 `false` 和空数组会保留。此处解释命令配置，实际发现的文件、选中的包和 `--all` 等运行参数请查看对应命令计划。
+`inspect --command` 支持 `ai`、`clean`、`create`、`deps`、`doctor`、`init`、`mirror`、`release`、`upgrade`，与命令执行复用同一个选项解析器。新增 `effective.values` 与逐字段 `effective.origins`，来源固定为 `default`、`project`、`cli`。重复传入 `--set 字段路径=JSON` 可只读预览配置覆盖；数组整体替换，显式 `false` 和空数组会保留。此处解释命令配置，实际发现的文件、选中的包和 `--all` 等运行参数请查看对应命令计划。
 
 配置 CLI 报告默认隐藏环境变量映射、脚本内容、工具原生配置及敏感键；`--redact` 额外替换 cwd、配置目录和 home 路径。程序化报告使用 `explainMonorepoConfig`、`validateConfigFile`。`loadMonorepoConfigDetails` 与原有 `inspectMonorepoConfig` 为需要回调的代码保留运行时对象，请勿直接序列化这些原始对象作为排障报告。
 

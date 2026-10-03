@@ -43,6 +43,7 @@ it('rejects invalid options and suppression policies instead of silently weakeni
   await expect(checkTemplateDrift(f.cwd, { suppressions: [{ id: 'template-instance-drift', reason: '' }] })).rejects.toThrow('nonempty reason')
   await write(f.cwd, 'repoctl.config.mjs', 'export default {commands:{doctor:{suppressions:null}}}')
   await expect(checkTemplateDrift(f.cwd)).rejects.toMatchObject({
+    code: 'REPOCTL_CONFIG_INVALID',
     diagnostics: [expect.objectContaining({ id: 'config.invalid-type', path: 'commands.doctor.suppressions', actualType: 'null' })],
   })
 })

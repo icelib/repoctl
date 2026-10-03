@@ -1,5 +1,6 @@
 import type { TemplateGenerationParameters, TemplateInstance, TemplateInstanceRegistry } from './types'
 import { portableRelativePath } from './paths'
+import { validateRemoteInstanceSource } from './remote'
 
 export const digestPattern = /^[a-f0-9]{64}$/u
 const numericIdentifier = '(?:0|[1-9]\\d*)'
@@ -49,7 +50,7 @@ export function validateInstance(instance: TemplateInstance) {
   onlyFields(instance, ['id', 'target', 'template', 'provenance', 'source', 'generator', 'parameters', 'baseline', 'excludedPaths'])
   onlyFields(instance.generator, ['profile', 'version'])
   onlyFields(instance.parameters, ['packageName', 'renameJson'])
-  onlyFields(instance.source, ['kind', 'templatePath', 'packageName', 'version', 'digest'])
+  onlyFields(instance.source, ['kind', 'templatePath', 'packageName', 'version', 'digest', 'remote'])
   onlyFields(instance.baseline, ['status', 'original', 'rendered', 'reason'])
   if (!instance || !/^[a-f0-9]{24}$/u.test(instance.id) || typeof instance.template !== 'string' || !instance.template
     || !['created', 'linked'].includes(instance.provenance)
@@ -66,8 +67,11 @@ export function validateInstance(instance: TemplateInstance) {
     throw new Error('Template exclusions must use sorted, canonical non-overlapping paths.')
   }
   const source = instance.source
-  portableRelativePath(source.templatePath)
-  if (!['package', 'snapshot'].includes(source.kind)
+  if (source.kind !== 'remote' || source.templatePath !== '.') {
+    portableRelativePath(source.templatePath)
+  }
+  validateRemoteInstanceSource(source, exactVersionPattern)
+  if (!['package', 'snapshot', 'remote'].includes(source.kind)
     || (source.kind === 'package' && (source.packageName !== '@icebreakers/monorepo-templates' || !exactVersionPattern.test(source.version ?? '')))
     || (source.digest !== undefined && !digestPattern.test(source.digest))) {
     throw new Error('Template source must use an exact package version or immutable snapshot.')

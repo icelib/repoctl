@@ -31,6 +31,9 @@ export async function prepareTemplateUpgrade(input: TemplateUpgradeOptions) {
   if (!instance) {
     throw new Error(`Unknown template instance: ${input.instance}`)
   }
+  if (instance.source.kind === 'remote') {
+    throw new Error('This upgrade command accepts built-in template package versions. Remote source identity and retained baselines are preserved; remote npm/Git upgrades are not supported yet.')
+  }
   if (await loadTemplateUpgradeJournal(cwd, instance.id)) {
     throw new Error(`This instance has a pending template upgrade. Inspect templates recover-upgrade ${instance.id} before starting another upgrade.`)
   }

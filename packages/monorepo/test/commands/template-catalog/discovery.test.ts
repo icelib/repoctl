@@ -13,7 +13,7 @@ describe('built template catalog discovery', () => {
   it('keeps built-in definitions and literal compatibility helpers aligned', async () => {
     const cwd = await fixture()
     const catalog = await repo.resolveTemplateCatalog({ cwd })
-    expect(catalog.entries).toHaveLength(8)
+    expect(catalog.entries).toHaveLength(9)
     expect(catalog.diagnostics).toEqual([])
     for (const entry of catalog.entries) {
       expect(entry.origin).toBe('builtin')
@@ -64,7 +64,7 @@ describe('built template catalog discovery', () => {
     const catalog = await repo.resolveTemplateCatalog({ cwd })
     expect(catalog.entries.find(entry => entry.key === 'legacy')).toMatchObject({ source: 'legacy', target: 'legacy', origin: 'custom' })
     expect(catalog.entries.find(entry => entry.key === 'tsdown')).toMatchObject({ source: 'replacement', origin: 'custom', overridesBuiltin: true })
-    expect(catalog.diagnostics).toEqual([expect.objectContaining({ id: 'template-override', status: 'warn', template: 'tsdown', configFile: expect.stringContaining('repoctl.config.mjs'), configPath: 'commands.create.templateMap["tsdown"]' })])
+    expect(catalog.diagnostics).toEqual([expect.objectContaining({ id: 'template-override', status: 'warn', template: 'tsdown', configFile: expect.stringContaining('repoctl.config.mjs'), configPath: 'commands.create.templateMap.tsdown' })])
     const detail = await cli(cwd, ['templates', 'tsdown', '--markdown'])
     expect(detail.stdout).toContain('| Overrides built-in | true |')
     await repo.createNewProject({ cwd, type: 'tsdown' })
@@ -76,7 +76,7 @@ describe('built template catalog discovery', () => {
     const source = await template(cwd, 'company/service')
     const other = await fixture({ templateMap: { company: { source, target: 'apps/company', category: 'service', description: 'Internal service' } } })
     const report = await repo.checkTemplates({ cwd: other })
-    expect(report.templateCount).toBe(9)
+    expect(report.templateCount).toBe(10)
     expect(report.summary.fail).toBe(0)
     const filtered = await cli(other, ['templates', '--category', 'service', '--json'])
     expect(JSON.parse(filtered.stdout).map((entry: { key: string }) => entry.key)).toEqual(['hono-server', 'company'])

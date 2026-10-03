@@ -4,6 +4,7 @@ import { admissionSchema } from './admission'
 import { commandSchemas, dependencyTypes } from './commands'
 import { installationSecuritySchema } from './installation-security'
 import { array, boolean, choices, isRecord, names, nonempty, object, record, validateSchema } from './schema'
+import { validateTemplateSources } from './template-sources'
 import { toolingSchema } from './tooling'
 
 const selector = object({ packages: names, paths: names, tags: names, private: boolean })
@@ -33,6 +34,7 @@ export function validateMonorepoConfig(value: unknown): ConfigDiagnostic[] {
     return diagnostics
   }
   validateSchema(Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'extends' && !key.startsWith('$') && key !== '_layers')), rootSchema, '', diagnostics)
+  validateTemplateSources(value, diagnostics)
   const upgrade = isRecord(value['commands']) && isRecord(value['commands']['upgrade']) ? value['commands']['upgrade'] : undefined
   if (upgrade?.['overwrite'] === true && (upgrade['noOverwrite'] === true || upgrade['skipOverwrite'] === true)) {
     diagnostics.push({ id: 'config.conflict', path: 'commands.upgrade.overwrite', actualType: 'boolean', expected: 'one overwrite policy', suggestion: 'Choose overwrite or noOverwrite/skipOverwrite, not both.' })

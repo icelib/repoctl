@@ -7,7 +7,7 @@ Rule:
 - Load `repoctl.config.*`; rename legacy `monorepo.config.*`, which is no longer loaded.
 - Validate repoctl-owned fields before command side effects with `repo config validate --json`.
 - Native tooling passthrough and callbacks keep their extension boundary. Config modules are trusted executable project code.
-- Use `repo config inspect --command ai --set 'format="json"' --json` for shared defaults/project/CLI provenance. Contexts: ai, clean, create, deps, init, mirror, release, upgrade. Runtime selection is explained by each command's plan.
+- Use `repo config inspect --command ai --set 'format="json"' --json` for shared defaults/project/CLI provenance. Contexts: ai, clean, create, deps, doctor, init, mirror, release, upgrade. Runtime selection is explained by each command's plan.
 - Reports redact env values and native tool payloads by default; `--redact` additionally hides local paths. For programmatic safe reports use `explainMonorepoConfig` or `validateConfigFile`; runtime config APIs retain callbacks and should not be serialized for sharing.
 - Replace the old ignored `tooling.lintStaged.monorepoCommand` field with `repoCommand`.
 

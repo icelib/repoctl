@@ -19,7 +19,7 @@ export interface ResolvedCommandConfig<Name extends ConfigCommand = ConfigComman
 const defaults = {
   ai: { baseDir: 'agentic/prompts', force: false, format: 'md' },
   clean: { autoConfirm: false, dryRun: false, ignorePackages: [], includePrivate: true },
-  create: { renameJson: false, defaultTemplate: 'tsdown' },
+  create: { offline: false, renameJson: false, defaultTemplate: 'tsdown' },
   deps: { groups: [] },
   doctor: {},
   env: { tasks: ['build'], frameworkInference: true },

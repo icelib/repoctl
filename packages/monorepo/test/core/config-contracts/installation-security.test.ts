@@ -1,4 +1,4 @@
-import { loadMonorepoConfigDetails, validateConfigFile, validateMonorepoConfig } from '@icebreakers/monorepo'
+import { loadMonorepoConfigDetails, runDoctor, validateConfigFile, validateMonorepoConfig } from '@icebreakers/monorepo'
 import { expect, it } from 'vitest'
 import { fixture, invoke } from './fixtures'
 
@@ -32,6 +32,11 @@ it.each([
   const diagnostics = validateMonorepoConfig({ installationSecurity })
   expect(diagnostics.map(item => item.path)).toContain(expectedPath)
   expect(JSON.stringify(diagnostics)).not.toContain('private-value')
+})
+
+it('rejects invalid root policy before doctor starts even with a workspace-only selection', async () => {
+  const cwd = await fixture('export default { installationSecurity: {unknown: "private-value"} }')
+  await expect(runDoctor(cwd, { rules: ['package-json'] })).rejects.toThrow('installationSecurity.unknown')
 })
 
 it('rejects invalid root policy in CLI preflight before doctor starts', async () => {

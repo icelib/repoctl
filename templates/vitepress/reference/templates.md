@@ -4,16 +4,17 @@ repoctl templates are maintained by `@icebreakers/monorepo-templates`. The CLI, 
 
 ## Built-In Templates
 
-| Key           | Category | Default target     | Use case                               |
-| ------------- | -------- | ------------------ | -------------------------------------- |
-| `tsdown`      | library  | `packages/tsdown`  | TypeScript library                     |
-| `vue-lib`     | library  | `packages/vue-lib` | Vue 3 component library                |
-| `vue-hono`    | app      | `apps/client`      | Vue 3 + Hono app                       |
-| `react-vite`  | app      | `apps/react-vite`  | React + Vite + TypeScript SPA          |
-| `hono-server` | service  | `apps/server`      | Hono API service                       |
-| `vitepress`   | docs     | `apps/website`     | VitePress docs site                    |
-| `nimbus`      | docs     | `apps/docs`        | Nimbus + Astro, default bilingual docs |
-| `cli`         | tool     | `apps/cli`         | TypeScript CLI                         |
+| Key           | Category | Default target       | Use case                                           |
+| ------------- | -------- | -------------------- | -------------------------------------------------- |
+| `tsdown`      | library  | `packages/tsdown`    | TypeScript library                                 |
+| `vue-lib`     | library  | `packages/vue-lib`   | Vue 3 component library                            |
+| `vue-hono`    | app      | `apps/client`        | Vue 3 + Hono app                                   |
+| `react-vite`  | app      | `apps/react-vite`    | React + Vite + TypeScript SPA                      |
+| `react-lib`   | library  | `packages/react-lib` | React component library with types and CSS exports |
+| `hono-server` | service  | `apps/server`        | Hono API service                                   |
+| `vitepress`   | docs     | `apps/website`       | VitePress docs site                                |
+| `nimbus`      | docs     | `apps/docs`          | Nimbus + Astro, default bilingual docs             |
+| `cli`         | tool     | `apps/cli`           | TypeScript CLI                                     |
 
 Nimbus is the default for the interactive **Docs Site** goal. It includes English at `/`, Chinese at `/zh/`, search and AI documentation endpoints. VitePress remains an explicit alternative. Their default targets are `apps/docs` and `apps/website`, so both can coexist. General creation still defaults to `tsdown`; naming a project `docs` does not infer its template. In noninteractive workflows, pass `--template nimbus` explicitly.
 
@@ -299,3 +300,97 @@ export default {
   },
 }
 ```
+
+## React component library
+
+```bash
+pnpm create repoctl@latest my-workspace -- --yes --templates react-lib
+# Or add a library to an existing workspace:
+repo new ui --template react-lib
+```
+
+`react-lib` provides an ESM-only React 19.3+ library in `packages/react-lib`.
+Import `Counter` and `CounterProps` from the package root and import
+`your-package-name/style.css` once in the consumer application. React/React DOM
+and JSX runtimes remain peer dependencies; CSS is marked as a side effect.
+The library has build, ESLint/Stylelint, TypeScript, tsd and built-component tests.
+
+Generated packages remain private by default. Set your package name and version,
+remove `private` or set it to `false`, then run `repo package check` before
+publishing. The source workspace's `pnpm test:packaged-react-lib` verifies both
+creation flows and installs an actual tarball in a separate Vite application,
+checking public types, production styling, pointer/keyboard interaction and a
+single shared React instance. The bundled client boundary is also exercised by a
+Next App Router Server Component importing the tarball, followed by production
+browser hydration and interaction. Storybook is optional.
+
+## Validate a template as its author
+
+`repo templates validate <key>` is an explicit execution command. It resolves the same built-in/custom catalog, creates a disposable workspace outside the author repository, installs its declared pnpm version through Corepack, then runs build → lint → typecheck (TypeScript/Vue) → tsd (typed libraries) → test → test:e2e (when declared). Missing required scripts fail before installation. Style files require Stylelint in `lint`, or a separate `lint:styles` script.
+
+```bash
+repo templates validate internal --fixture ./fixtures/workspace --name basic --name renamed --json
+repo templates validate react-lib --dry-run --json
+repo templates validate internal --fixture ./fixtures/workspace --keep-failed --timeout 240000
+```
+
+The optional fixture is an author-owned workspace skeleton with `package.json`, an exact `packageManager: "pnpm@..."`, workspace settings, and any companion packages. It is copied through normal template filtering; it is never modified. Without a fixture, the installed repoctl workspace assets supply the root. Each name receives its own workspace. Names currently test package renaming; arbitrary template feature parameters are not supported yet.
+
+Library validation removes `private` only from its disposable copy, packs a tarball, checks exports and declared runtime dependencies (including `imports` mappings), then installs and imports the tarball in an independent consumer. Type declarations are checked with strict NodeNext resolution. Application/service/browser behavior belongs in the template's finite `test`/`test:e2e` scripts; those scripts own their normal service lifecycle, with timeout/interruption cleanup as a backstop. Browser installation is an explicit author setup step.
+
+Commands and output are returned with stable stages and diagnostic codes. Successful and failed samples are removed by default; `--keep-failed` preserves failed samples with `report.json`, and `--keep-temp` preserves all samples. The report includes the retained directory. Execution never happens during `repo templates` or `--check`. Validation executes trusted author scripts; it is not an untrusted-code sandbox.
+
+The same contract is public API:
+
+```ts
+import { planTemplateValidation, validateTemplate } from 'repoctl'
+
+const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace' }
+const controller = new AbortController()
+const plan = await planTemplateValidation(options)
+const report = await validateTemplate({ ...options, keep: 'failure', signal: controller.signal })
+```
+
+## Fixed npm and Git sources
+
+Custom entries can use an exact npm package version or an explicit Git ref while keeping `source` as the relative template directory inside that archive. Use `source: '.'` when the archive root is the template. `templatesDir` applies only to local sources.
+
+```ts
+export default defineMonorepoConfig({
+  commands: {
+    create: {
+      cacheDir: './.cache/template-assets',
+      templateMap: {
+        team: {
+          source: 'templates/library',
+          target: 'packages/team',
+          category: 'library',
+          remote: { kind: 'npm', packageName: '@acme/templates', version: '1.2.3' },
+        },
+        service: {
+          source: 'templates/service',
+          target: 'apps/service',
+          remote: { kind: 'git', repository: 'https://github.com/acme/templates.git', ref: 'v1.2.3' },
+        },
+      },
+    },
+  },
+})
+```
+
+```sh
+repo templates fetch team --json
+repo new sdk --template team --dry-run
+repo new sdk --template team --offline
+repo templates validate team --fixture ./fixtures/workspace --offline --json
+```
+
+`repo templates fetch <key>` acquires and verifies assets without creating a project. Actual creation and author validation can also fetch a missing source. Discovery, health checks, creation previews and validation previews are read-only: fetch the exact source first. `--offline` refuses a cache miss. `--cache-dir` on fetch/new/package-create/validate and `commands.create.cacheDir` select a cache directory relative to the invocation directory. The default is `$XDG_CACHE_HOME/repoctl/template-sources-v1`, or `~/.cache/repoctl/template-sources-v1`.
+
+npm versions must be exact; tags and ranges are rejected. The effective registry comes from the optional `remote.registry`, scoped npm settings or the default registry. Existing `.npmrc` authentication is honored in memory; tokens do not enter plans, cache manifests or instance provenance. Git accepts HTTPS, SSH and file URLs with an explicit ref. Use credential helpers or an SSH agent rather than credentials in URLs. Remote package scripts, Git hooks, submodules and dependency installation never run during fetching.
+
+The first Git fetch records its resolved commit. That same request continues using the verified cached commit even if a branch or tag moves. Pin a full commit hash for reproducibility across fresh caches. To deliberately resolve a moved ref, choose a new cache directory or remove the identified cache entry after confirming no writer is active. Corrupt entries fail explicitly and are never silently trusted or refreshed. Archives are bounded and checked before extraction; traversal, links, special files and portable-path collisions are rejected.
+
+Creation records npm version/integrity or Git commit/integrity with its retained baseline. Remote instances support baseline reconstruction and drift inspection. `templates upgrade` currently accepts built-in template-package versions and rejects remote instances explicitly; changing a remote declaration does not upgrade existing generated projects.
+
+The public `resolveRemoteTemplateSource(remote, source, { cwd, cacheDir, offline })` helper returns verified `sourceDir`, normalized `request`, fixed `resolved` identity, asset `digest`, and `cache: 'hit' | 'downloaded'`.

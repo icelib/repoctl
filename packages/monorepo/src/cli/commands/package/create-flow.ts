@@ -39,6 +39,8 @@ function normalizeNameForTemplate(name: string, type: CreateNewProjectOptions['t
 }
 
 export interface RunCreateFlowOptions {
+  offline?: boolean
+  cacheDir?: string
   template?: CreateNewProjectOptions['type']
   dryRun?: boolean
   json?: boolean
@@ -123,6 +125,7 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
   try {
     const context = await loadTemplateCatalogContext({ cwd })
     const createConfig = context.createConfig
+    const sourceOptions = { ...(options.offline !== undefined ? { offline: options.offline } : {}), ...(options.cacheDir ? { cacheDir: options.cacheDir } : {}) }
     const catalog = createTemplateCatalog(context)
     const templates = Object.fromEntries(catalog.entries.map(entry => [entry.key, entry]))
     let explicitTemplate = options.template ?? createConfig?.type ?? createConfig?.defaultTemplate
@@ -143,6 +146,7 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
     if (!explicitTemplate && !canPrompt()) {
       const type = defaultTemplate
       const createOptions = {
+        ...sourceOptions,
         name: normalizeNameForTemplate(packageName ?? createConfig?.name ?? 'my-package', type, templates),
         cwd,
         type,
@@ -188,6 +192,7 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
       }
 
       const createOptions = {
+        ...sourceOptions,
         name: normalizeNameForTemplate(packageName, type, templates),
         cwd,
         ...(type !== undefined ? { type } : {}),
@@ -220,6 +225,7 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
     })
 
     const createOptions = {
+      ...sourceOptions,
       name: normalizeNameForTemplate(packageName, type, templates),
       cwd,
       ...(type !== undefined ? { type } : {}),
