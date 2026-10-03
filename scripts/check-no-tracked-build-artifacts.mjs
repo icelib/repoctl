@@ -6,6 +6,7 @@ const TRACKED_BUILD_ARTIFACT_PATTERNS = [
   /^(?:templates|apps|packages)\/[^/]+\/next-env\.d\.ts$/u,
   /^packages\/[^/]+\/dist\//u,
   /^apps\/[^/]+\/dist\//u,
+  /^packages\/monorepo-templates\/(?:assets|skeleton|templates)\//u,
   /^(?:templates|apps|packages)\/[^/]+\/worker-configuration\.d\.ts$/u,
 ]
 
