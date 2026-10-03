@@ -161,6 +161,8 @@ export { planTemplateValidation, validateTemplate } from './template-validation'
 
 export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
+
+export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
 export { applyWorkspaceMovePlan } from './workspace/move/apply'
 export { planWorkspaceMove } from './workspace/move/plan'
 export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
