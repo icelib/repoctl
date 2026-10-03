@@ -14,9 +14,10 @@ export async function workspaceInventory(root: string, target: string) {
     if (entries.length >= 100_000) {
       throw new Error('Workspace preview exceeds 100,000 entries. Review and clean generated files before generating a new plan.')
     }
-    const metadata = await lstat(file)
+    const metadata = await lstat(file, { bigint: true })
     const relative = path.relative(target, file) || '.'
-    const common = { path: relative, mode: metadata.mode, mtimeMs: metadata.mtimeMs }
+    // Keep the report JSON-compatible while identity and freshness checks retain full precision.
+    const common = { path: relative, mode: Number(metadata.mode), mtimeMs: Number(metadata.mtimeNs) / 1_000_000 }
     if (path.basename(file) === '.git') {
       repositories.push(path.relative(root, file))
     }
@@ -36,22 +37,22 @@ export async function workspaceInventory(root: string, target: string) {
       const digest = createHash('sha256')
       const handle = await open(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0))
       try {
-        const opened = await handle.stat()
+        const opened = await handle.stat({ bigint: true })
         if (!opened.isFile() || opened.dev !== metadata.dev || opened.ino !== metadata.ino) {
           throw new Error(`Workspace entry changed while opening: ${relative}`)
         }
         for await (const chunk of handle.createReadStream({ autoClose: false })) {
           digest.update(chunk)
         }
-        const current = await handle.stat()
-        if (current.size !== metadata.size || current.mtimeMs !== metadata.mtimeMs || current.ctimeMs !== metadata.ctimeMs) {
+        const current = await handle.stat({ bigint: true })
+        if (current.size !== metadata.size || current.mtimeNs !== metadata.mtimeNs || current.ctimeNs !== metadata.ctimeNs) {
           throw new Error(`Workspace entry changed while reading: ${relative}`)
         }
       }
       finally {
         await handle.close()
       }
-      entries.push({ ...common, kind: 'file', size: metadata.size, hash: digest.digest('hex') })
+      entries.push({ ...common, kind: 'file', size: Number(metadata.size), hash: digest.digest('hex') })
     }
     else {
       throw new Error(`Unsupported entry in workspace target: ${path.relative(root, file)}`)
