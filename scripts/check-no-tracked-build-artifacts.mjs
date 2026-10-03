@@ -4,6 +4,7 @@ import process from 'node:process'
 const TRACKED_BUILD_ARTIFACT_PATTERNS = [
   /^packages\/[^/]+\/dist\//u,
   /^apps\/[^/]+\/dist\//u,
+  /^packages\/monorepo-templates\/(?:assets|skeleton|templates)\//u,
   /^(?:templates|apps|packages)\/[^/]+\/worker-configuration\.d\.ts$/u,
 ]
 
