@@ -63,6 +63,10 @@ Usage:
   duration, exit code and actual command arguments. `--redact` replaces cwd/home prefixes.
   Environment values and child output are not persisted. Abrupt termination cannot guarantee a report.
 
+## check cache
+
+`repo check cache <current-summary.json> [previous-summary.json] --json` analyzes existing Turbo run summaries without running tasks or mutating caches. Use `--markdown` and redirect stdout for a CI artifact; `--slowest` accepts 1–100. Schema 1 compares stable task IDs and digested input/global/dependency/environment/configuration evidence. Missing evidence or unsupported schemas remain unknown; cache misses are not assigned a speculative cause. Actual durations and a verifiable dependency critical path are reported separately from observed wall span. Environment values and commands never appear in output. Parent execution and file-output flags are rejected; regular check JSON remains preview-only.
+
 ## doctor
 
 Purpose: diagnose whether the current workspace is ready to use.
@@ -241,6 +245,12 @@ execution: workspace root/outside paths, symbolic-link targets or parent paths,
 linked root manifests, and unselected nested workspaces are rejected. Dependency
 references from consuming packages are not rewritten by this command.
 
+## env check
+
+Use `repo env check [tasks...]` to compare static source/example variable names with Turbo hash, passthrough and inferred declarations. Default task: `build`; private packages are included. `--json` and `--markdown` show source locations without values or snippets; `--strict` fails warnings and `--no-framework-inference` disables dependency-based prefix assumptions. The command is always read-only and does not run tasks or load actual dotenv values.
+
+Root/package JSONC configuration, array replacement, `$TURBO_EXTENDS$`, wildcard exclusions and environment-file input coverage are resolved explicitly. Configure `commands.env` task/include/exclude options and reasoned `suppressions` with rule/package/task/variable/path selectors. Dynamic reads and unsupported source syntax remain visible; unused exceptions warn. Static task reachability, aliases, shadowed globals, template expressions, generated code and cross-package source imports are not resolved. Never suggest placing every discovered variable in `globalEnv`; review task-local hash declarations and intentional passthrough separately.
+
 ## env info (alias: e i)
 
 Purpose: print environment details for debugging and automation.
@@ -343,3 +353,9 @@ Usage:
 `repo release snapshot --kind pr --pr <number> --commit <full-HEAD-sha> --build-id <run-attempt> --dry-run --json` previews deterministic temporary versions. Use `--kind nightly` without `--pr` for nightly packages. Without dry-run, archive committed HEAD outside the repository, install frozen dependencies, build, pack and validate isolated consumers. `--output` chooses an external artifact parent. Every public package receives an exact snapshot version and internal references follow those versions. Source manifests/intents/ledger/changelogs/Git refs stay unchanged.
 
 `--publish` requires `REPOCTL_SNAPSHOT_PUBLISH=1` in a trusted same-repository GitHub Actions event whose SHA matches HEAD: `pull_request` for PRs; `schedule` or `workflow_dispatch` for nightly. Fork and `pull_request_target` publication is rejected. Only snapshot tags are used; no GitHub Releases or Git tags are created. Repeat the same identity only for identical artifacts; metadata and tarball integrity are checked before skipping existing versions. Unknown registry state fails closed. Reports retain exact install instructions, artifact paths and validation errors.
+
+## Build contexts and production directories
+
+Preview `repo workspace prepare <exact-name-or-./directory> --mode prune|deploy --out ../empty-output --json`; save the plan outside the source workspace. Apply only after review with `repo workspace prepare --apply ../plan.json`. Prune uses local Turbo 2 and optional `--docker`; deploy uses exact pinned pnpm 10/11/12 with production dependencies, frozen lockfile, disabled lifecycle/pnpmfile hooks, optional `--offline`/explicit `--legacy`, and an existing built `--entry` or manifest main/single bin. Native version-specific injection and peer behavior remains authoritative. No application, image publishing or cloud deployment is executed.
+
+Native commands receive an isolated copy without node_modules, Git/operation/cache directories, real env files or named authentication files. Public .env.example/.env.sample remain. Source symlinks/special files, source-directed native write settings and inventories above 100,000 entries/1 GiB are unsupported. Output must be outside the workspace; links must remain inside the artifact. Publish files exclusively and commit the receipt last. Replays verify source/tool/config fingerprints and complete output; failures preserve concurrent edits and report retained paths. Review cleanupPending and recover partial output before removing a stale .repoctl/workspace-artifacts.lock. Do not hand-edit lockfiles or overwrite nonempty output. On Windows, transfer junction contents with an appropriate copy/archive mode.

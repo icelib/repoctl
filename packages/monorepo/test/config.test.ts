@@ -1,3 +1,4 @@
+import { realpath } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { isCI } from 'ci-info'
 import path from 'pathe'
@@ -48,7 +49,7 @@ describe('monorepo config integration', () => {
 
   it.skipIf(isCI)('overrides create command defaults', async () => {
     await vi.resetModules()
-    const root = await fs.mkdtemp(path.join(tmpdir(), 'monorepo-config-create-'))
+    const root = await realpath(await fs.mkdtemp(path.join(tmpdir(), 'monorepo-config-create-')))
     await writeConfig(
       root,
       `export default {\n  commands: {\n    create: {\n      defaultTemplate: 'cli',\n      renameJson: true,\n      templatesDir: ${JSON.stringify(path.relative(root, templatesRoot))},\n    },\n  },\n}\n`,

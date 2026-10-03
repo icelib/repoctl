@@ -1,14 +1,15 @@
-import type { TemplateDefinition } from '@icebreakers/monorepo-templates'
 import type { AgenticTemplateFormat } from '../commands/ai'
 import type { CreateNewProjectOptions } from '../commands/create'
 import type { DependencyAdmissionConfig } from '../commands/deps/admission/types'
 import type { InitPreset, InitToolingTarget } from '../commands/init'
 import type { CodeownersConfig } from '../core/codeowners/types'
+import type { CreateTemplateDefinition } from '../core/template-catalog'
 import type { WorkspaceBoundariesConfig } from '../core/workspace-boundaries/types'
 import type { CleanCommandConfig } from './clean'
 import type { CliOpts } from './cli'
 import type { ToolingConfig } from './config/tooling'
 import type { DependenciesCommandConfig } from './dependencies'
+import type { EnvCacheConfig } from './env-cache'
 import type { ReleaseCommandConfig } from './release'
 
 export interface AiCommandConfig {
@@ -44,18 +45,18 @@ export interface AiCommandConfig {
  */
 export interface CreateCommandConfig extends Partial<Omit<CreateNewProjectOptions, 'cwd'>> {
   /**
-   * 自定义模板根目录。
-   * @default 内置模板所在的 `packages/monorepo/templates`
+   * 自定义模板根目录，相对路径按配置文件所在目录解析。
+   * @default 已安装模板包的 templates 目录
    */
   templatesDir?: string
   /**
    * 扩展模板映射表，key 为类型，value 为模板来源/目标路径。
    * @default 内置 `templateMap`
    */
-  templateMap?: Record<string, string | TemplateDefinition>
+  templateMap?: Record<string, string | CreateTemplateDefinition>
   /**
    * 自定义交互提示的选项列表。
-   * @default 内置 `baseChoices`
+   * @default 已解析目录中的全部模板
    */
   choices?: CreateChoiceOption[]
   /**
@@ -194,6 +195,7 @@ export interface MonorepoConfig {
     create?: CreateCommandConfig
     clean?: CleanCommandConfig
     deps?: DependenciesCommandConfig
+    env?: EnvCacheConfig
     upgrade?: UpgradeCommandConfig
     init?: InitCommandConfig
     mirror?: MirrorCommandConfig
