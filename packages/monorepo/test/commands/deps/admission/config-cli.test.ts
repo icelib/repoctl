@@ -44,6 +44,16 @@ describe('admission configuration and built CLI', () => {
     await expect(checkDependencyAdmission(h.workspace)).rejects.toMatchObject({ code: 'REPOCTL_CONFIG_INVALID', diagnostics: [{ path: 'commands.deps.groups' }] })
   })
 
+  it('does not execute unrelated workspace configuration with an explicit admission policy', async () => {
+    const h = await fixture({ 'packages/web': { dependencies: { 'legacy-sdk': '^1' } } })
+    await writeFile(path.join(h.workspace, 'repoctl.config.mjs'), 'throw new Error("Unrelated version configuration was executed")')
+    const report = await checkDependencyAdmission(h.workspace, { config: { rules: [rule()] } })
+    expect(report.summary.fail).toBe(1)
+    expect(report.findings).toMatchObject([
+      { id: 'admission-denied', rule: 'browser', declaration: { name: 'legacy-sdk' } },
+    ])
+  })
+
   it('emits stable JSON across languages, exits on warn only with strict and integrates with doctor', async () => {
     const h = await fixture({ 'packages/web': { dependencies: { 'legacy-sdk': '^1' } } })
     await configure(h.workspace, { rules: [rule({ severity: 'warn' })] })

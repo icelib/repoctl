@@ -22,8 +22,8 @@ concurrency:
 jobs:
   build:
     name: Build and Test
-    # Allow Windows, macOS and Ubuntu Node 22 to finish their complete validation.
-    timeout-minutes: ${{ (matrix.os == 'windows-latest' || matrix.os == 'macos-latest' || (matrix.os == 'ubuntu-latest' && matrix.node-version == 22)) && 25 || 15 }}
+    # Allow packaged consumers and all platform checks to finish before cache upload.
+    timeout-minutes: ${{ matrix.os == 'ubuntu-latest' && 35 || 25 }}
     strategy:
       fail-fast: false
       matrix:
@@ -105,6 +105,10 @@ jobs:
       - name: Check packaged React application
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-react
+
+      - name: Check packaged Playwright capability
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-capability
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
