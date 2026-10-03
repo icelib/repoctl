@@ -76,6 +76,24 @@ repo doctor --apply plans/doctor-fix.json --json
 
 应用时复核规范化 workspace 与原始文件内容，拒绝链接文件和篡改的操作，复用暂存写入及回滚事务，再无抑制地运行根脚本检查。输入内容改变会停止修复，需要重新生成计划。重复应用已完成计划不会再改文件。文字 `fix` 建议不会作为 shell 执行，也不会自动安装依赖或修改 release workflow。
 
+## `repo env check`
+
+```bash
+repo env check
+repo env check build test --json --strict
+repo env check --markdown --no-framework-inference
+```
+
+只读检查静态 `process.env.NAME`、`import.meta.env.NAME`、字面量属性访问与解构，并与 Turbo 环境声明对照。默认检查 `build`，包含 private 包。每个包和任务分别列出参与 hash、仅透传、框架推断、框架内置、遗漏声明及无法静态确定的访问，附源码位置。注释和普通字符串不计为引用。真实 `.env*`、`.dev.vars*` 只检查文件路径，从不读取内容；示例文件只提取键名。JSON、文本和 Markdown 不输出变量值或源码片段。
+
+支持根与包级 `turbo.json`/`turbo.jsonc`、包专属任务、按顺序继承其他包配置、数组替换、`$TURBO_EXTENDS$` 和任务继承排除。变量通配符和否定模式采用 Turbo 语义。不支持的高级 `global` 配置及对象形式输入会返回配置失败，避免猜测覆盖结果。环境文件同时核对 `globalDependencies`、任务 `inputs`、`$TURBO_ROOT$`、显式排除和 Git 默认未忽略路径；文件存在本身不表示缓存已覆盖。`passThroughEnv` 只提供运行时变量，不把值计入 hash，报告会要求复核，不会自动提升为 `globalEnv`。全局 `*` 声明会提示检查缓存失效范围。
+
+在 `repoctl.config` 的 `commands.env` 中配置 `tasks`、包相对路径的 `include`/`exclude` glob、`frameworkInference` 和 `suppressions`。每条豁免必须有稳定 `rule` 与非空 `reason`，可按 `package`、`task`、`variable` 和仓库相对 `path` glob 缩小范围。豁免诊断仍可见，未匹配豁免会产生警告。配置失败退出 1；`--strict` 同时阻断警告。`--dry-run` 表明命令始终只读。API 为 `checkEnvironmentCache(cwd, options)` 和 `formatEnvironmentCache(report, markdown?)`。
+
+静态引用只是所选任务的候选输入，不能证明脚本实际执行了该源码。扫描覆盖 JS/TS 与 Vue/Svelte script block，跳过链接和大于 2 MiB 的文件；不解析别名、被遮蔽的全局变量、模板表达式、生成代码或跨包源码导入。框架推断依据包依赖估算，运行参数、自定义前缀及 shell 脚本引入的变量需要人工复核。既有可执行 repoctl 配置本身也应避免副作用。命令不运行任务、不加载真实环境值、不重写 Turbo 配置，也不扩大全局缓存输入。
+
+参考：[Turbo 环境变量](https://turborepo.com/docs/crafting-your-repository/using-environment-variables)、[配置](https://turborepo.com/docs/reference/configuration)、[包配置继承](https://turborepo.com/docs/reference/package-configurations)。
+
 ## `repo templates`
 
 ```bash

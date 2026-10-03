@@ -63,6 +63,24 @@ Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs
 
 Apply checks the canonical workspace and original file contents, rejects links and modified operations, reuses the staged file transaction with rollback, and reruns the root-script check without suppression. A changed input stops the fix; regenerate the plan. Reapplying an already applied plan is unchanged. Textual `fix` suggestions are never executed, and dependency installation or release workflow modification is outside this fixer.
 
+## `repo env check`
+
+```bash
+repo env check
+repo env check build test --json --strict
+repo env check --markdown --no-framework-inference
+```
+
+This read-only check compares static `process.env.NAME`, `import.meta.env.NAME`, literal property reads and destructuring with Turbo environment declarations. It checks `build` by default and includes private packages. Each package/task report separates hashed variables, passthrough variables, inferred framework prefixes, framework built-ins, missing declarations and unresolved dynamic reads, with source locations. Comments and ordinary strings do not become references. Actual `.env*` and `.dev.vars*` contents are never read; example files contribute key names only. No values or source snippets appear in JSON, text or Markdown.
+
+Root and package `turbo.json`/`turbo.jsonc` configurations support package-qualified tasks, ordered package inheritance, array replacement, `$TURBO_EXTENDS$` and task inheritance exclusions. Wildcards and negations follow Turbo environment syntax. Unsupported advanced `global` configuration and object-form inputs fail validation instead of guessing coverage. Environment files are checked against `globalDependencies`, task `inputs`, `$TURBO_ROOT$`, explicit exclusions and Git's default non-ignored paths. Merely finding an env file does not establish hash coverage. `passThroughEnv` makes a variable available without hashing its value; it is reported for review rather than automatically moved into `globalEnv`. A global `*` declaration receives a scope warning.
+
+Configure `commands.env` in `repoctl.config`: `tasks`, package-relative `include`/`exclude` globs, `frameworkInference`, and `suppressions`. Each suppression requires a stable `rule` and nonempty `reason`, with optional `package`, `task`, `variable` and repository-relative `path` glob selectors. Suppressed findings remain visible, and unused suppressions produce a warning. Configuration failures exit 1; `--strict` also fails on warnings. `--dry-run` documents the always-read-only behavior. APIs are `checkEnvironmentCache(cwd, options)` and `formatEnvironmentCache(report, markdown?)`.
+
+Static references are task candidates, not proof that a script executes that source. Scanning covers JS/TS and Vue/Svelte script blocks, skips links and files above 2 MiB, and does not resolve aliases, shadowed globals, templates, generated code or direct cross-package source imports. Framework inference is estimated from package dependencies; runtime flags, custom prefixes and variables introduced by shell scripts require review. Existing executable repoctl configuration must itself avoid side effects. The command does not run tasks, load real environment values, rewrite Turbo config or widen global cache inputs.
+
+References: [Turbo environment variables](https://turborepo.com/docs/crafting-your-repository/using-environment-variables), [configuration](https://turborepo.com/docs/reference/configuration), and [package inheritance](https://turborepo.com/docs/reference/package-configurations).
+
 ## `repo templates`
 
 ```bash

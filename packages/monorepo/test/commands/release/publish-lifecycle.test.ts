@@ -52,13 +52,14 @@ describe('built public release lifecycle with visibility confirmation', () => {
   })
 
   it.each([true, false])('pushes prereleases only after visibility confirmation (visible: %s)', async (visible) => {
-    const h = await publishHarness([{ status: 0, summary: [a, b] }], (_spec, { elapsed }) => visible && elapsed >= 10_000 ? '1.0.0' : '')
+    const packages = [a, b].map(pkg => ({ ...pkg, version: '1.0.1-alpha.0' }))
+    const h = await publishHarness([{ status: 0, summary: packages }], (_spec, { elapsed }) => visible && elapsed >= 10_000 ? '1.0.1-alpha.0' : '', packages)
     await writePendingIntent(h.cwd)
     await writeFile(path.join(h.cwd, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\nversioning:\n  lanes:\n    repoctl: alpha\n    "@scope/b": alpha\n')
     const github = { ensurePullRequest: vi.fn(), ensureRelease: vi.fn(), ensureTag: vi.fn() }
     const promise = releaseCi({ ...h.options, branch: 'alpha', github })
     if (visible) {
-      await expect(promise).resolves.toEqual([a, b])
+      await expect(promise).resolves.toEqual(packages)
     }
     else {
       await expect(promise).rejects.toThrow('visibility confirmation timed out')

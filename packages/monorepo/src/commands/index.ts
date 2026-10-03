@@ -125,6 +125,8 @@ export {
 
 export { resolveAffectedCheckPlan } from './check/affected'
 export type { AffectedCheckCommand, AffectedCheckOptions, AffectedCheckPlan, AffectedCheckSettings, AffectedFallback, AffectedFile, AffectedGitRange, AffectedPackage } from './check/affected'
+export { analyzeTurboRuns } from './check/cache'
+export type { TurboAnalysisLimitation, TurboAnalysisOptions, TurboCriticalPath, TurboHashEvidence, TurboRunAnalysis, TurboTaskAnalysis } from './check/cache'
 export { runCheckWithReport } from './check/execute'
 export { getKnipConfigurationSuggestions, planKnipCheck, runKnipCheck, saveKnipBaseline } from './check/knip'
 export { resolveAffectedCheckMatrix } from './check/matrix'
@@ -139,11 +141,17 @@ export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport }
 export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
 
 export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
+export { checkEnvironmentCache } from './env-cache'
+
+export type * from './env-cache'
+export { formatEnvironmentCache } from './env-cache/format'
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+export { resolveReleaseBranches } from './release/lines'
 
+export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
 export { createReleasePlan } from './release/plan'
 
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
