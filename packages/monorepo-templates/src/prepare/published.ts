@@ -2,6 +2,8 @@ import YAML from 'yaml'
 
 const sourceScriptNames = new Set(['tooling:build', 'check:no-tracked-build-artifacts', 'check:workflows', 'test:dev-scenarios', 'test:worker-types'])
 
+export const isSourceOnlyScript = (name: string) => name.startsWith('dev:') || sourceScriptNames.has(name) || name.startsWith('test:packaged-')
+
 export function sanitizePublishedManifestContent(content: string) {
   const manifest = JSON.parse(content) as { scripts?: Record<string, string>, devDependencies?: Record<string, string> }
   // Generated configs import repoctl/tooling, which owns the shared config dependencies.
@@ -15,7 +17,7 @@ export function sanitizePublishedManifestContent(content: string) {
   }
   if (manifest.scripts) {
     for (const name of Object.keys(manifest.scripts)) {
-      if (name.startsWith('dev:') || sourceScriptNames.has(name) || name.startsWith('test:packaged-')) {
+      if (isSourceOnlyScript(name)) {
         delete manifest.scripts[name]
       }
     }
