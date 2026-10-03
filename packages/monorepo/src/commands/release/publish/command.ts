@@ -5,7 +5,7 @@ import process from 'node:process'
 import { getReleaseEnv } from '../shared'
 import { outputText } from './evidence'
 
-export function runPublishAttempt(args: string[], options: ReleaseOptions) {
+export function runPublishAttempt(args: string[], options: ReleaseOptions & { quiet?: boolean }) {
   const result = (options.spawn ?? spawnSync)('pnpm', args, {
     cwd: options.cwd,
     encoding: 'utf8',
@@ -16,10 +16,10 @@ export function runPublishAttempt(args: string[], options: ReleaseOptions) {
   }) as SpawnSyncReturns<string>
   const stdout = outputText(result.stdout)
   const stderr = outputText(result.stderr)
-  if (stdout) {
+  if (stdout && !options.quiet) {
     process.stdout.write(stdout)
   }
-  if (stderr) {
+  if (stderr && !options.quiet) {
     process.stderr.write(stderr)
   }
   return { ...result, output: `${stdout}\n${stderr}` }
