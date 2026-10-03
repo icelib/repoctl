@@ -18,8 +18,10 @@ export function parseSpecifier(name: string, specifier: string, workspace: Recor
     return { protocol: 'npm', source: alias?.[1] ?? null, range: alias?.[2] ? validRange(alias[2]) : null }
   }
   if (specifier.startsWith('catalog:')) {
-    const catalog = specifier.slice(8)
-    const entries = catalog ? record(record(workspace['catalogs'])?.[catalog]) : record(workspace['catalog'])
+    const catalog = specifier.slice(8) || 'default'
+    const catalogs = record(workspace['catalogs'])
+    const duplicateDefault = workspace['catalog'] != null && catalogs?.['default'] != null
+    const entries = duplicateDefault ? undefined : catalog === 'default' ? record(workspace['catalog'] ?? catalogs?.['default']) : record(catalogs?.[catalog])
     const value = entries?.[name]
     const parsed = typeof value === 'string' && !value.startsWith('catalog:') ? parseSpecifier(name, value) : undefined
     return { protocol: 'catalog', source: parsed?.source ?? null, range: parsed?.range ?? null }

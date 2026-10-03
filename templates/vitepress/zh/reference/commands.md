@@ -1,5 +1,7 @@
 # 命令速查
 
+[`repo workspace move`](./move.md) 用 `--to`、`--name` 分别预览目录移动、包名修改或两者同时变更。审查 JSON 计划与源码人工任务后，再通过 `--apply` 显式应用。
+
 [`repo workspace remove`](./removal.md) 可按准确包名或目录预览移除单个包，检查消费者与待人工复核引用，再显式应用已审查的 JSON 计划。预览不删除文件；消费者默认阻止移除，只有明确指定 `--remove-references` 才计划删除对应清单依赖字段。
 
 [`repo workspace prepare`](./artifacts.md) 可预览原生 Turbo prune 构建上下文或锁定 pnpm deploy 生产目录，再显式应用已审查的 JSON 计划。必须选择唯一包和工作区外的空输出目录。
@@ -273,3 +275,30 @@ Doctor 修复在输入校验、应用、验证、回滚和清理期间持有 `.r
 ## `repo tooling references`
 
 `check --json` 无需启用即可检查已有引用；`plan` 和 `sync --dry-run` 只读输出稳定 JSON。显式配置 `tooling.projectReferences.enabled: true` 后，使用 `sync` 或 `apply <plan.json>` 同步受管引用。保留手工引用及 TypeScript/Vue 原有验证入口；不兼容编译选项、循环、缺失目标和过期计划会阻止应用。[配置参考](./config#typescript-project-references)说明了发现规则、显式编译关系、归属和恢复方式。
+
+### 增量接入 Playwright
+
+为已有 Vue/React Vite 应用添加浏览器测试；应用需包含 `build` 和 `preview` 脚本：
+
+```sh
+repo tooling capability list --json
+repo tooling capability plan playwright --target web --route / --role button --name Increment --expect-text 'Count: 1' --json > e2e-plan.json
+repo tooling capability apply e2e-plan.json --json
+pnpm install
+pnpm --filter @repoctl-e2e/web test:e2e:install
+pnpm test:e2e
+```
+
+使用 `--test-id` 可替代 `--role`/`--name`。路由、点击目标和预期文本必须对应应用中的真实交互。计划展示文件 diff、依赖、脚本、冲突和后续操作，预览不安装依赖。应用时使用已审阅的内容，检查过期输入和文件冲突；写入失败会回滚，重复应用不产生额外修改。首次接入请选择空目录（可用 `--directory` 指定）。应用业务文件及与生成内容不同的文件均受保护。
+
+能力包生成独立 E2E 工作区、无头 Chromium 测试、Turbo 构建依赖、CI 工作流、HTML 报告及失败 trace。浏览器需显式安装。`--port` 与 `--ci-port` 分别指定本地和 CI 端口且不能相同；CI 始终启动独立服务。本地只有显式添加 `--reuse-existing-server` 才复用服务。Playwright 在成功、失败和中断后清理自己启动的服务，保留借用的服务。安装后需提交 lockfile。
+
+公开 API：`listToolingCapabilities()`、`planToolingCapability(cwd, options)`、`applyToolingCapability(plan)`。JSON 使用 schemaVersion 1，字段名不随 CLI 语言变化。
+
+### 可选的 Storybook 组件库能力
+
+`repo tooling capability plan storybook --target <精确工作区名> --framework vue|react --component <命名导出> --example example.json --json` 预览独立的 `stories/<slug>` 工作区，再用 `repo tooling capability apply plan.json` 应用已审核计划。首版支持声明构建脚本、公开入口和明确运行时版本范围的 Vue 3、React 18/19 库。应用后安装依赖并提交 lockfile；发现与预览不会安装 Storybook 或浏览器。
+
+Vue 属性切换示例：`{"kind":"prop-update","prop":"msg","initial":"Hello Storybook","updated":"Updated component"}`。React 计数器示例：`{"kind":"click","args":{"initialCount":0},"alternateArgs":{"initialCount":4},"click":{"role":"button","name":"Increase"},"expectText":"1"}`。属性值采用 JSON 基础类型；交互断言验证所选组件的实际输出。生成 `Default`、`Alternate` 两种状态和 `Interaction` play 测试。
+
+运行 `pnpm build:storybook` 构建静态站点，再运行 `pnpm --filter @repoctl-stories/<slug> test:storybook:install` 显式安装 Chromium，最后用 `pnpm test:storybook` 执行无头交互测试。Turbo 先构建组件库依赖，并缓存 `storybook-static/**`；交互测试不缓存，输出 JUnit 报告。本地开发使用文档工作区的 `storybook` 脚本。独立的 Vitest/Vite 配置保留组件库原有测试、exports、运行时依赖与 tarball 内容。自有 stories/config 不被覆盖；生成文件出现差异会阻止应用，要求重新审核。不默认接入任何托管视觉回归服务。
