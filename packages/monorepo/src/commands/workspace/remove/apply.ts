@@ -10,7 +10,7 @@ import { discoverCleanWorkspace } from '../../clean/discovery'
 import { assertSafePath, isWithin } from '../../clean/safety'
 import { safeFile } from '../../deps/files'
 import { removalInventory } from './inventory'
-import { planWorkspaceRemoval, removalNextSteps } from './plan'
+import { planWorkspaceRemoval } from './plan'
 import { cleanupRemovalRecovery, prepareRemovalRecovery, restoreRemovedDirectory } from './recovery'
 import { validateRemovalPlan, verifyRemovalPostState } from './verify'
 
@@ -32,7 +32,7 @@ async function applyRemoval(cwd: string, plan: WorkspaceRemovalPlan): Promise<Wo
   })
   if (!present) {
     await verifyRemovalPostState(plan, false)
-    return { status: 'unchanged', removed: [], changed: [], cleanupPending: [], nextSteps: [...removalNextSteps] }
+    return { status: 'unchanged', removed: [], changed: [], cleanupPending: [], nextSteps: [...plan.nextSteps] }
   }
   const current = await planWorkspaceRemoval(root, plan.selection)
   if (!isDeepStrictEqual(current, plan)) {
@@ -91,7 +91,7 @@ async function applyRemoval(cwd: string, plan: WorkspaceRemovalPlan): Promise<Wo
   }
   // All semantic changes have committed. Cleanup failure must not claim rollback.
   const cleanupPending = [...await transaction.cleanup(), ...await cleanupRemovalRecovery(root, recovery!, plan.inventory)]
-  return { status: 'applied', removed: [plan.target.id], changed: plan.files.map(file => file.path), cleanupPending, nextSteps: [...removalNextSteps] }
+  return { status: 'applied', removed: [plan.target.id], changed: plan.files.map(file => file.path), cleanupPending, nextSteps: [...plan.nextSteps] }
 }
 
 /** Keep replay checks, validation, mutation and recovery under the same workspace lock. */

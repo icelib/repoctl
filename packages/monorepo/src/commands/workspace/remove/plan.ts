@@ -10,6 +10,7 @@ import { isWithin, validateCleanTargets } from '../../clean/safety'
 import { hash, readInput, record } from '../../deps/files'
 import { parseSpecifier } from '../../deps/specifiers'
 import { removalGit } from './git'
+import { removalInstanceNextSteps } from './instances'
 import { removalInventory } from './inventory'
 import { removalManifestChanges } from './manifests'
 import { removalReview } from './review'
@@ -144,6 +145,6 @@ export async function planWorkspaceRemoval(cwd: string, options: WorkspaceRemova
     workspaces: graph.nodes.map(node => node.id),
     git: state.git,
     review: reviewed.review,
-    nextSteps: [...removalNextSteps],
+    nextSteps: [...removalNextSteps, ...await removalInstanceNextSteps(root, target.id)],
   }
 }

@@ -13,6 +13,7 @@ export function validateRemovalPlan(plan: WorkspaceRemovalPlan) {
     || typeof plan.selection.removeReferences !== 'boolean' || typeof plan.canApply !== 'boolean'
     || !Array.isArray(plan.inputs) || !Array.isArray(plan.files) || !Array.isArray(plan.inventory)
     || !Array.isArray(plan.workspaces) || !Array.isArray(plan.blockers) || !record(plan.review)
+    || !Array.isArray(plan.nextSteps) || plan.nextSteps.some(step => typeof step !== 'string')
     || plan.inputs.some(item => !record(item) || typeof item.path !== 'string' || typeof item.hash !== 'string')
     || plan.files.some(item => !record(item) || typeof item.path !== 'string' || typeof item.before !== 'string' || typeof item.after !== 'string'
       || item.beforeHash !== hash(item.before) || item.afterHash !== hash(item.after)
