@@ -1,25 +1,30 @@
 import type { ReleaseCiOptions, ReleaseOptions } from './types'
 import { ReleaseCommandError } from './errors'
 import { runQualityScripts, runReleaseHooks } from './hooks'
+import { assertReleaseLineVersions, resolveStableReleaseBranch } from './lines'
+import { assertAppliedLine, assertPlannedLine, assertPreparedLine } from './lines/preview'
 import { assertPreviousReleaseComplete } from './preparation/guard'
 import { applyVersions } from './preparation/result'
 import { getPublishCandidates, publishWithRetry } from './publish'
-import { assertStableLaneAssignments, clearPublishSummary, hasGitChanges, hasPendingIntents, readPublishSummary, resolveBranch } from './shared'
+import { assertStableLaneAssignments, clearPublishSummary, hasGitChanges, hasPendingIntents, readPublishSummary } from './shared'
 
 export async function prepareStableReleases(options: ReleaseCiOptions) {
-  const branch = resolveBranch(options)
-  if (branch !== 'main') {
-    throw new ReleaseCommandError(`repo release stable prepare is only allowed on main, got ${branch}`)
-  }
+  const rule = await resolveStableReleaseBranch(options, 'prepare')
   await assertStableLaneAssignments(options)
   if (!await hasPendingIntents(options.cwd)) {
     return []
   }
-  await assertPreviousReleaseComplete(options)
+  await assertPlannedLine(rule, options)
+  await assertPreviousReleaseComplete(options, rule.distTag)
   runReleaseHooks('beforeVersion', options)
   await runQualityScripts(options)
+  await assertPlannedLine(rule, options)
   const releases = await applyVersions(options)
+  const publicReleases = await assertAppliedLine(rule, releases, options)
   runReleaseHooks('afterVersion', options)
+  if (releases.length) {
+    await assertPreparedLine(rule, publicReleases, options)
+  }
   if (releases.length && !hasGitChanges(options)) {
     throw new ReleaseCommandError('pnpm reported releases without file changes')
   }
@@ -31,10 +36,8 @@ export async function prepareStable(options: ReleaseOptions) {
 }
 
 export async function assertStablePublish(options: ReleaseOptions, quality = true) {
-  const branch = resolveBranch(options)
-  if (branch !== 'main') {
-    throw new ReleaseCommandError(`repo release stable publish is only allowed on main, got ${branch}`)
-  }
+  const rule = await resolveStableReleaseBranch(options, 'publish')
+  assertReleaseLineVersions(rule, await getPublishCandidates(options.cwd))
   await assertStableLaneAssignments(options)
   if (await hasPendingIntents(options.cwd)) {
     throw new ReleaseCommandError('stable publish found unconsumed change intents; prepare and merge the Release PR before publishing')
@@ -42,16 +45,19 @@ export async function assertStablePublish(options: ReleaseOptions, quality = tru
   if (quality) {
     await runQualityScripts(options)
   }
+  return rule
 }
 
 export async function publishStable(options: ReleaseOptions) {
-  await assertStablePublish(options)
+  const rule = await assertStablePublish(options)
   runReleaseHooks('beforePublish', options)
+  const candidates = await getPublishCandidates(options.cwd)
+  assertReleaseLineVersions(rule, candidates)
   await clearPublishSummary(options.cwd)
   await publishWithRetry(
-    ['publish', '-r', '--report-summary', '--provenance', '--no-git-checks'],
+    ['publish', '-r', '--report-summary', '--provenance', '--no-git-checks', ...(rule.distTag === 'latest' ? [] : ['--tag', rule.distTag])],
     options,
-    await getPublishCandidates(options.cwd),
+    candidates,
   )
   return readPublishSummary(options.cwd)
 }
