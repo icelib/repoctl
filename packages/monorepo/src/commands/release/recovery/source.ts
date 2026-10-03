@@ -8,6 +8,7 @@ import { ReleaseCommandError } from '../errors'
 import { runQualityScripts } from '../hooks'
 import { publishLifecycle } from '../lifecycle'
 import { releaseStateKey } from '../lifecycle/key'
+import { assertReleaseLineVersions, resolveStableReleaseBranch } from '../lines'
 import { resolveGitHub } from '../metadata'
 import { getPublishCandidates } from '../publish'
 import { packageKey } from '../publish/state'
@@ -16,6 +17,7 @@ import { readSourceCandidates } from './candidates'
 
 /** Run current tooling against the original source, never today's package contents. */
 export async function recoverSource(options: ReleaseCiOptions, source: string) {
+  const rule = await resolveStableReleaseBranch(options, 'publish')
   if (!/^[a-f0-9]{40}$/.test(source)) {
     throw new ReleaseCommandError('source-sha must be a full lowercase commit SHA')
   }
@@ -26,7 +28,7 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
   if (capture('git', ['rev-parse', '--is-shallow-repository'], options) !== 'false') {
     throw new ReleaseCommandError('Source recovery requires full Git history')
   }
-  run('git', ['merge-base', '--is-ancestor', source, 'origin/main'], options)
+  run('git', ['merge-base', '--is-ancestor', source, `refs/remotes/origin/${rule.branch}`], options)
   const origin = capture('git', ['remote', 'get-url', 'origin'], options)
   const root = await mkdtemp(path.join(tmpdir(), 'repoctl-release-source-'))
   const cwd = path.join(root, 'source')
@@ -35,7 +37,7 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
     // GitHub's signed OIDC identity belongs to the dispatching workflow commit.
     // Keep its environment intact; the checkout and release target use source.
     const env: NodeJS.ProcessEnv = { ...getReleaseEnv(options), REPO_RELEASE_SOURCE_SHA: source }
-    let recovery: ReleaseCiOptions = { ...options, cwd, branch: 'main', env }
+    let recovery: ReleaseCiOptions = { ...options, cwd, branch: rule.branch, env }
     // A local clone uses the source directory as origin; builds and provenance
     // must continue to see the actual repository identity.
     run('git', ['remote', 'set-url', 'origin', origin], recovery)
@@ -43,6 +45,7 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
     clearWorkspaceCache()
     const workspaceCandidates = await getPublishCandidates(cwd)
     const candidates = await readSourceCandidates(recovery, source)
+    assertReleaseLineVersions(rule, candidates)
     if (!candidates.length) {
       throw new ReleaseCommandError('Source commit introduces no prepared release versions')
     }
@@ -60,7 +63,7 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
     // Reuse those exact keys so accepted uploads and completed hooks survive recovery.
     const repository = env['GITHUB_REPOSITORY']
     if (repository && github.readReleaseState) {
-      const checkpoint = await github.readReleaseState(releaseStateKey(repository, 'latest', workspaceCandidates))
+      const checkpoint = await github.readReleaseState(releaseStateKey(repository, rule.distTag, workspaceCandidates))
       if (checkpoint) {
         if (checkpoint.state.packages.some(pkg => pkg.target !== source || !candidates.some(item => packageKey(item) === packageKey(pkg)))) {
           throw new ReleaseCommandError('Existing checkpoint includes a different source release; recover its original candidate set')
@@ -72,14 +75,14 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
     if (!dryRun) {
       run('pnpm', ['install', '--frozen-lockfile'], recovery)
       const config = await resolveCommandConfig('release', cwd)
-      recovery = { ...recovery, config: config ?? {} }
+      recovery = { ...recovery, config: { ...config, branches: options.config?.branches ?? {} } }
       await runQualityScripts(recovery)
     }
     else {
       // Use the dispatch configuration without executing historical config or hooks.
       recovery = { ...recovery, dryRun: true }
     }
-    return await publishLifecycle({ ...recovery, github }, selected)
+    return await publishLifecycle({ ...recovery, github }, selected, rule.distTag)
   }
   finally {
     for (const file of ['repoctl-publish-progress.json', 'repoctl-release-progress.json', 'pnpm-publish-summary.json']) {
