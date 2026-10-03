@@ -170,6 +170,8 @@ export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './rele
 export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
 
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
+
+export * from './template-drift'
 export * from './template-instances'
 
 export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'

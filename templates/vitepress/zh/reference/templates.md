@@ -296,3 +296,37 @@ repo templates recover-upgrade packages/shared-utils --apply --json
 恢复预览只读。应用恢复时，只有每个受影响路径仍与记录的变更前或变更后状态一致，才会恢复文件与旧来源版本；冲突的业务编辑须先另行保存并处理。恢复不会重放失败的升级。进程异常退出可能留下 `.repoctl/template-instances.lock`；核实记录中的进程已经停止后，再移除该锁并应用恢复。元数据已提交但恢复记录清理失败时，错误会明确说明升级已应用，此时恢复命令仍会撤销记录中的这次升级。
 
 恢复记录仅包含本次实际修改文件的本地前后内容，操作成功或恢复完成后会自动删除。请作为本地备份处理，将 `.repoctl/template-upgrades/` 排除在版本控制之外，并继续跟踪实例登记与模板基线。JSON 预览也包含受管候选文件内容，应按对应文件的敏感程度保存。即使是预览模式，显式传入 `--out <文件>` 仍会写出报告。
+
+## 诊断版本落后与受管文件漂移
+
+```sh
+repo templates drift --json
+repo templates drift --source-dir ../templates-2.2.0 --markdown --out reports/template-drift.md
+repo templates drift --remote --strict
+repo doctor --rules template-instance-baseline,template-instance-version,template-instance-drift,root-asset-drift --strict
+```
+
+漂移诊断只读，不更新来源版本、快照、登记信息或业务文件。`--out` 仅写出指定报告。报告包含路径与内容摘要，不包含业务文件正文。
+
+默认读取当前实际安装的模板包元数据，不访问网络。`--source-dir` 改为读取已解压包的元数据，不执行其脚本。`--remote` 显式查询公共 npm 仓库的 `latest` 标签并设置超时，不能与 `--source-dir` 同用。请求失败、返回内容无效或包身份不符时保持不可用状态。本地比较的 `same` 只表示两个已知版本一致，不代表已经是远程最新版本。`newer` 表示已知有较新模板包，不声称每个独立模板都发生变化。自定义快照来源没有可比较包版本，版本状态保留为 `unknown`。
+
+每个实例或根资产分别报告基线有效性、版本比较（`newer`、`same`、`ahead`、`unknown`）与本地漂移。仅检查可信留存基线中的路径，业务新增文件不进入扫描；用户删除明确显示 `deleted`，持久升级排除项显示 `excluded` 且不读取内容。不安全或不可读路径显示 `unavailable`。根资产必须具有经过验证的 `.repoctl/baselines/root/` 记录才能参与比较；登记不存在表示未受管，不是已验证健康。
+
+本地修改、删除、已知新版本和证据缺失默认产生警告。`--strict` 在存在有效警告时失败。Doctor 稳定规则 ID 为 `template-version-evidence`、`template-instance-registry`、`template-instance-baseline`、`template-instance-version`、`template-instance-drift`、`root-asset-registry`、`root-asset-version`、`root-asset-drift`。
+
+需要保留有理由的诊断豁免时，复用 `commands.doctor.suppressions`。精确的 workspace 相对路径将决定限定到一处发现；省略路径会覆盖所有实例中对应规则。有效抑制影响有效统计与 strict 退出码，原始发现、理由、过期项和未命中项仍完整保留。诊断抑制不改变文件所有权；文件需要退出模板管理时，应使用实例升级的持久排除功能。
+
+```ts
+export default {
+  commands: {
+    doctor: {
+      suppressions: [{
+        id: 'template-instance-drift',
+        path: 'packages/shared-utils/README.md',
+        reason: '团队独立维护该业务文档',
+        expires: '2027-01-31',
+      }],
+    },
+  },
+}
+```
