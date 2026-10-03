@@ -244,6 +244,11 @@
     - windows-ci-verification-budget
     - windows-packaged-validation-budget
     - workspace-artifact-preparation
+"@icebreakers/monorepo-templates@2.2.1":
+  dir: packages/monorepo-templates
+  intents:
+    - heavy-dolphins-remain
+    - quiet-rats-trade
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -429,6 +434,11 @@
     - warm-task-directory
     - wise-tools-attack
     - workspace-artifact-preparation
+"@icebreakers/monorepo@5.7.1":
+  dir: packages/monorepo
+  intents:
+    - heavy-dolphins-remain
+    - quiet-rats-trade
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -478,6 +488,10 @@ create-icebreaker@2.1.0:
     - calm-react-libraries
     - fresh-react-workspace
     - stable-template-origins
+create-icebreaker@2.1.1:
+  dir: packages/create-icebreaker
+  intents:
+    - quiet-rats-trade
 create-repoctl@0.1.0:
   dir: packages/create-repoctl
   intents:
@@ -514,6 +528,10 @@ create-repoctl@1.2.0:
     - fresh-react-workspace
     - next-app-router-template
     - stable-template-origins
+create-repoctl@1.2.1:
+  dir: packages/create-repoctl
+  intents:
+    - quiet-rats-trade
 eslint-plugin-better-stylelint@2.0.4:
   dir: packages/eslint-plugin-better-stylelint
   intents:
@@ -698,6 +716,11 @@ repoctl@5.7.0:
     - warm-task-directory
     - wise-tools-attack
     - workspace-artifact-preparation
+repoctl@5.7.1:
+  dir: packages/repoctl
+  intents:
+    - heavy-dolphins-remain
+    - quiet-rats-trade
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
