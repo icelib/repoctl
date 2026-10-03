@@ -348,6 +348,10 @@ Usage:
 
 Use `repoctl package api check --json` after building opted-in `tooling.apiReports` library declarations. Local API Extractor >=7.52.12 <8 is required. `package api update --json` produces a read-only plan; explicitly review it before `package api update --apply <plan.json>`. Preserve existing baselines on check, report failures, review change intents, and never claim API signature differences determine complete SemVer compatibility. Baseline paths are workspace-relative; entries/tsconfig are package-relative.
 
+### Installation security
+
+Use `repo doctor security --json` for a read-only, version-aware pnpm policy report. `--expectations policy.json --strict` checks organization requirements. `--preset balanced` previews only absent supported keys; save the JSON and explicitly use `--apply plan.json` after review. Preserve explicit policies, including release age zero and build approvals. Do not run lifecycle scripts or approve dependencies as part of inspection. Unknown versions/configuration are reported, not treated as safe.
+
 ## `repo tooling references`
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config.md#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
