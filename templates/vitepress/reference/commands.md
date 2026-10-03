@@ -1,5 +1,7 @@
 # Command Reference
 
+Use [`repo workspace move`](./move.md) with `--to`, `--name`, or both to preview workspace refactoring. Review the JSON plan and located source tasks, then explicitly apply it with `--apply`.
+
 Use [`repo workspace prepare`](./artifacts.md) to preview a native Turbo prune build context or pinned pnpm deploy production directory, then explicitly apply a reviewed JSON plan. Select one exact package and an empty output outside the workspace.
 
 This page focuses on high-value repoctl commands and options.
@@ -228,3 +230,30 @@ Doctor fix application holds `.repoctl/doctor-fix.lock` from input validation th
 ## `repo tooling references`
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
+
+### Incremental Playwright capability
+
+Add browser tests to an existing Vue/React Vite application with `build` and `preview` scripts:
+
+```sh
+repo tooling capability list --json
+repo tooling capability plan playwright --target web --route / --role button --name Increment --expect-text 'Count: 1' --json > e2e-plan.json
+repo tooling capability apply e2e-plan.json --json
+pnpm install
+pnpm --filter @repoctl-e2e/web test:e2e:install
+pnpm test:e2e
+```
+
+Use `--test-id` instead of `--role`/`--name` for a test-id locator. The route, click and expected text describe a real interaction in your application. The plan shows file diffs, dependencies, scripts, conflicts and next steps, without installing anything. Apply uses those exact reviewed bytes, rejects stale inputs and conflicts, and rolls back failed writes. A repeated unchanged apply has no effect. Choose an empty destination (`--directory`) for the new E2E workspace. Existing application sources and differing generated files are protected.
+
+The capability creates an independent E2E workspace, headless Chromium tests, Turbo build dependencies, a dedicated CI workflow, HTML reports and failure traces. Browser installation is explicit. `--port` and `--ci-port` set distinct local and CI ports. CI never reuses a running service. `--reuse-existing-server` opts into local reuse; Playwright cleans up its own service after success, failure or interruption, and leaves a borrowed service running. Commit the lockfile after installation.
+
+Public APIs: `listToolingCapabilities()`, `planToolingCapability(cwd, options)` and `applyToolingCapability(plan)`. JSON uses schema version 1 and stable English keys regardless of CLI language.
+
+### Optional Storybook for a component library
+
+`repo tooling capability plan storybook --target <exact-workspace> --framework vue|react --component <named-export> --example example.json --json` previews a separate `stories/<slug>` workspace. Apply the reviewed JSON with `repo tooling capability apply plan.json`. The first version supports Vue 3 and React 18/19 libraries with a build script, public entry and an explicit runtime version range. Install dependencies after applying and commit the resulting lockfile. Discovery and planning do not install Storybook or a browser.
+
+A Vue prop-update example is `{"kind":"prop-update","prop":"msg","initial":"Hello Storybook","updated":"Updated component"}`. For a React counter use `{"kind":"click","args":{"initialCount":0},"alternateArgs":{"initialCount":4},"click":{"role":"button","name":"Increase"},"expectText":"1"}`. Component props must be JSON primitives; interaction assertions exercise the selected component. `Default`, `Alternate` and `Interaction` stories provide two states and a play test.
+
+Run `pnpm build:storybook` for the static site, then `pnpm --filter @repoctl-stories/<slug> test:storybook:install` and `pnpm test:storybook` for headless Chromium tests. Turbo builds library dependencies first and records `storybook-static/**`; play tests run without caching and write a JUnit report. Use the generated workspace's `storybook` script for local development. Its independent Vitest and Vite configurations leave the library's existing tests, package exports, runtime dependencies and tarball contents unchanged. Existing stories and configuration are preserved; differing generated files block application and require a new review. No hosted visual testing service is enabled.
