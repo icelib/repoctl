@@ -11,6 +11,7 @@ export function formatReleasePlan(plan: ReleasePlan) {
     '# Release plan',
     '',
     `Status: ${plan.status}; pnpm: ${plan.pnpmVersion ?? 'unknown'}`,
+    ...(plan.branchRule ? [`Branch: ${cell(plan.branchRule.branch)}; kind: ${plan.branchRule.kind}; lane: ${cell(plan.branchRule.lane)}; range: ${cell(plan.branchRule.range)}; tag: ${cell(plan.branchRule.distTag)}`, ...(plan.branchRule.excludedRanges.length ? [`Excluded maintenance ranges: ${plan.branchRule.excludedRanges.map(cell).join(', ')}`] : [])] : []),
     '',
     '| Package | Current | Planned | Lane | Publish | Reasons |',
     '| --- | --- | --- | --- | --- | --- |',
@@ -26,8 +27,9 @@ export function registerReleasePlan(release: Command, cwd: string) {
     .description(localize('Preview native pnpm versioning without consuming intents or running release hooks', '只读预览 pnpm 版本计划，不消费 intents 或执行发布 hooks'))
     .option('--json', localize('Output a versioned JSON plan', '输出有版本结构的 JSON 计划'))
     .option('--markdown', localize('Output Markdown with release-note previews', '输出包含发布说明预览的 Markdown'))
-    .action(async (options: { json?: boolean }) => {
-      const plan = await createReleasePlan({ cwd })
+    .option('--branch <branch>', localize('Select the release line; defaults to the primary stable line', '选择发布线，默认正式主线'))
+    .action(async (options: { json?: boolean, branch?: string }) => {
+      const plan = await createReleasePlan({ cwd, ...(options.branch ? { branch: options.branch } : {}) })
       process.stdout.write(`${options.json ? JSON.stringify(plan, null, 2) : formatReleasePlan(plan)}\n`)
       if (plan.status === 'blocked') {
         process.exitCode = 1

@@ -1,26 +1,23 @@
 import type { ReleaseCiOptions, ReleaseMode } from './types'
+import { resolveCommandConfig } from '../../core/config'
 import { logger } from '../../core/logger'
 import { buildReleaseNoteDocument, readPendingIntentCommits, renderReleasePullRequest } from './body'
 import { ReleaseCommandError } from './errors'
 import { runAfterPublishHooks, runQualityScripts, runReleaseHooks } from './hooks'
 import { publishLifecycle } from './lifecycle'
+import { assertReleaseLineVersions, releasePullRequestHead, resolveReleaseBranch, resolveStableReleaseBranch } from './lines'
 import { publishMetadata, resolveGitHub, resolveReleaseLocale } from './metadata'
 import { releasePrerelease } from './prerelease'
-import { publishWithRetry } from './publish'
+import { getPublishCandidates, publishWithRetry } from './publish'
 import { reconcileRelease } from './reconcile'
 import { recoverSource } from './recovery/source'
-import { capture, clearPublishSummary, getReleaseEnv, hasPendingIntents, readPublishSummary, resolveBranch, run } from './shared'
+import { capture, clearPublishSummary, getReleaseEnv, hasPendingIntents, readPublishSummary, run } from './shared'
 import { assertStablePublish, prepareStableReleases, publishStable } from './stable'
 import { readReleaseTriggerContext, shouldRunRelease } from './trigger'
-import { prereleaseBranches } from './types'
-
-const releaseBranch = 'release/pnpm-version'
 
 async function createReleasePullRequest(options: ReleaseCiOptions) {
-  const branch = resolveBranch(options)
-  if (branch !== 'main') {
-    throw new ReleaseCommandError(`repo release stable prepare is only allowed on main, got ${branch}`)
-  }
+  const rule = await resolveStableReleaseBranch(options, 'prepare')
+  const releaseBranch = releasePullRequestHead(rule)
 
   const sourceCommits = await readPendingIntentCommits(options)
   const github = resolveGitHub(options)
@@ -62,17 +59,18 @@ async function createReleasePullRequest(options: ReleaseCiOptions) {
 
   await github.ensurePullRequest({
     head: releaseBranch,
-    base: 'main',
+    base: rule.branch,
     title: resolveReleaseLocale(options) === 'zh-CN'
       ? 'chore(release): 更新包版本'
       : 'chore(release): version packages',
     body: renderReleasePullRequest(noteDocument, metadata),
   })
-  await github.closeLegacyReleasePullRequests?.({ head: 'changeset-release/main', base: 'main' })
+  await github.closeLegacyReleasePullRequests?.({ head: `changeset-release/${rule.branch}`, base: rule.branch })
   return true
 }
 
 async function recoverUnpublished(options: ReleaseCiOptions) {
+  const rule = await assertStablePublish(options, false)
   const packageName = options.packageName || getReleaseEnv(options)['REPO_RELEASE_PACKAGE']?.trim()
   const packageVersion = options.packageVersion || getReleaseEnv(options)['REPO_RELEASE_VERSION']?.trim()
   if (!packageName || !packageVersion) {
@@ -90,12 +88,17 @@ async function recoverUnpublished(options: ReleaseCiOptions) {
   await runQualityScripts(options)
   const github = resolveGitHub(options)
   if (github.readReleaseState && github.writeReleaseState) {
-    return publishLifecycle({ ...options, github }, [{ name: packageName, version: packageVersion }])
+    return publishLifecycle({ ...options, github }, [{ name: packageName, version: packageVersion }], rule.distTag)
   }
   runReleaseHooks('beforePublish', options)
+  const actual = await getPublishCandidates(options.cwd)
+  assertReleaseLineVersions(rule, actual)
+  if (!actual.some(pkg => pkg.name === packageName && pkg.version === packageVersion)) {
+    throw new ReleaseCommandError('Recovery package version changed during beforePublish hooks; no upload started')
+  }
   await clearPublishSummary(options.cwd)
   await publishWithRetry(
-    ['publish', '-r', '--filter', packageName, '--report-summary', '--provenance', '--no-git-checks'],
+    ['publish', '-r', '--filter', packageName, '--report-summary', '--provenance', '--no-git-checks', ...(rule.distTag === 'latest' ? [] : ['--tag', rule.distTag])],
     options,
     [{ name: packageName, version: packageVersion }],
     true,
@@ -119,8 +122,8 @@ function resolveMode(options: ReleaseCiOptions): ReleaseMode {
 async function publishStableCi(options: ReleaseCiOptions) {
   const github = resolveGitHub(options)
   if (github.readReleaseState && github.writeReleaseState) {
-    await assertStablePublish(options, !(options.dryRun ?? getReleaseEnv(options)['REPO_RELEASE_DRY_RUN'] === 'true'))
-    return publishLifecycle({ ...options, github })
+    const rule = await assertStablePublish(options, !(options.dryRun ?? getReleaseEnv(options)['REPO_RELEASE_DRY_RUN'] === 'true'))
+    return publishLifecycle({ ...options, github }, undefined, rule.distTag)
   }
   // 保留旧的程序化 GitHub adapter；跨 runner 恢复需要状态读写能力。
   const packages = await publishStable(options)
@@ -130,6 +133,7 @@ async function publishStableCi(options: ReleaseCiOptions) {
 }
 
 export async function releaseCi(options: ReleaseCiOptions) {
+  options = { ...options, config: options.config ?? await resolveCommandConfig('release', options.cwd) ?? {} }
   const mode = resolveMode(options)
   const source = options.sourceSha ?? getReleaseEnv(options)['REPO_RELEASE_RECOVERY_SOURCE_SHA']?.trim()
   if (source) {
@@ -163,21 +167,22 @@ export async function releaseCi(options: ReleaseCiOptions) {
     }
   }
 
-  const branch = resolveBranch(options)
-  if (prereleaseBranches.has(branch)) {
+  const rule = await resolveReleaseBranch(options)
+  if (rule.kind === 'prerelease') {
     const github = resolveGitHub(options)
     if (github.readReleaseState && github.writeReleaseState) {
       if (options.dryRun ?? getReleaseEnv(options)['REPO_RELEASE_DRY_RUN'] === 'true') {
         if (await hasPendingIntents(options.cwd)) {
           throw new ReleaseCommandError('Prerelease dry-run requires an already prepared version commit')
         }
-        return publishLifecycle({ ...options, github }, undefined, branch)
+        assertReleaseLineVersions(rule, await getPublishCandidates(options.cwd))
+        return publishLifecycle({ ...options, github }, undefined, rule.distTag)
       }
       return releasePrerelease({ ...options, github }, () => publishLifecycle({
         ...options,
         github,
         env: { ...getReleaseEnv(options), GITHUB_SHA: capture('git', ['rev-parse', 'HEAD'], options) },
-      }, undefined, branch))
+      }, undefined, rule.distTag))
     }
     const packages = await releasePrerelease(options)
     if (!packages) {
@@ -186,9 +191,6 @@ export async function releaseCi(options: ReleaseCiOptions) {
     await publishMetadata(packages, options, true)
     runAfterPublishHooks(packages, options)
     return packages
-  }
-  if (branch !== 'main') {
-    throw new ReleaseCommandError(`repo release ci only supports main, alpha, beta, rc, or next branches, got ${branch}`)
   }
   if (await hasPendingIntents(options.cwd)) {
     await createReleasePullRequest(options)
