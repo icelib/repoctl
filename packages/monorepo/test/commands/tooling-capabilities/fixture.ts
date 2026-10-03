@@ -1,4 +1,4 @@
-import type { ToolingCapabilityOptions } from '@icebreakers/monorepo'
+import type { PlaywrightCapabilityOptions } from '@icebreakers/monorepo'
 import { mkdir, mkdtemp, readdir, readFile, realpath, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'pathe'
@@ -8,7 +8,7 @@ const roots: string[] = []
 afterEach(async () => {
   await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true })))
 })
-export const options: ToolingCapabilityOptions = { capability: 'playwright', target: 'web', interaction: { route: '/', click: { role: 'button', name: 'Increment' }, expectText: 'Count: 1' } }
+export const options: PlaywrightCapabilityOptions = { capability: 'playwright', target: 'web', interaction: { route: '/', click: { role: 'button', name: 'Increment' }, expectText: 'Count: 1' } }
 export async function fixture() {
   const root = await realpath(await mkdtemp(path.join(tmpdir(), 'repoctl-capability-')))
   roots.push(root)
