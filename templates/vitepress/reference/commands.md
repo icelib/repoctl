@@ -2,6 +2,8 @@
 
 Use [`repo workspace move`](./move.md) with `--to`, `--name`, or both to preview workspace refactoring. Review the JSON plan and located source tasks, then explicitly apply it with `--apply`.
 
+Use [`repo workspace prepare`](./artifacts.md) to preview a native Turbo prune build context or pinned pnpm deploy production directory, then explicitly apply a reviewed JSON plan. Select one exact package and an empty output outside the workspace.
+
 This page focuses on high-value repoctl commands and options.
 
 ## Main Entry

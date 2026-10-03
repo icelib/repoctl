@@ -57,6 +57,7 @@ export const routeSections = [
       item('knip', 'Unused code and dependencies', '闲置代码与依赖检查'),
       item('move', 'Move or rename a workspace', '移动或重命名工作区'),
       item('removal', 'Remove a workspace safely', '安全移除工作区'),
+      item('artifacts', 'Build and production artifacts', '构建与生产产物'),
       item('execution-model', 'Execution model', '执行模型'),
       item('output', 'Output formats', '输出格式'),
       item('aliases', 'Command aliases', '命令别名'),

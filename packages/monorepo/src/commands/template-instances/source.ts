@@ -43,16 +43,9 @@ export async function renderHistoricalTemplate(options: TemplateLinkOptions) {
         cwd: isolated,
         sourceDir,
         targetDir,
-        targetName: options.target,
-        targetExists: false,
-        template: options.template,
-        requestedTemplate: options.template,
-        usedFallback: false,
         hasPackageJson: await fs.pathExists(path.join(sourceDir, 'package.json')),
         packageName: options.parameters?.packageName ?? path.basename(options.target),
         packageJsonFileName: renameJson ? 'package.mock.json' : 'package.json',
-        renameJson,
-        templateDefinition: definition,
       }, false)
     }
     const after = await captureTemplateSnapshot(sourceDir)
