@@ -1,12 +1,12 @@
+import type { ReleaseBranchRule } from './lines/types'
 import type { ReleaseOptions } from './types'
 import { readFile } from 'node:fs/promises'
 import { readPendingIntents } from './intents'
+import { readReleaseBranches, resolveReleaseBranches } from './lines'
 import { capture, getReleaseEnv } from './shared'
 
-const releaseBranches = new Set(['main', 'alpha', 'beta', 'rc', 'next'])
-const prereleaseBranches = new Set(['alpha', 'beta', 'rc', 'next'])
-
 export interface ReleaseTriggerContext {
+  rules?: readonly ReleaseBranchRule[]
   eventName: string
   branch: string
   pendingChangesetFiles: readonly string[]
@@ -63,7 +63,8 @@ export function shouldRunRelease(context: ReleaseTriggerContext) {
     return true
   }
 
-  if (context.eventName !== 'push' || !releaseBranches.has(context.branch)) {
+  const rule = (context.rules ?? resolveReleaseBranches()).find(rule => rule.branch === context.branch)
+  if (context.eventName !== 'push' || !rule) {
     return false
   }
 
@@ -71,7 +72,7 @@ export function shouldRunRelease(context: ReleaseTriggerContext) {
     return true
   }
 
-  if (prereleaseBranches.has(context.branch)) {
+  if (rule.kind === 'prerelease') {
     return false
   }
 
@@ -119,6 +120,7 @@ export async function readReleaseTriggerContext(options: ReleaseOptions): Promis
   const sha = env['GITHUB_SHA']?.trim() || 'HEAD'
 
   return {
+    rules: await readReleaseBranches(options),
     eventName,
     branch,
     pendingChangesetFiles: await readPendingIntents(options.cwd),

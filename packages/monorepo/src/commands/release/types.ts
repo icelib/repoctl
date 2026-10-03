@@ -17,7 +17,7 @@ export interface ReleaseOptions {
 }
 
 export interface ReleaseCiOptions extends ReleaseOptions {
-  /** Recover the entire prepared release from this main-history commit. */
+  /** Recover the entire prepared release from a commit in the selected stable or maintenance branch history. */
   sourceSha?: string
   mode?: ReleaseMode
   packageName?: string

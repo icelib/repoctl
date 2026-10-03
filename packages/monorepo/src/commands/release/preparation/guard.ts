@@ -1,12 +1,14 @@
 import type { PublishedPackage, ReleaseCiOptions } from '../types'
 import { readFile } from 'node:fs/promises'
 import path from 'pathe'
+import semver from 'semver'
 import { getWorkspacePackages } from '../../../core/workspace'
 import { ReleaseCommandError } from '../errors'
 import { readLedger } from '../intents'
 import { findVersionCommit } from '../lifecycle/identity'
 import { releaseStateKey } from '../lifecycle/key'
 import { inspectRegistry } from '../lifecycle/registry'
+import { resolveReleaseBranch } from '../lines'
 import { readVersionSection } from '../notes/model'
 import { getPublishCandidates } from '../publish'
 import { packageKey } from '../publish/state'
@@ -60,17 +62,18 @@ export async function assertPreviousReleaseComplete(options: ReleaseCiOptions, d
     }
   }
   const blocked: string[] = []
+  const rule = options.config?.branches ? await resolveReleaseBranch(options) : undefined
   for (const pkg of prepared) {
     const published = await inspectRegistry(pkg, options)
     const release = releases?.find(item => item.tag_name === packageKey(pkg))
     const tag = github?.readTagTarget ? await github.readTagTarget(packageKey(pkg)) : undefined
     if (!published || unfinished.has(packageKey(pkg))
-      || (releases && (!release || release.draft || Boolean(release.prerelease) !== (distTag !== 'latest')))
+      || (releases && (!release || release.draft || Boolean(release.prerelease) !== Boolean(semver.prerelease(pkg.version))))
       || (github?.readTagTarget && (!tag || (published.gitHead && tag !== published.gitHead)))) {
       const source = sources.get(packageKey(pkg))!
-      const recovery = distTag === 'latest'
-        ? `repo release ci --mode publish --source-sha ${source}`
-        : `check out ${source} on ${distTag} and run repo release ci`
+      const recovery = rule?.kind === 'maintenance' || distTag === 'latest'
+        ? `${rule ? `check out ${rule.branch} and run ` : ''}repo release ci --mode publish --source-sha ${source}`
+        : `check out ${source} on ${rule?.branch ?? distTag} and run repo release ci`
       blocked.push(`${packageKey(pkg)} (source ${source}); recover with ${recovery}`)
     }
   }
