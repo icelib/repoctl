@@ -54,6 +54,7 @@ export interface OrganizationPresetDiagnostic {
 }
 
 export interface OrganizationPresetResolution {
+  /** Canonical workspace root for valid nonempty references; otherwise normalized absolute cwd without filesystem reads. */
   workspaceDir: string
   /** Lowest to highest precedence; dependencies precede the presets that extend them. */
   layers: OrganizationPresetLayer[]

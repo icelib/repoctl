@@ -1,6 +1,8 @@
 import type { OrganizationPresetDiagnostic, OrganizationPresetReference, OrganizationPresetResolution, OrganizationPresetSource } from '../../types/presets'
 import type { ConfigDiagnostic } from '../config/validation'
+import path from 'node:path'
 import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
+import { normalize } from 'pathe'
 import { satisfies } from 'semver'
 import { version as repoctlVersion } from '../../constants'
 import { isRecord, validateSchema } from '../config/validation/schema'
@@ -11,8 +13,7 @@ import { presetReferencesSchema } from './reference'
 
 /** Read installed data only: no importing package entrypoints, download, cache write or lifecycle execution. */
 export async function resolveOrganizationPresets(cwd: string, references: OrganizationPresetReference[]): Promise<OrganizationPresetResolution> {
-  const workspaceDir = await canonicalDirectory(await findWorkspaceDir(cwd) ?? cwd)
-  const result: OrganizationPresetResolution = { workspaceDir, layers: [], diagnostics: [], inputs: [], locations: [] }
+  const result: OrganizationPresetResolution = { workspaceDir: normalize(path.resolve(cwd)), layers: [], diagnostics: [], inputs: [], locations: [] }
   if (!Array.isArray(references)) {
     result.diagnostics.push({ id: 'preset.invalid-reference', status: 'fail', path: 'presets', source: null, detail: 'Preset references must be an array of exact npm package identities.' })
     return result
@@ -29,6 +30,8 @@ export async function resolveOrganizationPresets(cwd: string, references: Organi
   if (!references.length) {
     return result
   }
+  const workspaceDir = await canonicalDirectory(await findWorkspaceDir(cwd) ?? cwd)
+  result.workspaceDir = workspaceDir
   const inputs = new Map<string, string>()
   const versions = new Map<string, string>()
   const seen = new Map<string, OrganizationPresetSource>()
