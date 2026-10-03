@@ -11,7 +11,7 @@ export interface AppliedRelease {
 }
 
 export async function applyVersions(options: ReleaseOptions): Promise<AppliedRelease[]> {
-  const before = await readWorkspaceVersions(options.cwd)
+  const before = await readWorkspaceVersions(options.cwd, { includePrivate: true, includeRoot: true })
   const output = capture('pnpm', ['version', '-r', '--no-git-checks', '--json'], options)
   let data: unknown
   try {
@@ -23,7 +23,7 @@ export async function applyVersions(options: ReleaseOptions): Promise<AppliedRel
   if (!Array.isArray(data)) {
     throw new ReleaseCommandError('pnpm version must return an applied release array')
   }
-  const after = await readWorkspaceVersions(options.cwd)
+  const after = await readWorkspaceVersions(options.cwd, { includePrivate: true, includeRoot: true })
   const names = new Set<string>()
   for (const item of data) {
     if (!item || typeof item.name !== 'string' || names.has(item.name)

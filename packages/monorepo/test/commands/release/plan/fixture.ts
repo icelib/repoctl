@@ -38,6 +38,8 @@ export async function fixture() {
     return result.stdout.trim()
   }
   git('init', '-q')
+  git('config', 'maintenance.auto', 'false')
+  git('config', 'gc.auto', '0')
   git('config', 'user.name', 'Fixture')
   git('config', 'user.email', 'fixture@example.invalid')
   git('config', 'core.hooksPath', path.join(cwd, 'no-hooks'))
