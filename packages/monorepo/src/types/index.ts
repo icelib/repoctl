@@ -1,4 +1,5 @@
 export type { RepoctlLocale } from '../i18n/types'
+export type { ArtifactFile, WorkspaceArtifactApplyOptions, WorkspaceArtifactOptions, WorkspaceArtifactPlan, WorkspaceArtifactResult } from './artifact'
 export * from './cli'
 export * from './config'
 export * from './dependencies'
@@ -8,4 +9,5 @@ export * from './project-references'
 export * from './removal'
 export * from './upgrade'
 export * from './workspace'
+
 export type { ConfigValues, SimpleGit, SimpleGitOptions } from 'simple-git'
