@@ -88,6 +88,7 @@
   },
   "dependencies": {
     "@arethetypeswrong/core": "0.18.5",
+    "@babel/parser": "^7.29.8",
     "@icebreakers/commitlint-config": "workspace:*",
     "@icebreakers/eslint-config": "workspace:*",
     "@icebreakers/monorepo-templates": "workspace:*",
