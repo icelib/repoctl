@@ -140,6 +140,11 @@ export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport }
 export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
 
 export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
+export { inspectInstallSecurity } from './doctor/security'
+
+export type { InstallBuildDecision, InstallPolicyKey, InstallSecurityExpectations, InstallSecurityOptions, InstallSecurityPresetPlan, InstallSecurityReport, InstallSecuritySetting } from './doctor/security'
+export { applyInstallSecurityPreset, planInstallSecurityPreset } from './doctor/security/preset'
+
 export { checkEnvironmentCache } from './env-cache'
 
 export type * from './env-cache'

@@ -363,6 +363,10 @@ Usage:
 
 Doctor fix application holds `.repoctl/doctor-fix.lock` through validation, verification, rollback and cleanup. After a crash, confirm no writer remains and reconcile backups before manually removing the lock.
 
+### Installation security
+
+Use `repo doctor security --json` for a read-only, version-aware pnpm policy report. `--expectations policy.json --strict` checks organization requirements. `--preset balanced` previews only absent supported keys; save the JSON and explicitly use `--apply plan.json` after review. Preserve explicit policies, including release age zero and build approvals. Do not run lifecycle scripts or approve dependencies as part of inspection. Unknown versions/configuration are reported, not treated as safe.
+
 ## `repo tooling references`
 
 `check --json` checks existing references without opt-in. `plan` and `sync --dry-run` preview deterministic JSON without writes. With `tooling.projectReferences.enabled: true`, use `sync` or `apply <plan.json>` to maintain only registered references. Existing manual references and TypeScript/Vue validation scripts are preserved; incompatible compiler options, cycles, missing targets and stale plans block application. See [configuration](./config.md#typescript-project-references) for discovery, explicit compilation relationships, ownership and recovery.
