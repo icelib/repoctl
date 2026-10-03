@@ -28,7 +28,7 @@ async function applyLocked(plan: ProjectReferencesPlan): Promise<ProjectReferenc
   const registry = path.join(plan.workspaceDir, ownershipFile)
   const placeholder = `${JSON.stringify({ schemaVersion: 1, configs: {}, transaction: randomUUID() })}\n`
   let createdDirectory = false
-  let createdFile: Awaited<ReturnType<typeof lstat>> | undefined
+  let createdFile: { ino: bigint, dev: bigint } | undefined
   let placeholderWritten = false
   let transaction: Awaited<ReturnType<typeof stageFileTransaction>> | undefined
   try {
@@ -45,7 +45,7 @@ async function applyLocked(plan: ProjectReferencesPlan): Promise<ProjectReferenc
       await exists(plan.workspaceDir, ownershipFile)
       const handle = await open(registry, 'wx')
       try {
-        createdFile = await handle.stat()
+        createdFile = await handle.stat({ bigint: true })
         await handle.writeFile(placeholder)
         placeholderWritten = true
       }
@@ -67,7 +67,7 @@ async function applyLocked(plan: ProjectReferencesPlan): Promise<ProjectReferenc
       try {
         if (await exists(plan.workspaceDir, ownershipFile)) {
           await safeFile(plan.workspaceDir, ownershipFile)
-          const current = await lstat(registry)
+          const current = await lstat(registry, { bigint: true })
           // Rollback restores a backup inode, so the unique token proves ownership after replacement.
           const owned = placeholderWritten ? await readFile(registry, 'utf8') === placeholder : current.ino === createdFile.ino && current.dev === createdFile.dev
           if (!owned) {
