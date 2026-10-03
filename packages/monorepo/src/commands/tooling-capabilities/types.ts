@@ -1,5 +1,5 @@
 export interface ToolingCapability {
-  id: 'playwright'
+  id: 'playwright' | 'storybook'
   version: 1
   description: string
   requirements: string[]
@@ -11,7 +11,7 @@ export interface PlaywrightInteraction {
   expectText: string
 }
 
-export interface ToolingCapabilityOptions {
+export interface PlaywrightCapabilityOptions {
   capability: 'playwright'
   /** Exact workspace name or path relative to the workspace root. */
   target: string
@@ -23,6 +23,32 @@ export interface ToolingCapabilityOptions {
   /** Explicit local opt-in; CI always starts its own service. */
   reuseExistingServer?: boolean
 }
+
+export type StorybookArgs = Record<string, string | number | boolean | null>
+
+export interface StorybookCapabilityOptions {
+  capability: 'storybook'
+  target: string
+  /** Defaults to stories/<target slug>; always separate from the library. */
+  directory?: string
+  framework: 'vue' | 'react'
+  /** Named component export from the target library. */
+  component: string
+  example: {
+    kind: 'prop-update'
+    prop: string
+    initial: string
+    updated: string
+  } | {
+    kind: 'click'
+    args: StorybookArgs
+    alternateArgs: StorybookArgs
+    click: PlaywrightInteraction['click']
+    expectText: string
+  }
+}
+
+export type ToolingCapabilityOptions = PlaywrightCapabilityOptions | StorybookCapabilityOptions
 
 export interface ToolingCapabilityFile {
   path: string
