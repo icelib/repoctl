@@ -124,6 +124,8 @@ export {
 
 export { resolveAffectedCheckPlan } from './check/affected'
 export type { AffectedCheckCommand, AffectedCheckOptions, AffectedCheckPlan, AffectedCheckSettings, AffectedFallback, AffectedFile, AffectedGitRange, AffectedPackage } from './check/affected'
+export { analyzeTurboRuns } from './check/cache'
+export type { TurboAnalysisLimitation, TurboAnalysisOptions, TurboCriticalPath, TurboHashEvidence, TurboRunAnalysis, TurboTaskAnalysis } from './check/cache'
 export { runCheckWithReport } from './check/execute'
 export { getKnipConfigurationSuggestions, planKnipCheck, runKnipCheck, saveKnipBaseline } from './check/knip'
 export { resolveAffectedCheckMatrix } from './check/matrix'

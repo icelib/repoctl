@@ -63,6 +63,10 @@ Usage:
   duration, exit code and actual command arguments. `--redact` replaces cwd/home prefixes.
   Environment values and child output are not persisted. Abrupt termination cannot guarantee a report.
 
+## check cache
+
+`repo check cache <current-summary.json> [previous-summary.json] --json` analyzes existing Turbo run summaries without running tasks or mutating caches. Use `--markdown` and redirect stdout for a CI artifact; `--slowest` accepts 1–100. Schema 1 compares stable task IDs and digested input/global/dependency/environment/configuration evidence. Missing evidence or unsupported schemas remain unknown; cache misses are not assigned a speculative cause. Actual durations and a verifiable dependency critical path are reported separately from observed wall span. Environment values and commands never appear in output. Parent execution and file-output flags are rejected; regular check JSON remains preview-only.
+
 ## doctor
 
 Purpose: diagnose whether the current workspace is ready to use.
