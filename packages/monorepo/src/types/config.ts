@@ -9,6 +9,7 @@ import type { CleanCommandConfig } from './clean'
 import type { CliOpts } from './cli'
 import type { ToolingConfig } from './config/tooling'
 import type { DependenciesCommandConfig } from './dependencies'
+import type { EnvCacheConfig } from './env-cache'
 import type { ReleaseCommandConfig } from './release'
 
 export interface AiCommandConfig {
@@ -194,6 +195,7 @@ export interface MonorepoConfig {
     create?: CreateCommandConfig
     clean?: CleanCommandConfig
     deps?: DependenciesCommandConfig
+    env?: EnvCacheConfig
     upgrade?: UpgradeCommandConfig
     init?: InitCommandConfig
     mirror?: MirrorCommandConfig
