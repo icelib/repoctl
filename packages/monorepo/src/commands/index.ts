@@ -170,6 +170,9 @@ export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
 
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
 export * from './template-instances'
+
+export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
+export type { PlaywrightInteraction, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
 export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'
 export { applyWorkspaceRemovalPlan } from './workspace/remove/apply'
