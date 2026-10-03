@@ -42,3 +42,20 @@ it.each([
   expect(h.gitBytes(['show', `:${presetTarget}`], cwd).toString()).toBe(canonical)
   expect(await readFile(path.join(cwd, presetTarget), 'utf8')).toBe(crlf ? canonical.replaceAll('\n', '\r\n') : canonical)
 })
+
+it('uses the authorized next attributes when converting the resulting preset bytes', async () => {
+  const h = await presetFixture({ lineEnding: 'crlf', attributes: true })
+  const report = await prepareMaintenanceUpgrade(h.options)
+  expect(report.status, report.errors.join()).toBe('ready')
+  const operation = report.presets!.plan!.files.find(file => file.path === presetTarget)!
+  expect(operation.beforeHash).toBe(report.files.find(file => file.path === presetTarget)?.beforeHash)
+  expect(operation.afterHash).not.toBe(report.files.find(file => file.path === presetTarget)?.afterHash)
+  const cwd = path.join(h.root, 'publisher')
+  h.git(['clone', '-q', '--no-hardlinks', h.cwd, cwd], h.root)
+  const result = await validateMaintenanceArtifact({ cwd, directory: h.options.outputDirectory, expected: h.expected, request: h.request })
+  expect(result.ready).toBe(true)
+  const canonical = presetBytes.replace('first = 1', 'first = 10').replace('fourth = 4', 'fourth = 40')
+  expect(h.gitBytes(['show', `:${presetTarget}`], cwd).toString()).toBe(canonical)
+  expect(h.gitBytes(['show', ':.gitattributes'], cwd).toString()).toBe('scripts/*.mjs text eol=crlf\n')
+  expect(await readFile(path.join(cwd, presetTarget), 'utf8')).toBe(canonical.replaceAll('\n', '\r\n'))
+})

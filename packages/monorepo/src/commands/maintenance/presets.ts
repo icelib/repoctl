@@ -1,5 +1,6 @@
 import type { MaintenancePresetUpgrade, MaintenanceUpgradeOptions } from './types'
 import { Buffer } from 'node:buffer'
+import { normalize } from 'pathe'
 import { loadMonorepoConfigDetails } from '../../core/config'
 import { readOptional } from '../../core/file-transaction/paths'
 import { parsePresetBaseline, presetBaselinePath } from '../../core/presets/asset-plan/baseline'
@@ -31,6 +32,8 @@ export function exactPresetDependency(manifest: unknown, packageName: string): s
 
 /** Only configured direct root packages and previously adopted files enter automatic maintenance. */
 export async function planMaintenancePresets(options: MaintenanceUpgradeOptions, head: string, before: string, after: string): Promise<MaintenancePresetUpgrade | undefined> {
+  // Preparation already resolved the root identity; transactions use portable separators.
+  const rootDir = normalize(options.cwd)
   const loaded = await loadMonorepoConfigDetails(options.cwd, { refresh: true })
   const references = [...new Map((loaded.config.presets ?? []).map(reference => [reference.packageName, reference])).values()]
   const fromManifest = JSON.parse(maintenanceGit(options.cwd, ['show', `${options.base}:package.json`]))
@@ -68,7 +71,7 @@ export async function planMaintenancePresets(options: MaintenanceUpgradeOptions,
     const layer = loaded.presets.layers.find(layer => layer.source.packageName === reference.packageName && layer.source.version === to)!
     for (const asset of layer.manifest.assets ?? []) {
       const filename = presetBaselinePath(asset.target)
-      const content = await readOptional(options.cwd, filename)
+      const content = await readOptional(rootDir, filename)
       if (!content) {
         result.skipped.push(asset.target)
         continue

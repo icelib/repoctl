@@ -223,6 +223,7 @@ repoctl workspace owners --file .github/CODEOWNERS --sync
 必须显式选择工作区根目录下的 `.github/CODEOWNERS`、`CODEOWNERS` 或 `docs/CODEOWNERS`。根包可以通过 `.` 或根包名配置，其 `*` 默认规则先于更具体的子包规则生成。默认只读预览；即使同时传入 `--sync`，`--dry-run` 仍不写入。受管块外的规则、注释及顺序逐字保留。GitHub 使用最后匹配规则，后续可能覆盖包目录或子路径的规则（含无 owner 规则）会得到诊断；更高优先级的 CODEOWNERS 文件也会提示。无法安全表达的目录字符和非法映射会阻止同步。
 
 公开 `planCodeowners()` / `applyCodeownersPlan()` 提供前后内容和 diff；应用时重新校验配置、工作区发现和文件内容，过期计划会被拒绝。单文件原子替换、拒绝符号链接和硬链接目标，重跑不产生额外变更。不发送消息、不请求 review、不修改权限或分支保护。
+安装策略：参见 [pnpm 安装安全](../reference/install-security.md)，检查版本冷却、信任降级和构建批准，并预览可选策略。
 
 ## 受管资产升级 PR
 
@@ -230,7 +231,7 @@ repoctl workspace owners --file .github/CODEOWNERS --sync
 
 准备步骤应在一次性干净 checkout 中运行：应用完整根资产计划和三方合并，由 pnpm 更新锁文件，再执行 `--frozen-lockfile --ignore-scripts` 安装，随后按 build、lint、typecheck、tsd、test 顺序执行已声明的根脚本。生成的变更保留在该 checkout。冲突、源码漂移、不支持的路径和校验失败会留下 `blocked` 报告及日志；没有资产 diff 时为 `unchanged`，这两种状态均不创建 PR。报告包含逐文件计划、跳过/冲突项、来源/目标版本、检查结果、精确文件哈希与模式、补丁摘要。
 
-报告中的文件哈希针对精确的 Git blob 字节。准备阶段仍校验计划中的工作区文件原始字节；发布验证补丁索引及与其 Git 语义等价的工作区内容，允许 Git 内建的换行转换。隔离发布目录在检查文件前禁用 hooks、可执行的 clean/smudge/process 过滤器和文件系统监视器，并将这些设置保留至创建 PR。 预设报告同时记录原始前置字节与受限的换行配置，由 Git 内建转换关联到提交与补丁 blob；固定来源、已有所有权和计划字节检查仍须通过。
+报告中的文件哈希针对精确的 Git blob 字节。准备阶段仍校验计划中的工作区文件原始字节；发布验证补丁索引及与其 Git 语义等价的工作区内容，允许 Git 内建的换行转换。隔离发布目录在检查文件前禁用 hooks、可执行的 clean/smudge/process 过滤器和文件系统监视器，并将这些设置保留至创建 PR。 预设报告同时记录原始前置字节与受限的换行配置，由 Git 内建转换关联到提交与补丁 blob；固定来源、已有所有权和计划字节检查仍须通过。 原始字节按 HEAD 属性验证，结果字节按已授权补丁的新属性验证，支持预设更新 .gitattributes。补丁与报告路径不一致会在应用前拒绝；最终计划校验也可能在临时目录应用后拒绝，仍不会获取写凭据。
 
 通过 `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` 导出需主动启用的工作流，已有文件不会被覆盖。配置仓库 GitHub App 的 `REPOCTL_APP_CLIENT_ID`、`REPOCTL_APP_PRIVATE_KEY`，授予 **Contents、Pull requests、Workflows 写权限**，随后提交工作流。Workflows 权限用于更新受管工作流；App token 也能让新 PR 正常触发 CI。不需要 registry token。
 

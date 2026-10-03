@@ -1,8 +1,17 @@
 /** Embedded with the publisher: fixed workflow policy and committed JSON are the only authorities. */
 export function validatePresetMaintenance({ report, expected, git, hash, fail, Buffer }) {
   const allowed = new Set()
+  const checks = []
+  const verification = {
+    paths: allowed,
+    verify: () => {
+      for (const check of checks) {
+        check()
+      }
+    },
+  }
   if (report.presets === undefined) {
-    return allowed
+    return verification
   }
   const { versions, plan, checkout } = report.presets
   if (!Array.isArray(versions) || new Set(versions.map(change => change.packageName)).size !== versions.length
@@ -26,7 +35,7 @@ export function validatePresetMaintenance({ report, expected, git, hash, fail, B
     changes.set(change.packageName, change)
   }
   if (plan === null) {
-    return allowed
+    return verification
   }
   if (!plan || plan.schemaVersion !== 1 || plan.kind !== 'organization-preset-assets'
     || !['ready', 'unchanged'].includes(plan.status) || !Array.isArray(plan.files) || !Array.isArray(plan.conflicts) || plan.conflicts.length
@@ -98,21 +107,24 @@ export function validatePresetMaintenance({ report, expected, git, hash, fail, B
         fail('preset raw precondition differs from its reviewed plan')
       }
       const beforeHash = blobHash(operation.path, before)
-      const afterHash = blobHash(operation.path, Buffer.from(operation.content, 'base64'))
       if (hash(git(['show', `${expected.head}:${operation.path}`])) !== beforeHash) {
         fail('preset source precondition differs from committed ownership')
       }
       const entry = report.files.find(entry => entry.path === operation.path)
-      if (entry && (entry.beforeHash !== beforeHash || entry.afterHash !== afterHash || !entry.beforeMode || !entry.afterMode)) {
+      if (entry && (entry.beforeHash !== beforeHash || !entry.beforeMode || !entry.afterMode)) {
         fail('preset patch differs from its reviewed plan or removes ownership')
       }
-      if (applied && beforeHash !== afterHash) {
-        if (!entry) {
-          fail('preset patch omits a changed asset or its ownership baseline')
-        }
+      if (applied && entry) {
         allowed.add(operation.path)
       }
+      // The authorized patch may update .gitattributes; bind after bytes using its next rules.
+      checks.push(() => {
+        const afterHash = blobHash(operation.path, Buffer.from(operation.content, 'base64'))
+        if (entry ? entry.afterHash !== afterHash : applied && beforeHash !== afterHash) {
+          fail('preset patch differs from its reviewed plan or omits a changed asset')
+        }
+      })
     }
   }
-  return allowed
+  return verification
 }

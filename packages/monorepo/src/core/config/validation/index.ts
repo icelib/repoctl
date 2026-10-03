@@ -3,6 +3,7 @@ import type { ConfigDiagnostic, Schema } from './schema'
 import { presetReferencesSchema } from '../../presets/reference'
 import { admissionSchema } from './admission'
 import { commandSchemas, dependencyTypes } from './commands'
+import { installationSecuritySchema } from './installation-security'
 import { array, boolean, choices, isRecord, names, nonempty, object, record, validateSchema } from './schema'
 import { validateTemplateSources } from './template-sources'
 import { toolingSchema } from './tooling'
@@ -16,7 +17,7 @@ const boundaries = object({
   cycles: { ...cycles, expected: 'false or cycle policy', accepts: value => value === false || cycles.accepts(value) },
   exceptions: array(object({ rule: nonempty, source: nonempty, target: nonempty, type: choices('dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'), reason: nonempty }, ['rule', 'source', 'target', 'type', 'reason'])),
 })
-const rootSchema = object({ presets: presetReferencesSchema, commands: object(commandSchemas), tooling: toolingSchema, boundaries, dependencyPolicy: admissionSchema, codeowners: object({ owners: record(names) }, ['owners']) } satisfies Record<keyof MonorepoConfig, Schema>)
+const rootSchema = object({ presets: presetReferencesSchema, commands: object(commandSchemas), tooling: toolingSchema, boundaries, dependencyPolicy: admissionSchema, installationSecurity: installationSecuritySchema, codeowners: object({ owners: record(names) }, ['owners']) } satisfies Record<keyof MonorepoConfig, Schema>)
 
 export class ConfigValidationError extends Error {
   readonly code = 'REPOCTL_CONFIG_INVALID'

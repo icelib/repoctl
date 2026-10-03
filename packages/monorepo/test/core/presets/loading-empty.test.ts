@@ -16,6 +16,9 @@ it('resolves empty and invalid preset references without any filesystem discover
     import promises from 'node:fs/promises';
     import { syncBuiltinESMExports } from 'node:module';
     const repo = await import(${JSON.stringify(entry)});
+    // Node 22 loads some transitive ESM dependencies on the first valid lookup.
+    // Warm a separate path before instrumenting; the tested paths stay untouched.
+    await repo.resolveOrganizationPresets(${JSON.stringify(path.join(h.root, 'module-warmup'))}, [${JSON.stringify(valid)}]).catch(() => {});
     const probes = [];
     const restore = [];
     const patch = (target, name) => {

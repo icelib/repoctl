@@ -28,7 +28,7 @@ it('publishes an independently checked preset-only artifact without installed pa
   await expect(readFile(path.join(h.input.cwd, 'node_modules/repoctl/package.json'))).rejects.toMatchObject({ code: 'ENOENT' })
 })
 
-it.each(['policy', 'version', 'source', 'baseline', 'upstream', 'omission', 'report-targets', 'checkout-settings', 'raw-precondition', 'committed-precondition', 'checkout-omission'])('rejects forged %s evidence before obtaining write credentials', async (kind) => {
+it.each(['policy', 'version', 'source', 'baseline', 'upstream', 'omission', 'report-targets', 'checkout-settings', 'raw-precondition', 'committed-precondition', 'checkout-omission', 'planned-after'])('rejects forged %s evidence before obtaining write credentials', async (kind) => {
   const h = await publisher()
   const report = structuredClone(h.report)
   const plan = report.presets!.plan!
@@ -53,6 +53,11 @@ it.each(['policy', 'version', 'source', 'baseline', 'upstream', 'omission', 'rep
   else if (kind === 'omission') {
     report.files = report.files.filter(file => file.path !== h.baselinePath)
   }
+  else if (kind === 'planned-after') {
+    const content = Buffer.from('forged result bytes\n')
+    plan.files[0]!.content = content.toString('base64')
+    plan.files[0]!.afterHash = digest(content)
+  }
   else if (kind === 'checkout-settings') {
     report.presets!.checkout!.autocrlf = 'execute' as never
   }
@@ -73,7 +78,9 @@ it.each(['policy', 'version', 'source', 'baseline', 'upstream', 'omission', 'rep
   }
   await writeFile(path.join(h.options.outputDirectory, 'report.json'), JSON.stringify(report))
   await expect(validateMaintenanceArtifact(h.input)).rejects.toThrow('Maintenance publication blocked')
-  expect(h.git(['status', '--porcelain'], h.input.cwd)).toBe('')
+  if (kind !== 'planned-after') {
+    expect(h.git(['status', '--porcelain'], h.input.cwd)).toBe('')
+  }
 })
 
 it('exports exact preset triples and embeds the independent validator into the trusted workflow', async () => {
