@@ -125,6 +125,6 @@ export async function applyTemplateLinkPlan(plan: TemplateLinkPlan) {
     if (digest(registry) !== current.plan.registryDigest || snapshotDigest(target) !== current.plan.targetDigest) {
       throw new Error('Template link plan became stale before metadata commit; preview again.')
     }
-  })
+  }, { allocateIdOnConflict: true })
   return { ...current.plan, applied: true }
 }

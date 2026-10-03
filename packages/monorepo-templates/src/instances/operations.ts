@@ -21,8 +21,9 @@ export function templateInstanceId(target: string, template: string) {
 export async function createTemplateInstanceTarget(workspaceDir: string, relative: string) {
   const target = await safeInstancePath(workspaceDir, relative)
   const registry = await loadTemplateInstanceRegistry(workspaceDir)
-  if (registry.instances.some(instance => instance.target === relative || instance.target.startsWith(`${relative}/`) || relative.startsWith(`${instance.target}/`))) {
-    throw new Error(`Template target is already owned by a registered instance: ${relative}. Use templates instances and explicitly relocate a moved instance before creating another project.`)
+  const owner = registry.instances.find(instance => instance.target === relative || instance.target.startsWith(`${relative}/`) || relative.startsWith(`${instance.target}/`))
+  if (owner) {
+    throw new Error(`Template target is already owned by retained instance ${owner.id} at ${owner.target}: ${relative}. Inspect it with repo templates instances ${owner.id} --json. Removing a directory retains its provenance and baselines. Restore the original project from version control or a backup, explicitly relocate a verified moved instance, or choose a different unowned path for a new project.`)
   }
   await fs.mkdir(path.dirname(target), { recursive: true })
   // An exclusive leaf prevents a concurrent creator from overwriting an existing project.
@@ -56,7 +57,7 @@ export async function prepareGeneratedTemplateInstance(options: GeneratedTemplat
 
 export async function recordGeneratedTemplateInstance(options: GeneratedTemplateInstanceOptions) {
   const draft = await prepareGeneratedTemplateInstance(options)
-  return (await registerTemplateInstances(options.workspaceDir, [draft]))[0]!
+  return (await registerTemplateInstances(options.workspaceDir, [draft], undefined, { allocateIdOnConflict: true }))[0]!
 }
 
 export async function listTemplateInstances(workspaceDir: string): Promise<TemplateInstanceInfo[]> {

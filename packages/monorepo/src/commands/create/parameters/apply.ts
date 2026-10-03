@@ -120,5 +120,5 @@ export async function applyParameterizedProject(plan: CreateNewProjectPlan, gitM
     if (snapshotDigest(await captureTemplateSnapshot(targetDir)) !== snapshotDigest(staged.snapshot)) {
       throw new Error('Created files changed before provenance registration; concurrent edits will be preserved.')
     }
-  }, { rollback, committed: async () => {} })
+  }, { allocateIdOnConflict: true, rollback, committed: async () => {} })
 }
