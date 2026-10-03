@@ -28,6 +28,8 @@ The workspace operation lock `.repoctl/workspace-remove.lock` covers replay chec
 
 The transaction stages manifest replacements and moves the selected directory into a unique `node_modules/.cache/repoctl/removals/` operation directory. Recovery ancestors must be real directories. A cross-device move fails safely; no copy/delete fallback is attempted. Before commit, failures restore changed manifests and the directory when doing so is safe. Concurrent edits and a newly created target directory are preserved; the error reports retained original paths for manual recovery. After commit, cleanup failure returns `status: "applied"` with `cleanupPending` paths instead of claiming rollback. Inspect those exact paths before removing them; do not clear the shared cache indiscriminately.
 
+For generated packages, removal preserves the instance ID, origin registry and retained template baselines. The plan and result identify affected instances, which appear as `missing` afterward. A retained registration still owns its path, so `repo new` refuses to reuse it and identifies the owning instance. Restore the original project from version control or a backup to resume that history, or choose a different unowned path for a new project. Rebuilding a template baseline reconstructs upstream template output; it does not recover business edits. Removal does not unregister template history.
+
 The lockfile is never edited by this command. Finish explicitly with the repository's declared pnpm version:
 
 ```bash

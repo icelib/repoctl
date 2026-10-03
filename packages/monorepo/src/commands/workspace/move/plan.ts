@@ -1,5 +1,6 @@
 import type { WorkspaceMoveOptions, WorkspaceMovePlan } from '../../../types/move'
 import { isDeepStrictEqual } from 'node:util'
+import { planTemplateInstanceMove } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import YAML from 'yaml'
 import { getWorkspaceGraph, getWorkspaceImpact, resolveWorkspaceGraphNode } from '../../../core/workspace-graph'
@@ -10,6 +11,7 @@ import { validateCleanTargets } from '../../clean/safety'
 import { hash, record } from '../../deps/files'
 import { manifestInputs, relevantDiagnostics } from '../shared/inspection'
 import { moveConfigurationChanges } from './configuration'
+import { pendingInstanceUpgrades } from './instances'
 import { moveManifestChanges, moveWorkspaceManifest } from './manifests'
 import { validateDestination, validPackageName } from './paths'
 import { moveReview, readMoveReviewInputs } from './review'
@@ -44,6 +46,11 @@ export async function planWorkspaceMove(cwd: string, options: WorkspaceMoveOptio
   const inventory = await workspaceInventory(root, directory)
   const state = await workspaceGit(root, directory)
   const blockers: WorkspaceMovePlan['blockers'] = []
+  const templateInstances = await planTemplateInstanceMove(root, target.id, to)
+  const pendingUpgrades = await pendingInstanceUpgrades(root, templateInstances)
+  if (pendingUpgrades.length) {
+    blockers.push({ code: 'template_upgrade_pending', paths: pendingUpgrades })
+  }
   if (!state.git) {
     blockers.push({ code: 'git_unavailable', paths: [target.id] })
   }
@@ -103,7 +110,8 @@ export async function planWorkspaceMove(cwd: string, options: WorkspaceMoveOptio
     inventory: inventory.entries,
     workspaces: graph.nodes,
     git: state.git,
+    templateInstances,
     review,
-    nextSteps: [...moveNextSteps, ...(!target.private && name && name !== target.name ? [`${name} is a new npm package identity. This operation does not publish or deprecate ${target.name ?? 'the old package'}.`] : [])],
+    nextSteps: [...moveNextSteps, ...templateInstances.relocations.map(instance => `Template instance ${instance.id}: ${instance.from} → ${instance.to}; source, generation parameters and baselines are retained so local changes remain available to future drift checks and upgrades.`), ...(!target.private && name && name !== target.name ? [`${name} is a new npm package identity. This operation does not publish or deprecate ${target.name ?? 'the old package'}.`] : [])],
   }
 }

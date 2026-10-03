@@ -49,7 +49,7 @@ export async function validateDestination(root: string, from: string, value: str
 
 /** Reserve the leaf exclusively so rename cannot replace an unrelated empty directory. */
 export async function prepareDestination(root: string, relative: string) {
-  const created: Array<{ path: string, ino: number, dev: number }> = []
+  const created: Array<{ path: string, ino: bigint, dev: bigint }> = []
   const cleanup = async () => {
     const retained: string[] = []
     for (const item of [...created].reverse()) {
@@ -58,7 +58,7 @@ export async function prepareDestination(root: string, relative: string) {
           continue
         }
         await assertSafePath(root, item.path, 'directory')
-        const metadata = await lstat(item.path)
+        const metadata = await lstat(item.path, { bigint: true })
         if (metadata.ino !== item.ino || metadata.dev !== item.dev) {
           throw new Error('Concurrent directory replacement')
         }
@@ -77,7 +77,7 @@ export async function prepareDestination(root: string, relative: string) {
       const leaf = current === path.join(root, relative)
       if (leaf || !await exists(current)) {
         await mkdir(current)
-        const metadata = await lstat(current)
+        const metadata = await lstat(current, { bigint: true })
         created.push({ path: current, ino: metadata.ino, dev: metadata.dev })
       }
       await assertSafePath(root, current, 'directory')
@@ -96,7 +96,7 @@ export async function prepareDestination(root: string, relative: string) {
       const leaf = created.at(-1)!
       await assertSafePath(root, source, 'directory')
       await assertSafePath(root, leaf.path, 'directory')
-      const metadata = await lstat(leaf.path)
+      const metadata = await lstat(leaf.path, { bigint: true })
       if (metadata.ino !== leaf.ino || metadata.dev !== leaf.dev || (await readdir(leaf.path)).length) {
         throw new Error('The reserved destination changed before moving.')
       }

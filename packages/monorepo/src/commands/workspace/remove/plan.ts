@@ -8,6 +8,7 @@ import { validateCleanTargets } from '../../clean/safety'
 import { hash, record } from '../../deps/files'
 import { manifestInputs, relevantDiagnostics } from '../shared/inspection'
 import { removalGit } from './git'
+import { removalInstanceNextSteps } from './instances'
 import { removalInventory } from './inventory'
 import { removalManifestChanges } from './manifests'
 import { removalReview } from './review'
@@ -83,6 +84,6 @@ export async function planWorkspaceRemoval(cwd: string, options: WorkspaceRemova
     workspaces: graph.nodes.map(node => node.id),
     git: state.git,
     review: reviewed.review,
-    nextSteps: [...removalNextSteps],
+    nextSteps: [...removalNextSteps, ...await removalInstanceNextSteps(root, target.id)],
   }
 }

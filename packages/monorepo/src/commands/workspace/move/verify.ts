@@ -21,7 +21,12 @@ export function validateMovePlan(plan: WorkspaceMovePlan) {
       || item.beforeHash !== hash(item.before) || item.afterHash !== hash(item.after)
       || !plan.inputs.some(input => input.path === item.path && input.hash === item.beforeHash))
     || new Set(plan.inputs.map(item => item.path)).size !== plan.inputs.length
-    || new Set(plan.files.map(item => item.path)).size !== plan.files.length) {
+    || new Set(plan.files.map(item => item.path)).size !== plan.files.length
+    || !record(plan.templateInstances) || plan.templateInstances.from !== plan.target.id || plan.templateInstances.to !== plan.destination.id
+    || !/^[a-f\d]{64}$/u.test(plan.templateInstances.beforeHash) || !/^[a-f\d]{64}$/u.test(plan.templateInstances.afterHash)
+    || !Array.isArray(plan.templateInstances.relocations)
+    || plan.templateInstances.relocations.some(item => !record(item) || !/^[a-f\d]{24}$/u.test(item.id) || typeof item.from !== 'string'
+      || item.to !== movedPath(item.from, plan.target.id, plan.destination.id))) {
     throw new Error('Invalid workspace move plan.')
   }
 }

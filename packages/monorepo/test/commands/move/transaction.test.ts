@@ -4,6 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { applyWorkspaceMovePlan } from '@/commands/workspace/move/apply'
 import { planWorkspaceMove } from '@/commands/workspace/move/plan'
 import { fixture, snapshot } from './fixture'
+import { registeredFixture } from './instances/fixture'
 
 const hooks = vi.hoisted(() => ({ rename: vi.fn(), rm: vi.fn(), unlink: vi.fn() }))
 vi.mock('node:fs/promises', async original => ({ ...await original<typeof import('node:fs/promises')>(), ...hooks }))
@@ -138,4 +139,25 @@ it('preserves a replacement lock directory after releasing its own lock', async 
   expect(await applyWorkspaceMovePlan(h.workspace, plan)).toMatchObject({ status: 'applied' })
   expect((await lstat(directory)).isDirectory()).toBe(true)
   expect((await lstat(`${directory}.retained`)).isDirectory()).toBe(true)
+})
+
+it('reports cleanup failure after the moved instance registry has committed', async () => {
+  const h = await registeredFixture()
+  const plan = await planWorkspaceMove(h.workspace, { target: 'old', to: 'libs/core', name: 'core' })
+  let sawCommittedRegistry = false
+  hooks.rm.mockImplementation(async (file: string, options: Parameters<typeof actual.rm>[1]) => {
+    if (file.includes('.repoctl-move-') && file.endsWith('.bak')) {
+      const registry = JSON.parse(await readFile(h.registryFile, 'utf8'))
+      sawCommittedRegistry = registry.instances[0].target === 'libs/core'
+      throw new Error('Cleanup denied after commit')
+    }
+    return actual.rm(file, options)
+  })
+  const result = await applyWorkspaceMovePlan(h.workspace, plan)
+  expect(result.status).toBe('applied')
+  expect(sawCommittedRegistry).toBe(true)
+  expect(result.cleanupPending).toHaveLength(plan.files.length)
+  expect(JSON.parse(await readFile(h.registryFile, 'utf8')).instances[0]).toEqual({ ...h.instance, target: 'libs/core' })
+  await Promise.all(result.cleanupPending.map(file => access(file)))
+  expect((await applyWorkspaceMovePlan(h.workspace, plan)).status).toBe('unchanged')
 })

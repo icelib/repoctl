@@ -2,6 +2,7 @@ import type { WorkspaceGraphNode } from '../../../core/workspace-graph/types'
 import type { WorkspaceMoveReview } from '../../../types/move'
 import type { WorkspaceRemovalFile } from '../../../types/removal'
 import { lstat } from 'node:fs/promises'
+import { templateRegistryPath } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import { readInput } from '../../deps/files'
 import { relativeReference } from './manifests'
@@ -13,7 +14,8 @@ export async function readMoveReviewInputs(root: string, tracked: string[], cont
   const scanned: string[] = []
   const skipped: string[] = []
   for (const file of [...new Set(tracked)].sort()) {
-    if (file === 'pnpm-lock.yaml') {
+    // The registry has its own before/after fingerprint and atomic writer.
+    if (file === 'pnpm-lock.yaml' || file === templateRegistryPath) {
       continue
     }
     const metadata = await lstat(path.join(root, file)).catch(() => null)

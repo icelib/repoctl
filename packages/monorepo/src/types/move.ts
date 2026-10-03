@@ -1,3 +1,4 @@
+import type { TemplateInstanceMovePlan } from '@icebreakers/monorepo-templates'
 import type { WorkspaceGraphDiagnostic, WorkspaceGraphEdge, WorkspaceGraphNode, WorkspaceImpactResult } from '../core/workspace-graph/types'
 import type { WorkspaceRemovalEntry, WorkspaceRemovalFile } from './removal'
 
@@ -34,6 +35,8 @@ export interface WorkspaceMovePlan {
   inventory: WorkspaceRemovalEntry[]
   workspaces: WorkspaceGraphNode[]
   git: { root: string, head: string } | null
+  /** Registered targets change in the same transaction; identity and baselines are retained. */
+  templateInstances: TemplateInstanceMovePlan
   review: WorkspaceMoveReview
   nextSteps: string[]
 }

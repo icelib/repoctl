@@ -21,6 +21,10 @@ Root/outside paths, occupied destinations, duplicate or invalid names, links in 
 
 Applications hold `.repoctl/workspace-move.lock` from the first fresh/replay check through cleanup or rollback. A concurrent application fails closed. After a process crash, verify that no writer is active and recover pending backups before manually removing a stale lock.
 
+Registered template instances inside the selected directory move with it. The preview lists their IDs and old/new targets; IDs, source versions, generation parameters and baselines remain unchanged, including for package-name-only changes. Business edits remain local changes for subsequent template drift checks and three-way upgrades. Directory changes, manifest changes and instance targets commit together under the instance registry lock; failed registry writes restore files and directories before releasing it. Replay also checks the expected registry state. A pending upgrade recovery record blocks moving that instance: inspect `repo templates recover-upgrade <id>` first. Moving only part of a parent instance, or reusing another registered target (even a missing one), is rejected.
+
+The freed original path can host a new project of the same template. Registration allocates a distinct ID under the lock, so the moved project and the new project retain independent upgrade histories. If the move commits but a registry lock cannot be removed, the result remains `applied` and includes its exact path in `cleanupPending`; inspect it and confirm no writer is active before removing it.
+
 The command does not rewrite the lockfile or run install scripts. After resolving manual tasks, run:
 
 ```bash
