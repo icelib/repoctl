@@ -158,7 +158,8 @@ export { formatEnvironmentCache } from './env-cache/format'
 export * from './generate'
 
 export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
-export type { MaintenanceFile, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
+
+export type { MaintenanceFile, MaintenancePresetChange, MaintenancePresetUpgrade, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
@@ -174,12 +175,14 @@ export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
 
 export * from './template-drift'
+
 export * from './template-instances'
 export { planTemplateValidation, validateTemplate } from './template-validation'
 
 export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationParameterSet, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
 
 export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
+
 export type { PlaywrightCapabilityOptions, PlaywrightInteraction, StorybookArgs, StorybookCapabilityOptions, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
 export { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from './workspace/artifact'

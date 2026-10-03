@@ -1,3 +1,4 @@
+import type { ConfigValueSource } from '../../types/presets'
 import type { ConfigCommand, ResolvedCommandConfig } from './resolution'
 import type { ConfigDiagnostic } from './validation'
 import { loadMonorepoConfigDetails } from '../config'
@@ -15,7 +16,9 @@ export interface ConfigValidationReport {
 export interface ConfigExplanation extends ConfigValidationReport {
   cwd: string
   config: ConfigReportValue
-  effective?: { command: ConfigCommand, values: ConfigReportValue, origins: ResolvedCommandConfig['origins'] }
+  sources?: Record<string, ConfigValueSource>
+  layers?: Array<{ source: ConfigValueSource, config: ConfigReportValue }>
+  effective?: { command: ConfigCommand, values: ConfigReportValue, origins: ResolvedCommandConfig['origins'], sources: ResolvedCommandConfig['sources'] }
 }
 
 const privatePaths = new Set(['commands.mirror.env', 'commands.upgrade.scripts', 'tooling.commitlint', 'tooling.eslint', 'tooling.stylelint', 'tooling.lintStaged.config', 'tooling.lintStaged.repoCommand', 'tooling.vitest.overrides', 'tooling.tsconfig.compilerOptions', 'tooling.husky'])
@@ -61,7 +64,7 @@ export function sanitizeConfigReport(value: unknown, field = '', seen = new Set<
 export async function explainMonorepoConfig(cwd: string, options: { command?: ConfigCommand, overrides?: Record<string, unknown> } = {}): Promise<ConfigExplanation> {
   try {
     const loaded = await loadMonorepoConfigDetails(options.command ? await commandConfigDirectory(options.command, cwd) : cwd, { refresh: true })
-    const effective = options.command ? resolveCommandValues(options.command, loaded.config.commands?.[options.command], options.overrides, { entry: 'cli' }) : undefined
+    const effective = options.command ? resolveCommandValues(options.command, loaded.config.commands?.[options.command], options.overrides, { entry: 'cli', layers: loaded.sourceLayers }) : undefined
     if (!options.command && Object.keys(options.overrides ?? {}).length) {
       throw new ConfigValidationError([{ id: 'config.invalid-value', path: 'command', actualType: 'undefined', expected: 'command context', suggestion: 'Provide a command context before supplying overrides.' }])
     }
@@ -72,6 +75,8 @@ export async function explainMonorepoConfig(cwd: string, options: { command?: Co
       file: loaded.file,
       diagnostics: [],
       config: sanitizeConfigReport(loaded.config),
+      sources: loaded.sources,
+      layers: loaded.sourceLayers.map(layer => ({ source: layer.source, config: sanitizeConfigReport(layer.config) })),
       ...(effective ? { effective: { ...effective, values: sanitizeConfigReport(effective.values, `commands.${effective.command}`) } } : {}),
     }
   }

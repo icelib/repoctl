@@ -10,6 +10,9 @@ Rule:
 - Use `repo config inspect --command ai --set 'format="json"' --json` for shared defaults/project/CLI provenance. Contexts: ai, clean, create, deps, doctor, init, mirror, release, upgrade. Runtime selection is explained by each command's plan.
 - Reports redact env values and native tool payloads by default; `--redact` additionally hides local paths. For programmatic safe reports use `explainMonorepoConfig` or `validateConfigFile`; runtime config APIs retain callbacks and should not be serialized for sharing.
 - Replace the old ignored `tooling.lintStaged.monorepoCommand` field with `repoCommand`.
+- Organization presets use `presets: [{ packageName, version }]` with an exact installed dependency and JSON-only `repoctl.preset.json`. Loading never imports package code, installs or fetches. Parents precede declaring presets, then the project and CLI; arrays replace at preset boundaries. `config inspect` exposes ordered layers and precise package/version sources.
+- `repo presets inspect --json` lists recommendations and owned assets. `repo presets plan --json --out new-plan.json` is read-only; `repo presets apply new-plan.json` explicitly applies reviewed assets with three-way merge and a shared root-upgrade lock. Existing files and other provider baselines cannot be adopted implicitly. Commit `.repoctl/baselines/presets` alongside managed files.
+- Preset templates enter the unified catalog as fixed npm sources from the declaring package. `repo templates fetch <key>` prepares verified assets; previews and offline creation require that cache. Capability recommendations do not apply capabilities automatically.
 
 Use `defineMonorepoConfig` to set default options for CLI commands.
 Only include the fields you need.

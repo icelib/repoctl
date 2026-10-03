@@ -61,6 +61,8 @@ export default defineMonorepoConfig({
 
 ## Inspect Config
 
+Share fixed configuration across repositories with [organization preset packages](./organization-presets.md). They contribute JSON configuration, templates, capability recommendations and explicitly managed engineering assets.
+
 ```bash
 repo config inspect
 repo cfg i --json --out reports/config.json

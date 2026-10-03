@@ -65,6 +65,8 @@ export default defineMonorepoConfig({
 
 ## 查看当前配置
 
+可通过[组织预设包](./organization-presets.md)在多个仓库共享固定版本的 JSON 配置、模板、能力建议和显式受管工程文件。
+
 ```bash
 repo config inspect
 repo cfg i --json --out reports/config.json

@@ -29,6 +29,7 @@ function formatConfigInspection(inspection: ConfigInspection) {
     localize(`file: ${inspection.file ?? '-'}`, `文件：${inspection.file ?? '-'}`),
     localize(`commands: ${commandKeys.length > 0 ? commandKeys.join(', ') : '-'}`, `命令：${commandKeys.length > 0 ? commandKeys.join(', ') : '-'}`),
     localize(`tooling: ${toolingKeys.length > 0 ? toolingKeys.join(', ') : '-'}`, `Tooling：${toolingKeys.length > 0 ? toolingKeys.join(', ') : '-'}`),
+    ...(inspection.layers ?? []).map(layer => `layer: ${layer.source.kind === 'preset' ? `${layer.source.packageName}@${layer.source.version}` : layer.source.file ?? 'project'}`),
   ].join('\n')
 }
 

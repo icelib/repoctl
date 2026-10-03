@@ -1,5 +1,6 @@
 import process from 'node:process'
 import { afterEach, beforeEach, vi } from 'vitest'
+import { loadedConfigFixture } from '../../helpers/config'
 
 export const inputMock = vi.fn(async () => 'demo')
 export const selectMock = vi.fn(async () => 'library')
@@ -75,7 +76,7 @@ beforeEach(async () => {
 
   vi.doMock('@/core/config', () => ({
     resolveCommandConfig: resolveCommandConfigMock,
-    loadMonorepoConfigDetails: async () => ({ file: '/repo/repoctl.config.mjs', rawLayers: [], config: { commands: { create: await resolveCommandConfigMock() } } }),
+    loadMonorepoConfigDetails: async () => loadedConfigFixture({ commands: { create: await resolveCommandConfigMock() } }),
   }))
 
   vi.doMock('@/core/logger', () => ({

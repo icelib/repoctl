@@ -5,10 +5,10 @@ export interface UpgradeOptions extends CliOpts {
   dryRun?: boolean
   /** Override the configured asset selection with exact files or directory prefixes. */
   targets?: string[]
-  /** Attest an exact previous template version when no migration history exists. */
-  fromVersion?: string
   /** Whether configured targets extend the default asset selection. */
   mergeTargets?: boolean
+  /** Attest an exact previous template version when no migration history exists. */
+  fromVersion?: string
 }
 
 export type UpgradeFileStatus = 'add' | 'modify' | 'delete' | 'identical' | 'skip' | 'conflict'

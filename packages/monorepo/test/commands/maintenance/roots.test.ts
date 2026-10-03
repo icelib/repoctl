@@ -3,15 +3,18 @@ import path from 'node:path'
 import { prepareMaintenanceUpgrade } from '@icebreakers/monorepo'
 import { expect, it } from 'vitest'
 import { fixture } from './fixture'
+import { presetFixture, presetTarget } from './preset-fixture'
 
-it('prepares the real checkout when invoked through a directory alias', async () => {
-  const h = await fixture()
+it.each(['root', 'preset'] as const)('prepares %s assets through a native directory alias', async (provider) => {
+  const h = await (provider === 'preset' ? presetFixture() : fixture())
   const alias = path.join(h.root, 'checkout-alias')
   await symlink(h.cwd, alias, 'junction')
   const report = await prepareMaintenanceUpgrade({ ...h.options, cwd: alias })
   expect(report.status, report.errors.join()).toBe('ready')
-  expect(await realpath(report.plan!.rootDir)).toBe(await realpath(h.cwd))
-  expect(report.files.map(file => file.path)).toContain('.editorconfig')
+  const plan = provider === 'preset' ? report.presets!.plan! : report.plan!
+  expect(plan.rootDir).not.toContain('\\')
+  expect(await realpath(plan.rootDir)).toBe(await realpath(h.cwd))
+  expect(report.files.map(file => file.path)).toContain(provider === 'preset' ? presetTarget : '.editorconfig')
   expect(h.calls.length).toBeGreaterThan(0)
 })
 

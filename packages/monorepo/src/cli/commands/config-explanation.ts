@@ -48,6 +48,7 @@ export function formatConfigExplanation(report: ConfigExplanation): string {
       }
       value = value && typeof value === 'object' && !Array.isArray(value) ? value[part]! : null
     }
-    return `${field}: ${JSON.stringify(value)} (${source})`
+    const identity = report.effective?.sources[field]
+    return `${field}: ${JSON.stringify(value)} (${identity?.kind === 'preset' ? `${identity.packageName}@${identity.version}` : source})`
   })].join('\n')
 }

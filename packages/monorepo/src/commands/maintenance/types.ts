@@ -1,4 +1,5 @@
 import type { spawnSync } from 'node:child_process'
+import type { OrganizationPresetAssetPlan } from '../../core/presets/asset-plan/types'
 import type { UpgradePlan } from '../../types/upgrade'
 
 export interface MaintenanceUpgradeOptions {
@@ -17,6 +18,23 @@ export interface MaintenanceVersionChange {
   from: string | null
   to: string | null
   reason: string
+}
+
+export interface MaintenancePresetChange extends MaintenanceVersionChange {
+  packageName: string
+}
+
+export interface MaintenancePresetUpgrade {
+  versions: MaintenancePresetChange[]
+  plan: OrganizationPresetAssetPlan | null
+  /** Raw preconditions and built-in Git conversion settings for independent blob verification. */
+  checkout: {
+    autocrlf: 'false' | 'true' | 'input'
+    eol: 'native' | 'lf' | 'crlf'
+    before: Array<{ path: string, content: string }>
+  } | null
+  /** Newly declared files require an explicit presets plan/apply and workflow refresh. */
+  skipped: string[]
 }
 
 export interface MaintenanceFile {
@@ -41,6 +59,8 @@ export interface MaintenanceUpgradeReport {
   branch: 'repoctl/managed-assets'
   versions: MaintenanceVersionChange
   plan: UpgradePlan | null
+  /** Additive v1 extension; versions and plan keep their original repoctl-only meaning. */
+  presets?: MaintenancePresetUpgrade
   checks: { name: string, args: string[], status: 'passed' | 'failed' | 'skipped', log: string }[]
   files: MaintenanceFile[]
   patchHash: string | null

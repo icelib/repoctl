@@ -1,11 +1,14 @@
 import type { MonorepoConfig } from '../types'
+import type { ConfigSourceLayer, ConfigValueSource, OrganizationPresetResolution } from '../types/presets'
 import fs from 'node:fs'
 import { realpath } from 'node:fs/promises'
 import { loadConfig } from 'c12'
 import path from 'pathe'
 import { commandConfigDirectory } from './config/context'
 import { validatedConfigLoading } from './config/loading'
+import { mergeConfigValues } from './config/merge'
 import { assertMonorepoConfig, ConfigValidationError } from './config/validation'
+import { resolveOrganizationPresets } from './presets/load'
 
 export interface LoadedMonorepoConfig {
   file: string | null
@@ -14,6 +17,9 @@ export interface LoadedMonorepoConfig {
   config: MonorepoConfig
   /** Original C12 layers before default merging removes null values; not CLI output. */
   rawLayers: MonorepoConfig[]
+  sourceLayers: ConfigSourceLayer[]
+  sources: Record<string, ConfigValueSource>
+  presets: OrganizationPresetResolution
 }
 
 /**
@@ -62,13 +68,28 @@ async function loadConfigInternal(cwd: string, refresh = false): Promise<LoadedM
     .filter((file): file is string => Boolean(file && fs.existsSync(file)))
     .map(async file => path.normalize(await realpath(file))))
 
+  const file = matchedConfigFile
+    ? await realpath(matchedConfigFile)
+    : (configFile && fs.existsSync(configFile) ? await realpath(configFile) : null)
+  const presets = await resolveOrganizationPresets(cwd, config?.presets ?? [])
+  const failures = presets.diagnostics.filter(item => item.status === 'fail')
+  if (failures.length) {
+    throw new ConfigValidationError(failures.map(item => ({ id: 'config.invalid-value', path: item.path, actualType: 'preset', expected: 'valid installed organization preset', suggestion: `${item.id}: ${item.detail}` })))
+  }
+  const sourceLayers: ConfigSourceLayer[] = [
+    ...presets.layers.map(layer => ({ source: { kind: 'preset' as const, file: layer.source.manifestFile, packageName: layer.source.packageName, version: layer.source.version }, config: layer.manifest.config ?? {} })),
+    { source: { kind: 'project', file }, config: config ?? {} },
+  ]
+  const merged = mergeConfigValues(sourceLayers.map(layer => ({ source: layer.source, values: layer.config })))
+  assertMonorepoConfig(merged.values)
   return {
-    file: matchedConfigFile
-      ? await realpath(matchedConfigFile)
-      : (configFile && fs.existsSync(configFile) ? await realpath(configFile) : null),
-    files: [...new Set(files)],
-    config: config ?? {},
+    file,
+    files: [...new Set([...files, ...presets.inputs.map(input => input.path)])],
+    config: merged.values as MonorepoConfig,
     rawLayers: (layers ?? []).map(layer => layer.config ?? {}),
+    sourceLayers,
+    sources: merged.sources,
+    presets,
   }
 }
 

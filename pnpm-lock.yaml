@@ -246,6 +246,9 @@ importers:
       lint-staged:
         specifier: ^17.6.0
         version: 17.6.0
+      make-fetch-happen:
+        specifier: 15.0.6
+        version: 15.0.6(supports-color@10.2.2)
       only-allow:
         specifier: ^1.2.2
         version: 1.2.2

@@ -49,6 +49,7 @@ export async function loadTemplateCatalogContext(options: ResolveTemplateCatalog
     configFile: loaded.file,
     templatesDir: options.templatesDir ? path.resolve(cwd, options.templatesDir) : configuredRoot,
     createConfig,
+    presetLayers: loaded.presets.layers,
     rawCreateConfigs: loaded.rawLayers.map(layer => layer.commands?.create).filter(layer => layer !== undefined),
   }
 }

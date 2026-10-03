@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { sanitizePublishedManifestContent } from './published'
 
-it('keeps source browser acceptance tooling out of generated workspaces', () => {
+it('keeps source acceptance tooling out of generated workspaces', () => {
   const manifest = JSON.parse(sanitizePublishedManifestContent(JSON.stringify({
     scripts: {
       'test:packaged-create': 'node scripts/smoke-packaged-create.mjs',
@@ -9,7 +9,7 @@ it('keeps source browser acceptance tooling out of generated workspaces', () => 
       'test:packaged-react': 'node scripts/react/index.mjs',
       'test': 'vitest run',
     },
-    devDependencies: { playwright: '^1.62.1', vitest: '~5.0.2' },
+    devDependencies: { 'make-fetch-happen': '15.0.6', 'playwright': '^1.62.1', 'vitest': '~5.0.2' },
   })))
   expect(manifest.scripts['test:packaged-create']).toBeUndefined()
   expect(manifest.scripts['test:packaged-doctor']).toBeUndefined()

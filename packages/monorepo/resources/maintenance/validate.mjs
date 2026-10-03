@@ -1,6 +1,7 @@
 import { validateMaintenanceLanes } from './migration-lanes.mjs'
 import { maintenanceTemplateVersion } from './migration-lock.mjs'
 import { validateMaintenanceMigration } from './migrations.mjs'
+import { validatePresetMaintenance } from './presets.mjs'
 
 /** This exact function is embedded into the exported workflow; it uses only Node built-ins. */
 export async function validateMaintenanceArtifact({ cwd, directory, expected, request }) {
@@ -56,8 +57,10 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
     return { ready: false, reason: 'No managed asset changes.' }
   }
   if (report.status !== 'ready' || !Array.isArray(report.errors) || report.errors.length
-    || report.versions?.status !== 'changed' || report.plan?.status !== 'ready'
-    || !Array.isArray(report.plan.files) || report.plan.files.some(file => file.status === 'conflict')
+    || !['changed', 'unchanged'].includes(report.versions?.status)
+    || (report.versions.status === 'changed' && (report.plan?.status !== 'ready'
+      || !Array.isArray(report.plan.files) || report.plan.files.some(file => file.status === 'conflict')))
+    || (report.versions.status === 'unchanged' && !report.presets?.versions?.some(change => change.status === 'changed'))
     || !Array.isArray(report.checks) || report.checks.some(check => !['passed', 'skipped'].includes(check.status))
     || !['lockfile', 'install'].every(name => report.checks.some(check => check.name === name && check.status === 'passed'))
     || !report.checks.some(check => ['lint', 'typecheck', 'test'].includes(check.name) && check.status === 'passed')) {
@@ -88,8 +91,13 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
   if (migration && !report.files.some(file => file.path === migration.path)) {
     fail('migration ledger is missing from the reviewed patch')
   }
-  const allowed = filename => expected.targets.some(target => filename === target || filename.startsWith(`${target}/`))
-    || filename === 'pnpm-lock.yaml' || /^\.repoctl\/baselines\/root\/[a-f0-9]{64}\.json$/.test(filename) || filename === migration?.path
+  const presets = validatePresetMaintenance({ report, expected, git, hash, fail, Buffer })
+  const owned = new Set(git(['ls-tree', '-r', '--name-only', expected.head]).toString().split('\n').filter(name => /^\.repoctl\/baselines\/presets\/[a-f0-9]{64}\.json$/.test(name)))
+  const presetOwned = filename => owned.has(`.repoctl/baselines/presets/${hash(filename)}.json`)
+    || (filename.startsWith('.repoctl/baselines/root/') && owned.has(filename.replace('/root/', '/presets/')))
+  const allowed = filename => presets.paths.has(filename) || (!presetOwned(filename) && (filename === 'pnpm-lock.yaml'
+    || (report.versions.status === 'changed' && (expected.targets.some(target => filename === target || filename.startsWith(`${target}/`))
+      || /^\.repoctl\/baselines\/root\/[a-f0-9]{64}\.json$/.test(filename) || filename === migration?.path))))
   const names = report.files.map(file => file.path)
   if (new Set(names).size !== names.length || names.some(filename => !safePath(filename) || !allowed(filename))) {
     fail('patch includes an unapproved or duplicate path')
@@ -101,6 +109,17 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
     || (file.beforeMode === null) !== (file.beforeHash === null)
     || (file.afterMode === null) !== (file.afterHash === null))) {
     fail('unsupported Git mode or malformed file digest')
+  }
+  const patchFile = path.join(directory, 'changes.patch')
+  const patchPaths = git(['apply', '--numstat', '-z', '--', patchFile]).toString().split('\0').filter(Boolean).map((entry) => {
+    const match = /^(?:\d+|-)\t(?:\d+|-)\t(.+)$/u.exec(entry)
+    if (!match) {
+      fail('patch contains unsupported path evidence')
+    }
+    return match[1]
+  }).sort()
+  if (JSON.stringify(patchPaths) !== JSON.stringify([...names].sort())) {
+    fail('patch paths differ from the reviewed report')
   }
   let repository
   let branch
@@ -146,7 +165,6 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
   git(['check-ref-format', '--branch', expected.defaultBranch])
   git(['checkout', '-B', expected.defaultBranch, expected.head])
   git(['update-ref', `refs/remotes/origin/${expected.defaultBranch}`, expected.head])
-  const patchFile = path.join(directory, 'changes.patch')
   git(['apply', '--check', '--index', '--whitespace=nowarn', patchFile])
   git(['apply', '--index', '--whitespace=nowarn', patchFile])
   const actual = git(['diff', '--cached', '--name-only', '-z', '--no-renames', '--no-ext-diff', '--no-textconv']).toString().split('\0').filter(Boolean).sort()
@@ -174,6 +192,7 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
       fail(`patched file bytes or mode differ from the report: ${file.path}`)
     }
   }
+  presets.verify()
   // Bind every completed migration output to the verified patch using its resulting attributes.
   for (const operation of migration?.operations ?? []) {
     let afterHash = null
@@ -197,10 +216,12 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
   const body = [
     '<!-- repoctl-maintenance:v1 -->',
     `Synchronize repoctl root assets: ${report.versions.from} → ${report.versions.to}.`,
+    ...(report.presets?.versions.filter(change => change.status === 'changed').map(change => `Preset ${change.packageName}: ${change.from} → ${change.to}.`) ?? []),
     `Validated source: ${report.head}; comparison: ${report.base}.`,
     '',
-    ...report.plan.files.map(file => `- ${file.path}: ${file.status} (${file.reason})`),
+    ...(report.plan?.files ?? []).map(file => `- ${file.path}: ${file.status} (${file.reason})`),
     '',
+    ...(report.presets?.plan?.files.map(file => `- ${file.path}: ${file.status} (${file.reason})`) ?? []),
     ...report.checks.map(check => `- ${check.name}: ${check.status}`),
     '',
     `Complete plan, patch and logs: https://github.com/${expected.repository}/actions/runs/${expected.runId}`,

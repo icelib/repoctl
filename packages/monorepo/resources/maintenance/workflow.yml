@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       base:
-        description: Full trusted ancestor SHA before the repoctl dependency update
+        description: Full trusted ancestor SHA before the repoctl or preset dependency update
         required: true
         type: string
 
@@ -40,7 +40,7 @@ jobs:
             corepack enable
             pnpm install --frozen-lockfile --ignore-scripts
           } > "$RUNNER_TEMP/repoctl-bootstrap.log" 2>&1
-      - name: Prepare and validate the root asset upgrade
+      - name: Prepare and validate managed asset upgrades
         env:
           BASE_SHA: ${{ inputs.base || github.event.before }}
         run: pnpm exec repo maintenance upgrade --base "$BASE_SHA" --head "$GITHUB_SHA" --out "$RUNNER_TEMP/repoctl-maintenance"
@@ -123,6 +123,7 @@ jobs:
                 artifactDigest: process.env.ARTIFACT_DIGEST,
                 appConfigured: process.env.APP_CONFIGURED === 'true',
                 targets: __TARGETS__,
+                presetAssets: __PRESET_ASSETS__,
                 migrationPolicy: __MIGRATION_POLICY__,
               },
             });

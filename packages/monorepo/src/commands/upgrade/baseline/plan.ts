@@ -4,6 +4,7 @@ import type { RootAssetBaseline } from './record'
 import { Buffer } from 'node:buffer'
 import { readdir } from 'node:fs/promises'
 import path from 'pathe'
+import { presetBaselinePath } from '../../../core/presets/asset-plan/baseline'
 import { checkedFile, hash } from '../plan/files'
 import { mergeRootAsset } from './merge'
 import { baselineDirectory, baselinePath, encodeBaseline, isRootAsset, parseBaseline, templatePackage } from './record'
@@ -54,6 +55,10 @@ export async function createBaselinePlanner(context: UpgradeContext) {
     }
     const before = await read('target', filename)
     const previous = stored.get(filename)
+    if (await read('target', presetBaselinePath(filename)) !== null) {
+      await conflict(filename, upstream, 'preset-owned-asset', 'This asset belongs to an organization preset; upgrade it with repo presets plan and apply.')
+      return null
+    }
     const record: RootAssetBaseline = {
       schemaVersion: 1,
       path: filename,
@@ -91,6 +96,10 @@ export async function createBaselinePlanner(context: UpgradeContext) {
   async function removals() {
     for (const [filename, record] of stored) {
       if (seen.has(filename) || !plan.targets.some(target => filename === target || filename.startsWith(`${target}/`))) {
+        continue
+      }
+      if (await read('target', presetBaselinePath(filename)) !== null) {
+        await conflict(filename, null, 'preset-owned-asset', 'This asset also has organization preset ownership; reconcile the provider records before removal.')
         continue
       }
       if (await read('asset', record.source.assetPath) !== null) {

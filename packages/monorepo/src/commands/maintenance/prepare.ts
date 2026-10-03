@@ -3,10 +3,12 @@ import { mkdir, readdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
-import { applyUpgradePlan, planUpgrade } from '../upgrade'
+import { planUpgrade } from '../upgrade'
 import { isRootAsset } from '../upgrade/baseline/record'
+import { applyMaintenancePlans } from './apply'
 import { createMaintenancePatch, maintenanceBody } from './artifacts'
 import { maintenanceMigrationPath } from './migrations'
+import { assertMaintenancePresetLocks, planMaintenancePresets } from './presets'
 import { maintenanceCommand, maintenanceGit } from './process'
 import { detectMaintenanceVersionChange } from './versions'
 
@@ -33,30 +35,38 @@ async function generate(options: MaintenanceUpgradeOptions, report: MaintenanceU
   const before = maintenanceGit(options.cwd, ['show', `${report.base}:pnpm-lock.yaml`])
   const after = maintenanceGit(options.cwd, ['show', `${report.head}:pnpm-lock.yaml`])
   report.versions = detectMaintenanceVersionChange(before, after)
-  if (report.versions.status !== 'changed') {
-    report.status = report.versions.status === 'unchanged' ? 'unchanged' : 'blocked'
-    if (report.status === 'blocked') {
-      report.errors.push(report.versions.reason)
+  if (report.versions.status === 'blocked') {
+    throw new Error(report.versions.reason)
+  }
+  const presets = await planMaintenancePresets(options, report.head, before, after)
+  if (presets) {
+    report.presets = presets
+  }
+  if (report.versions.status === 'changed') {
+    const require = createRequire(path.join(options.cwd, 'package.json'))
+    const installed = JSON.parse(await readFile(require.resolve('repoctl/package.json'), 'utf8'))
+    if (installed.name !== 'repoctl' || installed.version !== report.versions.to) {
+      throw new Error('Install the exact target repoctl version from the frozen lockfile before preparing maintenance.')
     }
-    return
+    const plan = await planUpgrade({ cwd: options.cwd, outDir: '.', overwriteRelease: false })
+    report.plan = plan
+    if (plan.status !== 'ready' || plan.files.some(file => file.status === 'conflict')) {
+      throw new Error(`Root asset upgrade has conflicts: ${plan.blockers.map(blocker => blocker.detail).join('; ')}`)
+    }
+    // Upgrade plans use portable separators; compare the actual native directory identity.
+    const migrationPath = await maintenanceMigrationPath(options.cwd, report.head, report.versions.to!, plan)
+    if (await realpath(plan.rootDir) !== options.cwd || plan.files.some(file => !isRootAsset(file.path) && file.path !== migrationPath)) {
+      throw new Error('Maintenance supports only managed root assets in the checked-out repository.')
+    }
   }
-  const require = createRequire(path.join(options.cwd, 'package.json'))
-  const installed = JSON.parse(await readFile(require.resolve('repoctl/package.json'), 'utf8'))
-  if (installed.name !== 'repoctl' || installed.version !== report.versions.to) {
-    throw new Error('Install the exact target repoctl version from the frozen lockfile before preparing maintenance.')
+  const presetPlan = report.presets?.plan
+  if (presetPlan?.status === 'blocked' || presetPlan?.files.some(file => file.status === 'add' || file.status === 'conflict')) {
+    throw new Error(`Preset maintenance conflicts: ${presetPlan.conflicts.map(file => `${file.path}: ${file.reason}`).join('; ')}`)
   }
-  const plan = await planUpgrade({ cwd: options.cwd, outDir: '.', overwriteRelease: false })
-  report.plan = plan
-  if (plan.status !== 'ready' || plan.files.some(file => file.status === 'conflict')) {
-    throw new Error(`Root asset upgrade has conflicts: ${plan.blockers.map(blocker => blocker.detail).join('; ')}`)
+  if (presetPlan && report.plan?.files.some(file => presetPlan.files.some(preset => preset.path === file.path))) {
+    throw new Error('Root and preset asset plans overlap; review provider ownership explicitly.')
   }
-  // Upgrade plans use portable separators; compare the actual native directory identity.
-  const migrationPath = await maintenanceMigrationPath(options.cwd, report.head, report.versions.to!, plan)
-  if (await realpath(plan.rootDir) !== options.cwd || plan.files.some(file => !isRootAsset(file.path) && file.path !== migrationPath)) {
-    throw new Error('Maintenance supports only managed root assets in the checked-out repository.')
-  }
-  const applied = await applyUpgradePlan(options.cwd, plan)
-  if (applied.status === 'unchanged') {
+  if (!await applyMaintenancePlans(options.cwd, report)) {
     report.status = 'unchanged'
     return
   }
@@ -64,6 +74,7 @@ async function generate(options: MaintenanceUpgradeOptions, report: MaintenanceU
   if (detectMaintenanceVersionChange(after, await readFile(path.join(options.cwd, 'pnpm-lock.yaml'), 'utf8')).status !== 'unchanged') {
     throw new Error('Asset dependency resolution changed the target repoctl version; review the dependency update separately.')
   }
+  assertMaintenancePresetLocks(report.presets, await readFile(path.join(options.cwd, 'pnpm-lock.yaml'), 'utf8'))
   await runCheck(options, report, 'install', ['install', '--frozen-lockfile', '--ignore-scripts'])
   const scripts = JSON.parse(await readFile(path.join(options.cwd, 'package.json'), 'utf8')).scripts ?? {}
   for (const name of ['build', 'lint', 'typecheck', 'tsd', 'test']) {

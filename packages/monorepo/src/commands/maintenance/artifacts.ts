@@ -17,7 +17,15 @@ export async function createMaintenancePatch(options: MaintenanceUpgradeOptions,
   if (maintenanceGit(options.cwd, ['rev-parse', 'HEAD']).trim() !== report.head) {
     throw new Error('Validation changed Git HEAD; no upgrade patch can be published.')
   }
-  const operations = upgradeOperations(report.plan!.files)
+  const operations = [
+    ...upgradeOperations(report.plan?.files ?? []),
+    ...(report.presets?.plan?.files.some(file => file.beforeHash !== file.afterHash)
+      ? report.presets.plan.files.flatMap(file => [
+          ...(file.beforeHash !== file.afterHash ? [file] : []),
+          ...(file.baseline && file.baseline.beforeHash !== file.baseline.afterHash ? [file.baseline] : []),
+        ])
+      : []),
+  ]
   const allowed = new Set([...operations.map(file => file.path), 'pnpm-lock.yaml'])
   for (const file of operations) {
     const bytes = await readFile(path.join(options.cwd, file.path)).catch((error: NodeJS.ErrnoException) => {
@@ -72,11 +80,15 @@ export function maintenanceBody(report: MaintenanceUpgradeReport) {
   const lines = [
     '<!-- repoctl-maintenance:v1 -->',
     `Synchronize managed root assets after repoctl ${report.versions.from ?? 'unknown'} → ${report.versions.to ?? 'unknown'}.`,
+    ...(report.presets?.versions.filter(change => change.status === 'changed').map(change => `Preset ${change.packageName}: ${change.from} → ${change.to}.`) ?? []),
     '',
     `Source commit: ${report.head}. Comparison: ${report.base}. Status: ${report.status}.`,
     '',
     'Planned assets:',
     ...(report.plan?.files.map(file => `- ${file.path}: ${file.status} (${file.reason})`) ?? ['- No asset plan was needed.']),
+    '',
+    ...(report.presets?.plan?.files.map(file => `- ${file.path}: ${file.status} (${file.reason})`) ?? []),
+    ...(report.presets?.skipped.map(filename => `- ${filename}: skipped; explicit adoption is required.`) ?? []),
     '',
     'Validation:',
     ...report.checks.map(check => `- ${check.name}: ${check.status}`),

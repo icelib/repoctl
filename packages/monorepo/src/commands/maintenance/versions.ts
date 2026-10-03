@@ -2,7 +2,7 @@ import type { MaintenanceVersionChange } from './types'
 import { valid } from 'semver'
 import { lockfileRecord, parseWorkspaceLockfile } from '../../core/lockfile'
 
-function lockedVersion(source: string): string | null {
+export function lockedMaintenanceVersion(source: string, packageName = 'repoctl', exact = false): string | null {
   const lock = parseWorkspaceLockfile(source)
   if (!lock) {
     throw new Error('Unsupported or ambiguous pnpm workspace lockfile; expected one v9 workspace document.')
@@ -13,7 +13,7 @@ function lockedVersion(source: string): string | null {
     if (root[group] !== undefined && !map) {
       throw new Error(`Unsupported root ${group} lockfile entry.`)
     }
-    return map && Object.hasOwn(map, 'repoctl') ? [map['repoctl']] : []
+    return map && Object.hasOwn(map, packageName) ? [map[packageName]] : []
   })
   if (!entries.length) {
     return null
@@ -21,7 +21,7 @@ function lockedVersion(source: string): string | null {
   const entry = entries.length === 1 ? lockfileRecord(entries[0]) : undefined
   const raw = entry?.['version']
   if (typeof raw !== 'string' || typeof entry?.['specifier'] !== 'string') {
-    throw new TypeError('The root repoctl lockfile entry is ambiguous or unsupported.')
+    throw new TypeError(`The root ${packageName} lockfile entry is ambiguous or unsupported.`)
   }
   const version = raw.split('(')[0]!
   let depth = 0
@@ -31,15 +31,18 @@ function lockedVersion(source: string): string | null {
     }
     else if (character === ')') {
       if (--depth < 0) {
-        throw new Error('Malformed repoctl peer resolution suffix.')
+        throw new Error(`Malformed ${packageName} peer resolution suffix.`)
       }
     }
     else if (depth === 0 || /\s/.test(character)) {
-      throw new Error('Unsupported repoctl resolution suffix.')
+      throw new Error(`Unsupported ${packageName} resolution suffix.`)
     }
   }
   if (!valid(version) || valid(version) !== version || depth !== 0) {
-    throw new Error('Maintenance supports an exact registry repoctl version, not links, aliases or opaque resolutions.')
+    throw new Error(`Maintenance supports an exact registry ${packageName} version, not links, aliases or opaque resolutions.`)
+  }
+  if (exact && entry?.['specifier'] !== version) {
+    throw new Error(`Maintenance requires an exact root lockfile specifier for ${packageName}.`)
   }
   return version
 }
@@ -47,8 +50,8 @@ function lockedVersion(source: string): string | null {
 /** Compare resolved root versions; unrelated dependency and peer-context changes are no-ops. */
 export function detectMaintenanceVersionChange(before: string, after: string): MaintenanceVersionChange {
   try {
-    const from = lockedVersion(before)
-    const to = lockedVersion(after)
+    const from = lockedMaintenanceVersion(before)
+    const to = lockedMaintenanceVersion(after)
     if (from === to) {
       return { status: 'unchanged', from, to, reason: 'root-repoctl-version-unchanged' }
     }

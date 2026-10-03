@@ -53,6 +53,7 @@ export const routeSections = [
       item('', 'Reference overview', '参考总览'),
       item('commands', 'Command reference', '命令参考'),
       item('config', 'Configuration', '配置文件'),
+      item('organization-presets', 'Organization presets', '组织工程预设'),
       item('dependencies', 'Dependency consistency', '依赖版本一致性'),
       item('knip', 'Unused code and dependencies', '闲置代码与依赖检查'),
       item('artifacts', 'Build and production artifacts', '构建与生产产物'),

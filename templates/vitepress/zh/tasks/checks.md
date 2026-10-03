@@ -227,11 +227,13 @@ repoctl workspace owners --file .github/CODEOWNERS --sync
 
 ## 受管资产升级 PR
 
-可信默认分支更新依赖后，运行 `repo maintenance upgrade --base <升级前完整SHA> --head <当前完整SHA> --out <仓库外空目录>`，比较 pnpm 锁文件中**根依赖** `repoctl` 的精确解析版本。支持 pnpm 12 独立的包管理器文档；无关依赖和 peer 上下文变化不会触发升级；不支持或有歧义的解析会阻断。目标版本必须已通过 frozen lockfile 安装。
+可信默认分支更新依赖后，运行 `repo maintenance upgrade --base <升级前完整SHA> --head <当前完整SHA> --out <仓库外空目录>`，比较 pnpm 锁文件中**根依赖** `repoctl` 的精确解析版本。支持 pnpm 12 独立的包管理器文档；无关依赖和 peer 上下文变化不会触发升级；不支持或有歧义的解析会阻断。目标版本必须已通过 frozen lockfile 安装。直接配置且精确锁定的[组织预设](../reference/organization-presets.md#维护升级-pr)变化也可触发现有受管资产维护。导出的工作流固化包名、源路径和目标路径授权；新文件须显式采用并审阅工作流更新。
 
 准备步骤应在一次性干净 checkout 中运行：应用完整根资产计划和三方合并，由 pnpm 更新锁文件，再执行 `--frozen-lockfile --ignore-scripts` 安装，随后按 build、lint、typecheck、tsd、test 顺序执行已声明的根脚本。生成的变更保留在该 checkout。冲突、源码漂移、不支持的路径和校验失败会留下 `blocked` 报告及日志；没有资产 diff 时为 `unchanged`，这两种状态均不创建 PR。报告包含逐文件计划、跳过/冲突项、来源/目标版本、检查结果、精确文件哈希与模式、补丁摘要。
 
-报告中的文件哈希针对精确的 Git blob 字节。准备阶段仍校验计划中的工作区文件原始字节；发布验证补丁索引及与其 Git 语义等价的工作区内容，允许 Git 内建的换行转换。隔离发布目录在检查文件前禁用 hooks、可执行的 clean/smudge/process 过滤器和文件系统监视器，并将这些设置保留至创建 PR。
+报告中的文件哈希针对精确的 Git blob 字节。准备阶段仍校验计划中的工作区文件原始字节；发布验证补丁索引及与其 Git 语义等价的工作区内容，允许 Git 内建的换行转换。隔离发布目录在检查文件前禁用 hooks、可执行的 clean/smudge/process 过滤器和文件系统监视器，并将这些设置保留至创建 PR。 预设报告同时记录原始前置字节与受限的换行配置，由 Git 内建转换关联到提交与补丁 blob；固定来源、已有所有权和计划字节检查仍须通过。 原始字节按 HEAD 属性验证，结果字节按已授权补丁的新属性验证，支持预设更新 .gitattributes。补丁与报告路径不一致会在应用前拒绝；最终计划校验也可能在临时目录应用后拒绝，仍不会获取写凭据。
+
+自动维护支持完成内建 Changesets 迁移，并仅为它授权确切的 `.repoctl/migrations/ledger.json` 元数据路径。准备和发布共用固定迁移身份、已提交旧格式来源、执行日志与完成记录校验；目标模板版本沿已提交锁文件中的根 repoctl → monorepo → templates 依赖链确定，不能把 repoctl 版本当作模板版本。发布端将每个迁移输出关联到已验证的 Git 补丁，并根据已提交的工作区成员校验公开包预发布 lane。中断日志、有歧义的锁文件、非规范工作区模式及 YAML/JSON5 工作区清单需要先审阅并手工执行 `repo upgrade`，不会扩大其他 `.repoctl` 路径权限。采用此策略前需更新并审阅导出的可信工作流。
 
 自动维护支持完成内建 Changesets 迁移，并仅为它授权确切的 `.repoctl/migrations/ledger.json` 元数据路径。准备和发布共用固定迁移身份、已提交旧格式来源、执行日志与完成记录校验；目标模板版本沿已提交锁文件中的根 repoctl → monorepo → templates 依赖链确定，不能把 repoctl 版本当作模板版本。发布端将每个迁移输出关联到已验证的 Git 补丁，并根据已提交的工作区成员校验公开包预发布 lane。中断日志、有歧义的锁文件、非规范工作区模式及 YAML/JSON5 工作区清单需要先审阅并手工执行 `repo upgrade`，不会扩大其他 `.repoctl` 路径权限。采用此策略前需更新并审阅导出的可信工作流。
 
