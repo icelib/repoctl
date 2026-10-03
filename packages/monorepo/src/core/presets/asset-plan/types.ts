@@ -7,6 +7,8 @@ export interface OrganizationPresetAssetPlan {
   kind: 'organization-preset-assets'
   rootDir: string
   status: 'ready' | 'unchanged' | 'blocked'
+  /** Optional exact subset; omitted plans continue to include every declared asset. */
+  targets?: string[]
   sources: OrganizationPresetSource[]
   inputs: Array<{ path: string, hash: string }>
   locations: Array<{ packageName: string, fromDirectory: string, directory: string }>

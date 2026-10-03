@@ -22,7 +22,7 @@ concurrency:
 jobs:
   build:
     name: Build and Test
-    # Windows Node 22 serializes typechecking; leave time for tests and cache upload.
+    # Leave both Windows versions time for packaged checks and cache upload.
     timeout-minutes: ${{ matrix.os == 'windows-latest' && 25 || 15 }}
     strategy:
       fail-fast: false
@@ -128,6 +128,10 @@ jobs:
       - name: Check packaged organization presets
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-presets
+
+      - name: Check packaged preset maintenance
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 24 }}
+        run: pnpm test:packaged-maintenance-presets
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1

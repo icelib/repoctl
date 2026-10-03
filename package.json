@@ -91,7 +91,8 @@
     "test:packaged-react-lib": "node scripts/react-lib/index.mjs",
     "test:packaged-template-validation": "node scripts/template-validation/index.mjs",
     "test:packaged-template-sources": "node scripts/template-sources/index.mjs",
-    "test:packaged-presets": "node scripts/presets/index.mjs"
+    "test:packaged-presets": "node scripts/presets/index.mjs",
+    "test:packaged-maintenance-presets": "node scripts/maintenance-presets/index.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

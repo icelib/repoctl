@@ -184,7 +184,7 @@ async function removeSourceRepoChecks() {
   const workflowPath = path.join(assetsDir, '.github/workflows/ci.yml')
   if (await pathExists(workflowPath)) {
     const workflow = await fs.readFile(workflowPath, 'utf8')
-    const sourceChecks = /\r?\n\s+- name: (?:Check tracked build artifacts|Check CI\/CD workflow contracts|Check Worker type generation from packaged templates|Install browser for packaged documentation checks|Check packaged monorepo creation|Check packaged doctor|Check packaged Nimbus documentation|Check packaged React application|Check packaged Playwright capability|Check packaged Storybook capability|Check packaged React component library|Check packaged template author validation|Check packaged remote template sources|Check packaged organization presets)\r?\n(?:\s+if: [^\r\n]+\r?\n)?\s+run: [^\r\n]+\r?\n/g
+    const sourceChecks = /\r?\n\s+- name: (?:Check tracked build artifacts|Check CI\/CD workflow contracts|Check Worker type generation from packaged templates|Install browser for packaged documentation checks|Check packaged monorepo creation|Check packaged doctor|Check packaged Nimbus documentation|Check packaged React application|Check packaged Playwright capability|Check packaged Storybook capability|Check packaged React component library|Check packaged template author validation|Check packaged remote template sources|Check packaged organization presets|Check packaged preset maintenance)\r?\n(?:\s+if: [^\r\n]+\r?\n)?\s+run: [^\r\n]+\r?\n/g
     await fs.writeFile(workflowPath, workflow.replace(sourceChecks, '\n').replace(/\n{3,}/g, '\n\n'))
   }
   const manifestPath = path.join(assetsDir, 'package.json')

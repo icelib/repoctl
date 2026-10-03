@@ -138,6 +138,9 @@ export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport }
 export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
 
 export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
+export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
+
+export type { MaintenanceFile, MaintenancePresetChange, MaintenancePresetUpgrade, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'

@@ -79,3 +79,11 @@ repo presets apply preset-plan.json --json
 工作区锁覆盖校验、暂存、写入和回滚，受管文件写入后才推进 baseline。失败会恢复原始字节；并发编辑及恢复备份会被保留，不会被回滚覆盖。进程中断后，请保留 `.repoctl-upgrade-*.bak`/`.tmp`，确认没有活跃写入进程，按报错核对备份和 baseline 后，再移除遗留 `.repoctl/upgrade.lock` 并重新生成计划。
 
 公共 API 为 `resolveOrganizationPresets(cwd, references)`、`planOrganizationPresetAssets(cwd)` 和 `applyOrganizationPresetAssets(plan)`。解析器返回结构化预设诊断；读取配置的 API 会在写入前将阻断诊断映射为配置校验失败。
+
+## 维护升级 PR
+
+首次显式采用后，[维护工作流](../tasks/checks.md)可在直接配置的预设根依赖精确版本变化时更新已有受管文件。将新依赖、匹配的 `presets` 引用和 frozen lockfile 一起提交。准备阶段核对两个提交的依赖清单、锁定版本与已安装包身份，复用显式预设应用的三方合并和事务。无关依赖变化不运行资产校验；冲突或检查失败保留阻断报告；内容相同或重复运行不创建 PR。
+
+在验证通过的预设已安装时，运行 `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml`。导出的工作流固化包名、源路径、目标路径三元组。发布 job 独立读取已提交的根依赖和已有归属记录，校验补丁及 baseline 的准确 hash，通过后才获取写凭证。报告不能自行增加路径授权。新增工程文件或改变来源时，先显式采用、审阅，再导出并审阅新工作流；导出命令保护已有文件。仅通过继承引入的预设升级、移除及归属转移仍需显式预设流程。业务文件不会进入自动维护。
+
+维护报告保持 schema version 1：`versions` 和 `plan` 继续表示 repoctl 自身，新增可选 `presets` 保存预设版本、选中计划及跳过的新文件。`planOrganizationPresetAssets(cwd, targets?)` 支持精确目标子集，省略时仍计划全部声明资产；应用时重算同一选择。只有版本变化而上游字节未变时，不单独推进记录；后续实际变化仍从上一份已记录上游内容合并。

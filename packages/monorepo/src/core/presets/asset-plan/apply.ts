@@ -20,7 +20,7 @@ export async function applyOrganizationPresetAssets(plan: OrganizationPresetAsse
     throw new Error('Organization preset workspace changed')
   }
   return withOperationLock(plan.rootDir, 'upgrade', async () => {
-    const fresh = await planOrganizationPresetAssets(plan.rootDir)
+    const fresh = await planOrganizationPresetAssets(plan.rootDir, plan.targets)
     const outcomes = (value: OrganizationPresetAssetPlan) => value.files.map(file => ({ path: file.path, source: file.source, afterHash: file.afterHash, content: file.content, baseline: file.baseline ? { path: file.baseline.path, afterHash: file.baseline.afterHash, content: file.baseline.content } : null }))
     if (fresh.status === 'unchanged' && isDeepStrictEqual([fresh.sources, fresh.inputs, fresh.locations, fresh.ownership, outcomes(fresh)], [plan.sources, plan.inputs, plan.locations, plan.ownership, outcomes(plan)])) {
       return { status: 'unchanged', changed: [] }

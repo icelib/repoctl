@@ -1,0 +1,150 @@
+name: repoctl managed asset upgrade
+
+on:
+  push:
+    paths: [pnpm-lock.yaml]
+  workflow_dispatch:
+    inputs:
+      base:
+        description: Full trusted ancestor SHA before the repoctl or preset dependency update
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repoctl-maintenance-${{ github.repository }}-${{ github.event.repository.default_branch }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.report.outputs.status }}
+      artifact-id: ${{ steps.artifact.outputs.artifact-id }}
+      artifact-digest: ${{ steps.artifact.outputs.artifact-digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+      - name: Install the locked tool without lifecycle scripts
+        run: |
+          {
+            corepack enable
+            pnpm install --frozen-lockfile --ignore-scripts
+          } > "$RUNNER_TEMP/repoctl-bootstrap.log" 2>&1
+      - name: Prepare and validate managed asset upgrades
+        env:
+          BASE_SHA: ${{ inputs.base || github.event.before }}
+        run: pnpm exec repo maintenance upgrade --base "$BASE_SHA" --head "$GITHUB_SHA" --out "$RUNNER_TEMP/repoctl-maintenance"
+      - name: Read preparation status
+        if: always()
+        id: report
+        env:
+          BASE_SHA: ${{ inputs.base || github.event.before }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const file = path.join(process.env.RUNNER_TEMP, 'repoctl-maintenance/report.json');
+          fs.mkdirSync(path.dirname(file), { recursive: true });
+          if (!fs.existsSync(file)) {
+            const reason = 'Preparation did not produce a report; inspect the bootstrap log and failed workflow step.';
+            fs.writeFileSync(file, JSON.stringify({ schemaVersion: 1, kind: 'repoctl-maintenance-upgrade', status: 'blocked', base: process.env.BASE_SHA, head: process.env.GITHUB_SHA, repository: process.env.GITHUB_REPOSITORY, runId: process.env.GITHUB_RUN_ID, runAttempt: process.env.GITHUB_RUN_ATTEMPT, branch: 'repoctl/managed-assets', versions: { status: 'blocked', from: null, to: null, reason }, plan: null, checks: [], files: [], patchHash: null, errors: [reason] }, null, 2) + '\n');
+            fs.writeFileSync(path.join(path.dirname(file), 'body.md'), reason + '\n');
+          }
+          const bootstrap = path.join(process.env.RUNNER_TEMP, 'repoctl-bootstrap.log');
+          if (fs.existsSync(bootstrap)) fs.copyFileSync(bootstrap, path.join(path.dirname(file), 'check-bootstrap.log'));
+          const status = JSON.parse(fs.readFileSync(file, 'utf8')).status;
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `status=${status}\n`);
+          NODE
+      - name: Retain the complete plan, patch and validation evidence
+        if: always()
+        id: artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: repoctl-maintenance-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/repoctl-maintenance/report.json
+            ${{ runner.temp }}/repoctl-maintenance/body.md
+            ${{ runner.temp }}/repoctl-maintenance/changes.patch
+            ${{ runner.temp }}/repoctl-maintenance/check-*.log
+          retention-days: 14
+
+  propose:
+    needs: prepare
+    if: ${{ needs.prepare.outputs.status == 'ready' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ needs.prepare.outputs.artifact-id }}
+          path: ${{ runner.temp }}/repoctl-maintenance-artifact
+          merge-multiple: true
+      - name: Verify the immutable artifact and apply only reviewed bytes
+        id: verify
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          BASE_SHA: ${{ inputs.base || github.event.before }}
+          ARTIFACT_ID: ${{ needs.prepare.outputs.artifact-id }}
+          ARTIFACT_DIGEST: ${{ needs.prepare.outputs.artifact-digest }}
+          APP_CONFIGURED: ${{ vars.REPOCTL_APP_CLIENT_ID != '' && secrets.REPOCTL_APP_PRIVATE_KEY != '' }}
+        with:
+          script: |
+            __VALIDATOR__
+            const result = await validateMaintenanceArtifact({
+              cwd: process.env.GITHUB_WORKSPACE,
+              directory: `${process.env.RUNNER_TEMP}/repoctl-maintenance-artifact`,
+              request: github.request,
+              expected: {
+                repository: `${context.repo.owner}/${context.repo.repo}`,
+                coordinates: context.repo,
+                defaultBranch: context.payload.repository.default_branch,
+                head: context.sha,
+                base: process.env.BASE_SHA,
+                runId: process.env.GITHUB_RUN_ID,
+                runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+                artifactId: process.env.ARTIFACT_ID,
+                artifactDigest: process.env.ARTIFACT_DIGEST,
+                appConfigured: process.env.APP_CONFIGURED === 'true',
+                targets: __TARGETS__,
+                presetAssets: __PRESET_ASSETS__,
+              },
+            });
+            core.setOutput('ready', String(result.ready));
+            if (result.ready) core.setOutput('body-file', result.bodyFile);
+      - name: Obtain write credentials only after artifact verification
+        if: steps.verify.outputs.ready == 'true'
+        id: app
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.REPOCTL_APP_CLIENT_ID }}
+          private-key: ${{ secrets.REPOCTL_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
+      - name: Create or update the dedicated upgrade PR
+        if: steps.verify.outputs.ready == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          token: ${{ steps.app.outputs.token }}
+          branch: repoctl/managed-assets
+          base: ${{ github.event.repository.default_branch }}
+          title: 'chore: synchronize repoctl managed assets'
+          commit-message: 'chore: synchronize repoctl managed assets'
+          body-path: ${{ steps.verify.outputs.body-file }}

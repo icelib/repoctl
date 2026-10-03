@@ -7,11 +7,13 @@ import { baselinePath as rootBaselinePath } from '../../../commands/upgrade/base
 import { fileDiff } from '../../../commands/upgrade/plan/diff'
 import { loadMonorepoConfigDetails } from '../../config'
 import { canonicalDirectory, hash, readOptional } from '../../file-transaction/paths'
+import { presetAssetTarget } from '../assets'
 import { readPresetFile } from '../files'
 import { encodePresetBaseline, parsePresetBaseline, presetBaselinePath } from './baseline'
 
 /** Inspection is read-only. Applying this plan is the only preset asset write entrypoint. */
-export async function planOrganizationPresetAssets(cwd: string): Promise<OrganizationPresetAssetPlan> {
+export async function planOrganizationPresetAssets(cwd: string, targets?: string[]): Promise<OrganizationPresetAssetPlan> {
+  const selected = targets === undefined ? undefined : [...new Set(targets.map(presetAssetTarget))].sort()
   const rootDir = await canonicalDirectory(await findWorkspaceDir(cwd) ?? cwd)
   const loaded = await loadMonorepoConfigDetails(rootDir, { refresh: true })
   const inputs = new Map(loaded.presets.inputs.map(input => [input.path, input.hash]))
@@ -22,10 +24,13 @@ export async function planOrganizationPresetAssets(cwd: string): Promise<Organiz
     }
     inputs.set(filename, current)
   }
-  const plan: OrganizationPresetAssetPlan = { schemaVersion: 1, kind: 'organization-preset-assets', rootDir, status: 'unchanged', sources: loaded.presets.layers.map(layer => layer.source), inputs: [], locations: loaded.presets.locations, ownership: [], files: [], conflicts: [] }
+  const plan: OrganizationPresetAssetPlan = { schemaVersion: 1, kind: 'organization-preset-assets', rootDir, status: 'unchanged', ...(selected ? { targets: selected } : {}), sources: loaded.presets.layers.map(layer => layer.source), inputs: [], locations: loaded.presets.locations, ownership: [], files: [], conflicts: [] }
   const owners = new Map<string, string>()
   for (const layer of loaded.presets.layers) {
     for (const asset of layer.manifest.assets ?? []) {
+      if (selected && !selected.includes(asset.target)) {
+        continue
+      }
       if (owners.has(asset.target)) {
         plan.conflicts.push({ path: asset.target, reason: `Multiple presets claim this target: ${owners.get(asset.target)} and ${layer.source.packageName}` })
         continue
@@ -86,6 +91,9 @@ export async function planOrganizationPresetAssets(cwd: string): Promise<Organiz
       }
       plan.files.push(file)
     }
+  }
+  if (selected?.some(target => !owners.has(target))) {
+    throw new Error('Selected preset asset is no longer declared by an installed preset')
   }
   plan.inputs = [...inputs].map(([filename, hash]) => ({ path: filename, hash })).sort((a, b) => a.path.localeCompare(b.path))
   plan.files.sort((a, b) => a.path.localeCompare(b.path))
