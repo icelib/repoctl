@@ -1,5 +1,14 @@
 # create-repoctl
 
+## 1.2.1
+
+### Patch Changes
+
+- 修复 npm 发布确认的延迟可见处理并同步发布文档
+
+- Updated dependencies:
+  - @icebreakers/monorepo-templates@2.2.1
+
 ## 1.2.0
 
 ### Minor Changes

@@ -1,5 +1,13 @@
 # @icebreakers/monorepo-templates
 
+## 2.2.1
+
+### Patch Changes
+
+- 隔离发布验证脚本的控制环境，避免恢复参数污染测试
+
+- 修复 npm 发布确认的延迟可见处理并同步发布文档
+
 ## 2.2.0
 
 ### Minor Changes
