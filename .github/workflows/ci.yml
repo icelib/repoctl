@@ -118,6 +118,14 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-template-sources
 
+      - name: Check packaged Playwright capability
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-capability
+
+      - name: Check packaged Storybook capability
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-storybook
+
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         env:
