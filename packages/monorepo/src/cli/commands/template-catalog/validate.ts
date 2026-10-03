@@ -1,6 +1,6 @@
-import type { Command } from '@icebreakers/monorepo-templates'
+import type { Command, TemplateParameterValues } from '@icebreakers/monorepo-templates'
 import type { TemplateValidationOptions } from '../../../commands/template-validation'
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { planTemplateValidation, validateTemplate } from '../../../commands/template-validation'
@@ -10,6 +10,7 @@ interface Options {
   offline?: boolean
   cacheDir?: string
   name?: string[]
+  parameterMatrix?: string
   fixture?: string
   timeout?: string
   keepFailed?: boolean
@@ -19,6 +20,24 @@ interface Options {
   out?: string
 }
 
+async function readParameterMatrix(filename: string): Promise<TemplateParameterValues[]> {
+  const content = await readFile(path.resolve(filename))
+  if (content.length > 1024 * 1024) {
+    throw new Error('Template parameter matrix exceeds 1 MiB.')
+  }
+  let value: unknown
+  try {
+    value = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(content))
+  }
+  catch {
+    throw new Error('Template parameter matrix must contain valid UTF-8 JSON.')
+  }
+  if (!Array.isArray(value)) {
+    throw new TypeError('Template parameter matrix must be an array of parameter objects.')
+  }
+  return value as TemplateParameterValues[]
+}
+
 export function registerTemplateValidation(templates: Command) {
   templates.command('validate')
     .description(localize('Generate, install and validate an isolated template sample', '生成、安装并验证隔离的模板样本'))
@@ -26,6 +45,7 @@ export function registerTemplateValidation(templates: Command) {
     .option('--offline', localize('Use only verified cached remote assets', '只使用通过校验的远程资产缓存'))
     .option('--cache-dir <directory>', localize('Template asset cache directory', '模板资产缓存目录'))
     .option('--name <name>', localize('Sample name; repeat for a matrix', '样本名称，可重复用于组合验证'), (name: string, previous: string[] = []) => [...previous, name])
+    .option('--parameter-matrix <file>', localize('JSON array of typed parameter objects, crossed with names', '类型化参数对象的 JSON 数组文件，与样本名称交叉验证'))
     .option('--fixture <directory>', localize('Author workspace fixture to copy', '需要复制的作者工作区样本'))
     .option('--timeout <ms>', localize('Timeout per child command', '每个子命令超时毫秒数'))
     .option('--keep-failed', localize('Keep failing samples and diagnostics', '保留失败样本和诊断'))
@@ -48,6 +68,7 @@ export function registerTemplateValidation(templates: Command) {
           ...(opts.offline !== undefined ? { offline: opts.offline } : {}),
           ...(opts.cacheDir ? { cacheDir: opts.cacheDir } : {}),
           ...(opts.name ? { names: opts.name } : {}),
+          ...(opts.parameterMatrix ? { parameterSets: await readParameterMatrix(opts.parameterMatrix) } : {}),
           ...(opts.fixture ? { fixtureDir: opts.fixture } : {}),
           ...(opts.timeout ? { timeoutMs: Number(opts.timeout) } : {}),
           keep: opts.keepTemp ? 'always' : opts.keepFailed ? 'failure' : 'never',
@@ -66,7 +87,7 @@ export function registerTemplateValidation(templates: Command) {
             process.stdout.write(`[${diagnostic.code}] ${diagnostic.message}\n`)
           }
           for (const sample of result.samples) {
-            process.stdout.write(`${sample.name}: ${sample.status}${sample.failedStage ? ` (${sample.failedStage})` : ''}\n`)
+            process.stdout.write(`${sample.name} [parameters ${sample.parameterSet + 1}]: ${sample.status}${sample.failedStage ? ` (${sample.failedStage})` : ''}\n`)
             for (const step of sample.steps.filter(step => step.status !== 'passed')) {
               process.stdout.write(`${step.command?.output ?? step.diagnostics.map(item => `[${item.code}] ${item.message}`).join('\n')}\n`)
             }

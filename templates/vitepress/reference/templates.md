@@ -330,22 +330,24 @@ browser hydration and interaction. Storybook is optional.
 
 ```bash
 repo templates validate internal --fixture ./fixtures/workspace --name basic --name renamed --json
-repo templates validate react-lib --dry-run --json
+repo templates validate internal --fixture ./fixtures/workspace --parameter-matrix matrix.json --dry-run --json
 repo templates validate internal --fixture ./fixtures/workspace --keep-failed --timeout 240000
 ```
 
-The optional fixture is an author-owned workspace skeleton with `package.json`, an exact `packageManager: "pnpm@..."`, workspace settings, and any companion packages. It is copied through normal template filtering; it is never modified. Without a fixture, the installed repoctl workspace assets supply the root. Each name receives its own workspace. Names currently test package renaming; arbitrary template feature parameters are not supported yet.
+The optional fixture is an author-owned workspace skeleton with `package.json`, an exact `packageManager: "pnpm@..."`, workspace settings, and any companion packages. It is copied through normal template filtering; it is never modified. Without a fixture, the installed repoctl workspace assets supply the root. Each name is crossed with each typed parameter object from `--parameter-matrix matrix.json` (a JSON array), with at most 20 samples in total. Without a matrix, the template defaults form one parameter set. Every combination receives its own workspace; required scripts are selected from its rendered files and conditional package entries. This uses the same `repoctl.template.json` contract as `repo new`.
 
 Library validation removes `private` only from its disposable copy, packs a tarball, checks exports and declared runtime dependencies (including `imports` mappings), then installs and imports the tarball in an independent consumer. Type declarations are checked with strict NodeNext resolution. Application/service/browser behavior belongs in the template's finite `test`/`test:e2e` scripts; those scripts own their normal service lifecycle, with timeout/interruption cleanup as a backstop. Browser installation is an explicit author setup step.
 
 Commands and output are returned with stable stages and diagnostic codes. Successful and failed samples are removed by default; `--keep-failed` preserves failed samples with `report.json`, and `--keep-temp` preserves all samples. The report includes the retained directory. Execution never happens during `repo templates` or `--check`. Validation executes trusted author scripts; it is not an untrusted-code sandbox.
+
+Parameter values marked `sensitive` stay out of plans and reports. Child command output and diagnostic messages are hidden for sensitive combinations; stage, exit code and diagnostic code remain available. Retained generated workspaces can contain the supplied secrets in their intended files, so protect or remove those directories after debugging. Parameter input files are read without printing their contents.
 
 The same contract is public API:
 
 ```ts
 import { planTemplateValidation, validateTemplate } from 'repoctl'
 
-const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace' }
+const options = { cwd: process.cwd(), template: 'internal', fixtureDir: './fixtures/workspace', parameterSets: [{ enabled: false }, { enabled: true }] }
 const controller = new AbortController()
 const plan = await planTemplateValidation(options)
 const report = await validateTemplate({ ...options, keep: 'failure', signal: controller.signal })

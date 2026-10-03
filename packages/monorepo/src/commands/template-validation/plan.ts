@@ -7,6 +7,7 @@ import { createTemplateCatalog } from '../../core/template-catalog'
 import { loadTemplateCatalogContext } from '../../core/template-catalog/config'
 import { resolveRemoteTemplateSource } from '../../core/template-source'
 import { templateFiles } from './files'
+import { prepareValidationParameters } from './parameters'
 
 export async function prepareTemplateValidationPlan(options: TemplateValidationOptions, download = false): Promise<TemplateValidationPlan> {
   const cwd = path.resolve(options.cwd ?? process.cwd())
@@ -34,7 +35,6 @@ export async function prepareTemplateValidationPlan(options: TemplateValidationO
     await ensureTemplateAssetsPrepared()
   }
   const fixtureDir = await realpath(path.resolve(cwd, options.fixtureDir ?? assetsDir))
-  const manifest = JSON.parse(await readFile(path.join(sourceDir, 'package.json'), 'utf8'))
   const root = JSON.parse(await readFile(path.join(fixtureDir, 'package.json'), 'utf8'))
   const packageManager = root.packageManager
   if (typeof packageManager !== 'string' || !/^pnpm@\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/u.test(packageManager)) {
@@ -46,22 +46,14 @@ export async function prepareTemplateValidationPlan(options: TemplateValidationO
       throw new Error(`Template validation inputs must not contain symlinks: ${file}`)
     }
   }
-  const typed = files.some(file => /\.(?:[cm]?tsx?|vue)$/u.test(file))
-  const styles = files.some(file => /\.(?:css|scss|less|sass|vue)$/u.test(file))
-  const styleScript = styles && !/\bstylelint\b/u.test(manifest.scripts?.lint ?? '') ? ['lint:styles'] : []
-  const scripts = ['build', 'lint', ...styleScript, ...(typed ? ['typecheck'] : []), ...(entry.category === 'library' && typed ? ['tsd'] : []), 'test']
-  if (typeof manifest.scripts?.['test:e2e'] === 'string') {
-    scripts.push('test:e2e')
-  }
-  const diagnostics = scripts.filter(script => typeof manifest.scripts?.[script] !== 'string' || !manifest.scripts[script].trim()).map(script => ({
-    code: 'MISSING_REQUIRED_SCRIPT',
-    file: 'package.json',
-    message: `Missing required script: ${script}`,
-  }))
+  const prepared = await prepareValidationParameters(sourceDir, entry.category ?? null, names, options.parameterSets)
+  const diagnostics = prepared.sets.flatMap(set => set.diagnostics)
   if (!entry.category) {
     diagnostics.push({ code: 'MISSING_TEMPLATE_CATEGORY', file: 'repoctl.config', message: 'Declare a template category so validation can select the correct artifact checks.' })
   }
-  return { schemaVersion: 1, template: entry.key, sourceDir: await realpath(sourceDir), ...(sourceResolution ? { sourceResolution } : {}), category: entry.category ?? null, fixtureDir, packageManager, names, scripts, diagnostics }
+  const requiredScripts = new Set(prepared.sets.flatMap(set => set.scripts))
+  const scripts = ['build', 'lint', 'lint:styles', 'typecheck', 'tsd', 'test', 'test:e2e'].filter(script => requiredScripts.has(script))
+  return { schemaVersion: 1, template: entry.key, sourceDir: await realpath(sourceDir), ...(sourceResolution ? { sourceResolution } : {}), category: entry.category ?? null, fixtureDir, packageManager, names, parameterSets: prepared.sets, scripts, diagnostics }
 }
 
 export function planTemplateValidation(options: TemplateValidationOptions) {

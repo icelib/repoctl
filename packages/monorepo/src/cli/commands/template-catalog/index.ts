@@ -126,7 +126,7 @@ export function registerTemplatesCommands(program: Command) {
         logger.info(localize('Next: run `repo new <name> --template <key>`.', '下一步：运行 `repo new <name> --template <key>`。'))
       }
     })
+  registerTemplateInstanceCommands(templates)
   registerTemplateValidation(templates)
   registerTemplateFetch(templates)
-  registerTemplateInstanceCommands(templates)
 }

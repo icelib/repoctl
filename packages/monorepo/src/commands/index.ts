@@ -175,7 +175,7 @@ export * from './template-drift'
 export * from './template-instances'
 export { planTemplateValidation, validateTemplate } from './template-validation'
 
-export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
+export type { TemplateValidationDiagnostic, TemplateValidationOptions, TemplateValidationParameterSet, TemplateValidationPlan, TemplateValidationReport, TemplateValidationSample, TemplateValidationStage, TemplateValidationStep } from './template-validation'
 
 export { applyToolingCapability, listToolingCapabilities, planToolingCapability } from './tooling-capabilities'
 export type { PlaywrightCapabilityOptions, PlaywrightInteraction, StorybookArgs, StorybookCapabilityOptions, ToolingCapability, ToolingCapabilityFile, ToolingCapabilityOptions, ToolingCapabilityPlan, ToolingCapabilityResult } from './tooling-capabilities'
