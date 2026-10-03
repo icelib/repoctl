@@ -123,6 +123,27 @@ The managed Release workflow exposes the same `source-sha` input for `publish` a
 
 Recovery preserves GitHub's workflow environment for trusted publishing and provenance: its signed identity refers to the workflow run's commit. The isolated checkout, release checkpoint, Git tags, and Release targets refer to `source-sha`. Do not overwrite `GITHUB_SHA` to recover an older source; npm rejects provenance that disagrees with the signed workflow identity.
 
+## PR and nightly snapshots
+
+Use a snapshot for downstream validation before a stable release. Commit the source first and preview the complete set of public workspace packages:
+
+```bash
+repo release snapshot --kind pr --pr 123 --commit <full-HEAD-sha> --build-id <run-id>-<attempt> --dry-run --json
+repo release snapshot --kind nightly --commit <full-HEAD-sha> --build-id <run-id>-<attempt> --output /tmp/repoctl-artifacts
+```
+
+The command reuses the native pnpm release plan for candidate explanations and base versions, then snapshots every public package together. Versions include the full source SHA and a deterministic digest of the PR/nightly build identity. The only tags are `snapshot-pr-<number>` and `snapshot-nightly`; there is no option to target a stable tag. Reuse a build identity only to recover the same source and artifacts. The report contains exact `pnpm add` instructions.
+
+Snapshot planning through the CLI and API does not load or execute `repoctl.config.*`. It uses committed pnpm metadata independently of stable release configuration; ordinary release commands still validate their configuration before running.
+
+Without `--publish`, the command prepares installable tarballs. It extracts committed HEAD outside the repository, installs the frozen lockfile, rewrites internal references to exact snapshot versions, runs the root `build` script, and checks the packed files with publint, Are the Types Wrong, and isolated consumers. Original manifests, intents, ledger, changelogs and Git refs stay unchanged on success, failure or interruption. Failed and completed runs retain `snapshot-report.json`, tarballs, and diagnostic consumers under the reported directory. A hard interruption can leave partial output; rerun the same identity to reconcile registry evidence. Source symlinks, Git submodules and `publishConfig.directory` are currently rejected; the root build script and frozen lockfile are required.
+
+Add `--publish` only in an explicitly authorized GitHub Actions job with `REPOCTL_SNAPSHOT_PUBLISH=1`. `GITHUB_SHA` must match the requested commit and the event repository must match `GITHUB_REPOSITORY`. PR publication requires a same-repository `pull_request` event; forks and `pull_request_target` cannot publish. Nightly publication accepts `schedule` or `workflow_dispatch`. Keep fork jobs on preparation only and scope credentials to the trusted publishing job. Existing stable and prerelease workflows are not changed.
+
+Publication defaults to the public npm registry; `--registry <https-url>` explicitly selects another registry (HTTP is supported only for a local test registry). Uploads reuse the bounded publication/recovery adapter and never create GitHub Releases or Git tags. Repeated identities compare exact package metadata and SHA-512 tarball integrity before skipping an upload. Unknown registry state or conflicting bytes stop publication. A changed or non-reproducible build needs a new `--build-id`.
+
+The public APIs are `createSnapshotPlan(options)` and `releaseSnapshot(options)`. Both expose `schemaVersion: 1`, the native plan, snapshot identity, candidates, exact versions, target tag and install instructions. `releaseSnapshot` adds retained artifacts and validation results; preparation failures return `status: failed` with `error`, and the CLI exits with code 1.
+
 ## Next
 
 Read [publishing and changelogs](/learn/monorepo/publish) for repository policy and [reports and output](/tasks/reports) for CI artifacts.

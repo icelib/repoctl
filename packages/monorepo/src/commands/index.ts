@@ -155,8 +155,10 @@ export { resolveReleaseBranches } from './release/lines'
 
 export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
 export { createReleasePlan } from './release/plan'
-
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
+export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
+
+export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
 export * from './template-instances'
 export { applyUpgradePlan, formatUpgradePlan, planUpgrade } from './upgrade'
 
