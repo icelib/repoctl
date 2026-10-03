@@ -11,6 +11,11 @@ export function registerConfigPreflight(program: Command, cwd: string) {
     if (action.name() === 'templates' && action.parent === program) {
       return
     }
+    // Snapshots derive their plan from committed pnpm metadata without loading
+    // executable release configuration, including through the CLI entrypoint.
+    if (action.name() === 'snapshot' && action.parent?.name() === 'release' && action.parent.parent === program) {
+      return
+    }
     let command: Command | null = action
     while (command) {
       if (command.name() === 'config') {

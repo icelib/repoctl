@@ -12,6 +12,7 @@ it('registers admission IDs, filters detailed findings and preserves the failing
   await fs.outputFile(path.join(h.root, 'repoctl.config.mjs'), 'export default { dependencyPolicy: { rules: [{ id: "my-browser-policy", workspaces: ["app"], dependencies: ["legacy-sdk"], effect: "deny", sections: ["dependencies"], reason: "Use a browser-safe dependency" }] } }')
   expect(getDoctorRuleIds()).toEqual(expect.arrayContaining(admissionIds))
   expect(getDoctorRuleIds()).not.toContain('my-browser-policy')
+  expect((await runDoctor(h.cwd, { rules: ['package-json'] })).checks).toEqual([expect.objectContaining({ id: 'package-json', status: 'pass' })])
   const selected = await runDoctor(h.cwd, { rules: ['admission-denied'] })
   expect(selected.checks).toMatchObject([{ id: 'admission-denied', status: 'fail', path: 'packages/app/package.json', field: 'dependencies.legacy-sdk' }])
   expect(selected.checks).toHaveLength(1)
