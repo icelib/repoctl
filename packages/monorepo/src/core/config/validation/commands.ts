@@ -1,4 +1,5 @@
 import type { MonorepoConfig } from '../../../types'
+import type { DoctorCommandConfig, DoctorSuppression } from '../../../types/doctor'
 import type { EnvCacheConfig, EnvCacheSuppression } from '../../../types/env-cache'
 import type { ReleaseBranchesConfig } from '../../../types/release'
 import type { Schema } from './schema'
@@ -13,6 +14,8 @@ const templateValue = { ...template, expected: 'nonempty string or template defi
 
 const envSuppression = object({ rule: nonempty, reason: nonempty, package: nonempty, task: nonempty, variable: nonempty, path: nonempty } satisfies Record<keyof EnvCacheSuppression, Schema>, ['rule', 'reason'])
 const env = object({ tasks: names, include: names, exclude: names, frameworkInference: boolean, suppressions: array(envSuppression) } satisfies Record<keyof EnvCacheConfig, Schema>)
+const doctorSuppression = object({ id: nonempty, reason: nonempty, path: string, expires: string } satisfies Record<keyof DoctorSuppression, Schema>, ['id', 'reason'])
+const doctor = object({ rules: names, suppressions: array(doctorSuppression) } satisfies Record<keyof DoctorCommandConfig, Schema>)
 const branches = object({
   stable: nonempty,
   maintenance: array(object({ branch: nonempty, range: nonempty, tag: nonempty }, ['branch', 'range', 'tag'])),
@@ -24,6 +27,7 @@ export const commandSchemas = {
   clean: object({ autoConfirm: boolean, dryRun: boolean, ignorePackages: strings, includePrivate: boolean, pinnedVersion: nonempty }),
   create: object({ name: string, renameJson: boolean, type: nonempty, templatesDir: nonempty, templateMap: record(templateValue), choices: array(object({ value: nonempty, name: string, description: string, short: string, disabled: union(boolean, string) }, ['value'])), defaultTemplate: nonempty }),
   deps: object({ groups: array(object({ name: nonempty, workspaces: names, dependencies: names, sections: dependencyTypes, reason: nonempty, ignore: boolean }, ['name', 'workspaces', 'dependencies', 'reason'])) }),
+  doctor,
   env,
   init: object({ skipReadme: boolean, skipPkgJson: boolean, skipChangeset: boolean, skipIssueTemplateConfig: boolean, tooling: toolingTargets, preset: choices('minimal', 'standard'), force: boolean }),
   mirror: object({ env: record(string) }),

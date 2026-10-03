@@ -4,9 +4,11 @@ export function createCheck(check: DoctorCheck) {
   return check
 }
 
-export function summarizeChecks(checks: DoctorCheck[]): DoctorSummary {
+export function summarizeChecks(checks: DoctorCheck[], includeSuppressed = false): DoctorSummary {
   return checks.reduce<DoctorSummary>((summary, check) => {
-    summary[check.status] += 1
+    if (includeSuppressed || check.suppression?.state !== 'active') {
+      summary[check.status] += 1
+    }
     return summary
   }, {
     pass: 0,

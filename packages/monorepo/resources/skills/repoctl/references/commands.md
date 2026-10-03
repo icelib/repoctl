@@ -80,6 +80,21 @@ Usage:
 - `--json` emits the structured report only and still exits non-zero when blocking failures exist
 - `--out <file>` persists the text or JSON report and still exits non-zero when blocking failures exist
 
+```bash
+repo doctor --list-rules
+repo doctor --rules root-scripts,package-manager --strict
+repo doctor --rules root-scripts --fix --out plans/doctor-fix.json
+repo doctor --apply plans/doctor-fix.json --json
+```
+
+`--rules` selects exact stable check IDs before execution; unknown IDs fail and list the available rules. The CLI replaces `commands.doctor.rules`; omitted rules run all checks, while an explicit empty config array runs none. Shared discovery and rule prerequisites still run. `manifest-health` is an aggregate over the static manifest checks. Workspace boundaries and dependency admission use stable `boundary-*` / `admission-*` IDs; selecting only `boundary-policy` or `admission-policy` preserves the actual aggregate failure status, and prerequisite configuration failures remain visible. Custom policy names appear only in diagnostic details.
+
+Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs `id` and a nonempty `reason`; optional `path` matches an exact workspace-relative finding path. Optional `expires` is an inclusive UTC date (`YYYY-MM-DD`). JSON retains the original finding status, `suppression`, `rawSummary`, and every waiver with its matched count. Only active waivers are excluded from effective `summary` and strict exit status; expired and unmatched waivers remain visible.
+
+`--fix` previews JSON without modifying project files. Only missing `repo:init`, `repo:new`, `repo:check`, and `repo:doctor` keys in the root `package.json` are supported. Existing values, including empty/custom scripts, are preserved for manual review. An actively suppressed or unselected rule produces no fix. Review the additions, complete before/after content, hashes, risk, and diff before using `--apply`. Plans contain original manifest content and cannot be redacted or rendered as Markdown for execution.
+
+Apply checks the canonical workspace and original file contents, rejects links and modified operations, reuses the staged file transaction with rollback, and reruns the root-script check without suppression. A changed input stops the fix; regenerate the plan. Reapplying an already applied plan is unchanged. Textual `fix` suggestions are never executed, and dependency installation or release workflow modification is outside this fixer.
+
 ## upgrade
 
 Preview the complete operation with `repo upgrade --dry-run`, `--json` or `--markdown`; these modes never write or prepare missing assets. Save JSON and review every add/modify/delete/skip/conflict before `repo upgrade --apply <plan.json>`. Plans contain exact bytes and input hashes, including semantic merges and legacy prerelease metadata migration. Application rejects stale inputs, keeps migration groups together and rolls back recoverable failures. Retained `.repoctl-upgrade-*.bak` originals support manual recovery after interruption or a concurrent edit. `--no-overwrite` protects existing assets and legacy metadata; custom release workflows still require `--overwrite-release`. Public APIs: `planUpgrade`, `formatUpgradePlan`, `applyUpgradePlan`, and `upgradeMonorepo({ dryRun: true })`.
@@ -343,6 +358,8 @@ Usage:
 ## Affected CI matrix
 
 `repo check --affected --matrix` previews a versioned GitHub Actions matrix without running checks. `--shards N` deterministically groups workspaces into at most 1–256 jobs. Reuse base/head, filters and global inputs from affected mode. Pass only `matrix` to Actions `fromJSON`, gate strategy expansion with `hasWork`, and execute each row's non-skipped executable/args arrays in order from the checkout root. Each job builds dependencies itself. Full fallbacks stay in one job and retain diagnostics. No workflow is changed or triggered; only explicit `--out` writes a report.
+
+Doctor fix application holds `.repoctl/doctor-fix.lock` through validation, verification, rollback and cleanup. After a crash, confirm no writer remains and reconcile backups before manually removing the lock.
 
 ### Installation security
 

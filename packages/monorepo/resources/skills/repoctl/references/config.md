@@ -68,6 +68,27 @@ Key areas:
 - init: skip steps for README/package.json/pnpm change intent setup
 - mirror: add or override env mirrors
 
+## `commands.doctor`
+
+Validate the schema of the whole configuration before executing selected doctor rules. Omitted `rules` selects every rule; explicit `rules: []` selects none. Valid but unsatisfied unselected policies do not contribute findings. `config inspect --command doctor` and doctor both consume workspace-root policy from package directories, with explicit CLI selection taking precedence.
+
+```ts
+export default defineMonorepoConfig({
+  commands: {
+    doctor: {
+      rules: ['root-scripts', 'commit-hooks'],
+      suppressions: [{
+        id: 'commit-hooks',
+        reason: 'CI validates commits while the hooks migration is scheduled',
+        expires: '2026-12-31',
+      }],
+    },
+  },
+})
+```
+
+Configure reasoned waivers under `commands.doctor.suppressions`. Each item needs `id` and a nonempty `reason`; optional `path` matches an exact workspace-relative finding path. Optional `expires` is an inclusive UTC date (`YYYY-MM-DD`). JSON retains the original finding status, `suppression`, `rawSummary`, and every waiver with its matched count. Only active waivers are excluded from effective `summary` and strict exit status; expired and unmatched waivers remain visible.
+
 ## TypeScript project references
 
 Check an existing reference graph without enabling writes:
