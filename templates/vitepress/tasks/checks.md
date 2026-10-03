@@ -174,6 +174,7 @@ repoctl workspace owners --file .github/CODEOWNERS --sync
 A file is always explicit: `.github/CODEOWNERS`, `CODEOWNERS`, or `docs/CODEOWNERS`, relative to the workspace root. Map `.` or the root package name to create a `*` default rule before the more specific child package rules. The default is read-only. `--dry-run` also prevents writes with `--sync`. A marked block preserves outside rules/comments byte for byte. The last matching GitHub rule wins: later rules that may shadow generated paths are reported, including ownerless rules. An existing higher-priority CODEOWNERS file is reported. Unsupported literal directory characters and invalid mappings block sync.
 
 The public `planCodeowners()` / `applyCodeownersPlan()` APIs expose before/after content and a diff, revalidate configuration and workspace inputs, and reject stale plans. Writes replace one file atomically, refuse symlink/hardlink targets, and are idempotent. No messages, review requests, permissions, or branch protection are changed.
+Installation policy: see [pnpm installation security](../reference/install-security.md) for release waiting, trust and build approval diagnostics and optional reviewed presets.
 
 ## Managed asset upgrade PRs
 
