@@ -111,7 +111,19 @@ describe('built check execution reports', () => {
       expect(report.tasks[0]).toMatchObject({ status: 'interrupted', signal: 'SIGTERM' })
       expect(report.tasks[1]).toMatchObject({ status: 'skipped', exitCode: null })
       const pid = Number(await readFile(path.join(cwd, 'child.pid'), 'utf8'))
-      expect(() => process.kill(pid, 0)).toThrow()
+      // Signalling pnpm's process group is synchronous; the OS reaps its descendants asynchronously.
+      await expect.poll(() => {
+        try {
+          process.kill(pid, 0)
+          return false
+        }
+        catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ESRCH') {
+            throw error
+          }
+          return true
+        }
+      }, { timeout: 1000, interval: 10 }).toBe(true)
     }
     finally {
       if (running.child.exitCode === null) {
