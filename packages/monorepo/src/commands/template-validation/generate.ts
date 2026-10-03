@@ -3,6 +3,7 @@ import { access, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { scaffoldWorkspace } from '@icebreakers/monorepo-templates'
 import { applyCreateNewProjectPlan } from '../create'
+import { attachCreateParameters } from '../create/parameters/prepare'
 
 export async function generateValidationSample(plan: TemplateValidationPlan, workspace: string, name: string) {
   await scaffoldWorkspace({ targetDir: workspace, assetsDir: plan.fixtureDir })
@@ -14,7 +15,7 @@ export async function generateValidationSample(plan: TemplateValidationPlan, wor
   const targetName = `packages/${name}`
   const targetDir = path.join(workspace, targetName)
   const definition = { source: plan.sourceResolution?.request.templatePath ?? plan.sourceDir, target: targetName }
-  await applyCreateNewProjectPlan({
+  await applyCreateNewProjectPlan(await attachCreateParameters({
     cwd: workspace,
     requestedTemplate: plan.template,
     template: plan.template,
@@ -30,6 +31,6 @@ export async function generateValidationSample(plan: TemplateValidationPlan, wor
     templateDefinition: definition,
     templateInfo: { ...definition, key: plan.template, label: plan.template, sourceDir: plan.sourceDir, origin: 'custom', overridesBuiltin: false, configFile: null },
     ...(plan.sourceResolution ? { sourceResolution: plan.sourceResolution } : {}),
-  }, false)
+  }, {}), false)
   return targetDir
 }

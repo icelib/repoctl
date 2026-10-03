@@ -48,12 +48,13 @@ export async function ensureParent(directory: string, created: OwnedDirectory[])
   }
 }
 
-/** Only empty directories with the same identity are ours to remove. */
+/** Only empty directories with the same identity and canonical path are ours to remove. */
 export async function cleanDirectories(created: OwnedDirectory[]) {
   for (const directory of [...created].reverse()) {
     try {
       const info = await lstat(directory.path, { bigint: true })
-      if (info.isDirectory() && !info.isSymbolicLink() && info.ino === directory.identity.ino && info.dev === directory.identity.dev && path.normalize(await realpath(directory.path)) === directory.path) {
+      // Directory records can use native node:path or portable path separators.
+      if (info.isDirectory() && !info.isSymbolicLink() && info.ino === directory.identity.ino && info.dev === directory.identity.dev && path.normalize(await realpath(directory.path)) === path.normalize(directory.path)) {
         await rmdir(directory.path)
       }
     }

@@ -11,6 +11,7 @@ import { loadTemplateCatalogContext } from '../../../core/template-catalog/confi
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
 import { createIntentChoices } from './intents'
+import { promptParameter, readParameterData } from './parameter-input'
 
 function normalizeTargetName(name: string, baseDir: 'packages' | 'apps') {
   if (name.includes('/')) {
@@ -41,6 +42,7 @@ function normalizeNameForTemplate(name: string, type: CreateNewProjectOptions['t
 export interface RunCreateFlowOptions {
   offline?: boolean
   cacheDir?: string
+  data?: string
   template?: CreateNewProjectOptions['type']
   dryRun?: boolean
   json?: boolean
@@ -66,6 +68,9 @@ function printCreatePlan(plan: CreateNewProjectPlan) {
   logger.log(localize(`  package: ${plan.packageName}`, `  包名：${plan.packageName}`))
   logger.log(localize(`  package json: ${plan.hasPackageJson ? plan.packageJsonFileName : 'not included in template'}`, `  package json：${plan.hasPackageJson ? plan.packageJsonFileName : '模板中未包含'}`))
   logger.log(localize(`  workspace manifest: pnpm-workspace.yaml will include ${plan.targetName.includes('/') ? `${plan.targetName.split('/')[0]}/*` : 'packages/*'}`, `  workspace 清单：pnpm-workspace.yaml 将包含 ${plan.targetName.includes('/') ? `${plan.targetName.split('/')[0]}/*` : 'packages/*'}`))
+  if (plan.parameterization) {
+    logger.log(JSON.stringify(plan.parameterization, null, 2))
+  }
   logger.log('')
   logger.info(localize('Dry run only; no files were written.', '仅执行预览；未写入任何文件。'))
 }
@@ -83,6 +88,7 @@ function formatCreatePlan(plan: CreateNewProjectPlan) {
     localize(`  package: ${plan.packageName}`, `  包名：${plan.packageName}`),
     localize(`  package json: ${plan.hasPackageJson ? plan.packageJsonFileName : 'not included in template'}`, `  package json：${plan.hasPackageJson ? plan.packageJsonFileName : '模板中未包含'}`),
     localize(`  workspace manifest: pnpm-workspace.yaml will include ${plan.targetName.includes('/') ? `${plan.targetName.split('/')[0]}/*` : 'packages/*'}`, `  workspace 清单：pnpm-workspace.yaml 将包含 ${plan.targetName.includes('/') ? `${plan.targetName.split('/')[0]}/*` : 'packages/*'}`),
+    ...(plan.parameterization ? [JSON.stringify(plan.parameterization, null, 2)] : []),
     '',
     localize('Dry run only; no files were written.', '仅执行预览；未写入任何文件。'),
   ].join('\n')
@@ -125,7 +131,8 @@ export async function runCreateFlow(cwd: string, inputName: string | undefined, 
   try {
     const context = await loadTemplateCatalogContext({ cwd })
     const createConfig = context.createConfig
-    const sourceOptions = { ...(options.offline !== undefined ? { offline: options.offline } : {}), ...(options.cacheDir ? { cacheDir: options.cacheDir } : {}) }
+    const parameterValues = await readParameterData(cwd, options.data)
+    const sourceOptions = { ...(parameterValues !== undefined ? { parameters: parameterValues } : {}), ...(canPrompt() && !options.json ? { parameterPrompt: promptParameter } : {}), ...(options.offline !== undefined ? { offline: options.offline } : {}), ...(options.cacheDir ? { cacheDir: options.cacheDir } : {}) }
     const catalog = createTemplateCatalog(context)
     const templates = Object.fromEntries(catalog.entries.map(entry => [entry.key, entry]))
     let explicitTemplate = options.template ?? createConfig?.type ?? createConfig?.defaultTemplate

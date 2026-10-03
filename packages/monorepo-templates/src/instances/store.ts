@@ -65,7 +65,7 @@ export async function loadTemplateBaseline(workspaceDir: string, digest: string)
 export async function mutateTemplateRegistry<T>(
   workspaceDir: string,
   mutate: (registry: TemplateInstanceRegistry) => Promise<{ result: T, snapshots?: Record<string, TemplateSnapshot> }>,
-  hooks?: Pick<TemplateInstanceReplacementHooks, 'rollback' | 'committed'>,
+  hooks?: Partial<Pick<TemplateInstanceReplacementHooks, 'rollback' | 'committed'>>,
 ): Promise<T> {
   const file = await safeInstancePath(workspaceDir, templateRegistryPath)
   const lockPath = await safeInstancePath(workspaceDir, '.repoctl/template-instances.lock')
@@ -128,13 +128,13 @@ export async function mutateTemplateRegistry<T>(
       await fs.rename(temporary, file)
     }
     committed = true
-    await hooks?.committed()
+    await hooks?.committed?.()
   }
   catch (error) {
     failure = { error }
     if (!committed) {
       try {
-        await hooks?.rollback()
+        await hooks?.rollback?.()
       }
       catch (recoveryError) {
         failure = { error: new AggregateError([error, recoveryError], `Template registry transaction failed and file recovery needs attention: ${recoveryError instanceof Error ? recoveryError.message : String(recoveryError)}. Preserve the pending recovery record.`) }
@@ -233,5 +233,5 @@ export async function registerTemplateInstances(workspaceDir: string, drafts: Te
       }
     }
     return { result: registered, snapshots }
-  })
+  }, options)
 }

@@ -1,4 +1,5 @@
 import type { TemplateGenerationParameters, TemplateInstance, TemplateInstanceRegistry } from './types'
+import { isParameterRecord, parameterName } from '../parameters/schema'
 import { portableRelativePath } from './paths'
 import { validateRemoteInstanceSource } from './remote'
 
@@ -35,12 +36,23 @@ function onlyFields(value: object, fields: string[]) {
 }
 
 export function generationParameters(input: TemplateGenerationParameters = {}): TemplateGenerationParameters {
-  if (Object.keys(input).some(key => !['packageName', 'renameJson'].includes(key))
+  if (Object.keys(input).some(key => !['packageName', 'renameJson', 'templateValues', 'sensitiveParameters'].includes(key))
     || (input.packageName !== undefined && (typeof input.packageName !== 'string' || !/^[@\w./-]+$/u.test(input.packageName)))
     || (input.renameJson !== undefined && typeof input.renameJson !== 'boolean')) {
-    throw new Error('Only packageName and renameJson are supported non-secret generation parameters.')
+    throw new Error('Unsupported or invalid non-secret generation parameters.')
+  }
+  if (input.templateValues !== undefined && (!isParameterRecord(input.templateValues)
+    || Object.entries(input.templateValues).some(([key, value]) => !parameterName.test(key) || ['constructor', 'prototype', '__proto__'].includes(key) || !['string', 'boolean'].includes(typeof value)))) {
+    throw new Error('Template generation values must be validated non-secret strings or booleans.')
+  }
+  if (input.sensitiveParameters !== undefined && (!Array.isArray(input.sensitiveParameters)
+    || input.sensitiveParameters.some(key => typeof key !== 'string' || !parameterName.test(key) || Object.hasOwn(input.templateValues ?? {}, key))
+    || new Set(input.sensitiveParameters).size !== input.sensitiveParameters.length)) {
+    throw new Error('Sensitive generation parameters retain unique names only, never values.')
   }
   return {
+    ...(input.templateValues !== undefined ? { templateValues: { ...input.templateValues } } : {}),
+    ...(input.sensitiveParameters !== undefined ? { sensitiveParameters: [...input.sensitiveParameters].sort() } : {}),
     ...(input.packageName !== undefined ? { packageName: input.packageName } : {}),
     ...(input.renameJson !== undefined ? { renameJson: input.renameJson } : {}),
   }
@@ -49,12 +61,12 @@ export function generationParameters(input: TemplateGenerationParameters = {}): 
 export function validateInstance(instance: TemplateInstance) {
   onlyFields(instance, ['id', 'target', 'template', 'provenance', 'source', 'generator', 'parameters', 'baseline', 'excludedPaths'])
   onlyFields(instance.generator, ['profile', 'version'])
-  onlyFields(instance.parameters, ['packageName', 'renameJson'])
+  onlyFields(instance.parameters, ['packageName', 'renameJson', 'templateValues', 'sensitiveParameters'])
   onlyFields(instance.source, ['kind', 'templatePath', 'packageName', 'version', 'digest', 'remote'])
   onlyFields(instance.baseline, ['status', 'original', 'rendered', 'reason'])
   if (!instance || !/^[a-f0-9]{24}$/u.test(instance.id) || typeof instance.template !== 'string' || !instance.template
     || !['created', 'linked'].includes(instance.provenance)
-    || !['workspace-copy-v1', 'repo-new-v1'].includes(instance.generator?.profile)
+    || !['workspace-copy-v1', 'repo-new-v1', 'repo-new-parameters-v1'].includes(instance.generator?.profile)
     || !exactVersionPattern.test(instance.generator.version)) {
     throw new Error('Invalid template instance identity or generator.')
   }

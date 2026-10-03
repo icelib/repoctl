@@ -163,4 +163,5 @@ export async function writeFileTransaction(root: string, files: FileTransactionC
   if (retained.length) {
     throw new Error(`Upgrade applied; remove retained backups after review: ${retained.join(', ')}`)
   }
+  return new Map(staged.flatMap(item => item.appliedIdentity ? [[item.file.path, item.appliedIdentity] as const] : []))
 }

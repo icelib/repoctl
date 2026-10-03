@@ -44,8 +44,9 @@ export interface AiCommandConfig {
 
 /**
  * `repo package create` 命令的配置项。
+ * 模板参数与交互回调仅由单次创建调用传入。
  */
-export interface CreateCommandConfig extends Partial<Omit<CreateNewProjectOptions, 'cwd'>> {
+export interface CreateCommandConfig extends Partial<Omit<CreateNewProjectOptions, 'cwd' | 'parameters' | 'parameterPrompt'>> {
   /**
    * 自定义模板根目录，相对路径按配置文件所在目录解析。
    * @default 已安装模板包的 templates 目录
