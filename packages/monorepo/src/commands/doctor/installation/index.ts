@@ -6,7 +6,7 @@ import fs from '../../../utils/fs'
 import { compareManifest, readLockfile, readYaml, record } from './lockfile'
 import { checkInstallation } from './state'
 
-export async function collectInstallationChecks(context: DoctorContext): Promise<DoctorCheck[]> {
+export async function collectInstallationChecks(context: DoctorContext, selected?: ReadonlySet<string>): Promise<DoctorCheck[]> {
   const { workspaceDir, packageJson } = context
   const manifests = context.manifests.filter(entry => entry.data).map(entry => ({
     dir: path.relative(workspaceDir, entry.directory) || '.',
@@ -69,5 +69,9 @@ export async function collectInstallationChecks(context: DoctorContext): Promise
           : localize('Review manifest changes and pnpm configuration, then explicitly run pnpm install with the declared version to regenerate the lockfile.', '检查清单变更和 pnpm 配置，然后手动使用声明版本运行 pnpm install 更新锁文件。') }
       : {}),
   }
-  return [lockCheck, await checkInstallation(context, lockfile, lockCheck, manifests)]
+  const checks = !selected || selected.has('lockfile-sync') ? [lockCheck] : []
+  if (!selected || selected.has('installation-state')) {
+    checks.push(await checkInstallation(context, lockfile, lockCheck, manifests))
+  }
+  return checks
 }

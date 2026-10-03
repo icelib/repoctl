@@ -34,3 +34,5 @@ This package retains the `repo` and `repoctl` bins for existing installations. N
 - Documentation: https://repoctl.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/monorepo
 - Issues: https://github.com/icelib/repoctl/issues
+
+Doctor exposes `getDoctorRuleIds()`, `runDoctor(cwd, { rules, suppressions })`, `planDoctorFix(cwd, options)`, and `applyDoctorFixPlan(cwd, plan)`. Rule selection uses stable IDs; suppressions require a reason and can expire on an inclusive UTC date. Fix plans only add absent recommended root script keys, preserve existing values, reject changed inputs, and verify the result.
