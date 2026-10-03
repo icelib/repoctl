@@ -27,13 +27,21 @@ export interface MaintenancePresetChange extends MaintenanceVersionChange {
 export interface MaintenancePresetUpgrade {
   versions: MaintenancePresetChange[]
   plan: OrganizationPresetAssetPlan | null
+  /** Raw preconditions and built-in Git conversion settings for independent blob verification. */
+  checkout: {
+    autocrlf: 'false' | 'true' | 'input'
+    eol: 'native' | 'lf' | 'crlf'
+    before: Array<{ path: string, content: string }>
+  } | null
   /** Newly declared files require an explicit presets plan/apply and workflow refresh. */
   skipped: string[]
 }
 
 export interface MaintenanceFile {
   path: string
+  /** SHA-256 of committed Git blob bytes, before checkout conversions. */
   beforeHash: string | null
+  /** SHA-256 of the reviewed patch's Git blob bytes, before checkout conversions. */
   afterHash: string | null
   beforeMode: string | null
   afterMode: string | null

@@ -4,7 +4,7 @@ export function validatePresetMaintenance({ report, expected, git, hash, fail, B
   if (report.presets === undefined) {
     return allowed
   }
-  const { versions, plan } = report.presets
+  const { versions, plan, checkout } = report.presets
   if (!Array.isArray(versions) || new Set(versions.map(change => change.packageName)).size !== versions.length
     || versions.some(change => !['changed', 'unchanged'].includes(change.status))) {
     fail('invalid preset version evidence')
@@ -32,6 +32,21 @@ export function validatePresetMaintenance({ report, expected, git, hash, fail, B
     || !['ready', 'unchanged'].includes(plan.status) || !Array.isArray(plan.files) || !Array.isArray(plan.conflicts) || plan.conflicts.length
     || new Set(plan.files.map(file => file.path)).size !== plan.files.length) {
     fail('preset plan is missing, duplicated or conflicted')
+  }
+  if (!checkout || !['false', 'true', 'input'].includes(checkout.autocrlf) || !['native', 'lf', 'crlf'].includes(checkout.eol)
+    || !Array.isArray(checkout.before) || checkout.before.some(file => typeof file.path !== 'string' || typeof file.content !== 'string')
+    || new Set(checkout.before.map(file => file.path)).size !== checkout.before.length) {
+    fail('invalid preset checkout evidence')
+  }
+  const preconditions = new Map(checkout.before.map(file => [file.path, file.content]))
+  const paths = plan.files.flatMap(file => [file.path, file.baseline?.path])
+  if (preconditions.size !== paths.length || paths.some(filename => !preconditions.has(filename))) {
+    fail('preset checkout evidence does not match the reviewed paths')
+  }
+  // Use Git's own path/attribute conversion; filters and fsmonitor are disabled by the caller.
+  const blobHash = (filename, content) => {
+    const object = git(['-c', `core.autocrlf=${checkout.autocrlf}`, '-c', `core.eol=${checkout.eol}`, '-c', 'core.safecrlf=false', 'hash-object', '-w', `--path=${filename}`, '--stdin'], content).toString().trim()
+    return hash(git(['cat-file', 'blob', object]))
   }
   const baselinePath = target => `.repoctl/baselines/presets/${hash(target)}.json`
   const baseline = (bytes, file, targetVersion) => {
@@ -69,9 +84,6 @@ export function validatePresetMaintenance({ report, expected, git, hash, fail, B
     }
     baseline(original, file)
     baseline(previous, file)
-    if (hash(previous) !== next.beforeHash || hash(git(['show', `${expected.head}:${file.path}`])) !== file.beforeHash) {
-      fail('preset source precondition differs from committed ownership')
-    }
     const upstream = Buffer.from(next.content, 'base64')
     const content = Buffer.from(file.content, 'base64')
     if (upstream.toString('base64') !== next.content || hash(upstream) !== next.afterHash
@@ -80,11 +92,21 @@ export function validatePresetMaintenance({ report, expected, git, hash, fail, B
     }
     baseline(upstream, file, change.to)
     for (const operation of [file, next]) {
+      const encoded = preconditions.get(operation.path)
+      const before = Buffer.from(encoded, 'base64')
+      if (before.toString('base64') !== encoded || hash(before) !== operation.beforeHash) {
+        fail('preset raw precondition differs from its reviewed plan')
+      }
+      const beforeHash = blobHash(operation.path, before)
+      const afterHash = blobHash(operation.path, Buffer.from(operation.content, 'base64'))
+      if (hash(git(['show', `${expected.head}:${operation.path}`])) !== beforeHash) {
+        fail('preset source precondition differs from committed ownership')
+      }
       const entry = report.files.find(entry => entry.path === operation.path)
-      if (entry && (entry.beforeHash !== operation.beforeHash || entry.afterHash !== operation.afterHash || !entry.beforeMode || !entry.afterMode)) {
+      if (entry && (entry.beforeHash !== beforeHash || entry.afterHash !== afterHash || !entry.beforeMode || !entry.afterMode)) {
         fail('preset patch differs from its reviewed plan or removes ownership')
       }
-      if (applied && operation.beforeHash !== operation.afterHash) {
+      if (applied && beforeHash !== afterHash) {
         if (!entry) {
           fail('preset patch omits a changed asset or its ownership baseline')
         }

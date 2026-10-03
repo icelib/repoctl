@@ -28,7 +28,7 @@ it('publishes an independently checked preset-only artifact without installed pa
   await expect(readFile(path.join(h.input.cwd, 'node_modules/repoctl/package.json'))).rejects.toMatchObject({ code: 'ENOENT' })
 })
 
-it.each(['policy', 'version', 'source', 'baseline', 'upstream', 'omission', 'report-targets'])('rejects forged %s evidence before obtaining write credentials', async (kind) => {
+it.each(['policy', 'version', 'source', 'baseline', 'upstream', 'omission', 'report-targets', 'checkout-settings', 'raw-precondition', 'committed-precondition', 'checkout-omission'])('rejects forged %s evidence before obtaining write credentials', async (kind) => {
   const h = await publisher()
   const report = structuredClone(h.report)
   const plan = report.presets!.plan!
@@ -52,6 +52,20 @@ it.each(['policy', 'version', 'source', 'baseline', 'upstream', 'omission', 'rep
   }
   else if (kind === 'omission') {
     report.files = report.files.filter(file => file.path !== h.baselinePath)
+  }
+  else if (kind === 'checkout-settings') {
+    report.presets!.checkout!.autocrlf = 'execute' as never
+  }
+  else if (kind === 'checkout-omission') {
+    report.presets!.checkout!.before.pop()
+  }
+  else if (kind === 'raw-precondition' || kind === 'committed-precondition') {
+    const evidence = report.presets!.checkout!.before.find(file => file.path === presetTarget)!
+    const content = Buffer.from('forged before bytes\n')
+    evidence.content = content.toString('base64')
+    if (kind === 'committed-precondition') {
+      plan.files[0]!.beforeHash = digest(content)
+    }
   }
   else {
     plan.targets = ['scripts/arbitrary.mjs']

@@ -31,7 +31,7 @@ it('preserves disjoint local edits while upgrading and records only upstream bas
   expect(await readFile(path.join(h.cwd, '.editorconfig'), 'utf8')).toBe(h.upstream.replace('root = true', 'root = false'))
   const record = JSON.parse(await readFile(path.join(h.cwd, h.baselinePath), 'utf8'))
   expect(Buffer.from(record.upstream.content, 'base64').toString()).toBe(h.upstream)
-  expect(report.files.find(file => file.path === '.editorconfig')?.beforeHash).toBe(digest(h.local))
+  expect(report.files.find(file => file.path === '.editorconfig')?.beforeHash).toBe(digest(h.gitBytes(['show', `${report.head}:.editorconfig`])))
 })
 
 it('keeps overlapping local edits and baseline intact and reports the conflict without running scripts', async () => {

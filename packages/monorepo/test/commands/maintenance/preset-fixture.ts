@@ -9,8 +9,9 @@ export const presetSource = 'assets/check.mjs'
 export const presetBytes = 'export const first = 1\nexport const second = 2\nexport const third = 3\nexport const fourth = 4\n'
 export const presetPolicy = [{ packageName: presetName, source: presetSource, target: presetTarget }]
 
-export async function presetFixture(options: { sameBytes?: boolean, conflict?: boolean, mixed?: boolean, mixedManifest?: boolean, extra?: boolean, duplicate?: boolean } = {}) {
+export async function presetFixture(options: { sameBytes?: boolean, conflict?: boolean, mixed?: boolean, mixedManifest?: boolean, extra?: boolean, duplicate?: boolean, lineEnding?: 'crlf' } = {}) {
   const h = await fixture()
+  const sourceBytes = options.lineEnding === 'crlf' ? presetBytes.replaceAll('\n', '\r\n') : presetBytes
   const json = async (filename: string, value: unknown) => h.write(filename, `${JSON.stringify(value, null, 2)}\n`)
   const commit = (message: string) => {
     h.git(['add', '.'])
@@ -31,14 +32,14 @@ export async function presetFixture(options: { sameBytes?: boolean, conflict?: b
     await h.write('repoctl.config.mjs', `export default ${JSON.stringify({ presets: Array.from({ length: options.duplicate ? 2 : 1 }, () => ({ packageName: presetName, version })), commands: { upgrade: { targets: options.mixedManifest ? ['package.json', '.editorconfig'] : ['.editorconfig'], mergeTargets: false } } })}\n`)
     await h.write('pnpm-lock.yaml', lockfile(toolVersion, `      '${presetName}':\n        specifier: ${version}\n        version: ${version}\n`))
   }
-  await install('1.0.0', presetBytes, options.mixed ? '0.1.0' : h.version)
+  await install('1.0.0', sourceBytes, options.mixed ? '0.1.0' : h.version)
   const plan = await planOrganizationPresetAssets(h.cwd)
   await applyOrganizationPresetAssets(plan)
   const baselinePath = plan.files[0]!.baseline!.path
-  await h.write(presetTarget, presetBytes.replace(options.conflict ? 'first = 1' : 'fourth = 4', options.conflict ? 'first = 99' : 'fourth = 40'))
+  await h.write(presetTarget, sourceBytes.replace(options.conflict ? 'first = 1' : 'fourth = 4', options.conflict ? 'first = 99' : 'fourth = 40'))
   const workflow = await getMaintenanceWorkflow(h.cwd)
   const base = commit('adopt preset one')
-  await install('2.0.0', options.sameBytes ? presetBytes : presetBytes.replace('first = 1', 'first = 10'), h.version)
+  await install('2.0.0', options.sameBytes ? sourceBytes : sourceBytes.replace('first = 1', 'first = 10'), h.version)
   const head = commit('upgrade fixed preset')
   const expected = { ...h.expected, base, head, presetAssets: presetPolicy }
   const request = async (route: string) => {

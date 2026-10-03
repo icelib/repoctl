@@ -15,7 +15,7 @@ export async function getMaintenanceWorkflow(cwd?: string): Promise<string> {
   const loaded = cwd ? await loadMonorepoConfigDetails(cwd, { refresh: true }) : undefined
   const policy = loaded?.presets.layers.flatMap(layer => (layer.manifest.assets ?? []).map(asset => ({ packageName: layer.source.packageName, source: asset.source, target: asset.target }))) ?? []
   const script = `${presets.replace('export function', 'function')}\n${validator.replace(/^import .*\n/u, '').replace('export async function', 'async function')}`.trimEnd()
-  return template.replace('            __VALIDATOR__', script.split('\n').map(line => `            ${line}`).join('\n'))
-    .replace('__TARGETS__', JSON.stringify(getAssetTargets()))
-    .replace('__PRESET_ASSETS__', JSON.stringify(policy))
+  return template.replace('            __VALIDATOR__', () => script.split('\n').map(line => `            ${line}`).join('\n'))
+    .replace('__TARGETS__', () => JSON.stringify(getAssetTargets()))
+    .replace('__PRESET_ASSETS__', () => JSON.stringify(policy))
 }

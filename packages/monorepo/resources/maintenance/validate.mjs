@@ -8,10 +8,32 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
   const { createHash } = await import('node:crypto')
   const { execFileSync } = await import('node:child_process')
   const hash = value => createHash('sha256').update(value).digest('hex')
-  const git = args => execFileSync('git', ['--no-optional-locks', ...args], { cwd, maxBuffer: 32 * 1024 * 1024 })
   const fail = (message) => {
     throw new Error(`Maintenance publication blocked: ${message}`)
   }
+  // Git filters and fsmonitor are executable configuration, including during status/checkout.
+  const gitOptions = ['--no-optional-locks', '-c', 'core.fsmonitor=false']
+  const execGit = (args, input) => execFileSync('git', [...gitOptions, ...args], { cwd, input, maxBuffer: 32 * 1024 * 1024 })
+  let filterKeys
+  try {
+    filterKeys = execGit(['config', '--null', '--name-only', '--get-regexp', '^filter\\..*\\.(clean|smudge|process|required)$']).toString().split('\0').filter(Boolean)
+  }
+  catch (error) {
+    if (error.status !== 1 || error.stdout?.length) {
+      fail('cannot inspect Git filter configuration')
+    }
+    filterKeys = []
+  }
+  const disabled = new Map([['core.fsmonitor', 'false']])
+  for (const driver of new Set(filterKeys.map(key => key.slice(0, key.lastIndexOf('.'))))) {
+    for (const setting of ['clean', 'smudge', 'process', 'required']) {
+      const key = `${driver}.${setting}`
+      const value = setting === 'required' ? 'false' : ''
+      disabled.set(key, value)
+      gitOptions.push('-c', `${key}=${value}`)
+    }
+  }
+  const git = (args, input) => execGit(args, input)
   const readArtifact = async (filename, limit) => {
     const file = path.join(directory, filename)
     const stat = await fs.lstat(file)
@@ -103,6 +125,10 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
   }
   const hooks = path.join(directory, 'empty-hooks')
   await fs.mkdir(hooks, { recursive: true })
+  // Persist the same policy for the subsequent create-pull-request action.
+  for (const [key, value] of disabled) {
+    git(['config', '--local', '--replace-all', key, value])
+  }
   git(['config', '--local', 'core.hooksPath', hooks])
   // A named working base avoids create-pull-request's detached-HEAD rebase onto an unverified latest base.
   git(['check-ref-format', '--branch', expected.defaultBranch])
@@ -111,13 +137,17 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
   const patchFile = path.join(directory, 'changes.patch')
   git(['apply', '--check', '--index', '--whitespace=nowarn', patchFile])
   git(['apply', '--index', '--whitespace=nowarn', patchFile])
-  const actual = git(['diff', '--cached', '--name-only', '-z', '--no-renames']).toString().split('\0').filter(Boolean).sort()
+  const actual = git(['diff', '--cached', '--name-only', '-z', '--no-renames', '--no-ext-diff', '--no-textconv']).toString().split('\0').filter(Boolean).sort()
   if (JSON.stringify(actual) !== JSON.stringify([...names].sort())) {
     fail('patch paths differ from the reviewed report')
   }
   const index = new Map(git(['ls-files', '--stage', '-z']).toString().split('\0').filter(Boolean).map((entry) => {
     const [metadata, filename] = entry.split('\t')
-    return [filename, metadata.split(' ')[0]]
+    const [mode, object, stage] = metadata.split(' ')
+    if (stage !== '0') {
+      fail(`unmerged index entry: ${filename}`)
+    }
+    return [filename, { mode, object }]
   }))
   for (const file of report.files) {
     const next = index.get(file.path)
@@ -127,10 +157,17 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
       }
       throw error
     })
-    if ((next ?? null) !== file.afterMode || (stat && !stat.isFile())
-      || (stat ? hash(await fs.readFile(path.join(cwd, file.path))) : null) !== file.afterHash) {
+    if ((next?.mode ?? null) !== file.afterMode || (stat && !stat.isFile()) || Boolean(next) !== Boolean(stat)
+      || (next ? hash(git(['cat-file', 'blob', next.object])) : null) !== file.afterHash) {
       fail(`patched file bytes or mode differ from the report: ${file.path}`)
     }
+  }
+  // Git blob identity is exact; checkout bytes may differ through built-in EOL/encoding rules.
+  try {
+    git(['diff', '--exit-code', '--no-ext-diff', '--no-textconv', '--ignore-submodules=none', '--', ...names])
+  }
+  catch {
+    fail('patched checkout contents are not Git-equivalent to the verified index')
   }
   const body = [
     '<!-- repoctl-maintenance:v1 -->',

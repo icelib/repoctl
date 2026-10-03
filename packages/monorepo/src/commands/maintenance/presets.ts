@@ -5,6 +5,7 @@ import { readOptional } from '../../core/file-transaction/paths'
 import { parsePresetBaseline, presetBaselinePath } from '../../core/presets/asset-plan/baseline'
 import { planOrganizationPresetAssets } from '../../core/presets/asset-plan/plan'
 import { presetVersion } from '../../core/presets/reference'
+import { capturePresetCheckout } from './presets/bytes'
 import { maintenanceGit } from './process'
 import { lockedMaintenanceVersion } from './versions'
 
@@ -47,7 +48,7 @@ export async function planMaintenancePresets(options: MaintenanceUpgradeOptions,
   if (!references.length) {
     return undefined
   }
-  const result: MaintenancePresetUpgrade = { versions: [], plan: null, skipped: [] }
+  const result: MaintenancePresetUpgrade = { versions: [], plan: null, checkout: null, skipped: [] }
   const targets: string[] = []
   for (const reference of references) {
     const from = exactPresetDependency(fromManifest, reference.packageName)
@@ -85,6 +86,9 @@ export async function planMaintenancePresets(options: MaintenanceUpgradeOptions,
   result.skipped.sort()
   if (targets.length) {
     result.plan = await planOrganizationPresetAssets(options.cwd, targets)
+    if (result.plan.status !== 'blocked') {
+      result.checkout = await capturePresetCheckout(options.cwd, result.plan)
+    }
   }
   return result
 }

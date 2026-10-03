@@ -64,7 +64,7 @@ export async function createMaintenancePatch(options: MaintenanceUpgradeOptions,
     files.push({
       path: filename,
       beforeHash: previous ? digest(maintenanceGitBytes(options.cwd, ['show', `${report.head}:${filename}`])) : null,
-      afterHash: next ? digest(await readFile(path.join(options.cwd, filename))) : null,
+      afterHash: next ? digest(maintenanceGitBytes(options.cwd, ['cat-file', 'blob', next.object])) : null,
       beforeMode: previous?.mode ?? null,
       afterMode: next?.mode ?? null,
     })
