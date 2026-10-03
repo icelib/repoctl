@@ -4,7 +4,7 @@ import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
 import { findWorkspacePackages } from '@pnpm/workspace.find-packages'
 import path from 'pathe'
 import YAML from 'yaml'
-import { getRepoctlConfigCandidates, resolveCommandConfig } from '../../core/config'
+import { getRepoctlConfigCandidates, loadMonorepoConfigDetails } from '../../core/config'
 import { localize } from '../../i18n'
 import { hash, readInput, record } from './files'
 import { dependencySections, validatePolicy } from './policy'
@@ -38,7 +38,14 @@ export async function scanDependencies(cwd: string, options: { policy?: boolean 
     const relative = path.relative(workspaceDir, candidate)
     contents.set(relative, await readInput(workspaceDir, relative))
   }
-  const policy = options.policy === false ? [] : validatePolicy(await resolveCommandConfig('deps', workspaceDir) ?? {})
+  const loaded = options.policy === false ? undefined : await loadMonorepoConfigDetails(workspaceDir, { refresh: true })
+  for (const file of loaded?.files ?? []) {
+    const relative = path.relative(workspaceDir, file)
+    if (!contents.has(relative)) {
+      contents.set(relative, await readInput(workspaceDir, relative))
+    }
+  }
+  const policy = loaded ? validatePolicy(loaded.config.commands?.deps ?? {}) : []
   const occurrences: DependencyOccurrence[] = []
   const manifests = [...new Set(['package.json', ...packages.map(pkg => path.relative(workspaceDir, path.join(pkg.rootDir, 'package.json')))])].sort()
   for (const relative of manifests) {
@@ -62,7 +69,7 @@ export async function scanDependencies(cwd: string, options: { policy?: boolean 
     }
   }
   const inputs = [...contents].sort(([a], [b]) => a.localeCompare(b)).map(([file, content]) => ({ path: file, hash: hash(content) }))
-  return { workspaceDir, occurrences, policy, inputs, contents }
+  return { workspaceDir, workspace, occurrences, policy, inputs, contents }
 }
 
 export type DependencyScan = Awaited<ReturnType<typeof scanDependencies>>

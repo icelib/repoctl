@@ -86,7 +86,8 @@
     "--------": "----------------",
     "test:packaged-nimbus": "node scripts/nimbus/index.mjs",
     "test:packaged-react": "node scripts/react/index.mjs",
-    "test:packaged-next": "node scripts/next/index.mjs"
+    "test:packaged-next": "node scripts/next/index.mjs",
+    "test:packaged-capability": "node scripts/capabilities/index.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
