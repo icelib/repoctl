@@ -1,4 +1,4 @@
-import type { UpgradeApplyResult, UpgradeBaselineChange, UpgradeMergeDetails, UpgradeOptions, UpgradePlan } from '..'
+import type { UpgradeApplyResult, UpgradeBaselineChange, UpgradeMergeDetails, UpgradeMigrationsPlan, UpgradeMigrationStep, UpgradeOptions, UpgradePlan } from '..'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
 import { applyUpgradePlan, formatUpgradePlan, planUpgrade, upgradeMonorepo } from '..'
 
@@ -16,3 +16,9 @@ expectAssignable<UpgradeBaselineChange>({ path: '.repoctl/baselines/root/hash.js
 expectNotAssignable<UpgradeBaselineChange>({ path: 'x', beforeHash: 1, afterHash: null, content: null })
 declare const result: UpgradeApplyResult
 expectType<string[] | undefined>(result.conflicts)
+expectAssignable<UpgradeOptions>({ fromVersion: '1.0.15' })
+expectNotAssignable<UpgradeOptions>({ fromVersion: 1 })
+expectType<UpgradeMigrationsPlan | undefined>(plan.migrations)
+expectType<UpgradeMigrationStep[]>(plan.migrations!.steps)
+expectAssignable<UpgradeMigrationStep>({ id: 'migration', version: '1.1.0', status: 'pending', reason: 'version-boundary-crossed', files: ['package.json'] })
+expectNotAssignable<UpgradeMigrationStep>({ id: 'migration', version: '1.1.0', status: 'successful', reason: '', files: [] })

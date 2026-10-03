@@ -5,6 +5,8 @@ export interface UpgradeOptions extends CliOpts {
   dryRun?: boolean
   /** Override the configured asset selection with exact files or directory prefixes. */
   targets?: string[]
+  /** Attest an exact previous template version when no migration history exists. */
+  fromVersion?: string
 }
 
 export type UpgradeFileStatus = 'add' | 'modify' | 'delete' | 'identical' | 'skip' | 'conflict'
@@ -51,6 +53,24 @@ export interface UpgradeInput {
   hash: string | null
 }
 
+export interface UpgradeMigrationStep {
+  id: string
+  version: string
+  status: 'pending' | 'completed' | 'failed' | 'skipped' | 'blocked'
+  reason: string
+  files: string[]
+}
+
+export interface UpgradeMigrationsPlan {
+  fromVersion: string | null
+  toVersion: string
+  steps: UpgradeMigrationStep[]
+  /** Recovery explicitly distinguishes files already written before interruption. */
+  recovery: { path: string, state: 'before' | 'after' }[]
+  /** Reviewed intermediate states; completed content is a normal plan file. */
+  ledger?: { path: string, pending: string, failed: string }
+}
+
 export interface UpgradePlan {
   schemaVersion: 1
   cwd: string
@@ -62,6 +82,7 @@ export interface UpgradePlan {
   inputs: UpgradeInput[]
   files: UpgradeFilePlan[]
   blockers: { id: string, path: string | null, detail: string }[]
+  migrations?: UpgradeMigrationsPlan
 }
 
 export interface UpgradeApplyOptions {

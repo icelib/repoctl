@@ -107,6 +107,8 @@ Root assets use old-upstream/local/new-upstream three-way merging. Commit `.repo
 
 Upgrade apply holds `.repoctl/upgrade.lock` through validation, no-op detection, writes, rollback and cleanup. It never removes colliding recovery files, changed recovery bytes or replacement directories. After an interruption, confirm no writer is active and recover retained backups before removing the lock and regenerating the plan.
 
+Versioned migrations appear in `migrations` with stable IDs and affected files. The Changesets-to-pnpm migration starts at template 1.1.0. Use `--from-version <exact-semver>` only when the old version is known; dependency ranges are not version evidence. Unknown sources adopt only recognized legacy formats. Commit `.repoctl/migrations/ledger.json` when created; its cursor covers migrations, not all assets. Preview writes nothing. Pending/failed bytes and completed diffs are reviewed together; migration groups cannot be split, and completed is written only at the end of a successful migration transaction. Re-preview pending/failed attempts to see already-applied versus remaining files; third-state local edits block recovery and retain attempt-specific backups. The shared `.repoctl/upgrade.lock` is never stolen by age; confirm no writer is active and recover pending backups before clearing it. Recovery performs no network/publish actions or historical script execution.
+
 Purpose: sync repo assets and scripts into the workspace.
 Usage:
 
@@ -429,6 +431,8 @@ Run `pnpm build:storybook` for the static site, then `pnpm --filter @repoctl-sto
 - `repo maintenance workflow --out .github/workflows/repoctl-upgrade.yml` exports an opt-in two-job recipe without overwriting files. Use only the trusted default branch; keep project execution in the read-only job and acquire the GitHub App write token only after immutable artifact, SHA, path, mode and hash verification. App permissions must include contents, pull requests and workflows write.
 
 Maintenance report hashes describe exact Git blobs; planned working-file bytes are validated before staging. The isolated publisher verifies index bytes and Git-equivalent checkout contents across line-ending conversions, with hooks, executable filters and filesystem monitors disabled through PR creation.
+
+Automatic maintenance can complete the built-in Changesets migration and update only its exact `.repoctl/migrations/ledger.json` metadata path. Preparation and publication share the same fixed migration identity, committed legacy-source, journal and completed-history checks; the target template version comes from the committed root repoctl → monorepo → templates lockfile dependency chain, not the repoctl version number. The publisher binds every migration output to the verified Git patch and checks public-package prerelease lanes against committed workspace membership. Interrupted journals, ambiguous lockfiles, noncanonical workspace patterns, and YAML/JSON5 workspace manifests require a reviewed manual `repo upgrade`; no broader `.repoctl` path is authorized. Refresh the trusted exported workflow to adopt this migration policy.
 
 ## release snapshot
 
