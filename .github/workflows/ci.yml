@@ -23,7 +23,7 @@ jobs:
   build:
     name: Build and Test
     # Preserve time for full validation and packaged checks on every platform.
-    timeout-minutes: ${{ matrix.os == 'macos-latest' && 25 || 35 }}
+    timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
