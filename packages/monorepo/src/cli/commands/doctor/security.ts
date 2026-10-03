@@ -27,11 +27,16 @@ export function registerInstallSecurityCommand(doctor: Command, cwd: string) {
     .option('--preset <name>', localize('Preview the optional balanced preset as JSON', '以 JSON 预览可选 balanced 预设'))
     .option('--apply <file>', localize('Apply a reviewed preset plan', '应用已审核的预设计划'))
     .action(async (localOptions: Options, command: Command) => {
+      const parentOptions = doctor.opts()
+      if (['rules', 'listRules', 'fix'].some(key => parentOptions[key] !== undefined)) {
+        throw new Error('doctor security cannot be combined with parent doctor rule selection or fix operations.')
+      }
       const inherited = command.optsWithGlobals()
       if (inherited['markdown'] || inherited['out'] || inherited['redact']) {
         throw new Error('doctor security supports --json and --strict; parent report output options cannot be combined with this command.')
       }
-      const options: Options = { ...localOptions, json: localOptions.json ?? inherited['json'], strict: localOptions.strict ?? inherited['strict'] }
+      // Commander may parse shared flags on the parent; the selected subcommand owns its plan.
+      const options: Options = { ...localOptions, json: localOptions.json ?? inherited['json'], strict: localOptions.strict ?? inherited['strict'], apply: localOptions.apply ?? inherited['apply'] }
       if (options.apply) {
         if (options.preset || options.pnpmVersion || options.expectations) {
           throw new Error('Use --apply alone with a reviewed preset plan.')
