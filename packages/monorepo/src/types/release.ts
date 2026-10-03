@@ -1,3 +1,5 @@
+import type { ReleaseBranchesConfig } from '../commands/release/lines/types'
+
 export interface ReleaseAfterPublishHookConfig {
   /** 执行结果未知时是否允许重试；仅适用于可安全重复执行的脚本。默认 false。 */
   idempotent?: boolean
@@ -11,6 +13,8 @@ export interface ReleaseAfterPublishHookConfig {
 }
 
 export interface ReleaseCommandConfig {
+  /** Stable, maintenance and prerelease branch mappings. */
+  branches?: ReleaseBranchesConfig
   /**
    * version 与 publish 阶段执行的根 package.json 校验脚本。
    * 配置后完整替换内置的 build、lint、test。
@@ -47,3 +51,5 @@ export interface ReleaseCommandConfig {
     afterPublish?: ReleaseAfterPublishHookConfig[]
   }
 }
+
+export type { ReleaseBranchesConfig, ReleaseBranchRule } from '../commands/release/lines/types'

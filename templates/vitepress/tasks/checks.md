@@ -175,3 +175,21 @@ A file is always explicit: `.github/CODEOWNERS`, `CODEOWNERS`, or `docs/CODEOWNE
 
 The public `planCodeowners()` / `applyCodeownersPlan()` APIs expose before/after content and a diff, revalidate configuration and workspace inputs, and reject stale plans. Writes replace one file atomically, refuse symlink/hardlink targets, and are idempotent. No messages, review requests, permissions, or branch protection are changed.
 Installation policy: see [pnpm installation security](../reference/install-security.md) for release waiting, trust and build approval diagnostics and optional reviewed presets.
+
+## Diagnose Turbo cache misses and slow tasks
+
+Capture evidence with Turbo's existing `pnpm exec turbo run build --summarize`, then analyze an explicit saved summary. The analyzer never invokes tasks, deletes caches or edits configuration:
+
+```sh
+repo check cache .turbo/runs/current.json
+repo check cache .turbo/runs/current.json .turbo/runs/previous.json --json
+repo check cache current.json previous.json --markdown > cache-analysis.md
+```
+
+`--slowest 10` selects up to 1–100 tasks. JSON schema version 1 includes known hits/misses, unknown cache outcomes, a hit rate whose denominator excludes unknowns, actual task durations, duration deltas and comparisons keyed by stable task ID. Added and removed tasks are explicit. Missing/duplicate IDs, missing fields and unsupported summary schemas produce limitations; absent evidence never proves an input was removed. Native Turbo summary schema 1 is supported, including a real Turbo 2.11.6 fixture. Future schemas expose coarse recorded data only, with unknown comparisons.
+
+Shared global differences are stored once in `globalEvidence`; task evidence contains only task-specific differences, so report size does not multiply global file count by task count. Comparison evidence covers files, global inputs, dependency task hashes, environment declarations/values, task commands/arguments and resolved task configuration. Every value, including untrusted input hashes, becomes a SHA-256 digest before output; only task IDs, filenames, environment names and allowlisted field names are retained as labels. Raw environment values, commands and arbitrary configuration are never printed. Digest equality is evidence comparison, not proof of a unique cache-miss cause. Unchanged hashes with a miss and opaque changed hashes have explicit limitations. Reports do not include the input summary path.
+
+The dependency critical path is available only with unique tasks, complete dependencies, valid timings, an acyclic graph and no overlapping dependency execution. It reports summed task time separately from the observed span; scheduling gaps and contention prevent treating this as an optimization estimate. Inputs are limited to JSON files of 20 MiB and nesting depth 64. Analysis is read-only; redirect stdout to retain an artifact. Parent execution and plan-writing options (`--full`, `--affected`, `--report`, `--out`, etc.) are rejected; `--json`, `--markdown` and `--dry-run` work before or after `cache`. Normal `check --json` remains a check-plan preview.
+
+Public API: `analyzeTurboRuns(currentPath, { previous?: string, slowest?: number })` returns `TurboRunAnalysis` without changing files. JSON fields and limitation codes remain stable across languages.

@@ -224,3 +224,21 @@ repoctl workspace owners --file .github/CODEOWNERS --sync
 
 公开 `planCodeowners()` / `applyCodeownersPlan()` 提供前后内容和 diff；应用时重新校验配置、工作区发现和文件内容，过期计划会被拒绝。单文件原子替换、拒绝符号链接和硬链接目标，重跑不产生额外变更。不发送消息、不请求 review、不修改权限或分支保护。
 安装策略：参见 [pnpm 安装安全](../reference/install-security.md)，检查版本冷却、信任降级和构建批准，并预览可选策略。
+
+## 诊断 Turbo 缓存未命中与慢任务
+
+通过 Turbo 既有的 `pnpm exec turbo run build --summarize` 保存证据，再显式选择摘要文件分析。分析命令不启动任务、不删除缓存、不修改配置：
+
+```sh
+repo check cache .turbo/runs/current.json
+repo check cache .turbo/runs/current.json .turbo/runs/previous.json --json
+repo check cache current.json previous.json --markdown > cache-analysis.md
+```
+
+`--slowest 10` 支持 1–100 个慢任务。JSON schemaVersion 为 1，包含已知命中、未命中、未知缓存结果，以已知结果为分母计算命中率；记录实际任务耗时、耗时差异，按稳定 task ID 比较并标明新增与删除。缺失/重复 ID、缺失字段和不支持的摘要 schema 都会报告限制，不把信息缺失解释为输入已被删除。支持原生 Turbo summary schema 1，并包含真实 Turbo 2.11.6 fixture；未来 schema 仅保留可读取的粗粒度记录，比较结果标为 unknown。
+
+共享全局差异只在 `globalEvidence` 保存一次，任务仅保留自身证据，避免报告随任务数与全局文件数相乘膨胀。比较证据覆盖文件、全局输入、依赖任务 hash、环境声明/值、命令/参数及最终任务配置。所有值（包括输入中的 hash）先转为 SHA-256 摘要再输出，标签仅保留任务 ID、文件名、环境变量名和允许的字段名；不输出原始环境值、命令或任意配置。摘要相同只表示证据相同，不足以断定未命中的唯一原因；hash 不变仍未命中、hash 变化却无细节证据时都有明确限制。报告不包含输入摘要路径。
+
+只有任务标识唯一、依赖完整、时间有效、图无环且前置任务没有与消费者执行重叠时才计算关键路径。任务耗时之和与实测跨度分开呈现，调度空隙和竞争等开销意味着它不等于可节省的实际运行时间。输入限 20 MiB JSON 文件、嵌套深度 64。分析只读，可重定向 stdout 留档；拒绝父命令的执行和计划写入选项（`--full`、`--affected`、`--report`、`--out` 等）。`--json`、`--markdown`、`--dry-run` 可以放在 `cache` 前后；普通 `check --json` 保持计划预览语义。
+
+公开 API `analyzeTurboRuns(currentPath, { previous?: string, slowest?: number })` 返回 `TurboRunAnalysis`，不修改文件。JSON 字段和限制代码不随语言变化。
