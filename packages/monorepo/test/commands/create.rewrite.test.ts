@@ -31,14 +31,13 @@ describe('createNewProject root reference rewriting', () => {
     )
 
     vi.doMock('@/core/config', () => ({
-      resolveCommandConfig: vi.fn(async () => ({
-        templatesDir,
-        templateMap: {
-          custom: {
-            source: 'deep-template',
-            target: 'apps/client',
-          },
-        },
+      loadMonorepoConfigDetails: vi.fn(async () => ({
+        file: path.join(workspaceDir, 'repoctl.config.mjs'),
+        rawLayers: [],
+        config: { commands: { create: {
+          templatesDir,
+          templateMap: { custom: { source: 'deep-template', target: 'apps/client' } },
+        } } },
       })),
     }))
     vi.doMock('@/core/logger', () => ({
