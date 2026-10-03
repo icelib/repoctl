@@ -9,6 +9,8 @@ export function validatedConfigLoading(files: Set<string>, refresh: boolean): Pi
   const wrapped = new WeakSet<object>()
   return {
     ...fresh,
+    // Loading configuration must not create cache directories during read-only commands.
+    jitiOptions: { ...fresh?.jitiOptions, fsCache: false },
     async resolve(source, options) {
       await fresh?.resolve?.(source, options)
       const jiti = options.jiti

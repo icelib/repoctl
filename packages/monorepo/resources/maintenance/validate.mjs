@@ -1,5 +1,11 @@
+import { validateMaintenanceLanes } from './migration-lanes.mjs'
+import { maintenanceTemplateVersion } from './migration-lock.mjs'
+import { validateMaintenanceMigration } from './migrations.mjs'
+
 /** This exact function is embedded into the exported workflow; it uses only Node built-ins. */
 export async function validateMaintenanceArtifact({ cwd, directory, expected, request }) {
+  const { Buffer } = await import('node:buffer')
+  const { isDeepStrictEqual } = await import('node:util')
   const fs = await import('node:fs/promises')
   const path = await import('node:path')
   const { createHash } = await import('node:crypto')
@@ -10,7 +16,7 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
   }
   // Git filters and fsmonitor are executable configuration, including during status/checkout.
   const gitOptions = ['--no-optional-locks', '-c', 'core.fsmonitor=false']
-  const execGit = args => execFileSync('git', [...gitOptions, ...args], { cwd, maxBuffer: 32 * 1024 * 1024 })
+  const execGit = (args, input) => execFileSync('git', [...gitOptions, ...args], { cwd, input, maxBuffer: 32 * 1024 * 1024 })
   let filterKeys
   try {
     filterKeys = execGit(['config', '--null', '--name-only', '--get-regexp', '^filter\\..*\\.(clean|smudge|process|required)$']).toString().split('\0').filter(Boolean)
@@ -30,7 +36,7 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
       gitOptions.push('-c', `${key}=${value}`)
     }
   }
-  const git = args => execGit(args)
+  const git = (args, input) => execGit(args, input)
   const readArtifact = async (filename, limit) => {
     const file = path.join(directory, filename)
     const stat = await fs.lstat(file)
@@ -66,8 +72,24 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
   }
   const safePath = filename => typeof filename === 'string' && /^[\w./-]+$/.test(filename)
     && !filename.startsWith('/') && !filename.split('/').some(part => ['', '.', '..', '.git'].includes(part))
+  const sourcePaths = new Set(git(['ls-tree', '-r', '--name-only', expected.head]).toString().trim().split('\n'))
+  const readSource = filename => sourcePaths.has(filename) ? git(['show', `${expected.head}:${filename}`]) : null
+  const migration = validateMaintenanceMigration({
+    plan: report.plan,
+    policy: expected.migrationPolicy,
+    read: readSource,
+    templateVersion: () => maintenanceTemplateVersion({ lock: readSource('pnpm-lock.yaml'), toolVersion: report.versions.to, fail }),
+    validateLanes: (operation, tag) => validateMaintenanceLanes({ read: readSource, sourcePaths, operation, tag, Buffer, fail }),
+    hash,
+    equal: isDeepStrictEqual,
+    Buffer,
+    fail,
+  })
+  if (migration && !report.files.some(file => file.path === migration.path)) {
+    fail('migration ledger is missing from the reviewed patch')
+  }
   const allowed = filename => expected.targets.some(target => filename === target || filename.startsWith(`${target}/`))
-    || filename === 'pnpm-lock.yaml' || /^\.repoctl\/baselines\/root\/[a-f0-9]{64}\.json$/.test(filename)
+    || filename === 'pnpm-lock.yaml' || /^\.repoctl\/baselines\/root\/[a-f0-9]{64}\.json$/.test(filename) || filename === migration?.path
   const names = report.files.map(file => file.path)
   if (new Set(names).size !== names.length || names.some(filename => !safePath(filename) || !allowed(filename))) {
     fail('patch includes an unapproved or duplicate path')
@@ -150,6 +172,19 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
     if ((next?.mode ?? null) !== file.afterMode || (stat && !stat.isFile()) || Boolean(next) !== Boolean(stat)
       || (next ? hash(git(['cat-file', 'blob', next.object])) : null) !== file.afterHash) {
       fail(`patched file bytes or mode differ from the report: ${file.path}`)
+    }
+  }
+  // Bind every completed migration output to the verified patch using its resulting attributes.
+  for (const operation of migration?.operations ?? []) {
+    let afterHash = null
+    if (operation.content !== null) {
+      const object = git(['-c', 'core.safecrlf=false', 'hash-object', '-w', `--path=${operation.path}`, '--stdin'], Buffer.from(operation.content, 'base64')).toString().trim()
+      afterHash = hash(git(['cat-file', 'blob', object]))
+    }
+    const entry = report.files.find(file => file.path === operation.path)
+    const previous = entry ? null : readSource(operation.path)
+    if (afterHash !== (entry ? entry.afterHash : previous === null ? null : hash(previous))) {
+      fail('migration output differs from the completed journal')
     }
   }
   // Git blob identity is exact; checkout bytes may differ through built-in EOL/encoding rules.

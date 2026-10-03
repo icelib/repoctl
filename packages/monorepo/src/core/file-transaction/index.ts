@@ -20,7 +20,7 @@ interface StagedFile {
 }
 
 /** Keep preparation, replacement and cleanup separate for transactions that also move directories. */
-export async function stageFileTransaction(updates: FileTransactionUpdate[], validate: (file: string) => Promise<string>, namespace: 'deps' | 'remove' | 'doctor' | 'references') {
+export async function stageFileTransaction(updates: FileTransactionUpdate[], validate: (file: string) => Promise<string>, namespace: 'deps' | 'remove' | 'doctor' | 'references' | 'move') {
   const id = randomUUID()
   const staged: StagedFile[] = []
   const check = async (item: StagedFile) => {
@@ -103,6 +103,8 @@ export async function stageFileTransaction(updates: FileTransactionUpdate[], val
     throw error
   }
   return {
+    /** Exact operation-owned files, for directory-level verification before cleanup. */
+    recoveryPaths: () => staged.flatMap(item => [...item.backupOwned ? [item.backup] : [], ...item.temporaryOwned ? [item.temporary] : []]),
     async apply() {
       for (const item of staged) {
         await check(item)

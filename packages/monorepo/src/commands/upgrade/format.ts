@@ -4,6 +4,19 @@ import { localize } from '../../i18n'
 export function formatUpgradePlan(plan: UpgradePlan, format: 'text' | 'markdown' = 'text') {
   const heading = localize('Upgrade plan', '升级计划')
   const lines = [format === 'markdown' ? `# ${heading}` : heading, `${plan.status}: ${plan.rootDir}`, '']
+  if (plan.migrations) {
+    lines.push(`Migrations: ${plan.migrations.fromVersion ?? 'unknown'} -> ${plan.migrations.toVersion}`)
+    for (const step of plan.migrations.steps) {
+      lines.push(`${step.id} @ ${step.version}: ${step.status} (${step.reason})${step.files.length ? ` [${step.files.join(', ')}]` : ''}`)
+    }
+    for (const file of plan.migrations.recovery) {
+      lines.push(`Recovery ${file.path}: ${file.state === 'after' ? 'already applied' : 'pending write'}`)
+    }
+    if (plan.migrations.ledger) {
+      lines.push(`Ledger: ${plan.migrations.ledger.path}; reviewed pending and failed states are included in JSON.`)
+    }
+    lines.push('')
+  }
   for (const file of plan.files) {
     lines.push(format === 'markdown' ? `## ${file.path}` : file.path)
     lines.push(`${file.status} (${file.reason}): ${file.detail}`)

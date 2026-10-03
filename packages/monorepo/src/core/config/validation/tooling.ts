@@ -1,8 +1,13 @@
+import type { PublicApiEntryConfig, PublicApiPackageConfig } from '../../../commands/api-report/types'
 import type { ToolingConfig } from '../../../types'
 import type { Schema } from './schema'
 import { array, boolean, object, opaque, positive, record, string, strings, union } from './schema'
 
+const apiEntry = object({ entryPoint: string, baseline: string } satisfies Record<keyof PublicApiEntryConfig, Schema>, ['entryPoint', 'baseline'])
+const apiPackage = object({ entries: record(apiEntry), tsconfig: string } satisfies Record<keyof PublicApiPackageConfig, Schema>, ['entries'])
+
 export const toolingSchema = object({
+  apiReports: record(apiPackage),
   projectReferences: object({ enabled: boolean, root: string, projects: strings, exclude: strings, relations: array(object({ source: string, target: string }, ['source', 'target'])) }),
   commitlint: opaque,
   eslint: opaque,

@@ -50,7 +50,7 @@ export async function prepareGeneratedTemplateInstance(options: GeneratedTemplat
 
 export async function recordGeneratedTemplateInstance(options: GeneratedTemplateInstanceOptions) {
   const draft = await prepareGeneratedTemplateInstance(options)
-  return (await registerTemplateInstances(options.workspaceDir, [draft]))[0]!
+  return (await registerTemplateInstances(options.workspaceDir, [draft], undefined, { allocateIdOnConflict: true }))[0]!
 }
 
 export async function listTemplateInstances(workspaceDir: string): Promise<TemplateInstanceInfo[]> {

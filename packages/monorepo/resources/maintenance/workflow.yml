@@ -123,6 +123,7 @@ jobs:
                 artifactDigest: process.env.ARTIFACT_DIGEST,
                 appConfigured: process.env.APP_CONFIGURED === 'true',
                 targets: __TARGETS__,
+                migrationPolicy: __MIGRATION_POLICY__,
               },
             });
             core.setOutput('ready', String(result.ready));

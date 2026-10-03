@@ -9,6 +9,8 @@ import { playwrightWorkflow } from './playwright/workflow'
 import { listToolingCapabilities } from './registry'
 import { rootFiles } from './root-files'
 import { resolveCapabilitySettings } from './settings'
+import { storybookFiles } from './storybook/files'
+import { storybookWorkflow } from './storybook/workflow'
 
 export async function planToolingCapability(cwd: string, input: ToolingCapabilityOptions): Promise<ToolingCapabilityPlan> {
   const settings = await resolveCapabilitySettings(cwd, input)
@@ -25,10 +27,11 @@ export async function planToolingCapability(cwd: string, input: ToolingCapabilit
       }
     }
   }
-  const generated = playwrightFiles(settings)
+  const generated = settings.kind === 'playwright' ? playwrightFiles(settings) : storybookFiles(settings)
   const roots = await rootFiles(settings, conflicts)
-  const workflowPath = `.github/workflows/e2e-${settings.workspace.name.replace(/[^a-z0-9-]+/gi, '-').toLowerCase()}.yml`
-  const desired = { ...generated.files, ...roots, [workflowPath]: playwrightWorkflow(settings) }
+  const workflowPath = `.github/workflows/${settings.kind === 'playwright' ? 'e2e' : 'storybook'}-${settings.workspace.name.replace(/[^a-z0-9-]+/gi, '-').toLowerCase()}.yml`
+  const workflow = settings.kind === 'playwright' ? playwrightWorkflow(settings) : storybookWorkflow(settings)
+  const desired = { ...generated.files, ...roots, [workflowPath]: workflow }
   const files: ToolingCapabilityPlan['files'] = []
   for (const [file, content] of Object.entries(desired).sort(([a], [b]) => a.localeCompare(b))) {
     const current = await readOptional(settings.root, file)
@@ -46,7 +49,7 @@ export async function planToolingCapability(cwd: string, input: ToolingCapabilit
   return {
     schemaVersion: 1,
     rootDir: settings.root,
-    capability: listToolingCapabilities()[0]!,
+    capability: listToolingCapabilities().find(item => item.id === settings.kind)!,
     options: settings.options,
     target: settings.target,
     workspace: settings.workspace,
@@ -55,6 +58,6 @@ export async function planToolingCapability(cwd: string, input: ToolingCapabilit
     dependencies: Object.entries(generated.dependencies).map(([name, version]) => ({ package: settings.workspace.name, name, version, kind: 'devDependencies' as const })),
     scripts: Object.entries(generated.scripts).map(([name, command]) => ({ package: settings.workspace.name, name, command })),
     conflicts,
-    nextSteps: status === 'blocked' ? ['Resolve the listed conflicts and rerun the plan.'] : ['Review the file and dependency changes.', 'Run pnpm install at the workspace root and commit the lockfile', `Run pnpm --filter ${settings.workspace.name} test:e2e:install`, 'Run pnpm test:e2e at the workspace root'],
+    nextSteps: status === 'blocked' ? ['Resolve the listed conflicts and rerun the plan.'] : ['Review the file and dependency changes.', 'Run pnpm install at the workspace root and commit the lockfile', `Run pnpm --filter ${settings.workspace.name} ${settings.kind === 'playwright' ? 'test:e2e' : 'test:storybook'}:install`, settings.kind === 'playwright' ? 'Run pnpm test:e2e at the workspace root' : 'Run pnpm build:storybook and pnpm test:storybook at the workspace root'],
   }
 }
