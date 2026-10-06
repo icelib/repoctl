@@ -166,10 +166,12 @@ export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
-
 export { resolveReleaseBranches } from './release/lines'
-
 export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
+
+export { auditReleaseOidc } from './release/oidc'
+
+export type { ReleaseOidcAuditOptions, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from './release/oidc'
 
 export { createReleasePlan } from './release/plan'
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'

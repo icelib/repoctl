@@ -153,10 +153,15 @@ Usage:
 - `pnpm exec repo release ci --mode prepare`
 - `pnpm exec repo release ci --mode publish`
 - `pnpm exec repo release ci --mode publish-unpublished --package <name> --version <version>`
+- `pnpm exec repo release ci --mode oidc-audit`
 
 The command uses `GITHUB_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_API_URL`, and
 `GITHUB_SHA` to upsert the Release PR, package tags, and GitHub Releases. It
 consumes `pnpm-publish-summary.json` and is safe to retry.
+
+`oidc-audit` independently checks every versioned public child package using the current GitHub-hosted job's OIDC identity and the official npm registry. It returns safe JSON (`schemaVersion: 1`) with allowlisted identity fields, per-package HTTP status/message and aggregate success. The CLI fails if any exchange fails, but still checks all packages. It does not load release configuration, consume intents, execute quality scripts/hooks, publish, or create tags/Releases. Recovery flags (`source-sha`, `dry-run`, `package`, `version`) are incompatible. The managed workflow has a separate read-only audit job with Node 24, `id-token: write` and installation lifecycle scripts disabled; generated projects need only installed repoctl, while the source workspace builds its tooling closure.
+
+Use `auditReleaseOidc({ cwd, env?, fetch? })` for the same programmatic report. JWTs, request tokens and exchange tokens are never included or saved. A 404 alone cannot identify expired trust: check npm package settings and repository/workflow/environment matching. If npm explicitly says `Expired`, delete/recreate the configuration and perform the first successful publish within 48 hours under [npm's policy](https://github.blog/changelog/2026-10-02-unvalidated-npm-trusted-publishing-configurations-now-expire/). A successful exchange does not complete that initial publish validation; auditing immediately before publishing narrows that gap.
 
 ## workspace upgrade (alias: ws up)
 

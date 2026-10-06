@@ -137,6 +137,22 @@ repo release ci --mode prepare
 
 验证脚本（`qualityScripts` 和 `hooks.verify`）不继承本次发布的控制参数，例如发布模式或恢复来源；普通 CI 与认证环境变量仍会保留。其他生命周期 hook 继续使用原有发布上下文。
 
+## 核验 npm trusted publishing
+
+在受管 Release 工作流的手动调度中选择 `oidc-audit`，或者在现有的 GitHub-hosted 发布 job 中运行：
+
+```bash
+pnpm exec repo release ci --mode oidc-audit
+```
+
+job 需要 `id-token: write` 和 Node 24，并使用实际发布时的仓库、工作流文件及 environment。另建诊断工作流会改变身份。受管工作流使用独立的核验 job，只授予 `contents: read` 和 `id-token: write`，关闭安装 lifecycle scripts，跳过 GitHub App 令牌及发布质量检查。只有 repoctl 源码仓库构建工具依赖闭包；消费方直接使用已安装的 CLI。自定义工作流也应隔离这些步骤，使用 `pnpm install --frozen-lockfile --ignore-scripts` 安装。
+
+命令在加载发布配置前独立路由，向官方 npm registry 逐个核验有版本号的公开子包，包含已发布的包。它只申请短时交换凭据，不上传包、不修改版本或 intent、不运行 hooks、不写进度文件、不创建 tag/Release，也不保存 token。`source-sha`、`dry-run`、`package` 和 `version` 恢复输入必须为空。JSON 包含 `schemaVersion: 1`、允许展示的身份字段、每包 HTTP 状态及 npm 错误信息、整体 `ok`；即使某包失败也会继续完成全部包报告，最后以退出码 1 失败。程序化 API `auditReleaseOidc({ cwd, env?, fetch? })` 返回同一报告而不打印；调用者须检查 `ok`。
+
+HTTP 404 或 `OIDC token exchange error - package not found` 本身无法区分包不存在、信任声明不匹配或配置过期。核对 npm 包设置里的 trusted publisher 状态，以及报告中的仓库、工作流和 environment。不要把 JWT 或交换 token 复制到日志或求助信息。
+
+根据 [npm 首次发布验证策略](https://github.blog/changelog/2026-10-02-unvalidated-npm-trusted-publishing-configurations-now-expire/)，创建后 48 小时内没有首次成功发布的配置会过期。只有 npm 页面明确显示 `Expired` 时，才按过期处理：删除并重建该包的配置，在 48 小时内完成首次发布；单纯编辑不会重置它。“配置存在”“交换成功”“首次成功发布”是不同证据；核验不能重置或完成这个时限。首次成功发布后不再受初始 48 小时限制。实际发布继续使用 OIDC/provenance，不在发布 job 增加 npm token 兜底。
+
 ## 下一步
 
 阅读[发包与变更日志](/zh/learn/monorepo/publish)，再查看[报告与输出](/zh/tasks/reports)了解 CI 产物。
