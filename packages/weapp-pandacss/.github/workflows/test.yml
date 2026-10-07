@@ -1,0 +1,35 @@
+name: test
+
+on:
+  # push:
+  #   branches:
+  #     - main
+  pull_request:
+    branches:
+      - main
+      - next
+      - alpha
+      - beta
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18, 20, 22]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - run: pnpm i
+      - run: pnpm build
+      - run: pnpm test
+
+      - uses: codecov/codecov-action@v4

@@ -1,0 +1,6 @@
+packages:
+  - "taro-app"
+  - "uni-app-vue3"
+  - "taro-app-vue3"
+  - "taro-app-linaria"
+  - "react-app"

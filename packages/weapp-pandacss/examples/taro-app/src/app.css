@@ -1,0 +1,40 @@
+@layer reset, base, tokens, recipes, utilities;
+
+@layer reset {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  /* ... */
+}
+
+@layer base {
+  .aaa {
+    color: #cc3b3b;
+    text-decoration: none;
+  }
+  /* ... */
+}
+
+@layer recipes {
+  .button {
+    background-color: red;
+  }
+
+  .button--variant-primary {
+    background-color: blue;
+  }
+  /* ... */
+}
+
+@layer tokens {
+  :root {
+    --color-primary: #000;
+    --color-secondary: #fff;
+    --color-tertiary: #ccc;
+    --shadow-sm: 0 0 0 1px rgba(0, 0, 0, 0.05);
+  }
+  /* ... */
+}
+

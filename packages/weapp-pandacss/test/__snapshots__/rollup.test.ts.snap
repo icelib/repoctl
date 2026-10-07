@@ -1,0 +1,83 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`rollup build > lib build output diff 1`] = `
+[
+  {
+    "code": "'use strict';
+
+Object.defineProperty(exports, '__esModule', { value: true });
+
+const hello = () => 'world';
+console.log('Load util');
+
+const foo = 'bar';
+const wait = (timeout) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(true);
+        }, timeout);
+    });
+};
+
+exports.foo = foo;
+exports.hello = hello;
+exports.wait = wait;
+",
+    "dynamicImports": [],
+    "exports": [
+      "foo",
+      "hello",
+      "wait",
+    ],
+    "fileName": "index.js",
+    "implicitlyLoadedBefore": [],
+    "importedBindings": {},
+    "imports": [],
+    "isDynamicEntry": false,
+    "isEntry": true,
+    "isImplicitEntry": false,
+    "map": null,
+    "name": "index",
+    "referencedFiles": [],
+    "type": "chunk",
+  },
+]
+`;
+
+exports[`rollup build > lib build output diff 2`] = `
+[
+  {
+    "code": "const hello = () => 'world';
+console.log('Load util');
+
+const foo = 'bar';
+const wait = (timeout) => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve(true);
+        }, timeout);
+    });
+};
+
+export { foo, hello, wait };
+",
+    "dynamicImports": [],
+    "exports": [
+      "foo",
+      "hello",
+      "wait",
+    ],
+    "fileName": "index.mjs",
+    "implicitlyLoadedBefore": [],
+    "importedBindings": {},
+    "imports": [],
+    "isDynamicEntry": false,
+    "isEntry": true,
+    "isImplicitEntry": false,
+    "map": null,
+    "name": "index",
+    "referencedFiles": [],
+    "type": "chunk",
+  },
+]
+`;

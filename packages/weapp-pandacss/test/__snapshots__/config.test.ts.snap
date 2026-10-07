@@ -1,0 +1,48 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`config > get default config 1`] = `
+{
+  "context": {
+    "escapePredicate": "true",
+    "log": false,
+  },
+  "postcss": {
+    "cascadeLayersPluginOptions": {},
+    "disabled": false,
+    "isPseudoClassPluginOptions": {},
+    "removeNegationPseudoClass": true,
+    "selectorReplacement": {
+      "cascadeLayers": "n",
+      "root": "page",
+      "universal": [
+        "view",
+        "text",
+      ],
+    },
+  },
+}
+`;
+
+exports[`config > get default config from 0.default dir 1`] = `
+{
+  "context": {
+    "escapePredicate": "true",
+    "log": false,
+  },
+  "escapePredicate": [Function],
+  "postcss": {
+    "cascadeLayersPluginOptions": {},
+    "disabled": true,
+    "isPseudoClassPluginOptions": {},
+    "removeNegationPseudoClass": true,
+    "selectorReplacement": {
+      "cascadeLayers": "n",
+      "root": [],
+      "universal": [
+        "view",
+        "text",
+      ],
+    },
+  },
+}
+`;
