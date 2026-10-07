@@ -10,7 +10,7 @@ catalog:
   commander: ^15.0.0
   comment-json: ^5.0.0
   esbuild: ^0.28.2
-  postcss: ^8.5.28
+  postcss: ^8.5.29
   semver: ^7.8.5
   stylelint: ^17.16.0
   vitest: ^5.0.3
@@ -39,12 +39,12 @@ overrides:
   prettier: 3.9.9
   typescript: 6.0.3
   # ATTW relies on the compiler internals of its pinned TypeScript version.
-  '@arethetypeswrong/core>typescript': 5.6.1-rc
-  vite: 8.3.2
-  postcss: 8.5.28
+  '@arethetypeswrong/core>typescript': 5.9.3
+  vite: 8.3.3
+  postcss: 8.5.29
   postcss-selector-parser: 7.1.6
-  js-yaml: 5.4.2
-  nanoid: 6.0.1
+  js-yaml: 5.4.3
+  nanoid: 6.0.2
   brace-expansion: 5.0.12
   # Older minimatch imports the CommonJS default; v5 only exports named functions.
   minimatch@<4>brace-expansion: 1.1.21
