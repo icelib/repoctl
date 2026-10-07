@@ -3,7 +3,7 @@ import process from 'node:process'
 import { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from '@icebreakers/monorepo'
 import path from 'pathe'
 import { describe, expect, it } from 'vitest'
-import { fixture, json, node, runCli, snapshot } from './fixture'
+import { fixture, json, manager, node, runCli, snapshot } from './fixture'
 
 describe('workspace artifacts through native tools and built public APIs', () => {
   it.each([false, true])('prunes a build dependency closure using native Turbo (docker=%s)', async (docker) => {
@@ -100,7 +100,7 @@ describe('workspace artifacts through native tools and built public APIs', () =>
     await json(h.root, 'package.json', { name: 'fixture', private: true, packageManager: 'pnpm@9.0.0' })
     const options = { target: 'service', mode: 'deploy' as const, output: h.output, offline: true }
     await expect(planWorkspaceArtifact(h.root, options)).rejects.toThrow('stable pinned pnpm majors')
-    await json(h.root, 'package.json', { name: 'fixture', private: true, packageManager: 'pnpm@12.8.1' })
+    await json(h.root, 'package.json', { name: 'fixture', private: true, packageManager: `pnpm@${manager}` })
     await rename(path.join(h.root, 'packages/service/dist/index.js'), path.join(h.root, 'packages/service/dist/other.js'))
     await expect(planWorkspaceArtifact(h.root, options)).rejects.toThrow('Built deploy entry is missing')
     await rename(path.join(h.root, 'packages/service/dist/other.js'), path.join(h.root, 'packages/service/dist/index.js'))

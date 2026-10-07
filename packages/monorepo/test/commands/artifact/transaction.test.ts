@@ -8,7 +8,7 @@ import { promisify } from 'node:util'
 import { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from '@icebreakers/monorepo'
 import path from 'pathe'
 import { expect, it } from 'vitest'
-import { fixture, snapshot } from './fixture'
+import { fixture, manager, snapshot } from './fixture'
 
 const entry = pathToFileURL(path.resolve(import.meta.dirname, '../../../dist/index.mjs')).href
 
@@ -115,7 +115,7 @@ it('reports native peer failures and leaves the source and destination intact', 
   const bin = path.join(h.parent, 'bin')
   await mkdir(bin)
   const code = `const fs = require('node:fs'); const path = require('node:path');
-    if (process.argv.includes('--version')) console.log('12.8.1');
+    if (process.argv.includes('--version')) console.log('${manager}');
     else if (process.argv.includes('--help')) console.log('--prod --legacy');
     else if (process.argv.includes('config')) console.log('undefined');
     else { const out = process.argv.at(-1); fs.mkdirSync(out, { recursive: true }); fs.writeFileSync(path.join(out, 'partial'), 'partial'); console.error('ERR_PNPM_DEPLOY_AMBIGUOUS_PEER: conflicting fixture peers'); process.exitCode = 7; }

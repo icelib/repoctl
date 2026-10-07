@@ -1,5 +1,6 @@
 import { execFile, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { mkdir, mkdtemp, readdir, readFile, realpath, rm, symlink, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
@@ -11,7 +12,8 @@ import { afterEach } from 'vitest'
 
 const roots: string[] = []
 const require = createRequire(import.meta.url)
-export const manager = '12.8.1'
+const workspaceManifest = JSON.parse(readFileSync(new URL('../../../../../package.json', import.meta.url), 'utf8')) as { packageManager?: string }
+export const manager = workspaceManifest.packageManager?.match(/^pnpm@([^+]+)(?:\+.*)?$/u)?.[1] ?? '12.8.1'
 const guards = ['--config.pm-on-fail=ignore', '--config.runtime-on-fail=ignore', '--config.manage-package-manager-versions=false', '--config.ignore-pnpmfile=true', '--config.ignore-scripts=true']
 const cli = path.resolve(import.meta.dirname, '../../../bin/repoctl.js')
 

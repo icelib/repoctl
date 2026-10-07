@@ -37,7 +37,7 @@ it('creates a Next application from configured catalog defaults and applies Dev 
   await createNewProject({ cwd: h.root, name: 'apps/portal' })
   const application = path.join(h.root, 'apps/portal')
   const manifest = JSON.parse(await readFile(path.join(application, 'package.json'), 'utf8'))
-  expect(manifest.dependencies.next).toBe('16.3.8')
+  expect(manifest.dependencies.next).toBe('16.4.0')
   expect(manifest.scripts.typecheck).toContain('next typegen')
   await expect(access(path.join(application, 'src/app/api/health/route.ts'))).resolves.toBeUndefined()
 
