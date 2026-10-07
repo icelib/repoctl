@@ -50,6 +50,8 @@ export async function fixture() {
   }
   run('pnpm', ['install', '--lockfile-only', '--ignore-scripts'])
   run('git', ['init', '-q'])
+  run('git', ['config', 'maintenance.auto', 'false'])
+  run('git', ['config', 'gc.auto', '0'])
   run('git', ['config', 'user.name', 'Fixture'])
   run('git', ['config', 'user.email', 'fixture@example.invalid'])
   run('git', ['config', 'core.hooksPath', path.join(root, 'no-hooks')])

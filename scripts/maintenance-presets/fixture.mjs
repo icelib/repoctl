@@ -54,7 +54,10 @@ export function consumer(root, fixture, registry, localValue) {
     devDependencies: { repoctl: fixture.toolVersion, [name]: '1.0.0' },
   }
   writeJson(packageFile, manifest)
-  writeFileSync(path.join(root, 'pnpm-workspace.yaml'), YAML.stringify({ packages: [], overrides: fixture.overrides }))
+  // The source workspace explicitly allows same-day package validation. Keep
+  // the isolated consumer on that policy even when the CI runner configures a
+  // global minimum release age for ordinary installs.
+  writeFileSync(path.join(root, 'pnpm-workspace.yaml'), YAML.stringify({ packages: [], minimumReleaseAge: 0, overrides: fixture.overrides }))
   writeFileSync(path.join(root, '.npmrc'), `registry=${registry}\n`)
   writeFileSync(path.join(root, '.gitignore'), 'node_modules\n')
   writeFileSync(path.join(root, 'tests/asset.test.mjs'), `import assert from 'node:assert/strict'\nimport { first, fourth } from '../${target}'\nassert.equal(first, 10)\nassert.equal(fourth, ${localValue})\n`)
