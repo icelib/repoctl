@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 import { auditReleaseOidc, releaseCi } from '@icebreakers/monorepo'
 import { afterEach, expect, it, vi } from 'vitest'
 import { rootDir } from '@/constants'
@@ -78,7 +79,7 @@ it.each([
       : url.pathname.endsWith('/bad') ? { message: 'OIDC token exchange error - package not found' } : { token: 'fake-exchange-secret' };
     return new Response(JSON.stringify(body), { status: url.pathname.endsWith('/bad') ? 404 : 201 });
   }`)
-  const result = spawnSync(process.execPath, ['--import', preload, path.join(rootDir, 'packages', 'repoctl', 'bin', 'repo.js'), 'release', 'ci', ...args], {
+  const result = spawnSync(process.execPath, ['--import', pathToFileURL(preload).href, path.join(rootDir, 'packages', 'repoctl', 'bin', 'repo.js'), 'release', 'ci', ...args], {
     cwd,
     encoding: 'utf8',
     timeout: 30_000,
