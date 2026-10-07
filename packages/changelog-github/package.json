@@ -1,7 +1,7 @@
 {
   "name": "@icebreakers/changelog-github",
   "type": "module",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "Changesets GitHub changelog formatter for the repoctl development toolchain",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
