@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -20,6 +20,55 @@ function run(args, cwd, stdio = 'inherit') {
   })
 }
 
+function discoverWorkspacePackages() {
+  const packages = new Map()
+  for (const root of ['packages', 'templates']) {
+    const rootDir = path.join(repoRoot, root)
+    for (const entry of readdirSync(rootDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) {
+        continue
+      }
+      const packageDir = path.join(rootDir, entry.name)
+      const manifestPath = path.join(packageDir, 'package.json')
+      if (!existsSync(manifestPath)) {
+        continue
+      }
+      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'))
+      if (manifest.name) {
+        packages.set(manifest.name, { dir: packageDir, manifest })
+      }
+    }
+  }
+  return packages
+}
+
+function getWorkspaceDependencyClosure(packageNames, workspacePackages) {
+  const visited = new Set()
+  const closure = []
+  function visit(packageName) {
+    if (visited.has(packageName)) {
+      return
+    }
+    visited.add(packageName)
+    const packageInfo = workspacePackages.get(packageName)
+    if (!packageInfo) {
+      throw new Error(`workspace package ${packageName} is not defined`)
+    }
+    for (const dependencies of [packageInfo.manifest.dependencies, packageInfo.manifest.optionalDependencies]) {
+      for (const [dependencyName, version] of Object.entries(dependencies ?? {})) {
+        if (version.startsWith('workspace:') && workspacePackages.has(dependencyName)) {
+          visit(dependencyName)
+        }
+      }
+    }
+    closure.push(packageName)
+  }
+  for (const packageName of packageNames) {
+    visit(packageName)
+  }
+  return closure
+}
+
 function pack(packageDir) {
   const existing = new Set(readdirSync(packDir))
   run(['pack', '--pack-destination', packDir], packageDir, 'pipe')
@@ -35,9 +84,19 @@ try {
   mkdirSync(path.join(workspaceDir, 'packages', 'demo'), { recursive: true })
   mkdirSync(path.join(workspaceDir, '.husky'), { recursive: true })
 
-  const templatesTarball = pack(path.join(repoRoot, 'packages', 'monorepo-templates'))
-  const monorepoTarball = pack(path.join(repoRoot, 'packages', 'monorepo'))
-  const repoctlTarball = pack(path.join(repoRoot, 'packages', 'repoctl'))
+  const workspacePackages = discoverWorkspacePackages()
+  const packageNames = getWorkspaceDependencyClosure([
+    '@icebreakers/monorepo-templates',
+    '@icebreakers/monorepo',
+    'repoctl',
+  ], workspacePackages)
+  const tarballs = new Map(packageNames.map(packageName => [
+    packageName,
+    pack(workspacePackages.get(packageName).dir),
+  ]))
+  const templatesTarball = tarballs.get('@icebreakers/monorepo-templates')
+  const monorepoTarball = tarballs.get('@icebreakers/monorepo')
+  const repoctlTarball = tarballs.get('repoctl')
 
   writeFileSync(path.join(workspaceDir, 'package.json'), `${JSON.stringify({
     name: 'repoctl-packaged-doctor-smoke',
@@ -57,8 +116,7 @@ try {
     '  - packages/*',
     '  - examples/*',
     'overrides:',
-    `  '@icebreakers/monorepo': ${JSON.stringify(`file:${monorepoTarball}`)}`,
-    `  '@icebreakers/monorepo-templates': ${JSON.stringify(`file:${templatesTarball}`)}`,
+    ...packageNames.map(packageName => `  ${JSON.stringify(packageName)}: ${JSON.stringify(`file:${tarballs.get(packageName)}`)}`),
     'versioning:',
     '  changelog:',
     '    storage: repository',
@@ -74,11 +132,12 @@ try {
   }, null, 2)}\n`)
 
   run(['add', '--workspace-root', '--save-dev', '--ignore-scripts', templatesTarball, monorepoTarball, repoctlTarball], workspaceDir)
-  const manifest = JSON.parse(run(['exec', 'node', '-p', 'JSON.stringify(require("./package.json"))'], workspaceDir, 'pipe'))
+  const manifest = JSON.parse(run(['--silent', 'exec', 'node', '-p', 'JSON.stringify(require("./package.json"))'], workspaceDir, 'pipe'))
   if (manifest.dependencies?.vitest || manifest.devDependencies?.vitest) {
     throw new Error('the smoke workspace must not declare Vitest')
   }
   const tsconfig = JSON.parse(run([
+    '--silent',
     'exec',
     'node',
     '--input-type=module',
