@@ -18,6 +18,31 @@ function getActionUses(workflow: string) {
 }
 
 describe('release workflow', () => {
+  it.each([rootDir, assetsDir])('isolates OIDC audit from release credentials and lifecycle scripts in %s', async (root) => {
+    const workflow = YAML.parse(await fs.readFile(`${root}/.github/workflows/release.yml`, 'utf8'))
+    const audit = workflow.jobs['oidc-audit']
+    expect(workflow.on.workflow_dispatch.inputs.mode.options).toContain('oidc-audit')
+    expect(workflow.jobs.release.if).toBe('$' + '{{ inputs.mode != \'oidc-audit\' }}')
+    expect(audit.if).toBe('$' + '{{ github.event_name == \'workflow_dispatch\' && inputs.mode == \'oidc-audit\' }}')
+    expect(audit.permissions).toEqual({ 'contents': 'read', 'id-token': 'write' })
+    const steps = audit.steps as Array<{ uses?: string, run?: string, with?: Record<string, unknown>, env?: Record<string, string> }>
+    expect(steps.find(step => step.uses?.startsWith('actions/checkout@'))?.with?.['persist-credentials']).toBe(false)
+    expect(steps.find(step => step.uses?.startsWith('actions/setup-node@'))?.with?.['node-version']).toBe(24)
+    expect(steps.some(step => step.run === 'pnpm install --frozen-lockfile --ignore-scripts')).toBe(true)
+    expect(steps.some(step => step.run === 'pnpm exec repo release ci --mode oidc-audit')).toBe(true)
+    expect(steps.find(step => step.run === 'pnpm exec repo release ci --mode oidc-audit')?.env).toEqual({
+      REPO_RELEASE_PACKAGE: '$' + '{{ inputs.package }}',
+      REPO_RELEASE_VERSION: '$' + '{{ inputs.version }}',
+      REPO_RELEASE_DRY_RUN: '$' + '{{ inputs.dry-run }}',
+      REPO_RELEASE_RECOVERY_SOURCE_SHA: '$' + '{{ inputs.source-sha }}',
+    })
+    const source = JSON.stringify(audit)
+    for (const forbidden of ['create-github-app-token', 'NPM_TOKEN', 'NODE_AUTH_TOKEN', 'GITHUB_TOKEN', 'pnpm build', 'pnpm test', 'pnpm publish']) {
+      expect(source).not.toContain(forbidden)
+    }
+    expect(steps.some(step => step.run === 'pnpm run tooling:build')).toBe(root === rootDir)
+  })
+
   it.each([rootDir, assetsDir])('preserves progress even on failure in %s', async (root) => {
     const workflow = YAML.parse(await fs.readFile(`${root}/.github/workflows/release.yml`, 'utf8'))
     const steps = workflow.jobs.release.steps

@@ -1,6 +1,7 @@
 import type { Command } from '@icebreakers/monorepo-templates'
-import type { ReleaseOptions } from '../../commands/release/types'
+import type { ReleaseMode, ReleaseOptions } from '../../commands/release/types'
 import process from 'node:process'
+import { resolveReleaseMode } from '../../commands/release/shared'
 import { resolveCommandConfig } from '../../core/config'
 import { resolveCommandValues } from '../../core/config/resolution'
 import { logger } from '../../core/logger'
@@ -33,15 +34,16 @@ export function registerReleaseCommands(program: Command, cwd: string) {
 
   releaseCommand.command('ci')
     .description(localize('Prepare, publish, or recover versions in CI', '在 CI 中自动准备、发布和恢复版本'))
-    .option('--mode <mode>', localize('auto / prepare / publish / publish-unpublished / reconcile', 'auto / prepare / publish / publish-unpublished / reconcile'), 'auto')
+    .option('--mode <mode>', 'auto / prepare / publish / publish-unpublished / reconcile / oidc-audit', 'auto')
     .option('--package <name>', localize('Package used by publish-unpublished mode', 'publish-unpublished 使用的 package'))
     .option('--version <version>', localize('Version used by publish-unpublished mode', 'publish-unpublished 使用的版本'))
     .option('--source-sha <sha>', localize('Recover a prepared release from the selected line history', '从所选发布线的历史提交恢复整批发布'))
     .option('--dry-run', localize('Preview reconcile changes without updating GitHub', '只预览 reconcile 变更，不更新 GitHub'))
-    .action(async (opts: { mode?: 'auto' | 'prepare' | 'publish' | 'publish-unpublished' | 'reconcile', package?: string, version?: string, sourceSha?: string, dryRun?: boolean }) => {
+    .action(async (opts: { mode?: ReleaseMode, package?: string, version?: string, sourceSha?: string, dryRun?: boolean }) => {
       await runReleaseAction(async () => {
         const { releaseCi } = await import('@/commands')
-        const releaseOptions = await resolveReleaseOptions(cwd)
+        const mode = resolveReleaseMode(opts)
+        const releaseOptions = mode === 'oidc-audit' ? { cwd } : await resolveReleaseOptions(cwd)
         await releaseCi({
           ...releaseOptions,
           ...(opts.mode ? { mode: opts.mode } : {}),
@@ -50,7 +52,9 @@ export function registerReleaseCommands(program: Command, cwd: string) {
           ...(opts.sourceSha ? { sourceSha: opts.sourceSha } : {}),
           ...(opts.dryRun ? { dryRun: true } : {}),
         })
-        logger.success(localize('Release CI finished.', 'Release CI 完成。'))
+        if (mode !== 'oidc-audit') {
+          logger.success(localize('Release CI finished.', 'Release CI 完成。'))
+        }
       })
     })
 

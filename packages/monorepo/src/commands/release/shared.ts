@@ -1,4 +1,4 @@
-import type { PublishedPackage, ReleaseOptions } from './types'
+import type { PublishedPackage, ReleaseCiOptions, ReleaseMode, ReleaseOptions } from './types'
 import { spawnSync } from 'node:child_process'
 import { access, readFile, rm } from 'node:fs/promises'
 import process from 'node:process'
@@ -10,6 +10,14 @@ import { readPendingIntents } from './intents'
 
 export function getReleaseEnv(options: ReleaseOptions) {
   return options.env ?? process.env
+}
+
+/** CLI 预检与发布调度共享模式优先级，确保核验入口不加载可执行配置。 */
+export function resolveReleaseMode(options: Pick<ReleaseCiOptions, 'mode' | 'env'>): ReleaseMode {
+  const requested = options.mode && options.mode !== 'auto'
+    ? options.mode
+    : (options.env ?? process.env)['REPO_RELEASE_MODE']?.trim() as ReleaseMode | undefined
+  return requested && requested !== 'auto' ? requested : 'auto'
 }
 
 export function run(command: string, args: string[], options: ReleaseOptions) {

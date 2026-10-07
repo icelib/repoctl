@@ -67,7 +67,23 @@ After changing the mapping, preview `repo upgrade --dry-run --json` and apply th
 
 - Missing intent: add a changeset and rerun the plan.
 - Fixed group mismatch: inspect the package relationships before editing versions.
-- Registry authentication failure: refresh the local token and rerun the publish step; do not commit credentials.
+- Registry authentication failure in CI: run the OIDC audit below from the publishing workflow and inspect npm package settings.
+
+## Audit npm trusted publishing
+
+Choose `oidc-audit` when manually dispatching the managed Release workflow, or run this in your existing GitHub-hosted publishing job:
+
+```bash
+pnpm exec repo release ci --mode oidc-audit
+```
+
+The job needs `id-token: write`, Node 24 and the same repository, workflow file and environment as actual publishing. A different diagnostic workflow has a different identity. The managed workflow uses a separate audit job with only `contents: read` and `id-token: write`, disables install lifecycle scripts and skips GitHub App credentials and release quality checks. Only the repoctl source workspace builds its tooling closure; consumer workflows use the installed CLI. Custom workflows should use the same isolation and install with `pnpm install --frozen-lockfile --ignore-scripts`.
+
+The command independently routes before release configuration and checks every versioned public child package against the official npm registry, including packages already published. It requests short-lived exchange credentials but never uploads packages, changes versions/intents, runs hooks, writes progress files, creates tags/Releases or saves tokens. `source-sha`, `dry-run`, `package` and `version` recovery inputs must be empty. JSON includes `schemaVersion: 1`, safe identity fields, each package's HTTP status/message and `ok`; failures complete the whole package report before exiting with code 1. `auditReleaseOidc({ cwd, env?, fetch? })` exposes the same report without printing it; callers must check `ok`.
+
+An npm HTTP 404 or `OIDC token exchange error - package not found` does not by itself distinguish a missing package, mismatched trust or expired configuration. Check the npm package's trusted publisher status and compare repository, workflow and environment with the safe identity report. Never paste JWTs or exchange tokens into logs or support requests.
+
+Under [npm's initial validation policy](https://github.blog/changelog/2026-10-02-unvalidated-npm-trusted-publishing-configurations-now-expire/), configurations without a first successful publish expire after 48 hours. If the npm page explicitly shows `Expired`, delete and recreate that package's trusted publisher, then complete the first publish within 48 hours. Editing an expired configuration does not reset it. Existing configuration, successful exchange and successful first publish are separate evidence; an audit does not reset or satisfy this clock. After the first successful publish, that initial 48-hour limit no longer applies. Use OIDC/provenance for publication and keep npm token fallbacks out of publishing jobs.
 
 ## Partial publication and registry visibility
 

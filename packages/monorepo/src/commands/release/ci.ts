@@ -1,4 +1,4 @@
-import type { ReleaseCiOptions, ReleaseMode } from './types'
+import type { ReleaseCiOptions } from './types'
 import { resolveCommandConfig } from '../../core/config'
 import { logger } from '../../core/logger'
 import { buildReleaseNoteDocument, readPendingIntentCommits, renderReleasePullRequest } from './body'
@@ -7,11 +7,12 @@ import { runAfterPublishHooks, runQualityScripts, runReleaseHooks } from './hook
 import { publishLifecycle } from './lifecycle'
 import { assertReleaseLineVersions, releasePullRequestHead, resolveReleaseBranch, resolveStableReleaseBranch } from './lines'
 import { publishMetadata, resolveGitHub, resolveReleaseLocale } from './metadata'
+import { runReleaseOidcAudit } from './oidc'
 import { releasePrerelease } from './prerelease'
 import { getPublishCandidates, publishWithRetry } from './publish'
 import { reconcileRelease } from './reconcile'
 import { recoverSource } from './recovery/source'
-import { capture, clearPublishSummary, getReleaseEnv, hasPendingIntents, readPublishSummary, run } from './shared'
+import { capture, clearPublishSummary, getReleaseEnv, hasPendingIntents, readPublishSummary, resolveReleaseMode, run } from './shared'
 import { assertStablePublish, prepareStableReleases, publishStable } from './stable'
 import { readReleaseTriggerContext, shouldRunRelease } from './trigger'
 
@@ -112,16 +113,6 @@ async function recoverUnpublished(options: ReleaseCiOptions) {
   return packages
 }
 
-function resolveMode(options: ReleaseCiOptions): ReleaseMode {
-  const requested = options.mode && options.mode !== 'auto'
-    ? options.mode
-    : getReleaseEnv(options)['REPO_RELEASE_MODE']?.trim() as ReleaseMode | undefined
-  if (requested && requested !== 'auto') {
-    return requested
-  }
-  return 'auto'
-}
-
 async function publishStableCi(options: ReleaseCiOptions) {
   const github = resolveGitHub(options)
   if (github.readReleaseState && github.writeReleaseState) {
@@ -136,8 +127,11 @@ async function publishStableCi(options: ReleaseCiOptions) {
 }
 
 export async function releaseCi(options: ReleaseCiOptions) {
+  const mode = resolveReleaseMode(options)
+  if (mode === 'oidc-audit') {
+    return runReleaseOidcAudit(options)
+  }
   options = { ...options, config: options.config ?? await resolveCommandConfig('release', options.cwd) ?? {} }
-  const mode = resolveMode(options)
   const source = options.sourceSha ?? getReleaseEnv(options)['REPO_RELEASE_RECOVERY_SOURCE_SHA']?.trim()
   if (source) {
     return recoverSource({ ...options, mode }, source)
@@ -156,7 +150,7 @@ export async function releaseCi(options: ReleaseCiOptions) {
     return reconcileRelease({ ...options, dryRun: options.dryRun ?? getReleaseEnv(options)['REPO_RELEASE_DRY_RUN'] === 'true' })
   }
   if (mode !== 'auto') {
-    throw new ReleaseCommandError(`unknown release CI mode ${mode}; expected auto, prepare, publish, publish-unpublished, or reconcile`)
+    throw new ReleaseCommandError(`unknown release CI mode ${mode}; expected auto, prepare, publish, publish-unpublished, reconcile, or oidc-audit`)
   }
 
   // GitHub push events use the same trigger contract as Changesets. Local and

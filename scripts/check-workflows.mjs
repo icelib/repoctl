@@ -76,7 +76,16 @@ function checkReleaseWorkflow() {
 
   assert.ok(source.startsWith('# repoctl-managed: release/v2\n'))
   assert.deepEqual(branches, ['main', 'alpha', 'beta', 'rc', 'next'])
-  assert.deepEqual(modes, ['auto', 'prepare', 'publish', 'publish-unpublished', 'reconcile'])
+  assert.deepEqual(modes, ['auto', 'prepare', 'publish', 'publish-unpublished', 'reconcile', 'oidc-audit'])
+  assert.equal(release.if, githubExpression('inputs.mode != \'oidc-audit\''))
+  const audit = workflow.jobs?.['oidc-audit']
+  assert.equal(audit?.if, githubExpression('github.event_name == \'workflow_dispatch\' && inputs.mode == \'oidc-audit\''))
+  assert.deepEqual(audit?.permissions, { 'contents': 'read', 'id-token': 'write' })
+  const auditSteps = getSteps(workflow, 'oidc-audit')
+  assert.equal(auditSteps.find(step => step.uses?.startsWith('actions/checkout@'))?.with?.['persist-credentials'], false)
+  assert.ok(auditSteps.some(step => step.run === 'pnpm install --frozen-lockfile --ignore-scripts'))
+  assert.ok(auditSteps.some(step => step.run === 'pnpm exec repo release ci --mode oidc-audit'))
+  assertPinnedActions(auditSteps, 'OIDC audit')
   assert.equal(workflow.permissions?.contents, 'write')
   assert.equal(workflow.permissions?.['pull-requests'], 'write')
   assert.equal(workflow.permissions?.['id-token'], 'write')

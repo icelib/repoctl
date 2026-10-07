@@ -22,6 +22,7 @@ on:
           - publish
           - publish-unpublished
           - reconcile
+          - oidc-audit
       package:
         description: Package used for unpublished-version recovery
         required: false
@@ -56,6 +57,7 @@ concurrency:
 
 jobs:
   release:
+    if: ${{ inputs.mode != 'oidc-audit' }}
     name: Release
     runs-on: ubuntu-latest
     steps:
@@ -125,3 +127,38 @@ jobs:
             repoctl-release-progress.json
           if-no-files-found: ignore
           retention-days: 14
+
+  oidc-audit:
+    name: Audit npm OIDC
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mode == 'oidc-audit' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install Dependencies without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Build Release Tooling
+        run: pnpm run tooling:build
+
+      - name: Audit every publishable package
+        env:
+          REPO_RELEASE_PACKAGE: ${{ inputs.package }}
+          REPO_RELEASE_VERSION: ${{ inputs.version }}
+          REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
+          REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
+        run: pnpm exec repo release ci --mode oidc-audit

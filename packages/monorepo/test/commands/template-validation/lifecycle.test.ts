@@ -27,9 +27,12 @@ async function waitForService(name: string) {
 }
 
 const service = `import { createServer } from 'node:http'
-import { writeFileSync } from 'node:fs'
+import { renameSync, writeFileSync } from 'node:fs'
 const server = createServer((request, response) => response.end('ready'))
-server.listen(0, '127.0.0.1', () => writeFileSync('service.json', JSON.stringify({pid: process.pid, port: server.address().port})))
+server.listen(0, '127.0.0.1', () => {
+  writeFileSync('service.json.tmp', JSON.stringify({pid: process.pid, port: server.address().port}))
+  renameSync('service.json.tmp', 'service.json')
+})
 `
 
 describe('validation process ownership', () => {
