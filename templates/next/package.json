@@ -19,7 +19,7 @@
     "test:dev": "vitest"
   },
   "dependencies": {
-    "next": "16.3.8",
+    "next": "16.4.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
@@ -28,8 +28,8 @@
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.1",
-    "jsdom": "^30.1.1",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.2",
     "typescript": "~6.0.3",
     "vitest": "~5.0.3"
   }

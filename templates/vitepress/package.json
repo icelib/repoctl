@@ -42,12 +42,12 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "mermaid": "^12.0.0",
+    "mermaid": "^12.1.0",
     "tailwindcss": "^4.3.3",
     "vitepress": "2.0.0-alpha.20",
     "vitepress-plugin-llms": "^1.14.0",
     "vitest": "~5.0.3",
-    "vue-tsc": "^3.3.11",
+    "vue-tsc": "^3.3.12",
     "wrangler": "^4.135.0"
   }
 }

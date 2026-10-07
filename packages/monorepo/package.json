@@ -88,7 +88,7 @@
   },
   "dependencies": {
     "@arethetypeswrong/core": "0.18.5",
-    "@babel/parser": "^7.29.8",
+    "@babel/parser": "^7.29.9",
     "@icebreakers/commitlint-config": "workspace:*",
     "@icebreakers/eslint-config": "workspace:*",
     "@icebreakers/monorepo-templates": "workspace:*",
@@ -97,7 +97,7 @@
     "@pnpm/find-workspace-dir": "^1000.1.5",
     "@pnpm/logger": "^1100.0.0",
     "@pnpm/types": "^1102.1.1",
-    "@pnpm/worker": "^1100.4.6",
+    "@pnpm/worker": "^1100.4.8",
     "@pnpm/workspace.find-packages": "^1000.0.65",
     "@pnpm/workspace.read-manifest": "^1000.3.1",
     "c12": "^3.3.4",
@@ -111,7 +111,7 @@
     "klaw": "^4.1.0",
     "lint-staged": "^17.6.0",
     "micromatch": "^4.0.8",
-    "node-diff3": "~3.1.2",
+    "node-diff3": "~3.2.1",
     "p-queue": "^9.3.3",
     "pacote": "21.5.1",
     "pathe": "^2.0.3",
@@ -126,7 +126,7 @@
     "yaml": "catalog:"
   },
   "devDependencies": {
-    "@microsoft/api-extractor": "7.52.12",
+    "@microsoft/api-extractor": "7.59.4",
     "@types/cross-spawn": "^6.0.6",
     "@types/klaw": "^3.0.8",
     "@types/micromatch": "^4.0.10",
@@ -136,7 +136,7 @@
     "@types/validate-npm-package-name": "^4.0.2",
     "ci-info": "^4.4.0",
     "fdir": "^6.5.0",
-    "knip": "6.39.0"
+    "knip": "6.40.0"
   },
   "publishConfig": {
     "access": "public",
