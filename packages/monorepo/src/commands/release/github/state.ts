@@ -5,6 +5,12 @@ import { ReleaseCommandError } from '../errors'
 
 const branch = 'repoctl-release-state'
 
+interface ReleaseStateWriteOptions {
+  retryAttempts?: number
+  retryDelay?: number
+  sleep?: (milliseconds: number) => Promise<void>
+}
+
 function missing(error: unknown) {
   return error instanceof Error && 'status' in error && error.status === 404
 }
@@ -32,7 +38,14 @@ export async function readReleaseState(request: GitHubRequest, key: string): Pro
   }
 }
 
-export async function writeReleaseState(request: GitHubRequest, key: string, state: ReleaseLifecycleState, revision?: string) {
+function transient(error: unknown) {
+  if (!error || typeof error !== 'object' || !('status' in error) || typeof error.status !== 'number') {
+    return false
+  }
+  return error.status === 429 || error.status >= 500
+}
+
+export async function writeReleaseState(request: GitHubRequest, key: string, state: ReleaseLifecycleState, revision?: string, options: ReleaseStateWriteOptions = {}) {
   if (!revision) {
     try {
       await request('GET', `/git/ref/heads/${branch}`)
@@ -51,24 +64,35 @@ export async function writeReleaseState(request: GitHubRequest, key: string, sta
     }
   }
   const content = JSON.stringify(state)
-  try {
-    const { data } = await request<{ content: { sha: string } }>('PUT', statePath(key), {
-      message: 'chore(release): checkpoint release lifecycle [skip ci]',
-      branch,
-      content: Buffer.from(content).toString('base64'),
-      ...(revision ? { sha: revision } : {}),
-    })
-    if (!data?.content.sha) {
-      throw new ReleaseCommandError('GitHub returned no release checkpoint revision')
+  const attempts = Math.max(1, options.retryAttempts ?? 3)
+  const delay = Math.max(0, options.retryDelay ?? 1_000)
+  const sleep = options.sleep ?? (milliseconds => new Promise(resolve => setTimeout(resolve, milliseconds)))
+  let error: unknown
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      const { data } = await request<{ content: { sha: string } }>('PUT', statePath(key), {
+        message: 'chore(release): checkpoint release lifecycle [skip ci]',
+        branch,
+        content: Buffer.from(content).toString('base64'),
+        ...(revision ? { sha: revision } : {}),
+      })
+      if (!data?.content.sha) {
+        throw new ReleaseCommandError('GitHub returned no release checkpoint revision')
+      }
+      return data.content.sha
     }
-    return data.content.sha
-  }
-  catch (error) {
-    // PUT 采用文件 SHA 比较并交换；只有完全一致的远端内容才能证明丢失的响应已提交。
-    const recovered = await readReleaseState(request, key)
-    if (recovered && JSON.stringify(recovered.state) === content) {
-      return recovered.revision
+    catch (caught) {
+      error = caught
+      if (!transient(caught) || attempt === attempts) {
+        break
+      }
+      await sleep(delay * 2 ** (attempt - 1))
     }
-    throw new ReleaseCommandError(`Release checkpoint write failed or another publisher advanced it; retry after the other run finishes. ${error instanceof Error ? error.message : String(error)}`)
   }
+  // PUT 采用文件 SHA 比较并交换；只有完全一致的远端内容才能证明丢失的响应已提交。
+  const recovered = await readReleaseState(request, key)
+  if (recovered && JSON.stringify(recovered.state) === content) {
+    return recovered.revision
+  }
+  throw new ReleaseCommandError(`Release checkpoint write failed or another publisher advanced it; retry after the other run finishes. ${error instanceof Error ? error.message : String(error)}`)
 }

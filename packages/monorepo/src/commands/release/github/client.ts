@@ -136,7 +136,11 @@ export class GitHubClient implements GitHubOperations {
   }
 
   async writeReleaseState(key: string, state: ReleaseLifecycleState, revision?: string) {
-    return writeReleaseState(this.getRequest(), key, state, revision)
+    return writeReleaseState(this.getRequest(), key, state, revision, {
+      retryAttempts: this.retryAttempts,
+      retryDelay: this.retryDelay,
+      sleep: this.sleep,
+    })
   }
 
   async ensurePullRequest(options: EnsurePullRequestOptions) {

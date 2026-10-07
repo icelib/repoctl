@@ -30,6 +30,15 @@ it('rechecks a checkpoint PUT with a lost response and accepts only identical co
   expect(request.mock.calls.filter(([, init]) => init?.method === 'PUT')).toHaveLength(1)
 })
 
+it('retries a transient checkpoint failure before giving up', async () => {
+  const request = vi.fn<typeof fetch>()
+    .mockResolvedValueOnce(response({ object: { sha: target } }))
+    .mockResolvedValueOnce(response({ message: 'Internal Server Error' }, 500))
+    .mockResolvedValueOnce(response({ content: { sha: 'revision' } }, 201))
+  await expect(client(request).writeReleaseState(key, state)).resolves.toBe('revision')
+  expect(request.mock.calls.filter(([, init]) => init?.method === 'PUT')).toHaveLength(2)
+})
+
 it('does not mistake a concurrent checkpoint writer for its own lost response', async () => {
   const request = vi.fn<typeof fetch>()
     .mockResolvedValueOnce(response({ message: 'conflict' }, 409))
