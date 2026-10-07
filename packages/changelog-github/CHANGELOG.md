@@ -1,5 +1,11 @@
 # @icebreakers/changelog-github
 
+## 2.1.4
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#935)
+
 ## 2.1.3
 
 ### Patch Changes

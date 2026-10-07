@@ -24,6 +24,10 @@
   dir: packages/changelog-github
   intents:
     - auto-pr-933
+"@icebreakers/changelog-github@2.1.4":
+  dir: packages/changelog-github
+  intents:
+    - auto-pr-935
 "@icebreakers/commitlint-config@4.0.6":
   dir: packages/commitlint
   intents:
@@ -38,6 +42,10 @@
   intents:
     - auto-pr-899
     - icelib-repository-migration
+"@icebreakers/commitlint-config@4.1.2":
+  dir: packages/commitlint
+  intents:
+    - auto-pr-935
 "@icebreakers/eslint-config@7.1.1":
   dir: packages/eslint
   intents:
@@ -96,6 +104,10 @@
   intents:
     - auto-pr-930
     - auto-pr-933
+"@icebreakers/eslint-config@8.0.8":
+  dir: packages/eslint
+  intents:
+    - auto-pr-935
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -249,6 +261,11 @@
   intents:
     - heavy-dolphins-remain
     - quiet-rats-trade
+"@icebreakers/monorepo-templates@2.3.0":
+  dir: packages/monorepo-templates
+  intents:
+    - auto-pr-935
+    - new-jokes-happen
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -439,6 +456,11 @@
   intents:
     - heavy-dolphins-remain
     - quiet-rats-trade
+"@icebreakers/monorepo@5.8.0":
+  dir: packages/monorepo
+  intents:
+    - auto-pr-935
+    - new-jokes-happen
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -721,6 +743,10 @@ repoctl@5.7.1:
   intents:
     - heavy-dolphins-remain
     - quiet-rats-trade
+repoctl@5.8.0:
+  dir: packages/repoctl
+  intents:
+    - new-jokes-happen
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:

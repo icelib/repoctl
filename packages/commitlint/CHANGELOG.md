@@ -1,5 +1,11 @@
 # @icebreakers/commitlint-config
 
+## 4.1.2
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#935)
+
 ## 4.1.1
 
 ### Patch Changes
