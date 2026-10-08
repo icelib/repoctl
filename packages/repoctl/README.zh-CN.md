@@ -33,6 +33,18 @@ pnpm exec repo check --full
 pnpm exec repo env support --json --redact --out reports/support.json
 ```
 
+## fixed 版本组的发布说明
+
+同一 `versioning.fixed` 组中的包会同步升版。只有主包声明 change intent 时，pnpm 为其他同步升版的包生成的 `CHANGELOG.md` 可能只有版本标题。
+
+repoctl 5.8.0 起会在发布 PR 的包数量和版本表中保留这些包，并显示“仅更新版本；未记录该包的独立变更说明。”。主包的功能说明和提交归属不会复制到平台包，磁盘上的 changelog 仍由 pnpm 生成。需要记录平台包的独立改动时，为该包声明 change intent。
+
+若旧版发布 PR 遗漏同步升版的包，在工作区主分支升级工具及锁文件，合并后让发布工作流重新生成 PR：
+
+```bash
+pnpm add -Dw repoctl@^5.8.0
+```
+
 ## 语言
 
 默认输出英文。使用 `--lang zh-CN` 或 `REPOCTL_LANG=zh-CN` 切换为简体中文。
