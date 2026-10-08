@@ -47,7 +47,7 @@
     "test:types": "tsd",
     "test:dev": "vitest",
     "release": "pnpm publish",
-    "sync": "cnpm sync postcss-tailwindcss",
+    "sync": "repo release sync-npmmirror --package postcss-tailwindcss",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

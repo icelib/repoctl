@@ -2,6 +2,11 @@ import type { MonorepoConfig } from 'repoctl'
 
 export default {
   commands: {
+    release: {
+      hooks: {
+        afterPublish: [{ script: 'release:sync-npmmirror', continueOnError: true, idempotent: true }],
+      },
+    },
     create: {
       defaultTemplate: 'tsdown',
       renameJson: false,

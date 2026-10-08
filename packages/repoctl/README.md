@@ -52,6 +52,28 @@ If an older release PR omits these packages, upgrade the tool and lockfile on yo
 pnpm add -Dw repoctl@^5.8.0
 ```
 
+## Sync published packages to npmmirror
+
+Use the HTTP API directly; cnpm is not required.
+
+```bash
+pnpm exec repo release sync-npmmirror --all
+pnpm exec repo release sync-npmmirror --package repoctl --version 5.8.1
+pnpm exec repo release sync-npmmirror --all --dry-run
+```
+
+Choose exactly one of `--all`, `--package <name>`, or `--published`. With no explicit version, manual commands use the versions currently referenced by npm dist-tags. Private workspaces and packages explicitly targeting another registry are excluded from `--all`; packages not yet published on npm are reported as skipped.
+
+For automatic synchronization, add `"release:sync-npmmirror": "repo release sync-npmmirror --published"` to the root scripts and append this hook to `commands.release.hooks.afterPublish`:
+
+```json
+{ "script": "release:sync-npmmirror", "continueOnError": true, "idempotent": true }
+```
+
+The hook reads `REPO_RELEASE_PUBLISHED_PACKAGES` or `REPO_RELEASE_PUBLISH_SUMMARY`; an empty list skips synchronization, while missing or invalid input fails explicitly. Existing hooks remain in place.
+
+The command submits tasks with dependency synchronization disabled, waits for task completion, then verifies versions and their current dist-tags through the public mirror registry. The total budget defaults to 300 seconds (`--timeout <seconds>`), including requests and retries, with concurrency 2. A failed manual run exits nonzero and prints retry commands. In GitHub Actions it emits warnings and a step summary; the optional hook preserves the successful npm release.
+
 ## Language
 
 Output is English by default. Use `--lang zh-CN` or `REPOCTL_LANG=zh-CN` for Simplified Chinese.
