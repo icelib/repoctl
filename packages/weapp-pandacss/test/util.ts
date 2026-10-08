@@ -15,11 +15,11 @@ const taroAppRoot = path.resolve(examplesRoot, 'taro-app')
 const configRoot = path.resolve(__dirname, 'config')
 
 export {
-  fixturesRoot,
-  cssRoot,
   appRoot,
-  root,
+  configRoot,
+  cssRoot,
   examplesRoot,
+  fixturesRoot,
+  root,
   taroAppRoot,
-  configRoot
 }

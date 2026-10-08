@@ -1,106 +1,103 @@
-import { copyFile, readFile } from 'node:fs/promises'
-import { existsSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
-import { deleteAsync } from 'del'
-import fs from 'fs-extra'
-import { appRoot, fixturesRoot } from './util'
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import { createContext } from '@/core/context'
 
+const oldHelpers = path.resolve(
+  __dirname,
+  'fixtures/app/styled-system/helpers.mjs',
+)
+const panda2Helpers = path.resolve(
+  __dirname,
+  'fixtures/app/styled-system/helpers.panda2.mjs',
+)
+
+async function createProject(extension: 'mjs' | 'js' = 'mjs') {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'weapp-panda-'))
+  await fs.symlink(
+    path.resolve(__dirname, '../node_modules'),
+    path.join(root, 'node_modules'),
+    'dir',
+  )
+  await fs.writeFile(
+    path.join(root, 'panda.config.ts'),
+    `import { defineConfig } from '@pandacss/dev'\n\nexport default defineConfig({ outdir: 'styled-system', outExtension: '${extension}' })\n`,
+  )
+  await fs.mkdir(path.join(root, 'styled-system'), { recursive: true })
+  await fs.copyFile(
+    extension === 'mjs' ? oldHelpers : panda2Helpers,
+    path.join(root, `styled-system/helpers.${extension}`),
+  )
+  return root
+}
+
 describe('context', () => {
-  it('no config', async () => {
-    // expect(ctx).toBeDefined()
-    await expect(() => {
-      return createContext()
-    }).rejects.toThrowError()
+  it('requires a Panda config', async () => {
+    await expect(createContext()).rejects.toThrow()
   })
 
-  it('with config in app', async () => {
-    const ctx = await createContext({
-      pandaConfig: {
-        cwd: appRoot,
-      },
-    })
-    expect(ctx).toBeDefined()
-    expect(ctx.codegen).toBeDefined()
-    expect(ctx.pandaConfig).toBeDefined()
-    expect(ctx.rollback).toBeDefined()
-    const src = resolve(appRoot, 'src/styled-system/helpers.mjs')
-    await fs.ensureDir(dirname(src))
-    await copyFile(resolve(appRoot, 'styled-system/helpers.mjs'), src)
-    await ctx.codegen()
-    const backup = resolve(appRoot, 'src/styled-system/_helpers.backup.mjs')
-    existsSync(src)
-    existsSync(backup)
-    expect(await readFile(src, 'utf8')).not.toEqual(
-      await readFile(backup, 'utf8'),
-    )
-    await ctx.rollback()
-    expect(await readFile(src, 'utf8')).toEqual(await readFile(backup, 'utf8'))
-  })
+  it.each(['mjs', 'js'] as const)('codegens and rolls back helpers.%s', async (extension) => {
+    const root = await createProject(extension)
+    try {
+      const ctx = await createContext({ pandaConfig: { cwd: root } })
+      const helper = path.join(root, `styled-system/helpers.${extension}`)
+      const backup = path.join(root, `styled-system/_helpers.backup.${extension}`)
+      const original = await fs.readFile(helper, 'utf8')
 
-  it('codegen with wrapper throw error', async () => {
-    const ctx = await createContext({
-      pandaConfig: {
-        cwd: resolve(fixturesRoot, 'app1'),
-      },
-    })
-    await expect(() => {
-      return ctx.codegen()
-    }).rejects.toThrowError()
-  })
+      await ctx.codegen()
+      expect(await fs.readFile(helper, 'utf8')).not.toBe(original)
+      expect(await fs.readFile(backup, 'utf8')).toBe(original)
+      expect(await fs.stat(path.join(root, `styled-system/weapp-panda/index.${extension}`))).toBeDefined()
+      const patched = await fs.readFile(helper, 'utf8')
+      expect(patched).toContain(`./weapp-panda/index.${extension}`)
+      await ctx.codegen()
+      expect(await fs.readFile(helper, 'utf8')).toBe(patched)
+      expect(await fs.readFile(backup, 'utf8')).toBe(original)
 
-  it('codegen with wrapper', async () => {
-    const app0Root = resolve(fixturesRoot, 'app0')
+      await ctx.rollback()
+      expect(await fs.readFile(helper, 'utf8')).toBe(original)
 
-    const ctx = await createContext({
-      pandaConfig: {
-        cwd: app0Root,
-      },
-      log: true,
-    })
-    const src = resolve(app0Root, ctx.pandaConfig.config.outdir, 'helpers.mjs')
-    await fs.ensureDir(dirname(src))
-    await copyFile(resolve(appRoot, 'styled-system/helpers.mjs'), src)
-    await ctx.codegen()
-    expect(existsSync(src)).toBe(true)
-    expect(existsSync(resolve(dirname(src), 'weapp-panda'))).toBe(true)
-  })
-
-  it('codegen with wrapper case 2', async () => {
-    const appRoot = resolve(fixturesRoot, 'app2')
-
-    const ctx = await createContext({
-      pandaConfig: {
-        cwd: appRoot,
-      },
-      log: true,
-    })
-    const src = resolve(appRoot, ctx.pandaConfig.config.outdir, 'helpers.mjs')
-    await fs.ensureDir(dirname(src))
-    await copyFile(resolve(appRoot, 'styled-system/helpers.mjs'), src)
-    await ctx.codegen()
-    expect(existsSync(src)).toBe(true)
-    expect(existsSync(resolve(dirname(src), 'weapp-panda'))).toBe(true)
-  })
-
-  it('init config', async () => {
-    const ctx = await createContext({
-      pandaConfig: {
-        cwd: appRoot,
-      },
-    })
-    const userConfigPath = resolve(
-      dirname(ctx.pandaConfig.path),
-      'weapp-pandacss.config.ts',
-    )
-    if (existsSync(userConfigPath)) {
-      await deleteAsync([userConfigPath], {
-        onlyFiles: true,
-      })
+      const regenerated = `${original}\n// regenerated by Panda\n`
+      await fs.writeFile(helper, regenerated)
+      await ctx.codegen()
+      await ctx.rollback()
+      expect(await fs.readFile(helper, 'utf8')).toBe(regenerated)
     }
+    finally {
+      await fs.rm(root, { recursive: true, force: true })
+    }
+  })
 
-    expect(existsSync(userConfigPath)).toBe(false)
-    await ctx.init()
-    expect(existsSync(userConfigPath)).toBe(true)
+  it('rejects a missing runtime helper', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'weapp-panda-'))
+    try {
+      await fs.symlink(
+        path.resolve(__dirname, '../node_modules'),
+        path.join(root, 'node_modules'),
+        'dir',
+      )
+      await fs.writeFile(
+        path.join(root, 'panda.config.ts'),
+        `import { defineConfig } from '@pandacss/dev'\nexport default defineConfig({ outdir: 'styled-system' })\n`,
+      )
+      await expect((await createContext({ pandaConfig: { cwd: root } })).codegen())
+        .rejects
+        .toThrow('helpers')
+    }
+    finally {
+      await fs.rm(root, { recursive: true, force: true })
+    }
+  })
+
+  it('initializes the user config in the project root', async () => {
+    const root = await createProject()
+    try {
+      const ctx = await createContext({ pandaConfig: { cwd: root } })
+      await ctx.init()
+      await expect(fs.stat(path.join(root, 'weapp-pandacss.config.ts'))).resolves.toBeDefined()
+    }
+    finally {
+      await fs.rm(root, { recursive: true, force: true })
+    }
   })
 })

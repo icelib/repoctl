@@ -1,9 +1,9 @@
 import { Cell, Button as NButton } from '@nutui/nutui-react-taro'
 import { Button, Input, Text, View } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
-import { css, cx } from 'styled-system/css'
-import { escape } from 'styled-system/weapp-panda'
-import { styled } from 'styled-system/jsx'
+import { css, cx } from 'styled-system/css/index.mjs'
+import { styled } from 'styled-system/jsx/index.mjs'
+import { escape } from 'styled-system/weapp-panda/index.mjs'
 import IceButton from '@/components/Button'
 import './index.scss'
 

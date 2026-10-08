@@ -449,10 +449,10 @@ page:not(n):not(n) {
     --spacing-72: 18rem;
     --spacing-80: 20rem;
     --spacing-96: 24rem;
-    --spacing-0wd5: 0.125rem;
-    --spacing-1wd5: 0.375rem;
-    --spacing-2wd5: 0.625rem;
-    --spacing-3wd5: 0.875rem;
+    --spacing-0_r_d5: 0.125rem;
+    --spacing-1_r_d5: 0.375rem;
+    --spacing-2_r_d5: 0.625rem;
+    --spacing-3_r_d5: 0.875rem;
     --sizes-0: 0rem;
     --sizes-1: 0.25rem;
     --sizes-2: 0.5rem;
@@ -483,10 +483,10 @@ page:not(n):not(n) {
     --sizes-72: 18rem;
     --sizes-80: 20rem;
     --sizes-96: 24rem;
-    --sizes-0wd5: 0.125rem;
-    --sizes-1wd5: 0.375rem;
-    --sizes-2wd5: 0.625rem;
-    --sizes-3wd5: 0.875rem;
+    --sizes-0_r_d5: 0.125rem;
+    --sizes-1_r_d5: 0.375rem;
+    --sizes-2_r_d5: 0.625rem;
+    --sizes-3_r_d5: 0.875rem;
     --sizes-xs: 20rem;
     --sizes-sm: 24rem;
     --sizes-md: 28rem;
@@ -551,10 +551,10 @@ page:not(n):not(n) {
       transform: none;
     }
   }
-.text_redd400:not(n):not(n):not(n):not(n) {
+.text_red_d400:not(n):not(n):not(n):not(n) {
     color: var(--colors-red-400);
   }
-.bg_amberd800:not(n):not(n):not(n):not(n) {
+.bg_amber_d800:not(n):not(n):not(n):not(n) {
     background: var(--colors-amber-800);
   }
 "
@@ -1005,10 +1005,10 @@ page {
     --spacing-72: 18rem;
     --spacing-80: 20rem;
     --spacing-96: 24rem;
-    --spacing-0wd5: 0.125rem;
-    --spacing-1wd5: 0.375rem;
-    --spacing-2wd5: 0.625rem;
-    --spacing-3wd5: 0.875rem;
+    --spacing-0_r_d5: 0.125rem;
+    --spacing-1_r_d5: 0.375rem;
+    --spacing-2_r_d5: 0.625rem;
+    --spacing-3_r_d5: 0.875rem;
     --sizes-0: 0rem;
     --sizes-1: 0.25rem;
     --sizes-2: 0.5rem;
@@ -1039,10 +1039,10 @@ page {
     --sizes-72: 18rem;
     --sizes-80: 20rem;
     --sizes-96: 24rem;
-    --sizes-0wd5: 0.125rem;
-    --sizes-1wd5: 0.375rem;
-    --sizes-2wd5: 0.625rem;
-    --sizes-3wd5: 0.875rem;
+    --sizes-0_r_d5: 0.125rem;
+    --sizes-1_r_d5: 0.375rem;
+    --sizes-2_r_d5: 0.625rem;
+    --sizes-3_r_d5: 0.875rem;
     --sizes-xs: 20rem;
     --sizes-sm: 24rem;
     --sizes-md: 28rem;
@@ -1107,10 +1107,10 @@ page {
       transform: none;
     }
   }
-.text_redd400 {
+.text_red_d400 {
     color: var(--colors-red-400);
   }
-.bg_amberd800 {
+.bg_amber_d800 {
     background: var(--colors-amber-800);
   }
 "
@@ -1567,10 +1567,10 @@ page {
   --spacing-72: 18rem;
   --spacing-80: 20rem;
   --spacing-96: 24rem;
-  --spacing-0wd5: 0.125rem;
-  --spacing-1wd5: 0.375rem;
-  --spacing-2wd5: 0.625rem;
-  --spacing-3wd5: 0.875rem;
+  --spacing-0_r_d5: 0.125rem;
+  --spacing-1_r_d5: 0.375rem;
+  --spacing-2_r_d5: 0.625rem;
+  --spacing-3_r_d5: 0.875rem;
   --sizes-0: 0rem;
   --sizes-1: 0.25rem;
   --sizes-2: 0.5rem;
@@ -1601,10 +1601,10 @@ page {
   --sizes-72: 18rem;
   --sizes-80: 20rem;
   --sizes-96: 24rem;
-  --sizes-0wd5: 0.125rem;
-  --sizes-1wd5: 0.375rem;
-  --sizes-2wd5: 0.625rem;
-  --sizes-3wd5: 0.875rem;
+  --sizes-0_r_d5: 0.125rem;
+  --sizes-1_r_d5: 0.375rem;
+  --sizes-2_r_d5: 0.625rem;
+  --sizes-3_r_d5: 0.875rem;
   --sizes-xs: 20rem;
   --sizes-sm: 24rem;
   --sizes-md: 28rem;
@@ -1670,10 +1670,10 @@ page {
     animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
   }
 }
-.text_redd400:not(n):not(n):not(n):not(n) {
+.text_red_d400:not(n):not(n):not(n):not(n) {
   color: var(--colors-red-400);
 }
-.bg_amberd800:not(n):not(n):not(n):not(n) {
+.bg_amber_d800:not(n):not(n):not(n):not(n) {
   background: var(--colors-amber-800);
 }
 "
@@ -2130,10 +2130,10 @@ page {
   --spacing-72: 18rem;
   --spacing-80: 20rem;
   --spacing-96: 24rem;
-  --spacing-0wd5: 0.125rem;
-  --spacing-1wd5: 0.375rem;
-  --spacing-2wd5: 0.625rem;
-  --spacing-3wd5: 0.875rem;
+  --spacing-0_r_d5: 0.125rem;
+  --spacing-1_r_d5: 0.375rem;
+  --spacing-2_r_d5: 0.625rem;
+  --spacing-3_r_d5: 0.875rem;
   --sizes-0: 0rem;
   --sizes-1: 0.25rem;
   --sizes-2: 0.5rem;
@@ -2164,10 +2164,10 @@ page {
   --sizes-72: 18rem;
   --sizes-80: 20rem;
   --sizes-96: 24rem;
-  --sizes-0wd5: 0.125rem;
-  --sizes-1wd5: 0.375rem;
-  --sizes-2wd5: 0.625rem;
-  --sizes-3wd5: 0.875rem;
+  --sizes-0_r_d5: 0.125rem;
+  --sizes-1_r_d5: 0.375rem;
+  --sizes-2_r_d5: 0.625rem;
+  --sizes-3_r_d5: 0.875rem;
   --sizes-xs: 20rem;
   --sizes-sm: 24rem;
   --sizes-md: 28rem;
@@ -2233,10 +2233,10 @@ page {
     animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
   }
 }
-.text_redd400 {
+.text_red_d400 {
   color: var(--colors-red-400);
 }
-.bg_amberd800 {
+.bg_amber_d800 {
   background: var(--colors-amber-800);
 }
 "

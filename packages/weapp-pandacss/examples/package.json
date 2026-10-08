@@ -15,7 +15,9 @@
     "weapp-pandacss": "link:.."
   },
   "devDependencies": {
-    "@pandacss/dev": "^0.42.0",
+    "@pandacss/dev": "2.1.2",
+    "@pandacss/preset-base": "2.1.2",
+    "@pandacss/preset-panda": "2.1.2",
     "cross-env": "^7.0.3",
     "postcss-rem-to-responsive-pixel": "^6.0.1",
     "tailwindcss": "^3.4.4",

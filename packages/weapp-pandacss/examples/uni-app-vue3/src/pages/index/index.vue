@@ -24,7 +24,7 @@
 <script setup lang="ts">
 import IceButtonTw from '@/components/ButtonTw.vue'
 import IceButtonPanda from '@/components/ButtonPanda.vue'
-import { css } from 'styled-system/css'
+import { css } from 'styled-system/css/index.mjs'
 import { ref } from 'vue'
 const title = ref('Hello')
 const aaa = css({
@@ -56,12 +56,9 @@ const style0 = css({
 }
 
 .logo {
-  height: 200rpx;
   width: 200rpx;
-  margin-top: 200rpx;
-  margin-left: auto;
-  margin-right: auto;
-  margin-bottom: 50rpx;
+  height: 200rpx;
+  margin: 200rpx auto 50rpx;
 }
 
 .text-area {

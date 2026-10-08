@@ -1,46 +1,64 @@
+import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
-import fs from 'node:fs'
-import { deleteAsync } from 'del'
-import { readWantedLockfile } from '@pnpm/lockfile-file'
-import { appRoot, root } from './util'
 import { getPandacssConfig } from '@/core'
 import {
   copyEscape,
+  findPandaRuntime,
   getPandaVersion,
   getWeappCoreEscapeDir,
 } from '@/core/codegen'
+import { appRoot } from './util'
 
 describe('codegen', () => {
-  it('has install WeappCoreEscape', () => {
-    const dir = getWeappCoreEscapeDir()
-    expect(dir).toBeDefined()
+  it('finds the installed WeappCore escape runtime', () => {
+    expect(getWeappCoreEscapeDir()).toContain('@weapp-core')
   })
 
-  it('codegen to fixtures app', async () => {
+  it('copies the escape runtime into the generated system', async () => {
     const { config } = await getPandacssConfig({
       cwd: appRoot,
     })
+    const target = await fs.mkdtemp(path.join(os.tmpdir(), 'weapp-panda-'))
 
-    const target = path.resolve(appRoot, config.outdir, 'weapp-panda')
-    await deleteAsync([target])
-    expect(fs.existsSync(target)).toBe(false)
-    const res = await copyEscape(target)
-    expect(res.length).toBe(5)
-    for (const filename of res) {
-      expect(fs.existsSync(filename)).toBe(true)
+    try {
+      const res = await copyEscape(target)
+      expect(res).toHaveLength(4)
+      for (const filename of res) {
+        await expect(fs.stat(filename)).resolves.toBeDefined()
+      }
+      expect((config['outdir'] as string)).toContain('src/styled-system')
+    }
+    finally {
+      await fs.rm(target, { recursive: true, force: true })
     }
   })
 
-  it('getPandaVersion', async () => {
-    const lock = await readWantedLockfile(root, {
-      ignoreIncompatible: true,
-    })
-    expect(lock).toBeDefined()
-    const versionString
-      = lock?.importers['.'].devDependencies?.['@pandacss/dev']
+  it('reports the pinned Panda version', () => {
+    expect(getPandaVersion()).toBe('2.1.2')
+  })
 
-    expect(versionString).toBeDefined()
-    const idx = versionString?.indexOf('(')
-    expect(getPandaVersion()).toBe(versionString?.slice(0, idx))
+  it.each(['mjs', 'js'] as const)('detects helpers.%s', async (extension) => {
+    const target = await fs.mkdtemp(path.join(os.tmpdir(), 'weapp-panda-'))
+    try {
+      await fs.writeFile(path.join(target, `helpers.${extension}`), '')
+      const runtime = await findPandaRuntime(target)
+      expect(runtime.extension).toBe(extension)
+      expect(runtime.backupPath).toContain(`_helpers.backup.${extension}`)
+    }
+    finally {
+      await fs.rm(target, { recursive: true, force: true })
+    }
+  })
+
+  it('rejects a TypeScript-only runtime', async () => {
+    const target = await fs.mkdtemp(path.join(os.tmpdir(), 'weapp-panda-'))
+    try {
+      await fs.writeFile(path.join(target, 'helpers.ts'), '')
+      await expect(findPandaRuntime(target)).rejects.toThrow('outExtension')
+    }
+    finally {
+      await fs.rm(target, { recursive: true, force: true })
+    }
   })
 })

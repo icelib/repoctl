@@ -1,3 +1,4 @@
+import process from 'node:process'
 import { defineConfig } from '../../..'
 
 export default defineConfig({
@@ -7,14 +8,14 @@ export default defineConfig({
     selectorReplacement: {
       root: [],
       universal: [],
-      cascadeLayers: 'a'
+      cascadeLayers: 'a',
     },
-    removeNegationPseudoClass: true
+    removeNegationPseudoClass: true,
   },
   context: {
     pandaConfig: {
       cwd: process.cwd(),
-      file: 'path/to/your-panda-config-file'
-    }
-  }
+      file: 'path/to/your-panda-config-file',
+    },
+  },
 })

@@ -8,8 +8,8 @@
 // tailwindcss
 import { defineComponent } from 'vue'
 import type { PropType } from 'vue'
-import { cva } from "styled-system/css";
-import type { RecipeVariantProps } from 'styled-system/css'
+import { cva } from "styled-system/css/index.mjs";
+import type { RecipeVariantProps } from 'styled-system/css/index.mjs'
 const button = cva({
   base: {
     fontWeight: 'semibold',
@@ -88,5 +88,3 @@ export default defineComponent({
 
 
 </script>
-
-<style scoped></style>

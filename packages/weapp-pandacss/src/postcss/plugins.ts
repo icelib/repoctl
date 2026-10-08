@@ -3,18 +3,22 @@ import type {
   Root,
   Selector,
 } from 'postcss-selector-parser'
-import selectorParser, { selector as slt, tag,
-} from 'postcss-selector-parser'
-import { escape } from '@weapp-core/escape'
+import type { IPostcssPluginOptions } from '@/types'
+import type { Ref } from '@/utils'
 // @ts-ignore
 import createCascadeLayersPlugin from '@csstools/postcss-cascade-layers'
 // @ts-ignore
 import createIsPseudoClassPlugin from '@csstools/postcss-is-pseudo-class'
-import type { IPostcssPluginOptions } from '@/types'
-import { createContext, getUserConfig } from '@/core'
-import type { Ref } from '@/utils'
-import { createSingleExecutionFunction, merge, normalizeString, ref } from '@/utils'
+import { escape } from '@weapp-core/escape'
+import selectorParser from 'postcss-selector-parser'
 import { escapePostcssPlugin, wrapperPostcssPlugin } from '@/constants'
+import { createContext, getUserConfig } from '@/core'
+import { createSingleExecutionFunction, merge, normalizeString, ref } from '@/utils'
+
+// postcss-selector-parser is a CommonJS package. Access its node factories
+// through the default export so the ESM build does not rely on synthetic named
+// exports that Node cannot provide for CommonJS modules.
+const { selector: slt, tag } = selectorParser
 
 export function useOptions(options?: IPostcssPluginOptions) {
   // 默认没有默认值了，默认值从异步插件中初始化
@@ -73,7 +77,7 @@ export const innerPlugin: PluginCreator<
           const idx = selector.parent.nodes.indexOf(selector)
           if (idx > -1) {
             const beforeNode = selector.parent.nodes[idx - 1]
-            if (beforeNode.type !== 'class') {
+            if (beforeNode && beforeNode.type !== 'class') {
               selector.value = '+'
             }
           }
@@ -149,8 +153,8 @@ export const innerPlugin: PluginCreator<
         for (const x of selector.nodes) {
           if (
             x.nodes.length === 1
-            && x.nodes[0].type === 'id'
-            && x.nodes[0].value === '#'
+            && x.nodes[0]?.type === 'id'
+            && x.nodes[0]?.value === '#'
           ) {
             if (removeNegationPseudoClass) {
               selector.remove()
@@ -225,10 +229,11 @@ export const creator: PluginCreator<IPostcssPluginOptions> = (options) => {
   async function codegen() {
     const { config, configFile } = await getUserConfig()
     mergeOptions(config?.postcss)
-    const ctx = await createContext({
-      configFile,
-      ...config?.context,
-    })
+    const contextOptions = { ...config?.context }
+    if (configFile) {
+      Object.assign(contextOptions, { configFile })
+    }
+    const ctx = await createContext(contextOptions)
     await ctx.codegen()
   }
 

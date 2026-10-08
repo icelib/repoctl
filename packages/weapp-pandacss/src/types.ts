@@ -1,8 +1,8 @@
-import type { loadConfig } from '@pandacss/config'
 // @ts-ignore
 import type { pluginOptions as CascadeLayersPluginOptions } from '@csstools/postcss-cascade-layers'
 // @ts-ignore
 import type { pluginOptions as IsPseudoClassPluginOptions } from '@csstools/postcss-is-pseudo-class'
+import type { loadConfig } from '@pandacss/config'
 
 export type PandacssConfigFileOptions = Parameters<typeof loadConfig>[0]
 

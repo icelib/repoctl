@@ -47,6 +47,9 @@
       "path": "./packages/stylelint-plugin-tailwindcss"
     },
     {
+      "path": "./packages/weapp-pandacss"
+    },
+    {
       "path": "./templates/cli"
     },
     {

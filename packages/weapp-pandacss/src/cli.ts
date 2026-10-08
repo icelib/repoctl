@@ -1,5 +1,6 @@
+import process from 'node:process'
 import { cac } from 'cac'
-import { createContext, getUserConfig } from './core'
+import { createContext, getUserConfig, initConfig } from './core'
 
 let ctx: Awaited<ReturnType<typeof createContext>>
 
@@ -8,11 +9,11 @@ async function initCtx() {
     return ctx
   }
   const { config, configFile } = await getUserConfig()
-  ctx = await createContext({
-    configFile,
-    ...config?.context,
-    log: true,
-  })
+  const contextOptions = { ...config?.context, log: true as const }
+  if (configFile) {
+    Object.assign(contextOptions, { configFile })
+  }
+  ctx = await createContext(contextOptions)
   return ctx
 }
 
@@ -29,8 +30,7 @@ cli.command('rollback', 'rollback inject').action(async () => {
 })
 
 cli.command('init', 'init config file').action(async () => {
-  await initCtx()
-  await ctx.init()
+  await initConfig(process.cwd())
   console.log('✨ weapp-pandacss config initialized!')
 })
 

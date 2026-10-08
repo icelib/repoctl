@@ -16,7 +16,7 @@
 <script>
 import { reactive, toRefs } from 'vue';
 import { Dongdong } from '@nutui/icons-vue-taro';
-import { css } from 'styled-system/css'
+import { css } from 'styled-system/css/index.mjs'
 export default {
   name: 'Index',
   components: {
@@ -57,7 +57,7 @@ export default {
 
 <style lang="scss">
 .index {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;

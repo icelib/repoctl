@@ -58,7 +58,7 @@ describe('createSingleExecutionFunction', () => {
 
   it('should handle multiple concurrent calls', async () => {
     const asyncFunction = vi.fn(async () => {
-      return new Promise(resolve => setTimeout(() => resolve('Success!'), 100))
+      return new Promise(resolve => setTimeout(resolve, 100, 'Success!'))
     })
     const singleExecutionFunction = createSingleExecutionFunction(asyncFunction)
 

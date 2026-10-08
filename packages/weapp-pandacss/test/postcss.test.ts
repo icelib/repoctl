@@ -1,17 +1,18 @@
 import fs from 'node:fs/promises'
 import { resolve } from 'node:path'
 import postcss from 'postcss'
-// import parser from 'postcss-selector-parser'
-import { cssRoot } from './util'
 import postcssPlugin from '@/postcss'
 import { useOptions } from '@/postcss/plugins'
+// import parser from 'postcss-selector-parser'
+import { cssRoot } from './util'
+
 describe('postcss', () => {
   it('default', async () => {
     const rawCss = await fs.readFile(resolve(cssRoot, 'default.css'), 'utf8')
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(rawCss)
     expect(css).toMatchSnapshot()
   })
@@ -25,12 +26,12 @@ describe('postcss', () => {
   it('default without layer', async () => {
     const rawCss = await fs.readFile(
       resolve(cssRoot, 'default-without-layer.css'),
-      'utf8'
+      'utf8',
     )
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(rawCss)
     expect(css).toMatchSnapshot()
   })
@@ -38,7 +39,7 @@ describe('postcss', () => {
   it('default without layer removeNegationPseudoClass true', async () => {
     const rawCss = await fs.readFile(
       resolve(cssRoot, 'default-without-layer.css'),
-      'utf8'
+      'utf8',
     )
     const { css } = await postcss([postcssPlugin()]).process(rawCss)
     expect(css).toMatchSnapshot()
@@ -47,8 +48,8 @@ describe('postcss', () => {
   it('simple universal selector', async () => {
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(`*{}`)
     expect(css).toMatchSnapshot()
   })
@@ -60,8 +61,8 @@ describe('postcss', () => {
   it('universal selector', async () => {
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(` *, *::before, *::after, ::backdrop{}`)
     expect(css).toMatchSnapshot()
   })
@@ -69,8 +70,8 @@ describe('postcss', () => {
   it(':root and :host pseudo', async () => {
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(`:root,:host{}`)
     expect(css).toMatchSnapshot()
   })
@@ -78,8 +79,8 @@ describe('postcss', () => {
   it('only :root pseudo', async () => {
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(`:root{}`)
     expect(css).toMatchSnapshot()
   })
@@ -87,8 +88,8 @@ describe('postcss', () => {
   it('is pseudo', async () => {
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(`.hovercbg_yellowd400:is(:hover,[data-hover]){}`)
     expect(css).toMatchSnapshot()
   })
@@ -96,11 +97,11 @@ describe('postcss', () => {
   it('_peerHover case ', async () => {
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(
       `.peer:hover:not(n):not(n):not(n):not(n)~.peerHovercbg_redd500,
-      .peer[data-hover]:not(n):not(n):not(n):not(n)~.peerHovercbg_redd500 {}`
+      .peer[data-hover]:not(n):not(n):not(n):not(n)~.peerHovercbg_redd500 {}`,
     )
     expect(css).toMatchSnapshot()
   })
@@ -108,8 +109,8 @@ describe('postcss', () => {
   it('_peerHover no :not(n) case ', async () => {
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(`.peer~.peerHovercbg_redd500{}`)
     // 前面不能有伪元素和 [data-*]
     expect(css).toBe(`.peer~.peerHovercbg_redd500{}`)
@@ -120,8 +121,8 @@ describe('postcss', () => {
     .peer[data-hover]:not(n):not(n):not(n):not(n)~.peerHovercbg_redd500 {}`
     const { css } = await postcss([
       postcssPlugin({
-        disabled: true
-      })
+        disabled: true,
+      }),
     ]).process(testCase)
     expect(css).toBe(testCase)
   })
@@ -129,8 +130,8 @@ describe('postcss', () => {
   it('should not remove custom :not', async () => {
     const { css } = await postcss([
       postcssPlugin({
-        removeNegationPseudoClass: false
-      })
+        removeNegationPseudoClass: false,
+      }),
     ]).process(`.peer:not(.aa):not(#\\#){}`)
     expect(css).toMatchSnapshot()
   })
@@ -139,22 +140,22 @@ describe('postcss', () => {
     const testCase = `.peer:not(.aa):not(#\\#){}`
     const { css } = await postcss([
       postcssPlugin({
-        disabled: true
-      })
+        disabled: true,
+      }),
     ]).process(testCase)
     expect(css).toBe(testCase)
   })
 
   it('should not remove custom :not removeNegationPseudoClass true', async () => {
     const { css } = await postcss([postcssPlugin()]).process(
-      `.peer:not(.aa):not(#\\#){}`
+      `.peer:not(.aa):not(#\\#){}`,
     )
     expect(css).toMatchSnapshot()
   })
 
   it('should not transform descendant combinator', async () => {
     const { css } = await postcss([postcssPlugin()]).process(
-      `.custom-tabs .tabs__scroll { background: red; }`
+      `.custom-tabs .tabs__scroll { background: red; }`,
     )
     expect(css).toBe('.custom-tabs .tabs__scroll { background: red; }')
   })
@@ -164,9 +165,9 @@ describe('postcss', () => {
       postcssPlugin({
         removeNegationPseudoClass: false,
         selectorReplacement: {
-          universal: 'view'
-        }
-      })
+          universal: 'view',
+        },
+      }),
     ]).process(`*, *::before, *::after, ::backdrop{}`)
     expect(css).toBe('view,view::before,view::after,::backdrop{}')
   })
@@ -177,26 +178,26 @@ describe('postcss', () => {
     mergeOptions({
       disabled: true,
       cascadeLayersPluginOptions: {
-        onConditionalRulesChangingLayerOrder: false
+        onConditionalRulesChangingLayerOrder: false,
       },
       isPseudoClassPluginOptions: {
-        onPseudoElement: 'warning'
-      }
+        onPseudoElement: 'warning',
+      },
     })
     expect(optionsRef.value.disabled).toBe(true)
     expect(
       optionsRef.value.cascadeLayersPluginOptions
-        .onConditionalRulesChangingLayerOrder
+        .onConditionalRulesChangingLayerOrder,
     ).toBe(false)
     expect(optionsRef.value.isPseudoClassPluginOptions.onPseudoElement).toBe(
-      'warning'
+      'warning',
     )
     expect(optionsRef).toMatchSnapshot()
   })
 
   it('... :where happy', async () => {
     const { css } = await postcss([postcssPlugin()]).process(
-      `:where(:root, :host, :happy) {}`
+      `:where(:root, :host, :happy) {}`,
     )
     expect(css).toBe('page,page,:happy {}')
   })
@@ -204,8 +205,8 @@ describe('postcss', () => {
   it('optionsRef disabled option', async () => {
     const { css } = await postcss([
       postcssPlugin({
-        disabled: true
-      })
+        disabled: true,
+      }),
     ]).process(`:where(:root, :host, :happy) {}`)
     expect(css).toBe(`:where(:root, :host, :happy) {}`)
   })

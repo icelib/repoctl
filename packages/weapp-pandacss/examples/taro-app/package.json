@@ -8,6 +8,12 @@
     "typescript": true,
     "css": "sass"
   },
+  "browserslist": [
+    "last 3 versions",
+    "Android >= 4.1",
+    "ios >= 8"
+  ],
+  "author": "",
   "scripts": {
     "dev": "npm run dev:weapp",
     "build": "npm run build:weapp",
@@ -34,12 +40,6 @@
     "-": " && weapp-panda codegen",
     "open": "weapp open -p ."
   },
-  "browserslist": [
-    "last 3 versions",
-    "Android >= 4.1",
-    "ios >= 8"
-  ],
-  "author": "",
   "dependencies": {
     "@babel/runtime": "^7.24.8",
     "@nutui/nutui-react-taro": "^2.6.13",
@@ -66,7 +66,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.8",
-    "@pandacss/dev": "^0.42.0",
+    "@pandacss/dev": "2.1.2",
+    "@pandacss/preset-base": "2.1.2",
+    "@pandacss/preset-panda": "2.1.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.15",
     "@tarojs/cli": "3.6.34",
     "@tarojs/taro-loader": "3.6.34",

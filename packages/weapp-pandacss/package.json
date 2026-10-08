@@ -1,17 +1,18 @@
 {
   "name": "weapp-pandacss",
-  "version": "0.0.0",
-  "packageManager": "pnpm@9.7.0",
-  "description": "to use pandacss in weapp, 在小程序里使用 pandacss",
-  "author": "SonOfMagic <qq1324318532@gmail.com>",
+  "type": "module",
+  "version": "2.0.0",
+  "description": "Use Panda CSS in WeChat and other mini-program runtimes",
+  "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
-  "homepage": "https://sonofmagic.github.io/weapp-pandacss/",
+  "homepage": "https://repoctl.icebreaker.top",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sonofmagic/weapp-pandacss.git"
+    "url": "git+https://github.com/icelib/repoctl.git",
+    "directory": "packages/weapp-pandacss"
   },
   "bugs": {
-    "url": "https://github.com/sonofmagic/weapp-pandacss/issues"
+    "url": "https://github.com/icelib/repoctl/issues"
   },
   "keywords": [
     "panda",
@@ -19,143 +20,97 @@
     "css-in-js",
     "weapp",
     "wechat",
-    "mini",
     "miniprogram",
-    "mini app",
     "taro",
     "uni-app",
-    "小程序",
-    "vite",
     "postcss"
   ],
   "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
     },
     "./postcss": {
       "types": "./dist/postcss.d.ts",
-      "import": "./dist/postcss.mjs",
-      "require": "./dist/postcss.cjs"
+      "import": "./dist/postcss.js",
+      "require": "./dist/postcss.cjs",
+      "default": "./dist/postcss.js"
     },
+    "./package.json": "./package.json",
     "./*": "./*"
   },
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
-  "types": "types/index.d.ts",
-  "typesVersions": {
-    "*": {
-      "*": [
-        "./dist/*",
-        "./dist/index.d.ts"
-      ]
-    }
-  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "weapp-pandacss": "bin/weapp-pandacss.js",
     "weapp-panda": "bin/weapp-pandacss.js"
   },
   "files": [
+    "README.md",
+    "README.zh.md",
     "bin",
-    "dist",
-    "types"
+    "dist"
   ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
   "scripts": {
-    "dev": "pnpm clean && pnpm dts && cross-env NODE_ENV=development rollup --config rollup.config.ts --configPlugin typescript -w",
-    "build": "pnpm clean && pnpm dts && cross-env NODE_ENV=production rollup --config rollup.config.ts --configPlugin typescript",
-    "build:tsc": "cross-env NODE_ENV=development tsc --build tsconfig.json",
-    "dts": "tsc --emitDeclarationOnly -p tsconfig.dts.json",
-    "test:dev": "vitest",
+    "dev": "tsdown --watch --sourcemap",
+    "build": "tsdown",
+    "lint": "eslint src test test-d bin",
     "test": "vitest run",
-    "init:rename": "node scripts/init/rename.js",
-    "init:bin": "node scripts/init/bin.js",
-    "clean": "node scripts/clean.js",
-    "format": "pnpm prettier --check \"src/**/*.{ts,js}\" -w",
-    "ls:pack": "npm pack --dry-run",
-    "prepare": "ts-patch install -s",
-    "semantic-release": "semantic-release",
-    "sync": "cnpm sync weapp-pandacss",
-    "docs": "typedoc --out docs src/types.ts --tsconfig ./tsconfig.docs.json",
-    "preview": "vite preview docs --outDir .",
-    "e2e": "vitest run -c ./vitest.e2e.config.ts",
-    "e2e:build": "cd examples && pnpm run build",
-    "e2e:dev": "vitest -c ./vitest.e2e.config.ts",
-    "e2e:u": "npm run e2e:build && vitest run -u -c ./vitest.e2e.config.ts"
+    "test:dev": "vitest",
+    "test:types": "tsd",
+    "typecheck": "tsc --noEmit",
+    "pack:check": "pnpm build && pnpm pack --dry-run"
+  },
+  "peerDependencies": {
+    "@pandacss/dev": "2.1.2",
+    "postcss": "catalog:"
+  },
+  "dependencies": {
+    "@babel/generator": "^8.0.6",
+    "@babel/parser": "^8.0.7",
+    "@babel/traverse": "^8.0.7",
+    "@babel/types": "^8.0.6",
+    "@csstools/postcss-cascade-layers": "^6.0.2",
+    "@csstools/postcss-is-pseudo-class": "^6.0.3",
+    "@pandacss/config": "2.1.2",
+    "@weapp-core/escape": "8.0.0",
+    "c12": "^3.3.4",
+    "cac": "^7.0.0",
+    "colorette": "^2.0.20",
+    "dedent": "^1.7.0",
+    "defu": "^6.1.4",
+    "local-pkg": "^1.2.1",
+    "merge": "^2.1.1",
+    "postcss-selector-parser": "^7.1.6"
+  },
+  "devDependencies": {
+    "@pandacss/dev": "2.1.2",
+    "@pandacss/preset-base": "2.1.2",
+    "@pandacss/preset-panda": "2.1.2",
+    "@types/babel__generator": "^7.6.8",
+    "@types/babel__traverse": "^7.20.7",
+    "@types/lodash": "^4.17.21",
+    "@types/lodash-es": "^4.17.12",
+    "lodash": "^4.17.21",
+    "lodash-es": "^4.17.21",
+    "tsdown": "0.23.0"
   },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
-  "peerDependencies": {
-    "postcss": "^8.4"
-  },
-  "dependencies": {
-    "@babel/generator": "^7.24.8",
-    "@babel/parser": "^7.24.8",
-    "@babel/traverse": "^7.24.8",
-    "@babel/types": "^7.24.8",
-    "@csstools/postcss-cascade-layers": "4.0.6",
-    "@csstools/postcss-is-pseudo-class": "4.0.8",
-    "@pandacss/config": "^0.44.0",
-    "@weapp-core/escape": "2.1.0",
-    "c12": "^1.11.1",
-    "cac": "^6.7.14",
-    "fs-extra": "^11.2.0",
-    "local-pkg": "^0.5.0",
-    "postcss-selector-parser": "^6.1.1"
-  },
-  "devDependencies": {
-    "@icebreakers/eslint-config": "^0.3.8",
-    "@pandacss/dev": "^0.44.0",
-    "@pnpm/lockfile-file": "^9.1.2",
-    "@rollup/plugin-alias": "^5.1.0",
-    "@rollup/plugin-commonjs": "^26.0.1",
-    "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-replace": "^5.0.7",
-    "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-typescript": "^11.1.6",
-    "@tsconfig/recommended": "^1.0.6",
-    "@types/babel__generator": "^7.6.8",
-    "@types/babel__traverse": "^7.20.6",
-    "@types/fs-extra": "^11.0.4",
-    "@types/klaw": "^3.0.6",
-    "@types/lodash": "^4.17.5",
-    "@types/lodash-es": "^4.17.12",
-    "@types/node": "^20.14.5",
-    "@types/semantic-release": "^20.0.6",
-    "@vitest/coverage-v8": "^2.0.0",
-    "colorette": "^2.0.20",
-    "cross-env": "^7.0.3",
-    "debounce": "^2.1.0",
-    "dedent": "^1.5.3",
-    "defu": "^6.1.4",
-    "del": "^7.1.0",
-    "eslint": "9.8.0",
-    "klaw": "^4.1.0",
-    "kleur": "^4.1.5",
-    "lodash": "^4.17.21",
-    "lodash-es": "^4.17.21",
-    "merge": "^2.1.1",
-    "miniprogram-automator": "^0.12.1",
-    "only-allow": "^1.2.1",
-    "outdent": "^0.8.0",
-    "postcss": "^8.4.38",
-    "prettier": "^3.3.2",
-    "rollup": "^4.18.1",
-    "rollup-plugin-visualizer": "^5.12.0",
-    "semantic-release": "^24.0.0",
-    "semver": "^7.6.2",
-    "ts-node": "^10.9.2",
-    "ts-patch": "^3.2.0",
-    "tsconfig-paths": "^4.2.0",
-    "tslib": "^2.6.3",
-    "typedoc": "^0.26.0",
-    "typescript": "^5.4.5",
-    "typescript-transform-paths": "^3.4.7",
-    "vite": "^5.3.1",
-    "vitest": "^2.0.0"
+  "tsd": {
+    "directory": "test-d",
+    "compilerOptions": {
+      "module": "node16",
+      "skipLibCheck": true
+    }
   }
 }

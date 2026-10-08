@@ -2,6 +2,7 @@ import process from 'node:process'
 import { defineConfig } from '@pandacss/dev'
 // *:not(#\#)
 export default defineConfig({
+  presets: ['@pandacss/preset-base', '@pandacss/preset-panda'],
   // Whether to use css reset
   // 小程序没有必要使用
   // https://taro-docs.jd.com/docs/envs#processenvtaro_env
@@ -20,6 +21,8 @@ export default defineConfig({
 
   // The output directory for your css system
   outdir: 'styled-system',
+  outExtension: 'mjs',
+  forceImportExtension: true,
 
   // staticCss: {
   //   css: [

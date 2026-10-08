@@ -1,6 +1,24 @@
 packages:
-  - "taro-app"
-  - "uni-app-vue3"
-  - "taro-app-vue3"
-  - "taro-app-linaria"
-  - "react-app"
+  - taro-app
+  - uni-app-vue3
+  - taro-app-vue3
+  - taro-app-linaria
+  - react-app
+minimumReleaseAgeExclude:
+  - '@pandacss/cli@2.1.2'
+  - '@pandacss/compiler-darwin-arm64@2.1.2'
+  - '@pandacss/compiler-darwin-x64@2.1.2'
+  - '@pandacss/compiler-linux-arm64-gnu@2.1.2'
+  - '@pandacss/compiler-linux-arm64-musl@2.1.2'
+  - '@pandacss/compiler-linux-x64-gnu@2.1.2'
+  - '@pandacss/compiler-linux-x64-musl@2.1.2'
+  - '@pandacss/compiler-shared@2.1.2'
+  - '@pandacss/compiler-win32-arm64-msvc@2.1.2'
+  - '@pandacss/compiler-win32-x64-msvc@2.1.2'
+  - '@pandacss/compiler@2.1.2'
+  - '@pandacss/config@2.1.2'
+  - '@pandacss/dev@2.1.2'
+  - '@pandacss/postcss@2.1.2'
+  - '@pandacss/preset-base@2.1.2'
+  - '@pandacss/preset-panda@2.1.2'
+  - '@pandacss/types@2.1.2'

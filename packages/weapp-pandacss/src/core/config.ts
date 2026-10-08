@@ -1,10 +1,10 @@
+import type { UserInputConfig } from 'c12'
+import type { PandacssConfigFileOptions, UserConfig } from '@/types'
 import process from 'node:process'
 import { loadConfig as loadConfigFile } from '@pandacss/config'
-import type { UserInputConfig } from 'c12'
 import { createDefineConfig, loadConfig } from 'c12'
 import { getCreateContextDefaults, getPostcssPluginDefaults } from '@/defaults'
 import { defu } from '@/utils'
-import type { PandacssConfigFileOptions, UserConfig } from '@/types'
 
 export function getPandacssConfig(
   options?: Partial<PandacssConfigFileOptions>,

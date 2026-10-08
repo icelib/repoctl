@@ -1,5 +1,5 @@
-import process from 'node:process'
 import type { ICreateContextOptions, IPostcssPluginOptions } from '@/types'
+import process from 'node:process'
 
 export function getCreateContextDefaults(): Required<ICreateContextOptions> {
   return {
