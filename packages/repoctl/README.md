@@ -40,6 +40,18 @@ pnpm exec repo check --full
 pnpm exec repo env support --json --redact --out reports/support.json
 ```
 
+## Release notes for fixed version groups
+
+Packages in the same `versioning.fixed` group share version bumps. When only the main package declares a change intent, pnpm may generate a `CHANGELOG.md` containing just a version heading for the other packages in the group.
+
+Starting with repoctl 5.8.0, the release PR includes those packages in its count and version table with a “Version-only release; no package-specific changelog entries.” maintenance entry. It does not copy the main package's feature notes or commit attribution to platform packages. pnpm still owns the changelog files. Declare a change intent for a platform package when it has its own changes to describe.
+
+If an older release PR omits these packages, upgrade the tool and lockfile on your workspace's main branch, then let the release workflow regenerate the PR after merging:
+
+```bash
+pnpm add -Dw repoctl@^5.8.0
+```
+
 ## Language
 
 Output is English by default. Use `--lang zh-CN` or `REPOCTL_LANG=zh-CN` for Simplified Chinese.

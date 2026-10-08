@@ -7,10 +7,10 @@ afterEach(async () => {
 })
 
 /** A worker can answer requests while native pnpm runs through spawnSync. */
-export async function startRegistry() {
+export async function startRegistry(extraPackages: string[] = []) {
   const server = new Worker(`
-    const { parentPort } = require('node:worker_threads');
-    const packages = new Set(['a', 'b', 'consumer', 'private-lib', 'root-pkg']);
+    const { parentPort, workerData } = require('node:worker_threads');
+    const packages = new Set(['a', 'b', 'consumer', 'private-lib', 'root-pkg', ...workerData]);
     require('node:http').createServer((req, res) => {
       const name = decodeURIComponent(new URL(req.url, 'http://localhost').pathname.slice(1));
       res.setHeader('content-type', 'application/json');
@@ -21,7 +21,7 @@ export async function startRegistry() {
       }
       res.end(JSON.stringify({name, 'dist-tags': {latest: '1.0.0'}, versions: {'1.0.0': {name, version: '1.0.0'}}}));
     }).listen(0, '127.0.0.1', function () {parentPort.postMessage(this.address().port)});
-  `, { eval: true })
+  `, { eval: true, workerData: extraPackages })
   servers.push(server)
   const port = await new Promise<number>((resolve, reject) => {
     server.once('message', resolve)

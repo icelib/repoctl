@@ -5,10 +5,10 @@ import process from 'node:process'
 import crossSpawn from 'cross-spawn'
 import { startRegistry } from './registry'
 
-export async function fixture() {
+export async function fixture(options: { registryPackages?: string[] } = {}) {
   const cwd = await realpath(await mkdtemp(path.join(tmpdir(), 'repo-release-plan-')))
   const root = JSON.parse(await readFile(new URL('../../../../../../package.json', import.meta.url), 'utf8'))
-  const registry = await startRegistry()
+  const registry = await startRegistry(options.registryPackages)
   const env = { ...process.env, npm_config_registry: registry }
   async function write(filename: string, content: string) {
     await mkdir(path.dirname(path.join(cwd, filename)), { recursive: true })
