@@ -3,10 +3,12 @@ import type { UserDefinedOptions as IcebreakerEslintOptions, UserConfigItem as I
 import type { StylelintConfig as IcebreakerStylelintOptions } from '@icebreakers/stylelint-config'
 import type { CommitlintToolingConfig, EslintToolingConfig, StylelintToolingConfig } from '../types'
 import type { DefineConfigOptions, DefineEslintConfigOptions, MonorepoCommitlintConfig, MonorepoEslintConfig, MonorepoStylelintConfig } from './types'
+import { createRequire } from 'node:module'
 import { icebreaker as createCommitlint } from '@icebreakers/commitlint-config'
-import { icebreaker as createEslint } from '@icebreakers/eslint-config'
 import { icebreaker as createStylelint } from '@icebreakers/stylelint-config'
 import { isDefineConfigWrapper, loadToolingSection, resolveConfigInput } from './shared'
+
+const require = createRequire(import.meta.url)
 
 function resolveEslintOptions(
   options: EslintToolingConfig = {},
@@ -103,6 +105,8 @@ export function createMonorepoEslintConfig(
     configs: resolvedConfigs = [],
     ...rest
   } = resolveEslintOptions(options, extraConfigs)
+  // Preserve the synchronous composer API while loading plugins only for ESLint.
+  const { icebreaker: createEslint } = require('@icebreakers/eslint-config') as typeof import('@icebreakers/eslint-config')
   return createEslint(
     rest as IcebreakerEslintOptions,
     ...(resolvedConfigs as IcebreakerEslintUserConfigItem[]),

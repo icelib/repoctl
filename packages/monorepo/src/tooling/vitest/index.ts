@@ -1,7 +1,6 @@
 import type { ViteUserConfig } from 'vitest/config'
 import type { DefineVitestConfigOptions, DefineVitestProjectConfigOptions, MonorepoVitestConfigOptions, MonorepoVitestConfigOverrides, MonorepoVitestConfigResult, MonorepoVitestProjectConfigOptions, MonorepoVitestProjectConfigResult } from '../types'
 import process from 'node:process'
-import { mergeConfig } from 'vitest/config'
 import { loadToolingSection } from '../shared'
 import { defaultConfigCandidates, defaultProjectRoots, defaultWorkspaceConfigCandidates, findConfig, loadProjectRootsFromWorkspace, resolveProjects } from './discovery'
 
@@ -64,10 +63,11 @@ export function createMonorepoVitestConfig(options: MonorepoVitestConfigOptions 
   }
 }
 
-function mergeMonorepoVitestConfig(
+async function mergeMonorepoVitestConfig(
   base: ViteUserConfig,
   overrides: MonorepoVitestConfigOverrides = {},
-): MonorepoVitestConfigResult {
+): Promise<MonorepoVitestConfigResult> {
+  const { mergeConfig } = await import('vitest/config')
   const merged = mergeConfig(base, overrides) as MonorepoVitestConfigResult
   if (!merged.test) {
     return merged
@@ -139,7 +139,7 @@ export async function defineVitestConfig(
       ...toolingBaseOptions,
       ...options,
     }),
-    mergeMonorepoVitestConfig(toolingOverrides, overrides),
+    await mergeMonorepoVitestConfig(toolingOverrides, overrides),
   )
 }
 

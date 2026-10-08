@@ -1,8 +1,8 @@
 import { realpath } from 'node:fs/promises'
 import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
-import { findWorkspacePackages } from '@pnpm/workspace.find-packages'
 import { readWorkspaceManifest } from '@pnpm/workspace.read-manifest'
 import path from 'pathe'
+import { findWorkspacePackages } from '../../core/workspace/discovery'
 import { localize } from '../../i18n'
 
 /** Keep lexical package paths: resolving symlinks here would hide unsafe targets. */
