@@ -471,6 +471,10 @@
     - lighter-workspace-discovery
     - precise-release-recovery
     - quiet-checkpoints-retry
+"@icebreakers/monorepo@5.9.0":
+  dir: packages/monorepo
+  intents:
+    - heavy-worms-ring
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -763,6 +767,10 @@ repoctl@5.8.1:
     - lighter-workspace-discovery
     - precise-release-recovery
     - quiet-checkpoints-retry
+repoctl@5.9.0:
+  dir: packages/repoctl
+  intents:
+    - heavy-worms-ring
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
