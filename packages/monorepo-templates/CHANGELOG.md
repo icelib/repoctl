@@ -1,5 +1,11 @@
 # @icebreakers/monorepo-templates
 
+## 2.3.1
+
+### Patch Changes
+
+- Update packaged client and Nimbus template dependencies and the generated workspace pnpm pin to 12.10.1 (#1042).
+
 ## 2.3.0
 
 ### Minor Changes

@@ -1,5 +1,18 @@
 # repoctl
 
+## 5.8.1
+
+### Patch Changes
+
+- Reduce CLI and isolated test startup costs by discovering workspace manifests without loading pnpm installation internals, and loading ESLint plugins and Vitest configuration merging only when requested. Workspace inspection includes packages for other platforms and retains pnpm manifest formats, exclusion patterns, sorting and symlink identities.
+
+- Recover historical releases with their declared pnpm version, reconcile failed checkpoint writes before retrying with the original revision, and report only unfinished lifecycle targets when preparing the next release.
+
+- Retry transient GitHub release checkpoint failures so an accepted npm publication can resume safely.
+
+- Updated dependencies:
+  - @icebreakers/monorepo@5.8.1
+
 ## 5.8.0
 
 ### Minor Changes
