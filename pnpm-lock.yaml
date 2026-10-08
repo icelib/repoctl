@@ -479,6 +479,9 @@ importers:
       '@pnpm/find-workspace-dir':
         specifier: ^1000.1.5
         version: 1000.1.5
+      '@pnpm/fs.find-packages':
+        specifier: ^1000.0.24
+        version: 1000.0.24(@pnpm/logger@1100.0.0)
       '@pnpm/logger':
         specifier: ^1100.0.0
         version: 1100.0.0
@@ -488,9 +491,6 @@ importers:
       '@pnpm/worker':
         specifier: ^1100.4.8
         version: 1100.4.8(@pnpm/logger@1100.0.0)(@types/node@26.6.4)
-      '@pnpm/workspace.find-packages':
-        specifier: ^1000.0.65
-        version: 1000.0.65(@pnpm/logger@1100.0.0)(@pnpm/worker@1100.4.8(@pnpm/logger@1100.0.0)(@types/node@26.6.4))(supports-color@10.2.2)(typanion@3.14.0)
       '@pnpm/workspace.read-manifest':
         specifier: ^1000.3.1
         version: 1000.3.1

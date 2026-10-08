@@ -1,8 +1,8 @@
 import type { UpgradeContext } from './context'
 import { Buffer } from 'node:buffer'
-import { findWorkspacePackages } from '@pnpm/workspace.find-packages'
 import path from 'pathe'
 import YAML from 'yaml'
+import { findWorkspacePackages } from '../../../core/workspace/discovery'
 import { normalizeWorkspaceManifest } from '../workspace'
 
 /** Plan both lane changes and legacy metadata removals before any asset is applied. */

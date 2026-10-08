@@ -20,7 +20,7 @@ describe('core module coverage', () => {
 
     await vi.resetModules()
     vi.doMock('c12', () => ({ loadConfig: loadConfigMock }))
-    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@/core/workspace/discovery', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
     vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: readWorkspaceManifestMock }))
     vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: findWorkspaceDirMock }))
 

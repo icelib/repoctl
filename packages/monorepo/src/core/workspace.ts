@@ -1,8 +1,8 @@
 import type { GetWorkspacePackagesOptions, WorkspaceData, WorkspacePackageSummary, WorkspacePackageSummaryData, WorkspacePackageWithJsonPath } from '../types'
 import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
-import { findWorkspacePackages } from '@pnpm/workspace.find-packages'
 import { readWorkspaceManifest } from '@pnpm/workspace.read-manifest'
 import path from 'pathe'
+import { findWorkspacePackages } from './workspace/discovery'
 
 export type { GetWorkspacePackagesOptions } from '../types'
 

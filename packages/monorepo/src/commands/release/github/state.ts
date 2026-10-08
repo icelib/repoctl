@@ -42,7 +42,7 @@ function transient(error: unknown) {
   if (!error || typeof error !== 'object' || !('status' in error) || typeof error.status !== 'number') {
     return false
   }
-  return error.status === 429 || error.status >= 500
+  return error.status === 0 || error.status === 429 || error.status >= 500
 }
 
 export async function writeReleaseState(request: GitHubRequest, key: string, state: ReleaseLifecycleState, revision?: string, options: ReleaseStateWriteOptions = {}) {
@@ -83,16 +83,17 @@ export async function writeReleaseState(request: GitHubRequest, key: string, sta
     }
     catch (caught) {
       error = caught
-      if (!transient(caught) || attempt === attempts) {
+      // A failed response may follow a committed write. Reconcile before retrying,
+      // and never adopt a concurrent writer's revision to make our PUT succeed.
+      const recovered = await readReleaseState(request, key)
+      if (recovered && JSON.stringify(recovered.state) === content) {
+        return recovered.revision
+      }
+      if (recovered?.revision !== revision || !transient(caught) || attempt === attempts) {
         break
       }
       await sleep(delay * 2 ** (attempt - 1))
     }
-  }
-  // PUT 采用文件 SHA 比较并交换；只有完全一致的远端内容才能证明丢失的响应已提交。
-  const recovered = await readReleaseState(request, key)
-  if (recovered && JSON.stringify(recovered.state) === content) {
-    return recovered.revision
   }
   throw new ReleaseCommandError(`Release checkpoint write failed or another publisher advanced it; retry after the other run finishes. ${error instanceof Error ? error.message : String(error)}`)
 }

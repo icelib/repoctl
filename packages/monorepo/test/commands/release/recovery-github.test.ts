@@ -34,9 +34,59 @@ it('retries a transient checkpoint failure before giving up', async () => {
   const request = vi.fn<typeof fetch>()
     .mockResolvedValueOnce(response({ object: { sha: target } }))
     .mockResolvedValueOnce(response({ message: 'Internal Server Error' }, 500))
+    .mockResolvedValueOnce(response({ message: 'not found' }, 404))
     .mockResolvedValueOnce(response({ content: { sha: 'revision' } }, 201))
   await expect(client(request).writeReleaseState(key, state)).resolves.toBe('revision')
   expect(request.mock.calls.filter(([, init]) => init?.method === 'PUT')).toHaveLength(2)
+})
+
+it.each([429, 500, 503])('accepts a committed checkpoint after HTTP %s without another PUT', async (status) => {
+  const request = vi.fn<typeof fetch>()
+    .mockResolvedValueOnce(response({ message: 'response failed' }, status))
+    .mockResolvedValueOnce(response(stored()))
+  await expect(client(request).writeReleaseState(key, state, 'old-revision')).resolves.toBe('revision')
+  expect(request.mock.calls.map(([, init]) => init?.method)).toEqual(['PUT', 'GET'])
+})
+
+it('retries a transport failure only after confirming the original revision is unchanged', async () => {
+  const request = vi.fn<typeof fetch>()
+    .mockRejectedValueOnce(new TypeError('socket closed'))
+    .mockResolvedValueOnce(response({ ...stored({ ...state, npm: 'running' }), sha: 'old-revision' }))
+    .mockResolvedValueOnce(response({ content: { sha: 'revision' } }))
+  await expect(client(request).writeReleaseState(key, state, 'old-revision')).resolves.toBe('revision')
+  expect(request.mock.calls.map(([, init]) => init?.method)).toEqual(['PUT', 'GET', 'PUT'])
+  expect(request.mock.calls.filter(([, init]) => init?.method === 'PUT')
+    .map(([, init]) => JSON.parse(String(init?.body)).sha)).toEqual(['old-revision', 'old-revision'])
+})
+
+it('bounds retries when the checkpoint remains unchanged', async () => {
+  const request = vi.fn<typeof fetch>()
+    .mockImplementation(async (_url, init) => init?.method === 'PUT'
+      ? response({ message: 'Internal Server Error' }, 500)
+      : response({ ...stored({ ...state, npm: 'running' }), sha: 'old-revision' }))
+  await expect(client(request).writeReleaseState(key, state, 'old-revision')).rejects.toThrow('checkpoint write failed')
+  expect(request.mock.calls.map(([, init]) => init?.method)).toEqual(['PUT', 'GET', 'PUT', 'GET'])
+})
+
+it.each([0, 401, 403, 409, 422, 429, 500])('stops when another writer advances the checkpoint after status %s', async (status) => {
+  const request = vi.fn<typeof fetch>()
+  if (status === 0) {
+    request.mockRejectedValueOnce(new TypeError('response lost'))
+  }
+  else {
+    request.mockResolvedValueOnce(response({ message: 'write failed' }, status))
+  }
+  request.mockResolvedValueOnce(response(stored({ ...state, writer: 'writer-b' })))
+  await expect(client(request).writeReleaseState(key, state, 'old-revision')).rejects.toThrow('another publisher advanced')
+  expect(request.mock.calls.map(([, init]) => init?.method)).toEqual(['PUT', 'GET'])
+})
+
+it('does not retry a PUT when the reconciliation read fails', async () => {
+  const request = vi.fn<typeof fetch>()
+    .mockResolvedValueOnce(response({ message: 'Internal Server Error' }, 500))
+    .mockResolvedValue(response({ message: 'unavailable' }, 503))
+  await expect(client(request).writeReleaseState(key, state, 'old-revision')).rejects.toThrow()
+  expect(request.mock.calls.filter(([, init]) => init?.method === 'PUT')).toHaveLength(1)
 })
 
 it('does not mistake a concurrent checkpoint writer for its own lost response', async () => {

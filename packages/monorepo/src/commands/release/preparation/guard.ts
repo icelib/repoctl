@@ -57,7 +57,10 @@ export async function assertPreviousReleaseComplete(options: ReleaseCiOptions, d
       const key = releaseStateKey(repository, distTag, group)
       const checkpoint = await github.readReleaseState(key)
       if (checkpoint && (!checkpoint.state.complete || checkpoint.state.schemaVersion !== 1)) {
-        group.forEach(pkg => unfinished.add(packageKey(pkg)))
+        // candidates identifies the workspace snapshot; packages owns this lifecycle.
+        // Unchanged historical versions must not inherit another release's unfinished hooks.
+        const targets = checkpoint.state.schemaVersion === 1 ? checkpoint.state.packages : group
+        targets.forEach(pkg => unfinished.add(packageKey(pkg)))
       }
     }
   }

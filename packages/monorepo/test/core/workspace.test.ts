@@ -14,7 +14,7 @@ describe('workspace helpers', () => {
     ])
     const readManifestMock = vi.fn(async () => ({ packages: ['packages/*'] }))
 
-    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@/core/workspace/discovery', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
     vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: readManifestMock }))
     vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: vi.fn(async () => '/repo') }))
 
@@ -34,7 +34,7 @@ describe('workspace helpers', () => {
     ])
     const readManifestMock = vi.fn(async () => ({ packages: ['packages/*'] }))
 
-    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@/core/workspace/discovery', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
     vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: readManifestMock }))
     vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: vi.fn(async () => '/runneradmin/repo') }))
 
@@ -51,7 +51,7 @@ describe('workspace helpers', () => {
       { rootDir: '/repo/apps/site', manifest: { name: 'site', private: true }, rootDirRealPath: '/repo/apps/site' },
     ])
 
-    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@/core/workspace/discovery', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
     vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: vi.fn(async () => null) }))
     vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: vi.fn(async () => '/repo') }))
 
@@ -72,7 +72,7 @@ describe('workspace helpers', () => {
       { rootDir: '/repo/packages/a', manifest: { name: 'pkg-a', description: 'Alpha', private: false }, rootDirRealPath: '/repo/packages/a' },
     ])
 
-    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@/core/workspace/discovery', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
     vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: vi.fn(async () => ({ packages: ['packages/*'] })) }))
     vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: vi.fn(async () => '/repo') }))
 
@@ -103,7 +103,7 @@ describe('workspace helpers', () => {
     const findWorkspacePackagesMock = vi.fn(async () => [])
 
     vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: vi.fn(async () => undefined) }))
-    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@/core/workspace/discovery', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
     vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: vi.fn(async () => null) }))
 
     const { getWorkspaceData } = await import('@/core/workspace')
@@ -121,7 +121,7 @@ describe('workspace helpers', () => {
     const readManifestMock = vi.fn(async () => ({ packages: ['packages/*'] }))
     const findWorkspaceDirMock = vi.fn(async () => '/repo')
 
-    vi.doMock('@pnpm/workspace.find-packages', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
+    vi.doMock('@/core/workspace/discovery', () => ({ findWorkspacePackages: findWorkspacePackagesMock }))
     vi.doMock('@pnpm/workspace.read-manifest', () => ({ readWorkspaceManifest: readManifestMock }))
     vi.doMock('@pnpm/find-workspace-dir', () => ({ findWorkspaceDir: findWorkspaceDirMock }))
 
