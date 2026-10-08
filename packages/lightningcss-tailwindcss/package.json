@@ -47,7 +47,7 @@
     "test:types": "tsd",
     "test:dev": "vitest",
     "release": "pnpm publish",
-    "sync": "cnpm sync lightningcss-tailwindcss",
+    "sync": "repo release sync-npmmirror --package lightningcss-tailwindcss",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

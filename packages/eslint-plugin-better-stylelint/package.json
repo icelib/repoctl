@@ -46,7 +46,7 @@
     "test:types": "tsd",
     "test:dev": "vitest",
     "release": "pnpm publish",
-    "sync": "cnpm sync eslint-plugin-better-stylelint",
+    "sync": "repo release sync-npmmirror --package eslint-plugin-better-stylelint",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {

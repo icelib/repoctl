@@ -48,6 +48,10 @@ function localizeCommanderError(value: string) {
 }
 
 function configureLocalizedHelp(command: Command) {
+  // 根参数在子命令之前解析；语言参数仍允许出现在任意命令层级。
+  if (command !== program && !command.options.some(option => option.long === '--lang')) {
+    command.addOption(new Option('--lang <locale>', message('languageOption')).choices([...supportedLocales]))
+  }
   const defaultHelp = command.createHelp()
   const titles: Record<string, string> = {
     'Arguments:': message('argumentsTitle'),
@@ -75,6 +79,7 @@ function configureLocalizedHelp(command: Command) {
 }
 
 program
+  .enablePositionalOptions()
   .name(activeCliName)
   .version(version, '-V, --version', message('versionOption'))
   .description(message('cliDescription'))

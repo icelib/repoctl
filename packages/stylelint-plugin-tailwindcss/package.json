@@ -47,7 +47,7 @@
     "test:types": "tsd",
     "test:dev": "vitest",
     "release": "pnpm publish",
-    "sync": "cnpm sync stylelint-plugin-tailwindcss",
+    "sync": "repo release sync-npmmirror --package stylelint-plugin-tailwindcss",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {

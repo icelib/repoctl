@@ -45,6 +45,28 @@ repoctl 5.8.0 起会在发布 PR 的包数量和版本表中保留这些包，�
 pnpm add -Dw repoctl@^5.8.0
 ```
 
+## 同步已发布包到 npmmirror
+
+直接调用 HTTP API，无须安装 cnpm。
+
+```bash
+pnpm exec repo release sync-npmmirror --all
+pnpm exec repo release sync-npmmirror --package repoctl --version 5.8.1
+pnpm exec repo release sync-npmmirror --all --dry-run
+```
+
+`--all`、`--package <name>`、`--published` 必须三选一。手动命令未指定版本时，以 npm 当前 dist-tag 指向的已发布版本为目标。`--all` 排除私有 workspace 和明确发布到其他 registry 的包；尚未发布到 npm 的包显示为跳过。
+
+自动同步时，在根脚本添加 `"release:sync-npmmirror": "repo release sync-npmmirror --published"`，并在 `commands.release.hooks.afterPublish` 中追加：
+
+```json
+{ "script": "release:sync-npmmirror", "continueOnError": true, "idempotent": true }
+```
+
+钩子读取 `REPO_RELEASE_PUBLISHED_PACKAGES` 或 `REPO_RELEASE_PUBLISH_SUMMARY`；空列表跳过，缺失或损坏的输入明确失败。追加配置时保留已有钩子。
+
+命令跳过依赖递归同步，等待任务完成后，通过公开镜像 registry 验证目标版本及其当前 dist-tag。请求、重试和等待共用默认 300 秒预算，可通过 `--timeout <seconds>` 调整，并发默认为 2。手动同步失败返回非零退出码并打印补同步命令；GitHub Actions 同时输出 warning 和步骤摘要，上述可选钩子保留已经成功的 npm 发布结果。
+
 ## 语言
 
 默认输出英文。使用 `--lang zh-CN` 或 `REPOCTL_LANG=zh-CN` 切换为简体中文。

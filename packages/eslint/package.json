@@ -53,7 +53,7 @@
     "test:types": "tsd",
     "test:dev": "vitest",
     "release": "pnpm publish",
-    "sync": "cnpm sync @icebreakers/eslint-config",
+    "sync": "repo release sync-npmmirror --package @icebreakers/eslint-config",
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {

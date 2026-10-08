@@ -51,7 +51,7 @@
     "test:types": "tsd",
     "test:dev": "vitest",
     "release": "pnpm publish",
-    "sync": "cnpm sync @icebreakers/stylelint-config",
+    "sync": "repo release sync-npmmirror --package @icebreakers/stylelint-config",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
