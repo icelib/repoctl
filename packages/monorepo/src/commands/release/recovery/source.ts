@@ -14,6 +14,7 @@ import { getPublishCandidates } from '../publish'
 import { packageKey } from '../publish/state'
 import { capture, getReleaseEnv, hasPendingIntents, run } from '../shared'
 import { readSourceCandidates } from './candidates'
+import { sourcePackageManagerEnvironment } from './environment'
 
 /** Run current tooling against the original source, never today's package contents. */
 export async function recoverSource(options: ReleaseCiOptions, source: string) {
@@ -73,6 +74,7 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
     }
     const dryRun = options.dryRun ?? env['REPO_RELEASE_DRY_RUN'] === 'true'
     if (!dryRun) {
+      recovery = { ...recovery, env: await sourcePackageManagerEnvironment(recovery, root) }
       run('pnpm', ['install', '--frozen-lockfile'], recovery)
       const config = await resolveCommandConfig('release', cwd)
       recovery = { ...recovery, config: { ...config, branches: options.config?.branches ?? {} } }
