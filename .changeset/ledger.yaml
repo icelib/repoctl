@@ -266,6 +266,10 @@
   intents:
     - auto-pr-935
     - new-jokes-happen
+"@icebreakers/monorepo-templates@2.3.1":
+  dir: packages/monorepo-templates
+  intents:
+    - auto-pr-1042
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -461,6 +465,12 @@
   intents:
     - auto-pr-935
     - new-jokes-happen
+"@icebreakers/monorepo@5.8.1":
+  dir: packages/monorepo
+  intents:
+    - lighter-workspace-discovery
+    - precise-release-recovery
+    - quiet-checkpoints-retry
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -747,6 +757,12 @@ repoctl@5.8.0:
   dir: packages/repoctl
   intents:
     - new-jokes-happen
+repoctl@5.8.1:
+  dir: packages/repoctl
+  intents:
+    - lighter-workspace-discovery
+    - precise-release-recovery
+    - quiet-checkpoints-retry
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
