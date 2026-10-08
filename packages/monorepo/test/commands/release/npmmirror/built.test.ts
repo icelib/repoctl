@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { pathToFileURL } from 'node:url'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 const cli = path.resolve(import.meta.dirname, '../../../../../repoctl/bin/repo.js')
@@ -26,7 +27,7 @@ afterEach(async () => {
 })
 
 function run(args: string[], env: NodeJS.ProcessEnv = {}) {
-  return spawnSync(process.execPath, ['--import', path.join(cwd, 'preload.mjs'), cli, 'release', 'sync-npmmirror', ...args], {
+  return spawnSync(process.execPath, ['--import', pathToFileURL(path.join(cwd, 'preload.mjs')).href, cli, 'release', 'sync-npmmirror', ...args], {
     cwd,
     encoding: 'utf8',
     timeout: 30_000,
