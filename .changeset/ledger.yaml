@@ -270,6 +270,10 @@
   dir: packages/monorepo-templates
   intents:
     - auto-pr-1042
+"@icebreakers/monorepo-templates@2.3.2":
+  dir: packages/monorepo-templates
+  intents:
+    - wise-lamps-clap
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -290,6 +294,11 @@
   intents:
     - release-publish-summary
     - repair-release-notes
+"@icebreakers/monorepo@5.10.0":
+  dir: packages/monorepo
+  intents:
+    - itchy-knives-taste
+    - sweet-toys-repair
 "@icebreakers/monorepo@5.2.0":
   dir: packages/monorepo
   intents:
@@ -627,6 +636,11 @@ postcss-tailwindcss@3.1.3:
   dir: packages/postcss-tailwindcss
   intents:
     - auto-pr-917
+repoctl@5.10.0:
+  dir: packages/repoctl
+  intents:
+    - itchy-knives-taste
+    - sweet-toys-repair
 repoctl@5.2.0:
   dir: packages/repoctl
   intents:
