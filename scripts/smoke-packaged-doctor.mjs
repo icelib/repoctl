@@ -131,7 +131,7 @@ try {
     private: true,
   }, null, 2)}\n`)
 
-  run(['add', '--workspace-root', '--save-dev', '--ignore-scripts', templatesTarball, monorepoTarball, repoctlTarball], workspaceDir)
+  run(['add', '--workspace-root', '--save-dev', '--ignore-scripts', '--strict-peer-dependencies', templatesTarball, monorepoTarball, repoctlTarball], workspaceDir)
   const manifest = JSON.parse(run(['--silent', 'exec', 'node', '-p', 'JSON.stringify(require("./package.json"))'], workspaceDir, 'pipe'))
   if (manifest.dependencies?.vitest || manifest.devDependencies?.vitest) {
     throw new Error('the smoke workspace must not declare Vitest')
