@@ -78,7 +78,7 @@ describe('publish retry', () => {
     await expect(
       publishWithRetry(publishArgs, { cwd, sleep: retry, spawn: spawn as never }, [{ name: 'repoctl', version: '1.0.0' }]),
     ).rejects.toThrow('command failed: pnpm publish -r --report-summary --provenance --no-git-checks')
-    expect(calls).toHaveLength(2)
+    expect(calls).toHaveLength(1)
     expect(retry).not.toHaveBeenCalled()
   })
 

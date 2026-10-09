@@ -27,7 +27,7 @@ export async function getPublishCandidates(cwd: string): Promise<PublishedPackag
 }
 
 /** Only pnpm uploads; accepted versions never re-enter its retry filters. */
-export async function publishWithRetry(args: string[], options: ReleaseOptions & { quiet?: boolean }, candidates: PublishedPackage[], confirmAll = false, recovery?: { accepted: PublishedPackage[], save: (accepted: PublishedPackage[]) => Promise<void> }) {
+export async function publishWithRetry(args: string[], options: ReleaseOptions & { quiet?: boolean, deferConfirmation?: boolean }, candidates: PublishedPackage[], confirmAll = false, recovery?: { accepted: PublishedPackage[], save: (accepted: PublishedPackage[]) => Promise<void> }) {
   const state = new PublishState(candidates, recovery?.save)
   state.accept(recovery?.accepted ?? [])
   let attemptArgs = args
@@ -41,19 +41,21 @@ export async function publishWithRetry(args: string[], options: ReleaseOptions &
       await state.save(options.cwd, 'publishing')
 
       if (result.status === 0) {
-        await confirmVisibility(state, options, recovering ? candidates : state.acceptedPackages)
-        await state.save(options.cwd, 'complete')
+        if (!options.deferConfirmation) {
+          await confirmVisibility(state, options, recovering ? candidates : state.acceptedPackages)
+        }
+        await state.save(options.cwd, options.deferConfirmation ? 'confirming' : 'complete')
         return
       }
 
       recovering = true
-      await refreshRegistry(state, options)
-      await state.save(options.cwd, 'publishing')
       const transient = isTransientPublishFailure(result.output)
       const conflict = isPublishConflict(result.output)
       if (!transient && !conflict) {
         throw new ReleaseCommandError(`command failed: pnpm ${args.join(' ')}`, result.status ?? 1)
       }
+      await refreshRegistry(state, options)
+      await state.save(options.cwd, 'publishing')
       if (!state.pendingUploads.length || (conflict && !transient)) {
         await confirmVisibility(state, options, candidates, state.unconfirmed(candidates).length ? 20_000 : 0)
         await state.save(options.cwd, 'complete')

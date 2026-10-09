@@ -12,7 +12,17 @@ export interface ReleaseAfterPublishHookConfig {
   continueOnError?: boolean
 }
 
+export interface ReleaseRegistryConfig {
+  /** Maximum simultaneous registry queries. @default 4 */
+  concurrency?: number
+  /** Per-request timeout, bounded by the remaining visibility budget. @default 10000 */
+  requestTimeoutMs?: number
+  /** Total visibility confirmation budget. @default 900000 */
+  visibilityTimeoutMs?: number
+}
+
 export interface ReleaseCommandConfig {
+  registry?: ReleaseRegistryConfig
   /** Stable, maintenance and prerelease branch mappings. */
   branches?: ReleaseBranchesConfig
   /**

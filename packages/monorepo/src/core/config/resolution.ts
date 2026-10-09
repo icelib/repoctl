@@ -28,7 +28,7 @@ const defaults = {
   env: { tasks: ['build'], frameworkInference: true },
   init: { skipReadme: false, skipPkgJson: false, skipChangeset: false, skipIssueTemplateConfig: false, tooling: [], force: false },
   mirror: { env: chinaMirrorsEnvs },
-  release: { qualityScripts: ['build', 'lint', 'test'], hooks: { verify: [], beforeVersion: [], afterVersion: [], beforePublish: [], afterPublish: [] } },
+  release: { registry: { concurrency: 4, requestTimeoutMs: 10_000, visibilityTimeoutMs: 900_000 }, qualityScripts: ['build', 'lint', 'test'], hooks: { verify: [], beforeVersion: [], afterVersion: [], beforePublish: [], afterPublish: [] } },
   upgrade: { interactive: false, core: false, outDir: '', skipOverwrite: false, yes: false, overwrite: false, noOverwrite: false, overwriteRelease: false, mergeTargets: true, scripts: {}, skipChangesetMarkdown: true },
 } satisfies { [Name in ConfigCommand]: CommandConfig<Name> }
 

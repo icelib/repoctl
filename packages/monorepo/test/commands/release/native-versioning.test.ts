@@ -130,6 +130,14 @@ it('recovers only versions introduced by the original source; dry-run does not i
   expect(github.writeReleaseState).not.toHaveBeenCalled()
   expect(github.ensureRelease).not.toHaveBeenCalled()
   expect(await readFile(path.join(h.cwd, 'packages/repoctl/CHANGELOG.md'), 'utf8')).toBe('# Later, unrelated contents\n')
+  for (const stage of ['plan', 'verify', 'prepare', 'upload', 'confirm', 'finalize'] as const) {
+    await releaseCi({ ...options, stage })
+  }
+  expect(calls.some(call => call.startsWith('pnpm '))).toBe(false)
+  expect(github.writeReleaseState).not.toHaveBeenCalled()
+  expect(github.ensureRelease).not.toHaveBeenCalled()
+  const progress = JSON.parse(await readFile(path.join(h.cwd, 'repoctl-ci-progress.json'), 'utf8'))
+  expect(progress.done).toEqual(['plan', 'verify', 'prepare', 'upload', 'confirm', 'finalize'])
   await expect(releaseCi({ ...options, sourceSha: 'short' })).rejects.toThrow('full lowercase commit SHA')
   await expect(releaseCi({ ...options, sourceSha: 'a'.repeat(40) })).rejects.toThrow()
 })

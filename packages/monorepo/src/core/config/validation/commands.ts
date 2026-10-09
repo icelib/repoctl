@@ -3,7 +3,7 @@ import type { DoctorCommandConfig, DoctorSuppression } from '../../../types/doct
 import type { EnvCacheConfig, EnvCacheSuppression } from '../../../types/env-cache'
 import type { ReleaseBranchesConfig } from '../../../types/release'
 import type { Schema } from './schema'
-import { array, boolean, choices, isRecord, names, nonempty, object, record, string, strings, union } from './schema'
+import { array, boolean, choices, isRecord, names, nonempty, object, positive, record, string, strings, union } from './schema'
 
 export const dependencyTypes = array(choices('dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'))
 export const toolingTargets = array(choices('commitlint', 'eslint', 'stylelint', 'lint-staged', 'tsconfig', 'vitest'))
@@ -35,6 +35,6 @@ export const commandSchemas = {
   env,
   init: object({ skipReadme: boolean, skipPkgJson: boolean, skipChangeset: boolean, skipIssueTemplateConfig: boolean, tooling: toolingTargets, preset: choices('minimal', 'standard'), force: boolean }),
   mirror: object({ env: record(string) }),
-  release: object({ branches, qualityScripts: names, hooks: object({ verify: names, beforeVersion: names, afterVersion: names, beforePublish: names, afterPublish: array(object({ script: nonempty, continueOnError: boolean, idempotent: boolean }, ['script'])) }) }),
+  release: object({ registry: object({ concurrency: { ...positive, expected: 'positive integer', accepts: value => positive.accepts(value) && Number.isInteger(value) }, requestTimeoutMs: positive, visibilityTimeoutMs: positive }), branches, qualityScripts: names, hooks: object({ verify: names, beforeVersion: names, afterVersion: names, beforePublish: names, afterPublish: array(object({ script: nonempty, continueOnError: boolean, idempotent: boolean }, ['script'])) }) }),
   upgrade: object({ interactive: boolean, core: boolean, outDir: string, cwd: string, skipOverwrite: boolean, yes: boolean, overwrite: boolean, noOverwrite: boolean, overwriteRelease: boolean, targets: strings, mergeTargets: boolean, scripts: record(string), skipChangesetMarkdown: boolean }),
 } satisfies Record<keyof NonNullable<MonorepoConfig['commands']>, Schema>
