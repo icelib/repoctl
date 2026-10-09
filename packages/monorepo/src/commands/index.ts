@@ -165,7 +165,7 @@ export type { MaintenanceFile, MaintenancePresetChange, MaintenancePresetUpgrade
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
-export type { GitHubRelease, ReleaseCiOptions, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+export type { GitHubRelease, ReleaseCiOptions, ReleaseCiStage, ReleaseCiStageResult, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
 export { resolveReleaseBranches } from './release/lines'
 export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
 

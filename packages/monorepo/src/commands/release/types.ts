@@ -6,7 +6,11 @@ export const prereleaseBranches = new Set(['alpha', 'beta', 'rc', 'next'])
 
 export type ReleaseMode = 'auto' | 'prepare' | 'publish' | 'publish-unpublished' | 'reconcile' | 'oidc-audit'
 
+export type ReleaseCiStage = 'all' | 'plan' | 'verify' | 'prepare' | 'upload' | 'confirm' | 'finalize'
+
 export interface ReleaseOptions {
+  /** Optional registry HTTP transport, primarily for deterministic testing. */
+  registryFetch?: typeof globalThis.fetch
   cwd: string
   branch?: string
   spawn?: typeof spawnSync
@@ -17,6 +21,8 @@ export interface ReleaseOptions {
 }
 
 export interface ReleaseCiOptions extends ReleaseOptions {
+  /** Run one lifecycle phase. The default all entrypoint remains compatible. */
+  stage?: ReleaseCiStage
   /** Recover the entire prepared release from a commit in the selected stable or maintenance branch history. */
   sourceSha?: string
   mode?: ReleaseMode

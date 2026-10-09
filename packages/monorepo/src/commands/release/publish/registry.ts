@@ -1,87 +1,99 @@
 import type { PublishedPackage, ReleaseOptions } from '../types'
 import type { PublishState } from './state'
-import { spawnSync } from 'node:child_process'
 import { performance } from 'node:perf_hooks'
 import { logger } from '../../../core/logger'
 import { ReleaseCommandError } from '../errors'
-import { getReleaseEnv } from '../shared'
-import { outputText } from './evidence'
+import { registryClient, sleep } from '../registry'
+import { mapConcurrent, registrySettings } from '../registry/settings'
 import { packageKey } from './state'
 
-// npm may accept an upload several minutes before the version becomes queryable.
-const visibilityBudget = 15 * 60_000
-const refreshBudget = 5 * 60_000
-const pollInterval = 10_000
-const progressInterval = 60_000
+export { sleep } from '../registry'
 
-export function sleep(milliseconds: number, options: ReleaseOptions) {
-  return options.sleep?.(milliseconds) ?? new Promise<void>(resolve => setTimeout(resolve, milliseconds))
-}
-
-export async function refreshRegistry(state: PublishState, options: ReleaseOptions, packages = state.candidates, deadline = performance.now() + refreshBudget) {
+export async function refreshRegistry(state: PublishState, options: ReleaseOptions, packages = state.candidates, deadline = performance.now() + registrySettings(options).visibilityTimeoutMs) {
   const unknown: PublishedPackage[] = []
-  const pending = state.unconfirmed(packages)
-  for (const [index, pkg] of pending.entries()) {
-    const remaining = Math.floor(deadline - performance.now())
-    if (remaining <= 0) {
-      unknown.push(...pending.slice(index))
-      break
+  const client = registryClient(options)
+  await mapConcurrent(state.unconfirmed(packages), registrySettings(options).concurrency, async (pkg) => {
+    try {
+      const remote = await client.inspect(pkg, deadline, 'version')
+      if (remote) {
+        state.confirm(pkg)
+      }
     }
-    const result = (options.spawn ?? spawnSync)('npm', ['view', packageKey(pkg), 'version'], {
-      cwd: options.cwd,
-      encoding: 'utf8',
-      env: getReleaseEnv(options),
-      shell: false,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      timeout: Math.min(10_000, remaining),
-      killSignal: 'SIGKILL',
-    })
-    if (result.status === 0 && outputText(result.stdout).trim() === pkg.version) {
-      state.confirm(pkg)
-      await state.save(options.cwd, 'confirming')
-    }
-    else if (result.error || result.status === 0 || !/\bE404\b/.test(outputText(result.stderr))) {
+    catch (error) {
+      if (error instanceof ReleaseCommandError && error.message.includes('authentication failed')) {
+        throw error
+      }
       unknown.push(pkg)
+      logger.warn(error instanceof Error ? error.message : String(error))
     }
-  }
+  })
+  await state.save(options.cwd, 'confirming')
   return unknown
 }
 
-export async function confirmVisibility(state: PublishState, options: ReleaseOptions & { quiet?: boolean }, packages: PublishedPackage[], initialDelay = 0) {
-  let remaining = visibilityBudget
+export async function confirmVisibility(state: PublishState, options: ReleaseOptions & { quiet?: boolean }, packages: PublishedPackage[], initialDelay = 0, distTag?: string) {
+  const settings = registrySettings(options)
+  const budget = settings.visibilityTimeoutMs
+  const started = performance.now()
+  let virtualWait = 0
+  const elapsed = () => performance.now() - started + virtualWait
+  const tagged = new Set<string>()
+  const pending = () => distTag ? packages.filter(pkg => !tagged.has(packageKey(pkg))) : state.unconfirmed(packages)
   let delay = initialDelay
   let lastProgress = 0
-  let pendingVersions = state.unconfirmed(packages).map(packageKey).join(', ')
+  let pendingVersions = pending().map(packageKey).join(', ')
   if (pendingVersions && !options.quiet) {
-    logger.info(`Waiting up to ${visibilityBudget / 60_000} minutes for npm registry visibility; pending versions: ${pendingVersions}`)
+    logger.info(`Waiting up to ${budget / 60_000} minutes for npm registry visibility${distTag ? ` and dist-tag ${distTag}` : ''}; pending versions: ${pendingVersions}`)
   }
-  while (state.unconfirmed(packages).length && remaining > 0) {
-    const started = performance.now()
-    const wait = Math.min(delay, remaining)
-    if (wait) {
-      await sleep(wait, options)
+  try {
+    while (pending().length && elapsed() < budget) {
+      const wait = Math.min(delay, budget - elapsed())
+      if (wait) {
+        const before = performance.now()
+        await sleep(wait, options)
+        virtualWait += Math.max(0, wait - (performance.now() - before))
+      }
+      if (elapsed() >= budget) {
+        break
+      }
+      const queryStarted = performance.now()
+      const deadline = queryStarted + Math.max(0, budget - elapsed())
+      if (distTag) {
+        await mapConcurrent(pending(), settings.concurrency, async (pkg) => {
+          const remote = await registryClient(options).inspect(pkg, deadline)
+          if (remote) {
+            state.accept([pkg])
+            if (remote['dist-tags']?.[distTag] === pkg.version) {
+              state.confirm(pkg)
+              tagged.add(packageKey(pkg))
+            }
+          }
+        })
+      }
+      else {
+        const unknown = await refreshRegistry(state, options, packages, deadline)
+        if (unknown.length && elapsed() < budget) {
+          throw new ReleaseCommandError(`npm registry state is unknown after bounded retries: ${unknown.map(packageKey).join(', ')}; upload evidence preserved`)
+        }
+      }
+      await state.save(options.cwd, 'confirming')
+      const next = pending().map(packageKey).join(', ')
+      if (next && elapsed() < budget && !options.quiet && (next !== pendingVersions || elapsed() - lastProgress >= 60_000)) {
+        logger.info(`Waiting for npm registry visibility (${Math.floor(elapsed() / 1_000)}s/${budget / 1_000}s); pending versions: ${next}`)
+        lastProgress = elapsed()
+      }
+      pendingVersions = next
+      delay = elapsed() < 30_000 ? 2_000 : elapsed() < 120_000 ? 5_000 : 10_000
     }
-    // Count injected sleeps as well as real elapsed time, so tests need no wall-clock waits.
-    remaining -= Math.max(wait, performance.now() - started)
-    const queryStarted = performance.now()
-    await refreshRegistry(state, options, packages, queryStarted + remaining)
-    await state.save(options.cwd, 'confirming')
-    remaining -= performance.now() - queryStarted
-    const elapsed = visibilityBudget - remaining
-    const nextPendingVersions = state.unconfirmed(packages).map(packageKey).join(', ')
-    if (nextPendingVersions && remaining > 0 && !options.quiet
-      && (nextPendingVersions !== pendingVersions || elapsed - lastProgress >= progressInterval)) {
-      logger.info(`Waiting for npm registry visibility (${Math.floor(elapsed / 1_000)}s/${visibilityBudget / 1_000}s); pending versions: ${nextPendingVersions}`)
-      lastProgress = elapsed
+    if (pending().length) {
+      throw new ReleaseCommandError(`npm registry visibility confirmation timed out after ${budget / 60_000} minutes; pending versions: ${pending().map(packageKey).join(', ')}${distTag ? ` (including dist-tag ${distTag})` : ''}. Upload evidence is preserved in repoctl-publish-progress.json; resume confirmation without re-uploading accepted versions.`)
     }
-    pendingVersions = nextPendingVersions
-    delay = pollInterval
+    if (packages.length && !options.quiet) {
+      logger.info('npm registry visibility confirmed for all requested versions.')
+    }
   }
-  const pending = state.unconfirmed(packages)
-  if (pending.length) {
-    throw new ReleaseCommandError(`npm registry visibility confirmation timed out after ${visibilityBudget / 60_000} minutes; pending versions: ${pending.map(packageKey).join(', ')}. Upload evidence is preserved in repoctl-publish-progress.json; resume confirmation without re-uploading accepted versions.`)
-  }
-  if (packages.length && !options.quiet) {
-    logger.info('npm registry visibility confirmed for all requested versions.')
+  catch (error) {
+    await state.save(options.cwd, 'failed')
+    throw error
   }
 }

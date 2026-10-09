@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-09T10:35:40.055Z",
+  "node": "v24.18.0",
+  "concurrency": 4,
+  "requestTimeoutMs": 10000,
+  "packages": [
+    "@weapp-stylex/compiler@0.2.0",
+    "@weapp-stylex/core@0.1.2",
+    "@weapp-stylex/taro@0.2.0",
+    "@weapp-stylex/uni-app@0.2.0",
+    "weapp-stylex@0.2.0",
+    "@weapp-stylex/weapp-vite@0.3.0"
+  ],
+  "warmupRounds": 1,
+  "rounds": 3,
+  "serialNpmMs": [
+    2251,
+    4034,
+    5050
+  ],
+  "parallelHttpMs": [
+    1031,
+    1440,
+    2043
+  ],
+  "propagationWaitMs": 0,
+  "note": "Read-only queries of already-visible versions and latest tags; measures query overhead, not npm propagation."
+}

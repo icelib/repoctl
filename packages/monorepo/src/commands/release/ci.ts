@@ -14,6 +14,7 @@ import { reconcileRelease } from './reconcile'
 import { recoverSource } from './recovery/source'
 import { capture, clearPublishSummary, getReleaseEnv, hasPendingIntents, readPublishSummary, resolveReleaseMode, run } from './shared'
 import { assertStablePublish, prepareStableReleases, publishStable } from './stable'
+import { releaseCiStage } from './stages'
 import { readReleaseTriggerContext, shouldRunRelease } from './trigger'
 
 async function createReleasePullRequest(options: ReleaseCiOptions) {
@@ -132,6 +133,9 @@ export async function releaseCi(options: ReleaseCiOptions) {
     return runReleaseOidcAudit(options)
   }
   options = { ...options, config: options.config ?? await resolveCommandConfig('release', options.cwd) ?? {} }
+  if (options.stage && options.stage !== 'all') {
+    return releaseCiStage(options)
+  }
   const source = options.sourceSha ?? getReleaseEnv(options)['REPO_RELEASE_RECOVERY_SOURCE_SHA']?.trim()
   if (source) {
     return recoverSource({ ...options, mode }, source)

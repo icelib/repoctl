@@ -95,7 +95,6 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          registry-url: https://registry.npmjs.org
 
       - name: Install npm with trusted publishing support
         run: npm install --global npm@11.16.0 --registry=https://registry.npmjs.org
@@ -106,7 +105,8 @@ jobs:
       - name: Build Release Tooling
         run: pnpm run tooling:build
 
-      - name: Run repo release CI
+      - name: Release plan
+        id: release-plan
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token }}
           REPO_RELEASE_MODE: ${{ inputs.mode || 'auto' }}
@@ -114,7 +114,67 @@ jobs:
           REPO_RELEASE_VERSION: ${{ inputs.version }}
           REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
           REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
-        run: pnpm exec repo release ci
+        run: pnpm exec repo release ci --stage plan
+
+      - name: Release verify
+        id: release-verify
+        if: ${{ steps.release-plan.outputs.run == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token }}
+          REPO_RELEASE_MODE: ${{ inputs.mode || 'auto' }}
+          REPO_RELEASE_PACKAGE: ${{ inputs.package }}
+          REPO_RELEASE_VERSION: ${{ inputs.version }}
+          REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
+          REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
+        run: pnpm exec repo release ci --stage verify
+
+      - name: Release prepare
+        id: release-prepare
+        if: ${{ steps.release-plan.outputs.run == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token }}
+          REPO_RELEASE_MODE: ${{ inputs.mode || 'auto' }}
+          REPO_RELEASE_PACKAGE: ${{ inputs.package }}
+          REPO_RELEASE_VERSION: ${{ inputs.version }}
+          REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
+          REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
+        run: pnpm exec repo release ci --stage prepare
+
+      - name: Release upload
+        id: release-upload
+        if: ${{ steps.release-prepare.outputs.publish == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token }}
+          REPO_RELEASE_MODE: ${{ inputs.mode || 'auto' }}
+          REPO_RELEASE_PACKAGE: ${{ inputs.package }}
+          REPO_RELEASE_VERSION: ${{ inputs.version }}
+          REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
+          REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
+        run: pnpm exec repo release ci --stage upload
+
+      - name: Release confirm
+        id: release-confirm
+        if: ${{ steps.release-prepare.outputs.publish == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token }}
+          REPO_RELEASE_MODE: ${{ inputs.mode || 'auto' }}
+          REPO_RELEASE_PACKAGE: ${{ inputs.package }}
+          REPO_RELEASE_VERSION: ${{ inputs.version }}
+          REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
+          REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
+        run: pnpm exec repo release ci --stage confirm
+
+      - name: Release finalize
+        id: release-finalize
+        if: ${{ steps.release-prepare.outputs.publish == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token }}
+          REPO_RELEASE_MODE: ${{ inputs.mode || 'auto' }}
+          REPO_RELEASE_PACKAGE: ${{ inputs.package }}
+          REPO_RELEASE_VERSION: ${{ inputs.version }}
+          REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
+          REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
+        run: pnpm exec repo release ci --stage finalize
 
       - name: Preserve npm publish progress
         if: ${{ always() }}
@@ -125,6 +185,7 @@ jobs:
             pnpm-publish-summary.json
             repoctl-publish-progress.json
             repoctl-release-progress.json
+            repoctl-ci-progress.json
           if-no-files-found: ignore
           retention-days: 14
 

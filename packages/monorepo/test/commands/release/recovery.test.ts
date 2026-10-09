@@ -91,7 +91,7 @@ it.each(['E401', 'E403', 'ETIMEDOUT', 'SELF_SIGNED_CERT_IN_CHAIN', 'E429', 'E503
   await expect(releaseCi(h.options)).rejects.toThrow(/authentication failed|state is unknown/)
   expect(h.uploads()).toHaveLength(0)
   expect(remote.github.writeReleaseState).not.toHaveBeenCalled()
-  expect(h.sleep).toHaveBeenCalledTimes(['E401', 'E403'].includes(failure) ? 0 : 2)
+  expect(h.sleep).toHaveBeenCalledTimes(['E401', 'E403'].includes(failure) ? 0 : 4)
 })
 
 it('does not write checkpoints, tags, releases, or execute hooks in dry-run', async () => {
@@ -138,7 +138,7 @@ it('refuses to claim completion when the npm dist-tag is wrong', async () => {
     }
     return result
   })
-  await expect(releaseCi(h.options)).rejects.toThrow('dist-tag latest is not confirmed')
+  await expect(releaseCi(h.options)).rejects.toThrow('including dist-tag latest')
   expect(remote.releases.size).toBe(0)
   expect(remote.state()?.complete).toBe(false)
 })

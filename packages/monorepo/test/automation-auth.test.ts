@@ -69,11 +69,14 @@ describe.each([rootDir, assetsDir])('automation authentication in %s', (root) =>
   it('authenticates release pushes and API requests with the same credential', async () => {
     const steps = await readSteps(root, 'release', 'release')
     const checkout = steps.find(step => step.uses?.startsWith('actions/checkout@'))!
-    const runner = steps.find(step => step.run === 'pnpm exec repo release ci')!
+    const runners = steps.filter(step => step.run?.startsWith('pnpm exec repo release ci --stage '))
+    expect(runners).toHaveLength(6)
     const credential = expression('steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token')
     expect(checkout.with?.['token']).toBe(credential)
     expect(checkout.with?.['persist-credentials']).not.toBe(false)
-    expect(runner.env?.['GITHUB_TOKEN']).toBe(credential)
+    for (const runner of runners) {
+      expect(runner.env?.['GITHUB_TOKEN']).toBe(credential)
+    }
     expect(steps.findIndex(step => step.id === 'app-token')).toBeLessThan(steps.indexOf(checkout))
   })
 

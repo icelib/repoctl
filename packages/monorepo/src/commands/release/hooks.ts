@@ -6,6 +6,7 @@ import { resolveCommandValues } from '../../core/config/resolution'
 import { logger } from '../../core/logger'
 import { ReleaseCommandError } from './errors'
 import { run } from './shared'
+import { hasVerification } from './stages/verification'
 import { assertWorkspaceDependencyProtocols } from './workspace-protocol'
 
 type ReleaseHookPhase = Exclude<keyof NonNullable<ReleaseCommandConfig['hooks']>, 'afterPublish' | 'verify'>
@@ -53,6 +54,9 @@ function verificationEnvironment(options: ReleaseOptions) {
 }
 
 export async function runQualityScripts(options: ReleaseOptions) {
+  if (hasVerification(options)) {
+    return
+  }
   await assertWorkspaceDependencyProtocols(options.cwd)
   const config = resolveCommandValues('release', options.config).values
   const verificationOptions = { ...options, env: verificationEnvironment(options) }
@@ -61,6 +65,9 @@ export async function runQualityScripts(options: ReleaseOptions) {
 }
 
 export function runReleaseHooks(phase: ReleaseHookPhase, options: ReleaseOptions) {
+  if (phase === 'beforeVersion' && hasVerification(options)) {
+    return
+  }
   runScripts(options.config?.hooks?.[phase] ?? [], options)
 }
 

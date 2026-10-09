@@ -52,17 +52,17 @@ describe('release workflow', () => {
       uses: expect.stringMatching(/^actions\/upload-artifact@[0-9a-f]{40}$/),
       with: {
         'name': 'npm-publish-progress-$' + '{{ github.run_id }}-$' + '{{ github.run_attempt }}',
-        'path': 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\nrepoctl-release-progress.json\n',
+        'path': 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\nrepoctl-release-progress.json\nrepoctl-ci-progress.json\n',
         'if-no-files-found': 'ignore',
         'retention-days': 14,
       },
     })
-    expect(steps.find((step: { run?: string }) => step.run === 'pnpm exec repo release ci')['continue-on-error']).toBeUndefined()
+    expect(steps.find((step: { run?: string }) => step.run === 'pnpm exec repo release ci --stage plan')['continue-on-error']).toBeUndefined()
     const gitignore = await fs.readFile(`${root}/${root === rootDir ? '.gitignore' : 'gitignore'}`, 'utf8')
     expect(gitignore).toContain('/repoctl-publish-progress.json')
   })
 
-  it('uses one repoctl entrypoint for release orchestration', async () => {
+  it('uses same-job conditional repoctl stages for release orchestration', async () => {
     const workflow = await fs.readFile(`${rootDir}/.github/workflows/release.yml`, 'utf8')
     const actionUses = getActionUses(workflow)
 
@@ -70,7 +70,12 @@ describe('release workflow', () => {
     expect(workflow).toContain('- publish-unpublished')
     expect(workflow).toContain('REPO_RELEASE_RECOVERY_SOURCE_SHA: $' + '{{ inputs.source-sha }}')
     expect(workflow).toContain('REPO_RELEASE_MODE: $' + '{{ inputs.mode || \'auto\' }}')
-    expect(workflow).toContain('run: pnpm exec repo release ci')
+    const parsed = YAML.parse(workflow)
+    const steps = parsed.jobs.release.steps
+    expect(steps.filter((step: { run?: string }) => step.run?.startsWith('pnpm exec repo release ci')).map((step: { run: string }) => step.run)).toEqual(['plan', 'verify', 'prepare', 'upload', 'confirm', 'finalize'].map(stage => `pnpm exec repo release ci --stage ${stage}`))
+    expect(steps.find((step: { id?: string }) => step.id === 'release-upload').if).toContain('release-prepare.outputs.publish')
+    expect(steps.find((step: { uses?: string }) => step.uses?.startsWith('actions/setup-node@')).with).not.toHaveProperty('registry-url')
+    expect(workflow).not.toContain('NODE_AUTH_TOKEN')
     expect(workflow).toContain('GITHUB_TOKEN: $' + '{{ steps.app-token.outputs.token || secrets.REPOCTL_RELEASE_TOKEN || secrets.CHANGESETS_RELEASE_TOKEN || github.token }}')
     expect(workflow).not.toContain('GITHUB_TOKEN: $' + '{{ secrets.GITHUB_TOKEN }}')
     expect(workflow).toContain('contents: write')

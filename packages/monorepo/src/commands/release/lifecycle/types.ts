@@ -11,6 +11,8 @@ export interface ReleaseLifecycleState {
   candidates: PublishedPackage[]
   packages: ReleaseTarget[]
   accepted: PublishedPackage[]
+  /** A successful upload phase persisted every acceptance response. Legacy running states remain uncertain. */
+  uploadComplete?: boolean
   npm: 'pending' | 'running' | 'failed' | 'complete'
   metadata: string[]
   hooks: Record<string, 'pending' | 'running' | 'complete' | 'ignored'>

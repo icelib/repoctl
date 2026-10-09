@@ -70,7 +70,10 @@ function checkReleaseWorkflow() {
   const checkout = steps.find(step =>
     step.uses?.startsWith('actions/checkout@'),
   )
-  const runner = steps.find(step => step.run === 'pnpm exec repo release ci')
+  const runner = steps.find(step => step.run === 'pnpm exec repo release ci --stage plan')
+  assert.deepEqual(steps.filter(step => step.run?.startsWith('pnpm exec repo release ci')).map(step => step.id), ['plan', 'verify', 'prepare', 'upload', 'confirm', 'finalize'].map(stage => `release-${stage}`))
+  assert.equal(steps.find(step => step.uses?.startsWith('actions/setup-node@'))?.with?.['registry-url'], undefined)
+  assert.ok(!source.includes('NODE_AUTH_TOKEN'))
   const branches = workflow.on?.push?.branches ?? []
   const modes = workflow.on?.workflow_dispatch?.inputs?.mode?.options ?? []
 
@@ -116,7 +119,7 @@ function checkReleaseWorkflow() {
   assert.ok(artifact, 'release workflow must preserve publish diagnostics')
   assert.equal(artifact.if, githubExpression('always()'))
   assert.equal(artifact.with?.name, `npm-publish-progress-${githubExpression('github.run_id')}-${githubExpression('github.run_attempt')}`)
-  assert.equal(artifact.with?.path, 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\nrepoctl-release-progress.json\n')
+  assert.equal(artifact.with?.path, 'pnpm-publish-summary.json\nrepoctl-publish-progress.json\nrepoctl-release-progress.json\nrepoctl-ci-progress.json\n')
   assert.equal(artifact.with?.['if-no-files-found'], 'ignore')
   assert.equal(artifact.with?.['retention-days'], 14)
   assert.notEqual(runner['continue-on-error'], true)
