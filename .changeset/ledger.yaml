@@ -303,6 +303,10 @@
   dir: packages/monorepo
   intents:
     - calm-release-pr-updates
+"@icebreakers/monorepo@5.10.2":
+  dir: packages/monorepo
+  intents:
+    - release-summary-classification
 "@icebreakers/monorepo@5.2.0":
   dir: packages/monorepo
   intents:
@@ -645,6 +649,10 @@ repoctl@5.10.0:
   intents:
     - itchy-knives-taste
     - sweet-toys-repair
+repoctl@5.10.2:
+  dir: packages/repoctl
+  intents:
+    - release-summary-classification
 repoctl@5.2.0:
   dir: packages/repoctl
   intents:
