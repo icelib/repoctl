@@ -79,18 +79,91 @@ describe('GitHub release client', () => {
     expect(requestFetch).toHaveBeenNthCalledWith(1, expect.stringContaining('/repos/acme/repo/pulls?'), expect.objectContaining({ method: 'GET' }))
     expect(requestFetch).toHaveBeenNthCalledWith(2, 'https://api.github.com/repos/acme/repo/pulls', expect.objectContaining({ method: 'POST' }))
     const request = requestFetch.mock.calls[1]?.[1] as RequestInit | undefined
-    expect(JSON.parse(String(request?.body))).toMatchObject({ head: 'release/pnpm-version', base: 'main' })
+    expect(JSON.parse(String(request?.body))).toEqual({
+      title: 'Release',
+      body: 'Generated',
+      head: 'release/pnpm-version',
+      base: 'main',
+    })
   })
 
   it('updates an existing pull request instead of creating a duplicate', async () => {
     const requestFetch = vi.fn()
-      .mockResolvedValueOnce(response([{ number: 7, html_url: 'https://github.com/acme/repo/pull/7', state: 'open' }]))
+      .mockResolvedValueOnce(response([{ number: 7, html_url: 'https://github.com/acme/repo/pull/7', state: 'open', title: 'Old title', body: 'Old body' }]))
       .mockResolvedValueOnce(response({ number: 7, html_url: 'https://github.com/acme/repo/pull/7', state: 'open' }))
     const client = new GitHubClient({ token: 'token', repository: 'acme/repo', fetch: requestFetch })
 
     await client.ensurePullRequest({ head: 'release/pnpm-version', base: 'main', title: 'Updated', body: 'Body' })
 
     expect(requestFetch).toHaveBeenNthCalledWith(2, 'https://api.github.com/repos/acme/repo/pulls/7', expect.objectContaining({ method: 'PATCH' }))
+    const request = requestFetch.mock.calls[1]?.[1] as RequestInit | undefined
+    expect(JSON.parse(String(request?.body))).toEqual({ title: 'Updated', body: 'Body' })
+    expect(requestFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('skips an update when an existing pull request already matches', async () => {
+    const requestFetch = vi.fn().mockResolvedValueOnce(response([{
+      number: 7,
+      html_url: 'https://github.com/acme/repo/pull/7',
+      state: 'open',
+      title: 'Release',
+      body: 'Generated',
+    }]))
+    const client = new GitHubClient({ token: 'token', repository: 'acme/repo', fetch: requestFetch })
+
+    const existing = client.ensurePullRequest({ head: 'release/pnpm-version', base: 'main', title: 'Release', body: 'Generated' })
+    await expect(existing).resolves.toMatchObject({ number: 7 })
+
+    expect(requestFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('treats a null pull request body as an empty body during comparison', async () => {
+    const requestFetch = vi.fn().mockResolvedValueOnce(response([{
+      number: 7,
+      html_url: 'https://github.com/acme/repo/pull/7',
+      state: 'open',
+      title: 'Release',
+      body: null,
+    }]))
+    const client = new GitHubClient({ token: 'token', repository: 'acme/repo', fetch: requestFetch })
+
+    await client.ensurePullRequest({ head: 'release/pnpm-version', base: 'main', title: 'Release', body: '' })
+
+    expect(requestFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    { title: 'Updated', body: 'Generated' },
+    { title: 'Release', body: 'Updated' },
+  ])('updates an existing pull request when only one field changes: %j', async (options) => {
+    const requestFetch = vi.fn()
+      .mockResolvedValueOnce(response([{
+        number: 7,
+        html_url: 'https://github.com/acme/repo/pull/7',
+        state: 'open',
+        title: 'Release',
+        body: 'Generated',
+      }]))
+      .mockResolvedValueOnce(response({ number: 7, state: 'open' }))
+    const client = new GitHubClient({ token: 'token', repository: 'acme/repo', fetch: requestFetch })
+
+    await client.ensurePullRequest({ head: 'release/pnpm-version', base: 'main', ...options })
+
+    const request = requestFetch.mock.calls[1]?.[1] as RequestInit | undefined
+    expect(request?.method).toBe('PATCH')
+    expect(JSON.parse(String(request?.body))).toEqual(options)
+    expect(requestFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it('propagates a failed pull request update without attempting to create one', async () => {
+    const requestFetch = vi.fn()
+      .mockResolvedValueOnce(response([{ number: 7, state: 'open', title: 'Release', body: 'Generated' }]))
+      .mockResolvedValueOnce(response({ message: 'Forbidden' }, 403))
+    const client = new GitHubClient({ token: 'token', repository: 'acme/repo', fetch: requestFetch })
+
+    const update = client.ensurePullRequest({ head: 'release/pnpm-version', base: 'main', title: 'Updated', body: 'Generated' })
+    await expect(update).rejects.toMatchObject({ status: 403 })
+
     expect(requestFetch).toHaveBeenCalledTimes(2)
   })
 
