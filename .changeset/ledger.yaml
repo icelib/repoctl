@@ -299,6 +299,10 @@
   intents:
     - itchy-knives-taste
     - sweet-toys-repair
+"@icebreakers/monorepo@5.10.1":
+  dir: packages/monorepo
+  intents:
+    - calm-release-pr-updates
 "@icebreakers/monorepo@5.2.0":
   dir: packages/monorepo
   intents:
