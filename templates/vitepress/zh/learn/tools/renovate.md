@@ -52,25 +52,24 @@ npx renovate
 
 ```json
 {
-  "extends": ["config:base"],
-  "packageRules": [
-    {
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
-    },
-    {
-      "matchUpdateTypes": ["major"],
-      "automerge": false
-    }
-  ]
+  "extends": ["config:recommended", "group:allNonMajor"],
+  "rangeStrategy": "bump",
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "automerge": true,
+  "automergeType": "pr"
 }
 ```
 
 解释：
 
-- 使用基础配置 `"extends": ["config:base"]`。
-- **minor/patch 更新** 自动合并。
-- **major 更新** 需要人工 review。
+- 使用推荐配置，并将兼容的非 major 更新分组。
+- `"rangeStrategy": "bump"` 让版本范围随升级一起更新。
+- `"minimumReleaseAge": "7 days"` 要求每个新版本发布满 7 天后才进入升级候选。
+- `"internalChecksFilter": "strict"` 让 `renovate/stability-days` 稳定性检查保持阻塞状态；检查通过前不会创建升级分支或 PR。
+- `"automerge": true` 和 `"automergeType": "pr"` 允许通过检查的升级 PR 自动合并。
+
+Renovate 按版本分别计时：它等待的是当前版本发布后的 7 天，而不是等待这个包连续 7 天没有新发布。安全更新也遵循相同的 7 天等待窗口，确保自动升级都经过一致的验证时间。
 
 ### 实际效果
 

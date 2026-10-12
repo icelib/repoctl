@@ -1,5 +1,30 @@
 # @icebreakers/monorepo
 
+## 5.10.2
+
+### Patch Changes
+
+- fix(release): 保留变更说明显式声明的功能、修复、性能、文档和破坏性变更分类，避免来源提交或升版标题覆盖意图；说明提及依赖版本时保留正文，使发布 PR 与最终 GitHub Release 分类一致。
+
+## 5.10.1
+
+### Patch Changes
+
+- 让 Release pull request 更新在内容未变化时保持幂等，避免重复触发 CI。
+
+## 5.10.0
+
+### Minor Changes
+
+- Add identity-checked release CI stages and concurrent public npm registry confirmation with bounded requests and adaptive polling.
+
+### Patch Changes
+
+- 移除工作区扫描不再使用的 pnpm logger/worker 依赖，修复 logger peer 冲突；升级 simple-git 4.0.2 及 argv-parser 安全修复。
+
+- Updated dependencies:
+  - @icebreakers/monorepo-templates@2.3.2
+
 ## 5.9.0
 
 ### Minor Changes

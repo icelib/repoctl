@@ -151,7 +151,9 @@ export class GitHubClient implements GitHubOperations {
     const listed = await this.request<GitHubPullRequest[]>('GET', `/pulls?${query.toString()}`)
     const existing = listed.data?.[0]
     if (existing) {
-      await this.request<GitHubPullRequest>('PATCH', `/pulls/${existing.number}`, { title: options.title, body: options.body, base: options.base })
+      if (existing.title !== options.title || (existing.body ?? '') !== options.body) {
+        await this.request<GitHubPullRequest>('PATCH', `/pulls/${existing.number}`, { title: options.title, body: options.body })
+      }
       return existing
     }
     try {

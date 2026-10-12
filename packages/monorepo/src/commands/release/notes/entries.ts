@@ -59,9 +59,27 @@ function sourceCategory(commits: ReleaseCommit[]) {
   return undefined
 }
 
+const declaredReleaseSummaryPattern = /^(feat|fix|perf|docs|chore|refactor|test|build|ci|style|revert)(?:\([^\s()]+\))?(!)?:[ \t]+\S/
+
+function declaredSummaryCategory(summary: string): ReleaseCategory | undefined {
+  const declared = declaredReleaseSummaryPattern.exec(summary.trim())
+  if (!declared) {
+    return undefined
+  }
+  if (declared[2]) {
+    return 'breaking'
+  }
+  const categories: Record<string, ReleaseCategory> = { feat: 'features', fix: 'fixes', perf: 'performance', docs: 'docs' }
+  return categories[declared[1]!] ?? 'maintenance'
+}
+
 function classifyChange(heading: string, summary: string, commits: ReleaseCommit[]): ReleaseCategory {
   if (/dependenc(?:y|ies)/i.test(heading)) {
     return 'maintenance'
+  }
+  const declared = declaredSummaryCategory(summary)
+  if (declared) {
+    return declared
   }
   const fromCommit = sourceCategory(commits)
   if (fromCommit) {
@@ -146,21 +164,23 @@ function normalizeMarkdownEntry(item: { heading: string, summary: string }): Nor
     : undefined
   const dependencyName = arrowDependency ?? (dependencyVersions.length ? [...new Set(dependencyVersions)].join(', ') : dependencyLabel)
   const hasDependencyHeading = /\bupdated\s+dependenc(?:y|ies)\b|Dependencies:|Dependency:|\*\*Dependencies\*\*|\*\*Dependency\*\*/i.test(raw)
-  const hasDependency = hasDependencyHeading || Boolean(dependencyName)
+  const prose = raw
+    .replace(/\[{1,2}`?([0-9a-f]{7,40})`?\]\([^)]+\)/gi, '')
+    .replace(/\[#\d+\]\([^)]+\)/g, '')
+    .replace(/\bby\s+@[\w-]+(?:\[bot\])?/gi, '')
+    .replace(/\*\*/g, '')
+    .replace(/`/g, '')
+    .replace(/^[-*]\s+/, '')
+    .replace(/^[^\p{L}\p{N}]+/u, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  // 显式类型的说明可提及依赖版本；归一化不能覆盖正文和分类。
+  const hasDependency = !declaredSummaryCategory(prose) && (hasDependencyHeading || Boolean(dependencyName))
   const summary = hasDependency && dependencyName
     ? dependencyVersions.length > 1
       ? `Updated dependencies: ${[...new Set(dependencyVersions)].join(', ')}.`
       : `Updated dependency to ${dependencyName}.`
-    : raw
-        .replace(/\[{1,2}`?([0-9a-f]{7,40})`?\]\([^)]+\)/gi, '')
-        .replace(/\[#\d+\]\([^)]+\)/g, '')
-        .replace(/\bby\s+@[\w-]+(?:\[bot\])?/gi, '')
-        .replace(/\*\*/g, '')
-        .replace(/`/g, '')
-        .replace(/^[-*]\s+/, '')
-        .replace(/^[^\p{L}\p{N}]+/u, '')
-        .replace(/\s+/g, ' ')
-        .trim()
+    : prose
   const categoryHint = /🚨|breaking/i.test(raw)
     ? '🚨'
     : /🚀|✨/.test(raw)

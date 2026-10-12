@@ -1,5 +1,11 @@
 # @icebreakers/monorepo-templates
 
+## 2.3.2
+
+### Patch Changes
+
+- Split the managed OIDC release workflow into plan, verify, prepare, upload, confirm and finalize steps; avoid setup-node static-token placeholders.
+
 ## 2.3.1
 
 ### Patch Changes

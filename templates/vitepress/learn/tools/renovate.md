@@ -8,12 +8,14 @@ Renovate keeps dependencies current through reviewable pull requests. It is most
 {
   "extends": ["config:recommended", "group:allNonMajor"],
   "rangeStrategy": "bump",
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
   "automerge": true,
   "automergeType": "pr"
 }
 ```
 
-The repository groups compatible minor and patch updates. Cloudflare Workers tooling is grouped separately because Wrangler and its Vite plugin have a deliberate compatibility relationship.
+The repository groups compatible minor and patch updates. Cloudflare Workers tooling is grouped separately because Wrangler and its Vite plugin have a deliberate compatibility relationship. Renovate waits seven days after each version is published before it can create an update branch or pull request. `internalChecksFilter: "strict"` keeps the stability check blocking, so a pending `renovate/stability-days` check does not appear as a pull request yet. The timer is evaluated for each version independently; it does not require a package to stop publishing for seven days. Security updates follow the same seven-day wait so every automated update gets the same validation window.
 
 ## Review an update
 
