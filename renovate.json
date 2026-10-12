@@ -39,6 +39,17 @@
       ],
       "groupName": "Cloudflare Workers tooling",
       "groupSlug": "cloudflare-workers-tooling"
+    },
+    {
+      "matchManagers": [
+        "npm"
+      ],
+      "matchPackageNames": [
+        "@cloudflare/nimbus-docs"
+      ],
+      "groupName": "Nimbus documentation engine",
+      "groupSlug": "nimbus-documentation-engine",
+      "automerge": false
     }
   ]
 }

@@ -5,6 +5,7 @@ on:
     paths:
       - .github/workflows/devcontainer.yml
       - 'scripts/devcontainer/**'
+      - 'scripts/nimbus/**'
       - 'scripts/packaged-template/**'
       - 'packages/monorepo/src/commands/init/devcontainer/**'
       - 'packages/monorepo/src/cli/commands/tooling/**'
@@ -16,6 +17,7 @@ on:
       - packages/monorepo/src/commands/index.ts
       - 'templates/react-vite/**'
       - 'templates/tsdown/**'
+      - 'templates/nimbus/**'
       - package.json
       - pnpm-workspace.yaml
       - 'packages/monorepo-templates/**'
@@ -45,6 +47,8 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+      - name: Check Nimbus upgrade review
+        run: pnpm check:nimbus-upgrade
       - name: Install and build source packages
         run: pnpm install --frozen-lockfile
       - name: Check packaged Dev Container

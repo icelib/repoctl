@@ -51,6 +51,9 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
+      - name: Check Nimbus upgrade review
+        run: pnpm check:nimbus-upgrade
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

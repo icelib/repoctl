@@ -1,9 +1,31 @@
 import assert from 'node:assert/strict'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
-import { run } from '../packaged-template/workspace.mjs'
+import { json, repoRoot, run } from '../packaged-template/workspace.mjs'
 
 const pages = ['', 'get-started/', 'writing/', 'zh/', 'zh/get-started/', 'zh/writing/']
+
+export function checkUpgrade(docs) {
+  const version = json(path.join(docs, 'package.json')).dependencies['@cloudflare/nimbus-docs']
+  const baseline = json(path.join(docs, 'nimbus.json'))
+  assert.equal(version, json(path.join(repoRoot, 'templates/nimbus/package.json')).dependencies['@cloudflare/nimbus-docs'])
+  assert.deepEqual(baseline, json(path.join(repoRoot, 'templates/nimbus/nimbus.json')))
+  assert.equal(baseline.lastReviewedNimbusVersion, version)
+  assert.equal(json(path.join(docs, 'node_modules/@cloudflare/nimbus-docs/package.json')).version, version)
+  const migration = JSON.parse(run('pnpm', ['exec', 'nimbus-docs', 'migrate', '--dry-run', '--json'], docs))
+  assert.equal(migration.status, 'passed')
+  assert.equal(migration.baseline.fromVersion, version)
+  assert.equal(migration.baseline.targetVersion, version)
+  assert.equal(migration.baseline.recorded, true)
+  for (const key of ['migrations', 'reviews', 'errors']) {
+    assert.deepEqual(migration[key], [], `generated Nimbus template must have no pending ${key}`)
+  }
+  const check = JSON.parse(run('pnpm', ['exec', 'nimbus-docs', 'check', '--migrations', '--json'], docs))
+  const scope = check.scopes.find(item => item.scope === 'migrations')
+  assert.equal(scope?.status, 'passed')
+  assert.deepEqual(scope.notes, [], 'installed migration check must not skip dependency or baseline checks')
+  assert.deepEqual(check.findings, [])
+}
 
 export function checkOutput(docs) {
   const read = file => readFileSync(path.join(docs, 'dist', file), 'utf8')
@@ -31,6 +53,10 @@ export function checkOutput(docs) {
     assert.ok(alternate && existsSync(path.join(docs, 'dist', alternate, 'index.html')))
   }
   assert.ok(read('writing/index.md').includes('Keep the meaning of an example'))
+  const home = read('index.md')
+  assert.match(home, /^title: ["']?Welcome["']?$/m)
+  assert.ok(home.includes('Start with the essentials') && home.includes('One source, two ways to read'), 'homepage Markdown must render the English homepage')
+  assert.notEqual(home, read('llms.txt'), 'authored homepage Markdown must not be replaced with the discovery index')
   assert.ok(read('get-started/index.md').includes('```sh\ncorepack enable'))
   assert.ok(existsSync(path.join(docs, 'dist/pagefind/pagefind.js')))
   assert.ok(existsSync(path.join(docs, 'dist/sitemap-index.xml')))
@@ -70,19 +96,27 @@ export function checkCache(workspace, docs) {
     const output = JSON.parse(run('pnpm', ['exec', 'turbo', 'run', 'build', 'lint', 'typecheck', '--filter=@icebreakers/nimbus-template', '--dry=json'], workspace))
     return Object.fromEntries(output.tasks.filter(task => task.package === '@icebreakers/nimbus-template').map(task => [task.task, task.hash]))
   }
-  for (const [file, addition] of [
-    ['src/content/docs/index.mdx', '\nContent invalidates the build.\n'],
-    ['src/styles/site.css', '\n/* cache regression */\n'],
-    ['astro.config.ts', '\n// cache regression\n'],
+  for (const [file, change] of [
+    ['src/content/docs/index.mdx', content => `${content}\nContent invalidates the build.\n`],
+    ['src/styles/site.css', content => `${content}\n/* cache regression */\n`],
+    ['astro.config.ts', content => `${content}\n// cache regression\n`],
+    ['nimbus.json', (content) => {
+      const record = JSON.parse(content)
+      return `${JSON.stringify({ ...record, reconstructed: !record.reconstructed }, null, 2)}\n`
+    }],
   ]) {
     const baseline = hashes()
     const target = path.join(docs, file)
     const original = readFileSync(target, 'utf8')
-    writeFileSync(target, original + addition)
-    const changed = hashes()
-    for (const task of ['build', 'lint', 'typecheck']) {
-      assert.notEqual(changed[task], baseline[task], `${file} must invalidate ${task}`)
+    try {
+      writeFileSync(target, change(original))
+      const changed = hashes()
+      for (const task of ['build', 'lint', 'typecheck']) {
+        assert.notEqual(changed[task], baseline[task], `${file} must invalidate ${task}`)
+      }
     }
-    writeFileSync(target, original)
+    finally {
+      writeFileSync(target, original)
+    }
   }
 }

@@ -42,7 +42,10 @@ describe('documentation creation', () => {
     const { runCreateFlow } = await import('@/cli/commands/package/create-flow')
     await runCreateFlow(root, 'guide')
     const pkg = JSON.parse(await readFile(path.join(root, 'apps/guide/package.json'), 'utf8'))
-    expect(pkg.dependencies['@cloudflare/nimbus-docs']).toBe('0.16.0')
+    const template = JSON.parse(await readFile(new URL('../../../../templates/nimbus/package.json', import.meta.url), 'utf8'))
+    const baseline = JSON.parse(await readFile(path.join(root, 'apps/guide/nimbus.json'), 'utf8'))
+    expect(pkg.dependencies['@cloudflare/nimbus-docs']).toBe(template.dependencies['@cloudflare/nimbus-docs'])
+    expect(baseline.lastReviewedNimbusVersion).toBe(pkg.dependencies['@cloudflare/nimbus-docs'])
     expect(await readFile(path.join(root, 'apps/guide/src/content/docs/zh/index.mdx'), 'utf8')).toContain('欢迎')
   })
 

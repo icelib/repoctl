@@ -4,6 +4,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import { checkDevContainerWorkflow } from './devcontainer/workflow.mjs'
+import { checkNimbusUpgradeWorkflow } from './nimbus/workflow.mjs'
 
 const rootDir = path.dirname(
   fileURLToPath(new URL('../package.json', import.meta.url)),
@@ -142,6 +143,8 @@ function checkCiWorkflow() {
   const { workflow } = readWorkflow('ci.yml')
   const steps = getSteps(workflow, 'build')
   const commands = steps.flatMap(step => (step.run ? [step.run] : []))
+  checkNimbusUpgradeWorkflow(steps)
+  assert.equal(workflow.jobs.build['continue-on-error'], undefined)
 
   assert.deepEqual(workflow.on?.pull_request?.types, ['opened', 'synchronize'])
   assert.deepEqual(workflow.on?.pull_request?.['paths-ignore'], [
