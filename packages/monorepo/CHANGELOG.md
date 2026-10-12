@@ -1,5 +1,15 @@
 # @icebreakers/monorepo
 
+## 5.10.3
+
+### Patch Changes
+
+- chore(deps): update all non-major dependencies (#1051)
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.9
+  - @icebreakers/monorepo-templates@2.3.3
+
 ## 5.10.2
 
 ### Patch Changes
