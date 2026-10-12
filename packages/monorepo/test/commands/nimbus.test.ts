@@ -17,7 +17,11 @@ describe('Nimbus template delivery', () => {
       await scaffoldWorkspace({ targetDir: root, templateKeys: ['nimbus', 'vitepress'], includeAssets: false })
       const pkg = JSON.parse(await readFile(path.join(root, 'apps/docs/package.json'), 'utf8'))
       const template = JSON.parse(await readFile(new URL('../../../../templates/nimbus/package.json', import.meta.url), 'utf8'))
+      const sourceBaseline = JSON.parse(await readFile(new URL('../../../../templates/nimbus/nimbus.json', import.meta.url), 'utf8'))
+      const baseline = JSON.parse(await readFile(path.join(root, 'apps/docs/nimbus.json'), 'utf8'))
       expect(pkg.dependencies).toEqual(template.dependencies)
+      expect(baseline).toEqual(sourceBaseline)
+      expect(baseline.lastReviewedNimbusVersion).toBe(pkg.dependencies['@cloudflare/nimbus-docs'])
       expect(await readFile(path.join(root, 'apps/website/package.json'), 'utf8')).toContain('vitepress')
       const files = await readdir(path.join(root, 'apps/docs'))
       for (const generated of ['.astro', '.nimbus', 'node_modules', 'dist', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {

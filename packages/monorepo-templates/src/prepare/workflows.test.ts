@@ -11,6 +11,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@pinned
+      - name: Review Nimbus upgrade before installing
+        run: pnpm check:nimbus-upgrade
+      - name: Install
+        run: pnpm install
       - name: Component checks
         run: pnpm test:packaged-storybook
       - name: Arbitrary new source check
@@ -26,7 +31,6 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
       - name: Source verification
         run: pnpm check:workflows
-      - uses: actions/checkout@pinned
       - name: Build
         env:
           NODE_ENV: production
@@ -43,6 +47,7 @@ jobs:
   expect(parsed.jobs.build['runs-on']).toBe('ubuntu-latest')
   expect(parsed.jobs.build.steps).toEqual([
     { uses: 'actions/checkout@pinned' },
+    { name: 'Install', run: 'pnpm install' },
     { name: 'Build', env: { NODE_ENV: 'production' }, if: 'github.event_name == \'push\'', run: 'pnpm build' },
     { name: 'Test', run: 'pnpm lint\npnpm test\n' },
   ])
@@ -54,6 +59,7 @@ it.each([
   'pnpm test:packaged-future; pnpm build',
   'pnpm build || pnpm run --if-present test:packaged-future',
   'pnpm --filter workspace test:packaged-future',
+  'pnpm check:nimbus-upgrade && pnpm install',
 ])('rejects compound or unrecognized source commands: %s', (run) => {
   const content = YAML.stringify({ jobs: { test: { steps: [{ run }] } } })
   expect(() => sanitizePublishedCiWorkflowContent(content)).toThrow('separate CI steps')

@@ -1,6 +1,6 @@
 import YAML from 'yaml'
 
-const sourceScriptNames = new Set(['tooling:build', 'check:no-tracked-build-artifacts', 'check:workflows', 'test:dev-scenarios', 'test:worker-types'])
+const sourceScriptNames = new Set(['tooling:build', 'check:no-tracked-build-artifacts', 'check:nimbus-upgrade', 'check:workflows', 'test:dev-scenarios', 'test:worker-types'])
 
 export const isSourceOnlyScript = (name: string) => name.startsWith('dev:') || sourceScriptNames.has(name) || name.startsWith('test:packaged-')
 

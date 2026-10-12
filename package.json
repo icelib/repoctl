@@ -52,6 +52,7 @@
     "test:types": "turbo run test:types",
     "check:no-tracked-build-artifacts": "node ./scripts/check-no-tracked-build-artifacts.mjs",
     "check:workflows": "node ./scripts/check-workflows.mjs",
+    "check:nimbus-upgrade": "node ./scripts/nimbus/check-upgrade.mjs",
     "audit": "pnpm audit --audit-level=moderate",
     "audit:fix": "pnpm audit --fix",
     "cf-typegen": "pnpm --filter @icebreakers/client --filter @icebreakers/server run cf-typegen",

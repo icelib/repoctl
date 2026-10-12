@@ -54,6 +54,7 @@ it('keeps generated tests runnable without source repository check scripts', () 
   const content = sanitizePublishedManifestContent(JSON.stringify({
     scripts: {
       'check:no-tracked-build-artifacts': 'node ./scripts/check-no-tracked-build-artifacts.mjs',
+      'check:nimbus-upgrade': 'node ./scripts/nimbus/check-upgrade.mjs',
       'check:workflows': 'node ./scripts/check-workflows.mjs',
       'test:dev-scenarios': 'vitest run --config scripts/dev/vitest.config.mjs',
       'test': 'pnpm check:no-tracked-build-artifacts && vitest run && pnpm test:types && pnpm test:dev-scenarios',
