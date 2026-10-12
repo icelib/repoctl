@@ -28,6 +28,10 @@
   dir: packages/changelog-github
   intents:
     - auto-pr-935
+"@icebreakers/changelog-github@2.1.5":
+  dir: packages/changelog-github
+  intents:
+    - auto-pr-1051
 "@icebreakers/commitlint-config@4.0.6":
   dir: packages/commitlint
   intents:
@@ -108,6 +112,10 @@
   dir: packages/eslint
   intents:
     - auto-pr-935
+"@icebreakers/eslint-config@8.0.9":
+  dir: packages/eslint
+  intents:
+    - auto-pr-1051
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -274,6 +282,10 @@
   dir: packages/monorepo-templates
   intents:
     - wise-lamps-clap
+"@icebreakers/monorepo-templates@2.3.3":
+  dir: packages/monorepo-templates
+  intents:
+    - clever-peaches-attack
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -307,6 +319,10 @@
   dir: packages/monorepo
   intents:
     - release-summary-classification
+"@icebreakers/monorepo@5.10.3":
+  dir: packages/monorepo
+  intents:
+    - auto-pr-1051
 "@icebreakers/monorepo@5.2.0":
   dir: packages/monorepo
   intents:

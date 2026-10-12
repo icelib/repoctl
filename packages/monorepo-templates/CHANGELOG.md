@@ -1,5 +1,11 @@
 # @icebreakers/monorepo-templates
 
+## 2.3.3
+
+### Patch Changes
+
+- fix(nimbus): review the 0.17 upgrade and guard template migration baselines
+
 ## 2.3.2
 
 ### Patch Changes
