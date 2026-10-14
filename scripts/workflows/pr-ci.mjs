@@ -32,6 +32,7 @@ function checkPullRequestEntrypoints(rootDir) {
 export function checkPrCiWorkflow(rootDir) {
   checkPullRequestEntrypoints(rootDir)
   const { workflow } = readWorkflow(rootDir, 'pr-ci.yml')
+  assert.equal(workflow['run-name'], `PR checks for #${githubExpression('github.event.pull_request.number || inputs.pr_number')}`, 'Run names must retain the PR number after YAML parsing')
   assert.deepEqual(workflow.on?.pull_request_target?.types, [
     'opened',
     'synchronize',

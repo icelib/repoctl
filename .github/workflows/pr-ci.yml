@@ -1,5 +1,5 @@
 name: PR Checks
-run-name: PR checks for # ${{ github.event.pull_request.number || inputs.pr_number }}
+run-name: 'PR checks for #${{ github.event.pull_request.number || inputs.pr_number }}'
 
 on:
   pull_request_target:
