@@ -1,5 +1,12 @@
 assets/*
 !assets/monorepo.config.ts
+!assets/.github/
+assets/.github/*
+!assets/.github/workflows/
+assets/.github/workflows/*
+!assets/.github/workflows/ci.yml
+!assets/.github/workflows/release-intent-auto.yml
+!assets/.github/workflows/release-intent-check.yml
 fixtures/assets
 test/fixtures/demo
 templates

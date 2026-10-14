@@ -15,6 +15,8 @@ const nimbus = getTemplateDefinition('nimbus')
 
 仓库 `templates/` 下的源码工作区均为私有，本包是这些模板的正式分发边界。
 
+生成的工作区保留自动运行的 PR CI 和发布意图工作流。repoctl 源仓库的审批规则不进入发布资产。
+
 ## 项目链接
 
 - 文档：https://repoctl.icebreaker.top

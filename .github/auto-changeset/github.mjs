@@ -69,6 +69,9 @@ export function createGitHubClient({ token, repository, fetchImpl = fetch }) {
     },
     getRef: ref => request(`/git/ref/${encodePath(ref)}`),
     getCommit: sha => request(`/git/commits/${sha}`),
+    compareCommits: (base, head) => request(`/compare/${base}...${head}`),
+    getStatus: sha => request(`/commits/${sha}/status`),
+    createStatus: (sha, status) => request(`/statuses/${sha}`, { method: 'POST', body: JSON.stringify(status) }),
     createBlob: content => request('/git/blobs', { method: 'POST', body: JSON.stringify({ content, encoding: 'utf-8' }) }),
     createTree: (baseTree, tree) => request('/git/trees', { method: 'POST', body: JSON.stringify({ base_tree: baseTree, tree }) }),
     createCommit: (message, tree, parents) => request('/git/commits', { method: 'POST', body: JSON.stringify({ message, tree, parents }) }),
@@ -86,5 +89,7 @@ export function createGitHubClient({ token, repository, fetchImpl = fetch }) {
     },
     createBranch: async (branch, sha) => request('/git/refs', { method: 'POST', body: JSON.stringify({ ref: `refs/heads/${branch}`, sha }) }),
     createPullRequest: input => request('/pulls', { method: 'POST', body: JSON.stringify(input) }),
+    listReleasePullRequests: base => request(`/pulls?state=open&base=${encodeURIComponent(base)}&head=${encodeURIComponent(`${owner}:pnpm-release/${base}`)}`),
+    dispatchPrValidation: (number, ref) => request('/actions/workflows/pr-ci.yml/dispatches', { method: 'POST', body: JSON.stringify({ ref, inputs: { pr_number: String(number) } }) }),
   }
 }

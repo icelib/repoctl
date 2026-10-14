@@ -125,8 +125,11 @@ async function prepareEntry(client, pullRequest, files) {
   }
 }
 
-export async function processPullRequest(client, number) {
+export async function processPullRequest(client, number, { expectedHeadSha } = {}) {
   const pullRequest = await client.getPullRequest(number)
+  if (expectedHeadSha && pullRequest.head.sha !== expectedHeadSha) {
+    throw new Error('PR head changed before release intent preparation; approve the latest run.')
+  }
   const files = await client.getPullRequestFiles(number)
   const entry = await prepareEntry(client, pullRequest, files)
   if (!entry) {
@@ -138,8 +141,11 @@ export async function processPullRequest(client, number) {
     return { action: 'commented', number }
   }
   const ref = await client.getRef(`heads/${pullRequest.head.ref}`)
-  await commitChangesets(client, pullRequest.head.ref, ref.object.sha, [entry])
-  return { action: 'committed', number, path: entry.path }
+  if (ref.object.sha !== pullRequest.head.sha) {
+    throw new Error('PR head changed while preparing its release intent; retry the latest run.')
+  }
+  const sha = await commitChangesets(client, pullRequest.head.ref, pullRequest.head.sha, [entry])
+  return { action: 'committed', number, path: entry.path, sha }
 }
 
 export async function backfillPullRequests(client, numbers, { runId = `${Date.now()}` } = {}) {

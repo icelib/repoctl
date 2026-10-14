@@ -1,0 +1,57 @@
+name: Release Intent Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+jobs:
+  release-intent:
+    name: Require release intent for publishable changes
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Skip generated release PRs
+        if: startsWith(github.head_ref, 'pnpm-release/') || startsWith(github.head_ref, 'release/pnpm-version')
+        run: echo "Generated pnpm release PR detected; skipping validation"
+
+      - name: Validate release intent presence
+        if: ${{ !startsWith(github.head_ref, 'pnpm-release/') && !startsWith(github.head_ref, 'release/pnpm-version') }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          base_sha="${{ github.event.pull_request.base.sha }}"
+          head_sha="${{ github.event.pull_request.head.sha }}"
+          changed_files="$(git diff --name-only "$base_sha" "$head_sha")"
+
+          publishable_changes="$(printf '%s\n' "$changed_files" | \
+            rg '^packages/[^/]+/' \
+            | rg -v '/dist/' \
+            || true)"
+
+          if [ -z "$publishable_changes" ]; then
+            echo "No publishable package changes detected"
+            exit 0
+          fi
+
+          release_intents="$(printf '%s\n' "$changed_files" | rg '^\.changeset/.+\.md$' || true)"
+
+          if [ -n "$release_intents" ]; then
+            echo "pnpm release intent detected"
+            exit 0
+          fi
+
+          echo "Publishable package changes require a pnpm release intent in .changeset/*.md."
+          echo "Create one with: pnpm change"
+          echo
+          echo "Changed files:"
+          printf '%s\n' "$publishable_changes"
+          exit 1

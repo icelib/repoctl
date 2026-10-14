@@ -47,6 +47,7 @@ env:
   npm_config_registry: https://registry.npmjs.org
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
   id-token: write
@@ -139,6 +140,16 @@ jobs:
           REPO_RELEASE_DRY_RUN: ${{ inputs.dry-run }}
           REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
         run: pnpm exec repo release ci --stage prepare
+
+      # Source repository only: GITHUB_TOKEN PR events do not trigger pull_request_target.
+      - name: Request Release PR approval
+        id: pr-ci-approval
+        if: ${{ steps.release-prepare.outcome == 'success' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_USES_EVENT_TOKEN: ${{ steps.app-token.outputs.token == '' && secrets.REPOCTL_RELEASE_TOKEN == '' && secrets.CHANGESETS_RELEASE_TOKEN == '' }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: node .github/pr-ci/index.mjs release
 
       - name: Release upload
         id: release-upload

@@ -4,6 +4,7 @@ import { templateChoices } from '../template-data.mjs'
 import { readPackageManagerFromManifest } from './package-manager/read'
 import { assetsDir, packageDir, templatesDir } from './paths'
 import { prepareAssets, sanitizePublishedWorkspaceContent } from './prepare'
+import { arePublishedGithubAssetsPrepared } from './prepare/github'
 
 const lockFileName = '.prepare-assets.lock'
 const lockPollIntervalMs = 200
@@ -111,6 +112,7 @@ export async function areTemplateAssetsPrepared() {
     && sanitizePublishedWorkspaceContent(sourceWorkspace) === preparedWorkspace
     && sourceAgentContent.every((content, index) => content === preparedAgentContent[index])
     && sourceSkillContent === preparedSkillContent
+    && await arePublishedGithubAssetsPrepared(sourceRoot, assetsDir)
 }
 
 async function waitForPrepared() {

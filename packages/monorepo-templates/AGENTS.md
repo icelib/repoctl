@@ -19,6 +19,7 @@ This file adds package-local guidance. Global rules are defined in the repositor
 - Keep `assets-data.mjs` target lists and actual `assets/` files aligned.
 - If a new asset is meant to be synced by `monorepo up`, add it to `assets-data.mjs` and ensure it is publishable.
 - If `assets/` ignore rules are adjusted, do not accidentally unignore unrelated generated assets.
+- Maintain consumer CI and release-intent workflows in `packages/monorepo/assets/.github/workflows/`; source-repository approval workflows and `.github/pr-ci/` tooling must not be published.
 - For scaffold logic updates, prioritize compatibility with `exactOptionalPropertyTypes` and cover option-edge cases.
 
 ## Validation
