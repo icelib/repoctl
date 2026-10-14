@@ -107,3 +107,5 @@ repo doctor --rules root-scripts,package-manager --strict
 repo doctor --rules root-scripts --fix --out plans/doctor-fix.json
 repo doctor --apply plans/doctor-fix.json --json
 ```
+
+<!-- Temporary PR approval and changeset acceptance probe. -->
