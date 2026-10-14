@@ -1,0 +1,64 @@
+name: Automatic Release Intent
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  workflow_dispatch:
+    inputs:
+      pr_numbers:
+        description: Comma-separated merged PR numbers to backfill
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    name: Generate release intent
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out workflow source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Validate GitHub App configuration
+        if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          APP_CLIENT_ID: ${{ vars.REPOCTL_APP_CLIENT_ID }}
+          APP_PRIVATE_KEY_CONFIGURED: ${{ secrets.REPOCTL_APP_PRIVATE_KEY != '' }}
+        run: |
+          if { [ -n "$APP_CLIENT_ID" ] && [ "$APP_PRIVATE_KEY_CONFIGURED" != 'true' ]; } ||
+             { [ -z "$APP_CLIENT_ID" ] && [ "$APP_PRIVATE_KEY_CONFIGURED" = 'true' ]; }; then
+            echo 'Configure both REPOCTL_APP_CLIENT_ID and REPOCTL_APP_PRIVATE_KEY.' >&2
+            exit 1
+          fi
+
+      - name: Create GitHub App token
+        if: ${{ vars.REPOCTL_APP_CLIENT_ID != '' && (github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository) }}
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.REPOCTL_APP_CLIENT_ID }}
+          private-key: ${{ secrets.REPOCTL_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Generate or backfill changesets
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || github.token }}
+          PR_NUMBERS: ${{ inputs.pr_numbers }}
+        run: node .github/auto-changeset/index.mjs

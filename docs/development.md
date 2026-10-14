@@ -2,7 +2,7 @@
 
 使用 Node.js 22.13+ 和根 `package.json` 指定的 pnpm 版本。先执行 `pnpm install`；安装后的 `postinstall` 会构建工作区。
 
-自动 changeset 与 Release PR 的 GitHub App 配置见 [自动提交与 PR 检查](./github-app-automation.md)。
+PR 验证的网页和 AI 审批操作见 [PR 检查审批](./pr-ci-approval.md)；Release 与手动 changeset backfill 的认证配置见 [自动提交认证](./github-app-automation.md)。
 
 ## 选择开发入口
 

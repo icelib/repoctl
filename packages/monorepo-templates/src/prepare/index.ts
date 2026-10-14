@@ -6,8 +6,8 @@ import { templateChoices } from '../../template-data.mjs'
 import { assetsDir, packageDir, templatesDir } from '../paths'
 import { toPublishGitignorePath } from '../utils/gitignore'
 import { shouldSkipTemplatePath } from '../utils/template-filter'
+import { preparePublishedGithubAssets } from './github'
 import { publishedToolingConfigs, removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedManifestContent, sanitizePublishedWorkspaceContent } from './published'
-import { sanitizePublishedCiWorkflowContent } from './workflows'
 
 export { removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedWorkspaceContent } from './published'
 
@@ -109,6 +109,10 @@ async function copyAssets(repoRoot: string, overwriteExisting: boolean) {
   const monorepoAssetRoot = path.resolve(repoRoot, 'packages/monorepo/assets')
 
   for (const target of assetTargets) {
+    if (target === '.github') {
+      await preparePublishedGithubAssets(repoRoot, assetsDir, overwriteExisting)
+      continue
+    }
     const packageAsset = path.join(monorepoAssetRoot, toPublishGitignorePath(target))
     const repoAsset = path.join(repoRoot, target)
     const from = publishedAgentSourceFiles.has(target) || !(await pathExists(repoAsset))
@@ -181,13 +185,7 @@ async function removeSourceRepoReleaseToolingBuildStep() {
   }
 }
 
-async function removeSourceRepoChecks() {
-  await fs.rm(path.join(assetsDir, '.github/workflows/devcontainer.yml'), { force: true })
-  const workflowPath = path.join(assetsDir, '.github/workflows/ci.yml')
-  if (await pathExists(workflowPath)) {
-    const workflow = await fs.readFile(workflowPath, 'utf8')
-    await fs.writeFile(workflowPath, sanitizePublishedCiWorkflowContent(workflow))
-  }
+async function sanitizePublishedManifest() {
   const manifestPath = path.join(assetsDir, 'package.json')
   if (await pathExists(manifestPath)) {
     const content = await fs.readFile(manifestPath, 'utf8')
@@ -224,6 +222,6 @@ export async function prepareAssets(options: PrepareAssetsOptions = {}) {
   await writePublishedToolingConfigs()
   await writePublishedAgentSkill(repoRoot)
   await removeSourceRepoReleaseToolingBuildStep()
-  await removeSourceRepoChecks()
+  await sanitizePublishedManifest()
   await copyTemplates(repoRoot, overwriteExisting)
 }

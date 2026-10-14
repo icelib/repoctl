@@ -23,6 +23,8 @@ const nimbus = getTemplateDefinition('nimbus')
 
 The source workspaces under the repository's `templates/` directory are private. This package is their supported distribution boundary.
 
+Generated workspaces retain automatic pull-request CI and release-intent workflows. Approval rules for the repoctl source repository are excluded from published assets.
+
 ## Project links
 
 - Documentation: https://repoctl.icebreaker.top

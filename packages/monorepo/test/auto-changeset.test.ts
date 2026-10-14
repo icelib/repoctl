@@ -66,8 +66,34 @@ describe('automatic changesets', () => {
       createCommit: async () => ({ sha: 'commit' }),
       updateRef: async () => { calls.push('updateRef') },
     }
-    await expect(processPullRequest(client as never, 42)).resolves.toEqual({ action: 'committed', number: 42, path: '.changeset/auto-pr-42.md' })
+    await expect(processPullRequest(client as never, 42)).resolves.toEqual({ action: 'committed', number: 42, path: '.changeset/auto-pr-42.md', sha: 'commit' })
     expect(calls).toEqual(['updateRef'])
+  })
+
+  it('rejects an outdated approved head before inspecting release intent files', async () => {
+    const client = {
+      getPullRequest: async () => ({ head: { sha: 'new-head' } }),
+      getPullRequestFiles: async () => { throw new Error('Must not inspect an unapproved head') },
+    }
+    await expect(processPullRequest(client as never, 42, { expectedHeadSha: 'approved-head' })).rejects.toThrow('head changed before')
+  })
+
+  it('does not commit an intent calculated for a head that changed during preparation', async () => {
+    const client = {
+      getPullRequest: async () => ({
+        number: 42,
+        title: 'Fix package',
+        draft: false,
+        labels: [],
+        head: { ref: 'feature/fix', sha: 'head', repo: { full_name: 'acme/repo' } },
+        base: { repo: { full_name: 'acme/repo' } },
+      }),
+      getPullRequestFiles: async () => [{ filename: 'packages/demo/src/index.ts' }],
+      getContent: async (path: string) => path.endsWith('package.json') ? '{"name":"demo"}' : undefined,
+      getRef: async () => ({ object: { sha: 'new-head' } }),
+      getCommit: async () => { throw new Error('Must not create a commit on the changed head') },
+    }
+    await expect(processPullRequest(client as never, 42)).rejects.toThrow('head changed while')
   })
 
   it.each(['unchanged', 'manual', 'edited', 'draft', 'release', 'private'])(
@@ -136,7 +162,7 @@ describe('automatic changesets', () => {
       createCommit: async () => ({ sha: 'commit' }),
       updateRef: async () => { calls.push('updateRef') },
     }
-    await expect(processPullRequest(client as never, 44)).resolves.toEqual({ action: 'committed', number: 44, path: '.changeset/auto-pr-44.md' })
+    await expect(processPullRequest(client as never, 44)).resolves.toEqual({ action: 'committed', number: 44, path: '.changeset/auto-pr-44.md', sha: 'commit' })
     expect(calls).toEqual(['updateRef'])
   })
 

@@ -1,0 +1,129 @@
+name: PR Checks
+run-name: PR checks for # ${{ github.event.pull_request.number || inputs.pr_number }}
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Open PR to approve and validate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Only supersede runs for this PR. Other approved PRs can run concurrently.
+concurrency:
+  group: pr-ci-${{ github.event.pull_request.number || inputs.pr_number }}
+  cancel-in-progress: true
+
+jobs:
+  approve:
+    name: Approve PR checks
+    if: ${{ (github.event_name == 'workflow_dispatch' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)) || (github.event_name == 'pull_request_target' && !github.event.pull_request.draft) }}
+    environment: pr-ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Approval received
+        run: echo "PR checks approved. Preparing the final commit for validation."
+
+  prepare:
+    name: Prepare approved PR
+    needs: approve
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      statuses: write
+    outputs:
+      head_sha: ${{ steps.prepare.outputs.head_sha }}
+      base_sha: ${{ steps.prepare.outputs.base_sha }}
+      merge_sha: ${{ steps.prepare.outputs.merge_sha }}
+      head_ref: ${{ steps.prepare.outputs.head_ref }}
+      run_ci: ${{ steps.prepare.outputs.run_ci }}
+      run_devcontainer: ${{ steps.prepare.outputs.run_devcontainer }}
+      pr_number: ${{ steps.prepare.outputs.pr_number }}
+    steps:
+      - name: Check out trusted workflow source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Prepare changeset and freeze validation commits
+        id: prepare
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+        run: node .github/pr-ci/index.mjs prepare
+
+  build:
+    name: CI
+    needs: prepare
+    if: ${{ needs.prepare.outputs.run_ci == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.prepare.outputs.merge_sha }}
+    secrets:
+      TURBO_TOKEN: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.TURBO_TOKEN || '' }}
+      CODECOV_TOKEN: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.CODECOV_TOKEN || '' }}
+
+  devcontainer:
+    name: Dev Container
+    needs: prepare
+    if: ${{ needs.prepare.outputs.run_devcontainer == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/devcontainer.yml
+    with:
+      ref: ${{ needs.prepare.outputs.merge_sha }}
+
+  release-intent:
+    name: Release Intent
+    needs: prepare
+    permissions:
+      contents: read
+    uses: ./.github/workflows/release-intent-check.yml
+    with:
+      ref: ${{ needs.prepare.outputs.merge_sha }}
+      base_sha: ${{ needs.prepare.outputs.base_sha }}
+      head_sha: ${{ needs.prepare.outputs.head_sha }}
+      head_ref: ${{ needs.prepare.outputs.head_ref }}
+
+  report:
+    name: Report PR validation
+    needs: [approve, prepare, build, devcontainer, release-intent]
+    if: ${{ always() && needs.prepare.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Check out trusted workflow source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Report results on the final PR commit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
+          HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+          RUN_CI: ${{ needs.prepare.outputs.run_ci }}
+          RUN_DEVCONTAINER: ${{ needs.prepare.outputs.run_devcontainer }}
+          CI_RESULT: ${{ needs.build.result }}
+          DEVCONTAINER_RESULT: ${{ needs.devcontainer.result }}
+          RELEASE_INTENT_RESULT: ${{ needs.release-intent.result }}
+        run: node .github/pr-ci/index.mjs report

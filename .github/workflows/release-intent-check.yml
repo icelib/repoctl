@@ -1,8 +1,20 @@
 name: Release Intent Check
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      base_sha:
+        required: true
+        type: string
+      head_sha:
+        required: true
+        type: string
+      head_ref:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -10,27 +22,29 @@ permissions:
 jobs:
   release-intent:
     name: Require release intent for publishable changes
-    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.ref }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Skip generated release PRs
-        if: startsWith(github.head_ref, 'pnpm-release/') || startsWith(github.head_ref, 'release/pnpm-version')
+        if: startsWith(inputs.head_ref, 'pnpm-release/') || startsWith(inputs.head_ref, 'release/pnpm-version')
         run: echo "Generated pnpm release PR detected; skipping validation"
 
       - name: Validate release intent presence
-        if: ${{ !startsWith(github.head_ref, 'pnpm-release/') && !startsWith(github.head_ref, 'release/pnpm-version') }}
+        if: ${{ !startsWith(inputs.head_ref, 'pnpm-release/') && !startsWith(inputs.head_ref, 'release/pnpm-version') }}
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+          HEAD_SHA: ${{ inputs.head_sha }}
         shell: bash
         run: |
           set -euo pipefail
 
-          base_sha="${{ github.event.pull_request.base.sha }}"
-          head_sha="${{ github.event.pull_request.head.sha }}"
-          changed_files="$(git diff --name-only "$base_sha" "$head_sha")"
+          changed_files="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
 
           publishable_changes="$(printf '%s\n' "$changed_files" | \
             rg '^packages/[^/]+/' \

@@ -4,6 +4,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, 
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { checkConsumerWorkflows } from './packaged-template/workflows.mjs'
 import { checkPackagedTemplateOrigins } from './template-origins/packaged.mjs'
 import { checkPackagedWebsite } from './vitepress/packaged.mjs'
 
@@ -53,6 +54,7 @@ function linkPackageDependencies(packageName, sourcePackageName) {
 }
 
 function checkWorkspace(workspaceDir) {
+  checkConsumerWorkflows(workspaceDir)
   const manifest = readJson(path.join(workspaceDir, 'package.json'))
   assert.equal(manifest.packageManager, sourceManifest.packageManager)
   assert.equal(manifest.devDependencies?.repoctl, 'latest')
@@ -85,6 +87,7 @@ try {
   linkPackageDependencies('@icebreakers/monorepo-templates', 'monorepo-templates')
 
   const installedTemplates = path.join(bootstrapDir, 'node_modules/@icebreakers/monorepo-templates')
+  checkConsumerWorkflows(path.join(installedTemplates, 'assets'))
   assert.equal(readJson(path.join(installedTemplates, 'assets/package.json')).packageManager, sourceManifest.packageManager)
   const reportedManager = run(process.execPath, [
     '--input-type=module',

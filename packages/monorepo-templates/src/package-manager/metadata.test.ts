@@ -1,6 +1,7 @@
 import { access, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { describe, expect, it } from 'vitest'
+import YAML from 'yaml'
 import { createPackageManagerFixture } from './test-support/fixture'
 
 describe('built workspace package manager API', () => {
@@ -16,6 +17,14 @@ describe('built workspace package manager API', () => {
       expect(fixture.npmrc).toContain('package-manager-strict-version=true')
       expect(await readFile(path.join(fixture.assetsDir, 'pnpm-workspace.yaml'), 'utf8')).toContain('pmOnFail: error')
       await expect(access(path.join(fixture.assetsDir, '.npmrc'))).rejects.toMatchObject({ code: 'ENOENT' })
+      const ci = YAML.parse(await readFile(path.join(fixture.assetsDir, '.github/workflows/ci.yml'), 'utf8'))
+      expect(ci.on.pull_request).toBeDefined()
+      expect(ci.on.workflow_call).toBeUndefined()
+      await expect(access(path.join(fixture.assetsDir, '.github/workflows/pr-ci.yml'))).rejects.toMatchObject({ code: 'ENOENT' })
+      await expect(access(path.join(fixture.assetsDir, '.github/pr-ci'))).rejects.toMatchObject({ code: 'ENOENT' })
+      const releaseContent = await readFile(path.join(fixture.assetsDir, '.github/workflows/release.yml'), 'utf8')
+      expect(releaseContent).not.toContain('pr-ci')
+      expect(YAML.parse(releaseContent).permissions.actions).toBeUndefined()
       for (const name of ['AGENTS.md', 'CLAUDE.md', '.agents/skills/repoctl/SKILL.md']) {
         const content = await readFile(path.join(fixture.assetsDir, name), 'utf8')
         expect(content).toContain('pnpm create repoctl@latest')

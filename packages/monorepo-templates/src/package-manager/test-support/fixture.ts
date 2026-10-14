@@ -26,8 +26,12 @@ export async function createPackageManagerFixture() {
   const npmrc = await readFile(path.join(sourceRoot, '.npmrc'), 'utf8')
   const sourceFiles = [
     'LICENSE',
+    '.github/workflows/release.yml',
     'packages/monorepo/assets/AGENTS.md',
     'packages/monorepo/assets/CLAUDE.md',
+    'packages/monorepo/assets/.github/workflows/ci.yml',
+    'packages/monorepo/assets/.github/workflows/release-intent-auto.yml',
+    'packages/monorepo/assets/.github/workflows/release-intent-check.yml',
     'packages/monorepo/resources/skills/repoctl/SKILL.md',
   ]
 
@@ -42,6 +46,11 @@ export async function createPackageManagerFixture() {
     outputFile(path.join(assetsDir, 'package.json'), JSON.stringify({ packageManager: 'pnpm@10.20.0' })),
     outputFile(path.join(assetsDir, 'npmrc'), 'package-manager-strict=false\n'),
     outputFile(path.join(assetsDir, '.npmrc'), 'package-manager-strict=false\n'),
+    outputFile(path.join(root, '.github/workflows/pr-ci.yml'), 'on: [pull_request_target]\njobs: {}\n'),
+    outputFile(path.join(root, '.github/workflows/ci.yml'), 'on: [workflow_call]\njobs: {}\n'),
+    outputFile(path.join(assetsDir, '.github/workflows/pr-ci.yml'), 'outdated cached approval workflow\n'),
+    outputFile(path.join(assetsDir, '.github/pr-ci/index.mjs'), 'outdated cached approval tooling\n'),
+    outputFile(path.join(assetsDir, '.github/workflows/release.yml'), 'outdated cached source release workflow\n'),
     outputFile(path.join(assetsDir, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\npmOnFail: warn\n'),
     ...['AGENTS.md', 'CLAUDE.md', 'LICENSE', '.agents/skills/repoctl/SKILL.md'].map(name => outputFile(path.join(assetsDir, name), 'outdated cached asset\n')),
     mkdir(path.join(packageDir, 'templates/tsdown'), { recursive: true }),
