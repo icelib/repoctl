@@ -20,7 +20,7 @@ export function fixture() {
   const client = {
     repository: 'acme/repo',
     getPullRequest: vi.fn(async () => structuredClone(pr)),
-    getRef: vi.fn(async () => ({ object: { sha: baseSha } })),
+    getRef: vi.fn(async (ref: string) => ({ object: { sha: ref === `heads/${pr.head.ref}` ? pr.head.sha : baseSha } })),
     getCommit: vi.fn(async () => ({ parents: [{ sha: baseSha }, { sha: pr.head.sha }] })),
     compareCommits: vi.fn(async () => ({ files: [{ filename: 'packages/demo/src/index.ts' }] })),
     getStatus: vi.fn(async () => ({ statuses: [{ context: 'PR Validation', target_url: 'https://github.com/acme/repo/actions/runs/123' }] })),

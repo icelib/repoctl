@@ -14,6 +14,49 @@ Release 使用内置 `GITHUB_TOKEN` 创建或更新 PR 时，其事件不会触�
 
 先完成代码验证并配置环境，再将工作流合入默认分支 `main`，最后用新 PR 或新提交验收。`pull_request_target` 使用基础分支上的工作流，旧运行不能证明新配置已生效。
 
+## Actions 事件策略
+
+GitHub 将于 **2026 年 11 月 2 日**在公开仓库执行默认策略，阻止未被显式允许的 `pull_request_target`。本仓需要该事件来从受信任的基础分支读取审批和准备代码，因此还要在 **Settings → Actions → Policies** 配置事件策略；该入口与 **General** 分开。
+
+创建启用状态为 **Active** 的策略，只匹配 `.github/workflows/pr-ci.yml`，仅允许 `pull_request_target` 和 `workflow_dispatch`。该策略允许创建审批运行，运行本身仍受 `pr-ci` 环境审批保护。策略只作用于本源码仓库，不能写入消费者模板或扩大到所有工作流。
+
+通过 API 配置时，先查询已有策略及适用的上级策略，避免重复创建：
+
+```bash
+gh api -H 'X-GitHub-Api-Version: 2026-03-10' \
+  'repos/icelib/repoctl/actions/policies?has_parents=true&per_page=100'
+```
+
+若没有适用策略，将下面的内容保存为 `pr-ci-policy.json`，再调用 `POST /repos/icelib/repoctl/actions/policies`。已有适用策略时，应检查并更新原策略，同时保留其必要限制。
+
+```json
+{
+  "name": "Allow gated PR checks",
+  "enforcement": "active",
+  "conditions": {
+    "workflow_path": {
+      "include": [".github/workflows/pr-ci.yml"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    {
+      "type": "restrict_action_events",
+      "parameters": {
+        "allowed_events": ["pull_request_target", "workflow_dispatch"]
+      }
+    }
+  ]
+}
+```
+
+```bash
+gh api --method POST -H 'X-GitHub-Api-Version: 2026-03-10' \
+  repos/icelib/repoctl/actions/policies --input pr-ci-policy.json
+```
+
+配置后重新查询策略，并用新 PR 事件确认运行仍先等待审批、未启动 runner；通过 **Policy insights** 检查事件策略是否阻止了运行。参见 [默认事件策略](https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target#default-policy-for-pull_request_target)和 [Actions 策略 API](https://docs.github.com/en/rest/actions/policies)。
+
 ## 网页批准
 
 在 PR 的 Checks 或 Actions 中打开名称对应该 PR 的 **PR Checks** 运行，点击 **Review deployments**，选择 `pr-ci`，点击 **Approve and deploy**。批准只放行所选运行。

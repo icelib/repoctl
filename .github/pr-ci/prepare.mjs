@@ -15,16 +15,24 @@ function openPullRequest(pr, repository) {
   }
 }
 
-async function frozenMerge(client, number, headSha, baseSha, wait) {
-  // The test merge ref can lag behind a changeset push. Verify its parents, not just its name.
+async function frozenMerge(client, initial, headSha, baseSha, previousHeadSha, wait) {
+  // PR metadata and its test merge can lag behind our changeset push. The branch ref
+  // must already match our exact commit before allowing that known stale PR head.
   for (let attempt = 0; attempt < 12; attempt++) {
-    const pr = await client.getPullRequest(number)
+    const pr = await client.getPullRequest(initial.number)
     openPullRequest(pr, client.repository)
-    const base = await client.getRef(`heads/${pr.base.ref}`)
-    if (pr.head.sha !== headSha || base.object.sha !== baseSha) {
+    const sameBranches = pr.base.ref === initial.base.ref
+      && pr.head.ref === initial.head.ref
+      && pr.head.repo.full_name === initial.head.repo.full_name
+    const base = await client.getRef(`heads/${initial.base.ref}`)
+    const head = initial.head.repo.full_name === client.repository
+      ? await client.getRef(`heads/${initial.head.ref}`)
+      : undefined
+    if (!sameBranches || base.object.sha !== baseSha || (head && head.object.sha !== headSha)
+      || (pr.head.sha !== headSha && pr.head.sha !== previousHeadSha)) {
       throw new Error('PR or base changed during preparation; approve the latest run.')
     }
-    if (pr.mergeable === true && /^[0-9a-f]{40}$/.test(pr.merge_commit_sha ?? '')) {
+    if (pr.head.sha === headSha && pr.mergeable === true && /^[0-9a-f]{40}$/.test(pr.merge_commit_sha ?? '')) {
       const commit = await client.getCommit(pr.merge_commit_sha)
       if (commit.parents?.length === 2 && commit.parents[0].sha === baseSha && commit.parents[1].sha === headSha) {
         return { pr, mergeSha: pr.merge_commit_sha }
@@ -51,7 +59,11 @@ export async function prepareValidation(client, { number, expectedHeadSha, targe
       throw new Error('Fork PRs must include their own release intent. Add one with pnpm change.')
     }
     headSha = intent.sha ?? headSha
-    const { pr, mergeSha } = await frozenMerge(client, number, headSha, base.object.sha, wait)
+    const previousHeadSha = intent.action === 'committed' && headSha !== initial.head.sha
+      && initial.head.repo.full_name === client.repository
+      ? initial.head.sha
+      : undefined
+    const { pr, mergeSha } = await frozenMerge(client, initial, headSha, base.object.sha, previousHeadSha, wait)
     const comparison = await client.compareCommits(base.object.sha, headSha)
     // Compare responses are pinned to both SHAs but list at most 300 files.
     const files = comparison.files ?? []

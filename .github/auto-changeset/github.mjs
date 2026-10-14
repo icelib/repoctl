@@ -89,7 +89,7 @@ export function createGitHubClient({ token, repository, fetchImpl = fetch }) {
     },
     createBranch: async (branch, sha) => request('/git/refs', { method: 'POST', body: JSON.stringify({ ref: `refs/heads/${branch}`, sha }) }),
     createPullRequest: input => request('/pulls', { method: 'POST', body: JSON.stringify(input) }),
-    listReleasePullRequests: base => request(`/pulls?state=open&base=${encodeURIComponent(base)}&head=${encodeURIComponent(`${owner}:pnpm-release/${base}`)}`),
+    listReleasePullRequests: (base, headRef) => request(`/pulls?state=open&base=${encodeURIComponent(base)}&head=${encodeURIComponent(`${owner}:${headRef}`)}`),
     dispatchPrValidation: (number, ref) => request('/actions/workflows/pr-ci.yml/dispatches', { method: 'POST', body: JSON.stringify({ ref, inputs: { pr_number: String(number) } }) }),
   }
 }

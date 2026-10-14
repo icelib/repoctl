@@ -23,6 +23,74 @@ describe('approved PR preparation', () => {
     expect(h.options.wait).toHaveBeenCalledOnce()
   })
 
+  it('waits for stale PR metadata only after its own changeset commit reaches the branch ref', async () => {
+    const h = fixture()
+    h.options.processIntent.mockResolvedValue({ action: 'committed', number: 42, path: '.changeset/auto-pr-42.md', sha: preparedSha })
+    h.client.getRef.mockImplementation(async ref => ({ object: { sha: ref === 'heads/feature/fix' ? preparedSha : baseSha } }))
+    h.options.wait.mockImplementation(async () => {
+      h.pr.head.sha = preparedSha
+    })
+
+    await expect(prepareValidation(h.client, h.options)).resolves.toMatchObject({ head_sha: preparedSha, merge_sha: mergeSha })
+    expect(h.options.wait).toHaveBeenCalledOnce()
+    expect(h.client.getCommit).toHaveBeenCalledOnce()
+    expect(h.client.getRef).toHaveBeenCalledWith('heads/feature/fix')
+    expect(h.client.compareCommits).toHaveBeenCalledWith(baseSha, preparedSha)
+    expect(h.client.createStatus).toHaveBeenCalledWith(preparedSha, expect.objectContaining({ state: 'pending' }))
+  })
+
+  it('bounds the wait when PR metadata never reflects its own changeset commit', async () => {
+    const h = fixture()
+    h.options.processIntent.mockResolvedValue({ action: 'committed', number: 42, path: '.changeset/auto-pr-42.md', sha: preparedSha })
+    h.client.getRef.mockImplementation(async ref => ({ object: { sha: ref === 'heads/feature/fix' ? preparedSha : baseSha } }))
+
+    await expect(prepareValidation(h.client, h.options)).rejects.toThrow('did not provide a current')
+    expect(h.options.wait).toHaveBeenCalledTimes(11)
+    expect(h.client.getCommit).not.toHaveBeenCalled()
+    expect(h.client.createStatus).toHaveBeenCalledWith(preparedSha, expect.objectContaining({ state: 'failure' }))
+  })
+
+  it('rejects an authoritative author push even when PR metadata still has the previous head', async () => {
+    const h = fixture()
+    h.options.processIntent.mockResolvedValue({ action: 'committed', number: 42, path: '.changeset/auto-pr-42.md', sha: preparedSha })
+    h.client.getRef.mockImplementation(async ref => ({ object: { sha: ref === 'heads/feature/fix' ? 'e'.repeat(40) : baseSha } }))
+
+    await expect(prepareValidation(h.client, h.options)).rejects.toThrow('changed during preparation')
+    expect(h.options.wait).not.toHaveBeenCalled()
+    expect(h.client.getCommit).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unexpected PR head instead of treating it as propagation delay', async () => {
+    const h = fixture()
+    h.options.processIntent.mockImplementation(async () => {
+      h.pr.head.sha = 'e'.repeat(40)
+      return { action: 'committed', number: 42, path: '.changeset/auto-pr-42.md', sha: preparedSha }
+    })
+    h.client.getRef.mockImplementation(async ref => ({ object: { sha: ref === 'heads/feature/fix' ? preparedSha : baseSha } }))
+
+    await expect(prepareValidation(h.client, h.options)).rejects.toThrow('changed during preparation')
+    expect(h.options.wait).not.toHaveBeenCalled()
+  })
+
+  it('rejects a hidden author push without an automatic changeset commit', async () => {
+    const h = fixture()
+    h.client.getRef.mockImplementation(async ref => ({ object: { sha: ref === 'heads/feature/fix' ? preparedSha : baseSha } }))
+
+    await expect(prepareValidation(h.client, h.options)).rejects.toThrow('changed during preparation')
+    expect(h.options.wait).not.toHaveBeenCalled()
+  })
+
+  it('rejects a PR retargeted to a branch with the same base commit', async () => {
+    const h = fixture()
+    h.options.processIntent.mockImplementation(async () => {
+      h.pr.base.ref = 'other-base'
+      return { action: 'skipped', number: 42 }
+    })
+
+    await expect(prepareValidation(h.client, h.options)).rejects.toThrow('changed during preparation')
+    expect(h.options.wait).not.toHaveBeenCalled()
+  })
+
   it.each(['draft', 'closed', 'conflicting', 'outdated approval'])('rejects a %s PR before writing a changeset', async (kind) => {
     const h = fixture()
     if (kind === 'draft') {
