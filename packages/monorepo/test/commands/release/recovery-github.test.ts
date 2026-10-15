@@ -101,10 +101,12 @@ it('does not mistake a concurrent checkpoint writer for its own lost response', 
 it('creates the journal branch and first checkpoint before publishing', async () => {
   const request = vi.fn<typeof fetch>()
     .mockResolvedValueOnce(response({ message: 'not found' }, 404))
-    .mockResolvedValueOnce(response({ object: { sha: target } }, 201))
+    .mockResolvedValueOnce(response({ sha: 'checkpoint-tree' }, 201))
+    .mockResolvedValueOnce(response({ sha: 'checkpoint-commit' }, 201))
+    .mockResolvedValueOnce(response({ object: { sha: 'checkpoint-commit' } }, 201))
     .mockResolvedValueOnce(response({ content: { sha: 'revision' } }, 201))
   await expect(client(request).writeReleaseState(key, state)).resolves.toBe('revision')
-  expect(JSON.parse(String(request.mock.calls[1]![1]!.body))).toEqual({ ref: 'refs/heads/repoctl-release-state', sha: target })
+  expect(JSON.parse(String(request.mock.calls[3]![1]!.body))).toEqual({ ref: 'refs/heads/repoctl-release-state', sha: 'checkpoint-commit' })
 })
 
 it.each([401, 403, 429, 500])('does not treat checkpoint lookup %s as missing', async (status) => {

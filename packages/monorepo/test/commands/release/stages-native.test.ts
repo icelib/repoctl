@@ -7,7 +7,8 @@ import { lineFixture } from './lines/fixture'
 
 it.each(['stable', 'prerelease'])('keeps %s preparation hooks ordered across real stages', async (kind) => {
   const h = await lineFixture()
-  await h.write('package.json', JSON.stringify({ private: true, scripts: { before: 'node event.cjs before', quality: 'node event.cjs quality', after: 'node event.cjs after' } }))
+  const manifest = JSON.parse(await readFile(path.join(h.cwd, 'package.json'), 'utf8'))
+  await h.write('package.json', JSON.stringify({ ...manifest, scripts: { before: 'node event.cjs before', quality: 'node event.cjs quality', after: 'node event.cjs after' } }))
   await h.write('event.cjs', 'const fs = require("node:fs"); const file = "events.json"; const events = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : []; events.push(process.argv[2]); fs.writeFileSync(file, JSON.stringify(events));')
   await h.write('.gitignore', 'events.json\nnode_modules\n')
   const github: GitHubOperations = { ensurePullRequest: vi.fn(), ensureRelease: vi.fn(), readReleaseState: vi.fn(async () => undefined), writeReleaseState: vi.fn(async () => '1') }
