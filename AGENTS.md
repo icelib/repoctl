@@ -15,6 +15,25 @@ dependencies so pnpm uses the version declared by the workspace.
 
 This repository is the source workspace for repoctl, a task-first CLI for pnpm and Turborepo monorepos. Product packages live under `packages/`: `repoctl` is the recommended entrypoint, `monorepo` contains the core engine, `monorepo-templates` distributes managed assets, and the create packages provide primary and compatibility bootstrap commands. Private template source workspaces live under `templates/`; they are product assets, not independently published packages. Shared TypeScript and build settings live in root configs such as `turbo.json`, `tsconfig.json`, and `eslint.config.js`.
 
+## Git Baseline Before Starting Work
+
+- Before editing files, inspect the working tree, current branch, upstream, and intended target remote and branch. For this repository, the usual target is `origin/main`; verify the remote URL before using it.
+- Fetch the target branch before assessing freshness. `git status` compares against cached remote references and cannot establish whether the remote has advanced. For the usual target, run:
+
+  ```bash
+  git status --short --branch
+  git remote get-url origin
+  git fetch origin main
+  git rev-list --left-right --count HEAD...origin/main
+  ```
+
+  The counts show commits unique to `HEAD` and `origin/main`, respectively. If fetching fails, report that the baseline could not be verified before making changes that depend on it.
+
+- Start new work from the current target branch. If a clean local `main` is behind `origin/main`, fast-forward it with `git merge --ff-only origin/main` before implementation. For an existing work branch, inspect divergence and integrate the target with a suitable rebase or merge before continuing.
+- Preserve local changes and existing commits while synchronizing. Use a separate worktree when needed; do not reset, overwrite, force-push, or automatically stash user work to make synchronization succeed.
+- Read the repository instructions, architecture, and dependency configuration again after synchronization so implementation follows the current source tree.
+- Fetch and compare again before committing, opening a PR, or merging. If the target advanced materially, integrate it and rerun affected checks before proceeding.
+
 ## Build, Test, and Development Commands
 
 - `pnpm install` — set up workspaces; ensure Node 22.13+ as defined in `package.json`.
