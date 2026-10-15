@@ -4,6 +4,7 @@ import process from 'node:process'
 import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
 import { resolveReleaseMode } from '../commands/release/shared'
 import { loadMonorepoConfigDetails } from '../core/config'
+import { withLegacyHookConfig } from '../core/config/legacy-hooks'
 import { ConfigValidationError } from '../core/config/validation'
 
 export function registerConfigPreflight(program: Command, cwd: string) {
@@ -30,11 +31,14 @@ export function registerConfigPreflight(program: Command, cwd: string) {
       }
       command = command.parent
     }
-    await loadMonorepoConfigDetails(cwd)
-    const root = await findWorkspaceDir(cwd)
-    if (root && root !== cwd) {
-      await loadMonorepoConfigDetails(root)
+    const validate = async () => {
+      await loadMonorepoConfigDetails(cwd)
+      const root = await findWorkspaceDir(cwd)
+      if (root && root !== cwd) {
+        await loadMonorepoConfigDetails(root)
+      }
     }
+    await (['upgrade', 'doctor'].includes(action.name()) ? withLegacyHookConfig(validate) : validate())
   })
 }
 

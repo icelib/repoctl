@@ -37,7 +37,7 @@ repo doctor --strict
 | `tool-package`               | 根依赖包含 `repoctl`                                             | `pnpm add -D repoctl`                        |
 | `root-scripts`               | 存在 `repo:init`、`repo:new`、`repo:check`、`repo:doctor` 根脚本 | `repo init --yes`                            |
 | `config-file`                | 使用 `repoctl.config.ts`，且没有残留 `monorepo.config.ts`        | 保留 `repoctl.config.ts`                     |
-| `commit-hooks`               | Husky 和 lint-staged 同时就绪                                    | `repo upgrade --yes`                         |
+| `commit-hooks`               | Lefthook 配置完整且没有旧工具残留                                | `repo upgrade --yes`                         |
 | `tooling-imports`            | 配置不再引用本地源码 loader 或旧 config wrapper                  | `repo upgrade --yes`                         |
 | `workspace-patterns`         | 常见目录被 workspace patterns 覆盖                               | `repo init --yes`                            |
 | `workspace-package-coverage` | 常见目录下的包都被 pnpm 覆盖                                     | `repo init --yes`                            |
@@ -91,7 +91,7 @@ repo doctor
 
 1. 先处理 `fail`，否则命令或 CI 很可能无法继续。
 2. 再处理遗留配置和 Node 版本问题。
-3. 然后补根脚本、hook 和 lint-staged。
+3. 然后补根脚本、Lefthook 钩子。
 4. 最后整理 workspace patterns 与 tooling imports。
 
 如果不确定报告能否安全分享，使用 [报告与自动化输出](/zh/tasks/reports) 里的 `--redact` 和 `env support`。

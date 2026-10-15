@@ -37,7 +37,7 @@ repoctl prints the selected tasks and the exact commands that would run. Remove 
 | Mode           | Command                         | Purpose                                             |
 | -------------- | ------------------------------- | --------------------------------------------------- |
 | Default        | `repo check`                    | Lightweight pre-commit verification                 |
-| Staged         | `repo check --staged`           | lint-staged plus workspace-aware type checking      |
+| Staged         | `repo check --staged`           | Lefthook plus workspace-aware type checking         |
 | Full           | `repo check --full`             | Root lint, typecheck, build, test, and tsd workflow |
 | Commit message | `repo check --edit-file <file>` | Validate a commit message file                      |
 
@@ -81,7 +81,7 @@ Affected mode selects changed workspace packages and their direct/transitive con
 
 The default range is the merge base of `origin/main` and `HEAD`, through `HEAD`, plus staged, unstaged and untracked files. `--head` must resolve to the current checkout. Missing refs, shallow/incomplete history, a non-current head, unavailable Git or a workspace nested below the Git root explicitly fall back to full checks. Unsafe workspace discovery fails instead of returning an empty plan. Deleted files and both sides of renames retain their owners; package manifest changes, including new/deleted packages, trigger full checks because dependencies may have changed.
 
-Default global inputs cover root package/workspace/lock/Turbo files, TypeScript/lint/test/commit configs, `.npmrc`, `.pnpmfile.*`, Node version files, `.github/**`, `.husky/**`, `scripts/**` and `patches/**`. Turbo `globalDependencies` and repeatable `--global-input` globs are additive. Unknown unowned files trigger full checks. Root Markdown, `docs/**` and license/notice documents are ignored unless a global rule matches; files inside a workspace remain package inputs. An unreadable Turbo config or unresolved graph diagnostics (including catalogs) also trigger full fallback when there are changes. Inspect `globalInputs` and `fallback` in JSON for the exact rules and reasons.
+Default global inputs cover root package/workspace/lock/Turbo files, TypeScript/lint/test/commit configs, `.npmrc`, `.pnpmfile.*`, Node version files, `.github/**`, `lefthook.yml`, `scripts/**` and `patches/**`. Turbo `globalDependencies` and repeatable `--global-input` globs are additive. Unknown unowned files trigger full checks. Root Markdown, `docs/**` and license/notice documents are ignored unless a global rule matches; files inside a workspace remain package inputs. An unreadable Turbo config or unresolved graph diagnostics (including catalogs) also trigger full fallback when there are changes. Inspect `globalInputs` and `fallback` in JSON for the exact rules and reasons.
 
 Execution follows `build → lint → typecheck → tsd → test`, skipping unavailable scripts. pnpm recursive commands receive the exact planned filters and handle dependency ordering. Build also includes dependencies outside the affected/filter set, recorded in `prerequisiteTargets`, so tests can use built artifacts. Full fallback uses each existing root script; when a root script is absent, it uses that script across all selected packages. Explicit filters limit checks even during fallback; build prerequisites may still lie outside them. Root scripts are responsible for their own Turbo/pnpm delegation.
 
@@ -100,7 +100,7 @@ repo check --full --report reports/check-result.md --report-format markdown
 
 JSON schema version `1` records the mode, directory, start/end timestamps, duration in milliseconds, exit code, and each task's executable and argument array. Stable statuses are `success`, `failed`, `skipped`, and `interrupted`. Failed commands stop the sequence; later tasks retain null timestamps/exit codes and a skip reason. The CLI keeps the failing exit code and saves the report on SIGINT/SIGTERM where the operating system allows graceful handling. SIGKILL, abrupt power loss, and an unwritable report destination cannot guarantee a saved report.
 
-Reports capture root script or verification stage results, not the internals of Turbo or lint-staged. In staged mode, configured typechecks run inside pre-commit; the separate staged-typecheck stage has no explicit file arguments and is reported as skipped. Reports do not collect environment values or child output. `--redact` replaces workspace and home path prefixes, including those in command arguments.
+Reports capture root script or verification stage results, not the internals of Turbo or Lefthook. In staged mode, workspace typechecks run once inside the Lefthook pre-commit pipeline; the report records pre-commit as one stage. Reports do not collect environment values or child output. `--redact` replaces workspace and home path prefixes, including those in command arguments.
 
 The programmatic `runCheckWithReport({ cwd, full: true, signal })` API returns the same report without exiting the caller. An optional `AbortSignal` cancels the active command.
 

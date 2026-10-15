@@ -1,4 +1,5 @@
 assets/*
+!assets/lefthook.yml
 !assets/monorepo.config.ts
 !assets/.github/
 assets/.github/*

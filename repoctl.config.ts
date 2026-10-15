@@ -35,9 +35,6 @@ export default {
         'media-feature-range-notation': 'prefix',
       },
     },
-    lintStaged: {
-      repoCommand: 'pnpm exec repo',
-    },
     vitest: {
       includeWorkspaceRootConfig: false,
       coverageExclude: ['**/dist/**'],

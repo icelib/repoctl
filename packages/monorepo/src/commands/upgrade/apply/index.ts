@@ -6,6 +6,8 @@ import { withOperationLock } from '../../../core/operation-lock'
 import { clearWorkspaceCache } from '../../../core/workspace'
 import { findWorkspacePackages } from '../../../core/workspace/discovery'
 import { upgradeOperations } from '../baseline/apply'
+import { hookGroup } from '../hooks'
+import { finishHooksUpgrade } from '../hooks/git'
 import { applyMigrationFiles } from '../migrations/apply'
 import { ledgerPath, migrationGroup } from '../migrations/record'
 import { canonicalDirectory, hash, readOptional } from '../plan/files'
@@ -87,6 +89,9 @@ async function applyLocked(cwd: string, plan: UpgradePlan, options: UpgradeApply
   }
   finally {
     clearWorkspaceCache()
+  }
+  if (files.some(file => file.group === hookGroup || file.reason === 'legacy-hooks-removed')) {
+    await finishHooksUpgrade(plan.rootDir)
   }
   return { status: 'applied', changed: files.map(file => file.path), ...report }
 }

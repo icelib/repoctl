@@ -3,6 +3,16 @@ import { describe, expect, it } from 'vitest'
 import { mergeWorkspaceManifest, normalizeWorkspaceManifest } from '@/commands/upgrade/workspace'
 
 describe('mergeWorkspaceManifest', () => {
+  it('keeps older pnpm build permissions and explicit denials in one format', () => {
+    const merged = mergeWorkspaceManifest(
+      normalizeWorkspaceManifest({ allowBuilds: { lefthook: true, esbuild: true, sharp: true } }),
+      normalizeWorkspaceManifest({ onlyBuiltDependencies: ['esbuild'], ignoredBuiltDependencies: ['sharp'] }),
+    )
+    expect(merged.onlyBuiltDependencies).toEqual(['esbuild', 'lefthook'])
+    expect(merged.ignoredBuiltDependencies).toEqual(['sharp'])
+    expect(merged.allowBuilds).toBeUndefined()
+  })
+
   it('adds missing workspace config without overriding existing values', () => {
     const source: WorkspaceManifestLike = normalizeWorkspaceManifest({
       packages: ['apps/*', 'packages/*', '!**/test/**'],

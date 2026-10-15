@@ -14,7 +14,6 @@ describe('runDoctor', () => {
     const pkgDir = path.join(workspaceDir, 'packages/demo')
 
     await fs.ensureDir(pkgDir)
-    await fs.ensureDir(path.join(workspaceDir, '.husky'))
     await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
     await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
       name: 'demo-workspace',
@@ -22,6 +21,7 @@ describe('runDoctor', () => {
       engines: { node: '>=0' },
       devDependencies: {
         repoctl: '^3.0.0',
+        lefthook: '2.2.2',
       },
       scripts: {
         'repo:init': 'repo init',
@@ -36,8 +36,7 @@ describe('runDoctor', () => {
       version: '0.0.0',
     }, { spaces: 2 })
     await fs.writeFile(path.join(workspaceDir, 'repoctl.config.ts'), 'export default {}\n')
-    await fs.writeFile(path.join(workspaceDir, '.husky/pre-commit'), 'pnpm exec lint-staged\n')
-    await fs.writeFile(path.join(workspaceDir, 'lint-staged.config.js'), 'export default {}\n')
+    await fs.writeFile(path.join(workspaceDir, 'lefthook.yml'), 'pre-commit:\n  jobs:\n    - run: pnpm lint\ncommit-msg:\n  jobs:\n    - run: pnpm commitlint\npre-push:\n  jobs:\n    - run: pnpm typecheck\n')
 
     await recordInstallation(workspaceDir)
     const { runDoctor } = await import('@/commands/doctor')
@@ -63,7 +62,6 @@ describe('runDoctor', () => {
     const pkgDir = path.join(workspaceDir, 'packages/demo')
 
     await fs.ensureDir(pkgDir)
-    await fs.ensureDir(path.join(workspaceDir, '.husky'))
     await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - apps/*\n  - packages/*\n  - examples/*\n')
     await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
       name: 'demo-workspace',
@@ -71,6 +69,7 @@ describe('runDoctor', () => {
       engines: { node: '>=0' },
       devDependencies: {
         repoctl: '^3.0.0',
+        lefthook: '2.2.2',
       },
       scripts: {
         'repo:init': 'repo init',
@@ -85,8 +84,7 @@ describe('runDoctor', () => {
       version: '0.0.0',
     }, { spaces: 2 })
     await fs.writeFile(path.join(workspaceDir, 'repoctl.config.ts'), 'export default {}\n')
-    await fs.writeFile(path.join(workspaceDir, '.husky/pre-commit'), 'pnpm exec lint-staged\n')
-    await fs.writeFile(path.join(workspaceDir, 'lint-staged.config.js'), 'export default {}\n')
+    await fs.writeFile(path.join(workspaceDir, 'lefthook.yml'), 'pre-commit:\n  jobs:\n    - run: pnpm lint\ncommit-msg:\n  jobs:\n    - run: pnpm commitlint\npre-push:\n  jobs:\n    - run: pnpm typecheck\n')
 
     await recordInstallation(workspaceDir)
     const { runDoctor } = await import('@/commands/doctor')
@@ -106,13 +104,13 @@ describe('runDoctor', () => {
   it('accepts repo-prefixed scripts', async () => {
     const workspaceDir = await createTempWorkspace('monorepo-doctor-repo-scripts-')
 
-    await fs.ensureDir(path.join(workspaceDir, '.husky'))
     await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - apps/*\n  - packages/*\n  - examples/*\n')
     await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
       name: 'repo-script-workspace',
       engines: { node: '>=0' },
       devDependencies: {
         repoctl: '^4.0.5',
+        lefthook: '2.2.2',
       },
       scripts: {
         'repo:init': 'repo init',
@@ -122,8 +120,7 @@ describe('runDoctor', () => {
       },
     }, { spaces: 2 })
     await fs.writeFile(path.join(workspaceDir, 'repoctl.config.ts'), 'export default {}\n')
-    await fs.writeFile(path.join(workspaceDir, '.husky/pre-commit'), 'pnpm exec lint-staged\n')
-    await fs.writeFile(path.join(workspaceDir, 'lint-staged.config.js'), 'export default {}\n')
+    await fs.writeFile(path.join(workspaceDir, 'lefthook.yml'), 'pre-commit:\n  jobs:\n    - run: pnpm lint\ncommit-msg:\n  jobs:\n    - run: pnpm commitlint\npre-push:\n  jobs:\n    - run: pnpm typecheck\n')
 
     const { runDoctor } = await import('@/commands/doctor')
     const report = await runDoctor(workspaceDir)
@@ -136,7 +133,6 @@ describe('runDoctor', () => {
   it('flags blocking issues and partial onboarding state', async () => {
     const workspaceDir = await createTempWorkspace('monorepo-doctor-fail-')
 
-    await fs.ensureDir(path.join(workspaceDir, '.husky'))
     await fs.writeFile(path.join(workspaceDir, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\n')
     await fs.writeJSON(path.join(workspaceDir, 'package.json'), {
       name: 'broken-workspace',
@@ -148,7 +144,6 @@ describe('runDoctor', () => {
     }, { spaces: 2 })
     await fs.writeFile(path.join(workspaceDir, 'repoctl.config.ts'), 'export default {}\n')
     await fs.writeFile(path.join(workspaceDir, 'monorepo.config.ts'), 'export default {}\n')
-    await fs.writeFile(path.join(workspaceDir, '.husky/pre-commit'), 'pnpm exec lint-staged\n')
 
     const { runDoctor } = await import('@/commands/doctor')
     const report = await runDoctor(workspaceDir)
@@ -180,6 +175,7 @@ describe('runDoctor', () => {
       engines: { node: '>=0' },
       devDependencies: {
         repoctl: '^3.0.0',
+        lefthook: '2.2.2',
       },
       scripts: {
         'repo:init': 'repo init',
@@ -190,9 +186,7 @@ describe('runDoctor', () => {
     }, { spaces: 2 })
     await fs.writeJSON(path.join(appDir, 'package.json'), { name: 'web' }, { spaces: 2 })
     await fs.writeFile(path.join(workspaceDir, 'repoctl.config.ts'), 'export default {}\n')
-    await fs.writeFile(path.join(workspaceDir, 'lint-staged.config.js'), 'export default {}\n')
-    await fs.ensureDir(path.join(workspaceDir, '.husky'))
-    await fs.writeFile(path.join(workspaceDir, '.husky/pre-commit'), 'pnpm exec lint-staged\n')
+    await fs.writeFile(path.join(workspaceDir, 'lefthook.yml'), 'pre-commit:\n  jobs:\n    - run: pnpm lint\ncommit-msg:\n  jobs:\n    - run: pnpm commitlint\npre-push:\n  jobs:\n    - run: pnpm typecheck\n')
     await fs.writeFile(path.join(appDir, 'eslint.config.js'), [
       'import { loadRepoctlToolingModule } from \'../../tooling/load-tooling-module.mjs\'',
       'const { defineEslintConfig } = await loadRepoctlToolingModule()',

@@ -11,7 +11,7 @@ it('installs an applied fixture through explicit offline pnpm lockfile and froze
   const source = path.join(h.root, 'source')
   await writeJson(path.join(source, 'package.json'), { name: 'repoctl-fixture-dep', version: '1.1.0', main: 'index.js' })
   await writeFile(path.join(source, 'index.js'), 'module.exports = 42\n')
-  const env = { ...process.env, HOME: h.home, USERPROFILE: h.home, COREPACK_ENABLE_NETWORK: '0', HUSKY: '0' }
+  const env = { ...process.env, HOME: h.home, USERPROFILE: h.home, COREPACK_ENABLE_NETWORK: '0', LEFTHOOK: '0' }
   const pnpm = (args: string[], cwd = h.workspace) => {
     const result = spawnSync(process.env['npm_execpath'] ?? 'pnpm', args, { cwd, env, encoding: 'utf8', timeout: 30_000 })
     expect(result.status, `${result.error ?? ''}\n${result.stderr}\n${result.stdout}`).toBe(0)

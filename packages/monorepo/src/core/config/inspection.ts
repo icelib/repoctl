@@ -21,7 +21,7 @@ export interface ConfigExplanation extends ConfigValidationReport {
   effective?: { command: ConfigCommand, values: ConfigReportValue, origins: ResolvedCommandConfig['origins'], sources: ResolvedCommandConfig['sources'] }
 }
 
-const privatePaths = new Set(['commands.mirror.env', 'commands.upgrade.scripts', 'tooling.commitlint', 'tooling.eslint', 'tooling.stylelint', 'tooling.lintStaged.config', 'tooling.lintStaged.repoCommand', 'tooling.vitest.overrides', 'tooling.tsconfig.compilerOptions', 'tooling.husky'])
+const privatePaths = new Set(['commands.mirror.env', 'commands.upgrade.scripts', 'tooling.commitlint', 'tooling.eslint', 'tooling.stylelint', 'tooling.vitest.overrides', 'tooling.tsconfig.compilerOptions'])
 const sensitiveKey = /token|secret|password|credential|authorization|cookie|api[_-]?key|private[_-]?key/i
 
 /** Deliberately opaque native tool payloads can contain plugins, functions, cycles and credentials. */

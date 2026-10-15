@@ -130,7 +130,7 @@ describe('verify commands', () => {
     ])
   })
 
-  it('runs lint-staged for pre-commit verification', async () => {
+  it('runs Lefthook for pre-commit verification', async () => {
     const spawnMock = vi.fn(() => createSpawnResult())
 
     await verifyPreCommit({
@@ -139,7 +139,7 @@ describe('verify commands', () => {
     })
 
     expect(spawnMock.mock.calls).toEqual([
-      ['pnpm', ['exec', 'lint-staged'], expect.objectContaining({ cwd: repoRoot, stdio: 'inherit' })],
+      ['pnpm', ['exec', 'lefthook', 'run', 'pre-commit'], expect.objectContaining({ cwd: repoRoot, stdio: 'inherit' })],
     ])
   })
 })

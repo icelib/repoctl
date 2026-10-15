@@ -14,7 +14,7 @@ export function run(command, args, cwd) {
       cwd,
       encoding: 'utf8',
       timeout: 240_000,
-      env: { ...process.env, CI: 'true', HUSKY: '0', TURBO_TELEMETRY_DISABLED: '1' },
+      env: { ...process.env, CI: 'true', LEFTHOOK: '0', TURBO_TELEMETRY_DISABLED: '1' },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
   }

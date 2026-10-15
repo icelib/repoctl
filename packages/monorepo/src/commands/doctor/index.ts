@@ -1,6 +1,7 @@
 import type { DoctorOptions } from '../../types/doctor'
 import type { DoctorReport } from './types'
 import { loadMonorepoConfigDetails } from '../../core/config'
+import { withLegacyHookConfig } from '../../core/config/legacy-hooks'
 import { collectDoctorContext } from './context'
 import { summarizeChecks } from './helpers'
 import { collectSelectedDoctorChecks, selectDoctorRules } from './rules'
@@ -12,7 +13,7 @@ export type { DoctorFixPlan, DoctorFixResult } from './fix/types'
 export { getDoctorRuleIds } from './rules'
 export type { DoctorCheck, DoctorReport, DoctorStatus, DoctorSummary, DoctorSuppressionReport } from './types'
 
-export async function runDoctor(cwd: string, options: DoctorOptions = {}) {
+async function collectDoctorReport(cwd: string, options: DoctorOptions) {
   if (!options || typeof options !== 'object' || Array.isArray(options)) {
     throw new Error('Doctor options must be an object.')
   }
@@ -41,4 +42,8 @@ export async function runDoctor(cwd: string, options: DoctorOptions = {}) {
     summary: summarizeChecks(checks),
     ...(suppressionReports.length ? { rawSummary: summarizeChecks(checks, true), suppressions: suppressionReports } : {}),
   } satisfies DoctorReport
+}
+
+export function runDoctor(cwd: string, options: DoctorOptions = {}) {
+  return withLegacyHookConfig(() => collectDoctorReport(cwd, options))
 }

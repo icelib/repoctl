@@ -19,7 +19,7 @@ function run(command, args, cwd) {
   return execFileSync(command, args, {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, HUSKY: '0', CI: 'true' },
+    env: { ...process.env, LEFTHOOK: '0', CI: 'true' },
     stdio: ['ignore', 'pipe', 'pipe'],
     timeout: 600_000,
     maxBuffer: 10 * 1024 * 1024,

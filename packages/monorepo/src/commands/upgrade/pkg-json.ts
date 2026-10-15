@@ -59,6 +59,7 @@ export function setPkgJson(
   targetPkgJson: PackageJson,
   options?: {
     scripts?: Record<string, string>
+    preserveLegacyHooks?: boolean
   },
 ) {
   const packageManager = sourcePkgJson.packageManager ?? ''
@@ -99,6 +100,9 @@ export function setPkgJson(
   }
 
   for (const [depName, depVersion] of Object.entries(sourceDevDeps)) {
+    if (options?.preserveLegacyHooks && depName === 'lefthook') {
+      continue
+    }
     if (typeof depVersion !== 'string') {
       continue
     }
@@ -152,5 +156,14 @@ export function setPkgJson(
       scripts[scriptName] = scriptCmd
     }
     targetPkgJson.scripts = scripts
+  }
+  if (sourceDevDeps['lefthook'] && !options?.preserveLegacyHooks) {
+    for (const dependencies of [targetPkgJson.dependencies, targetPkgJson.devDependencies]) {
+      delete dependencies?.['husky']
+      delete dependencies?.['lint-staged']
+    }
+    if (['husky', 'husky install'].includes(targetPkgJson.scripts?.['prepare'] ?? '')) {
+      delete targetPkgJson.scripts?.['prepare']
+    }
   }
 }

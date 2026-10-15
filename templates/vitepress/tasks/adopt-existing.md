@@ -73,7 +73,7 @@ Watch these checks:
 | `tool-package`               | `repoctl` is not installed                                        |
 | `root-scripts`               | `repo:init/repo:new/repo:check/repo:doctor` scripts are missing   |
 | `config-file`                | A stale `monorepo.config.ts` file is still present                |
-| `commit-hooks`               | Husky and lint-staged are only partially configured               |
+| `commit-hooks`               | Lefthook are only partially configured                            |
 | `workspace-package-coverage` | Some package.json files are not covered by workspace patterns     |
 
 ## Step 3: Sync Conservatively

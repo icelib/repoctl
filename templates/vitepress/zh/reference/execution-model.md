@@ -71,11 +71,11 @@ repoctl 会从 workspace 根目录加载 `repoctl.config.*`。`monorepo.config.*
 
 配置加载后会影响具体命令，例如：
 
-| 配置区域           | 影响命令                                                            |
-| ------------------ | ------------------------------------------------------------------- |
-| `commands.init`    | `repo init`                                                         |
-| `commands.create`  | `repo new`                                                          |
-| `commands.upgrade` | `repo upgrade`                                                      |
-| `tooling`          | `repoctl/tooling` wrapper 生成的 ESLint、Vitest、lint-staged 等配置 |
+| 配置区域           | 影响命令                                                         |
+| ------------------ | ---------------------------------------------------------------- |
+| `commands.init`    | `repo init`                                                      |
+| `commands.create`  | `repo new`                                                       |
+| `commands.upgrade` | `repo upgrade`                                                   |
+| `tooling`          | `repoctl/tooling` wrapper 生成的 ESLint、Vitest、Lefthook 等配置 |
 
 更多配置示例见：[配置文件](./config.md)。

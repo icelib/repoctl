@@ -44,6 +44,25 @@ function mergeUniqueArray<T>(target: T[], source: T[]) {
 export function mergeWorkspaceManifest(source: WorkspaceManifestLike, target: WorkspaceManifestLike): WorkspaceManifestLike {
   const normalizedSource = normalizeWorkspaceManifest(source)
   const normalizedTarget = normalizeWorkspaceManifest(target)
+  // Older pnpm versions use these lists. Keep one permission format, including
+  // explicit denials, instead of introducing an incompatible allowBuilds key.
+  if (!isPlainObject(normalizedTarget.allowBuilds)
+    && (Array.isArray(normalizedTarget.onlyBuiltDependencies) || Array.isArray(normalizedTarget.ignoredBuiltDependencies))
+    && isPlainObject(normalizedSource.allowBuilds)) {
+    const allowed = new Set(normalizedTarget.onlyBuiltDependencies as string[] | undefined)
+    const denied = new Set(normalizedTarget.ignoredBuiltDependencies as string[] | undefined)
+    for (const [dependency, enabled] of Object.entries(normalizedSource.allowBuilds)) {
+      if (enabled === true && !denied.has(dependency)) {
+        allowed.add(dependency)
+      }
+      else if (enabled === false && !allowed.has(dependency)) {
+        denied.add(dependency)
+      }
+    }
+    normalizedSource.onlyBuiltDependencies = [...allowed]
+    normalizedSource.ignoredBuiltDependencies = [...denied]
+    delete normalizedSource.allowBuilds
+  }
   const result: WorkspaceManifestLike = { ...normalizedTarget }
 
   for (const [key, value] of Object.entries(normalizedSource)) {

@@ -146,5 +146,11 @@ export async function createBaselinePlanner(context: UpgradeContext) {
       }
     }
   }
-  return { asset, removals, finalize, annotate }
+  function retire(filename: string) {
+    seen.add(filename)
+    if (stored.has(filename)) {
+      proposed.set(filename, null)
+    }
+  }
+  return { asset, removals, finalize, annotate, retire }
 }

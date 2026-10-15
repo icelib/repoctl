@@ -2,14 +2,12 @@ import { describe, expect, it } from 'vitest'
 import {
   createMonorepoCommitlintConfig,
   createMonorepoEslintConfig,
-  createMonorepoLintStagedConfig,
   createMonorepoStylelintConfig,
   createMonorepoTsconfig,
   createMonorepoVitestConfig,
   createMonorepoVitestProjectConfig,
   defineCommitlintConfig,
   defineEslintConfig,
-  defineLintStagedConfig,
   defineStylelintConfig,
   defineTsconfigConfig,
   defineVitestConfig,
@@ -23,32 +21,6 @@ describe('tooling factories', () => {
     expect(createMonorepoEslintConfig()).toBeTruthy()
     expect(createMonorepoStylelintConfig()).toBeTruthy()
     expect(createMonorepoTsconfig()).toBeTruthy()
-  })
-
-  it('creates lint-staged config with overridable repo command', () => {
-    const config = createMonorepoLintStagedConfig({
-      repoCommand: 'pnpm exec repo',
-    })
-    const command = config['*.{ts,tsx,mts,cts,vue,astro,mdx,json}']
-
-    expect(typeof command).toBe('function')
-    if (typeof command !== 'function') {
-      throw new TypeError('expected lint-staged rule to be callable')
-    }
-    expect(command(['src/index.ts'])).toContain('pnpm exec repo verify staged-typecheck')
-    expect(command(['templates/client/package.json'])).toContain('pnpm exec repo verify staged-typecheck')
-  })
-
-  it('passes through complete lint-staged config when provided', () => {
-    const config = createMonorepoLintStagedConfig({
-      config: {
-        '*.md': ['prettier --write'],
-      },
-    })
-
-    expect(config).toEqual({
-      '*.md': ['prettier --write'],
-    })
   })
 
   it('creates vitest config from explicit project roots', () => {
@@ -159,11 +131,6 @@ describe('tooling factories', () => {
         },
       },
     })
-    const lintStaged = await defineLintStagedConfig({
-      options: {
-        repoCommand: 'repo',
-      },
-    })
     const eslintIgnores = eslint
       .flatMap((config) => {
         const ignores = (config as { ignores?: string[] }).ignores
@@ -180,21 +147,12 @@ describe('tooling factories', () => {
     expect(stylelint['rules']).toMatchObject({
       'selector-class-pattern': null,
     })
-
-    const command = lintStaged['*.{ts,tsx,mts,cts,vue,astro,mdx,json}']
-    expect(typeof command).toBe('function')
-    if (typeof command !== 'function') {
-      throw new TypeError('expected lint-staged rule to be callable')
-    }
-    expect(command(['src/index.ts'])).toContain('repo verify staged-typecheck')
-    expect(command(['templates/client/package.json'])).toContain('repo verify staged-typecheck')
   })
 
   it('reads define wrapper cwd from object input', async () => {
     expect(await defineCommitlintConfig({ cwd: process.cwd() })).toBeTruthy()
     expect(await defineEslintConfig({ cwd: process.cwd() })).toBeTruthy()
     expect(await defineStylelintConfig({ cwd: process.cwd() })).toBeTruthy()
-    expect(await defineLintStagedConfig({ cwd: process.cwd() })).toBeTruthy()
     expect(await defineTsconfigConfig({ cwd: process.cwd() })).toBeTruthy()
     expect(await defineVitestProjectConfig({ cwd: process.cwd() })).toBeTruthy()
   })
@@ -249,7 +207,6 @@ describe('tooling factories', () => {
     expect(await defineCommitlintConfig()).toBeTruthy()
     expect(await defineEslintConfig()).toBeTruthy()
     expect(await defineStylelintConfig()).toBeTruthy()
-    expect(await defineLintStagedConfig()).toBeTruthy()
     expect(await defineTsconfigConfig()).toBeTruthy()
     expect(await defineVitestConfig()).toBeTruthy()
     expect(await defineVitestProjectConfig()).toBeTruthy()

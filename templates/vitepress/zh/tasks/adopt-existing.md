@@ -73,7 +73,7 @@ pnpm exec repo doctor --json --out reports/doctor-before.json
 | `tool-package`               | 没安装 `repoctl`                                 |
 | `root-scripts`               | 缺少 `repo:init/repo:new/repo:check/repo:doctor` |
 | `config-file`                | 残留已废弃的 `monorepo.config.ts`                |
-| `commit-hooks`               | Husky 和 lint-staged 只接了一半                  |
+| `commit-hooks`               | Lefthook 只接了一半                              |
 | `workspace-package-coverage` | package.json 没被 workspace patterns 覆盖        |
 
 ## 第三步：保守同步标准资产

@@ -122,7 +122,7 @@ describe('built pre-push API with real Git workspaces', () => {
     const base = f.commit()
     await f.write('turbo.json', '{}')
     await f.write('.github/workflows/test.yml', 'name: fixture\n')
-    await f.write('.husky/pre-push', 'fixture\n')
+    await f.write('lefthook.yml', 'fixture\n')
     f.commit()
     expect((await f.run(base)).calls).toEqual(rootFullChecks)
   })

@@ -82,7 +82,6 @@ function pack(packageDir) {
 try {
   mkdirSync(packDir, { recursive: true })
   mkdirSync(path.join(workspaceDir, 'packages', 'demo'), { recursive: true })
-  mkdirSync(path.join(workspaceDir, '.husky'), { recursive: true })
 
   const workspacePackages = discoverWorkspacePackages()
   const packageNames = getWorkspaceDependencyClosure([
@@ -103,6 +102,7 @@ try {
     private: true,
     packageManager: 'pnpm@11.22.0',
     engines: { node: '>=22.12.0' },
+    devDependencies: { lefthook: '2.2.2' },
     scripts: {
       'repo:init': 'repo init',
       'repo:new': 'repo new',
@@ -123,8 +123,7 @@ try {
     '',
   ].join('\n'))
   writeFileSync(path.join(workspaceDir, 'repoctl.config.ts'), 'export default {}\n')
-  writeFileSync(path.join(workspaceDir, 'lint-staged.config.js'), 'export default {}\n')
-  writeFileSync(path.join(workspaceDir, '.husky', 'pre-commit'), 'pnpm exec lint-staged\n')
+  writeFileSync(path.join(workspaceDir, 'lefthook.yml'), 'pre-commit:\n  jobs:\n    - run: pnpm lint\ncommit-msg:\n  jobs:\n    - run: pnpm commitlint\npre-push:\n  jobs:\n    - run: pnpm typecheck\n')
   writeFileSync(path.join(workspaceDir, 'packages', 'demo', 'package.json'), `${JSON.stringify({
     name: '@smoke/demo',
     version: '0.0.0',

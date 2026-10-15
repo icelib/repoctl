@@ -1,4 +1,3 @@
-export * from './lint-staged'
 export * from './linters'
 export { loadMonorepoToolingConfig } from './shared'
 export * from './tsconfig'

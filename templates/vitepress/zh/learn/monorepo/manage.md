@@ -199,16 +199,16 @@ pnpm exec repo new utils
 
 ## 默认提交链路
 
-如果你保留模板默认生成的 `.husky` 与 `lint-staged.config.js`，通常会得到这条链路：
+如果你保留模板默认生成的 `lefthook.yml`，通常会得到这条链路：
 
-| 阶段         | 默认行为                                                                |
-| ------------ | ----------------------------------------------------------------------- |
-| `pre-commit` | 聚焦 staged 文件运行 `stylelint`、`eslint`、workspace `typecheck`       |
-| `pre-push`   | 运行整仓 `lint`、`typecheck`，再补跑受影响包的 `build` / `test` / `tsd` |
+| 阶段         | 默认行为                                                          |
+| ------------ | ----------------------------------------------------------------- |
+| `pre-commit` | 聚焦 staged 文件运行 `stylelint`、`eslint`、workspace `typecheck` |
+| `pre-push`   | 依次运行整仓 `lint`、`typecheck`                                  |
 
 这也是为什么：
 
-- `pnpm exec repo doctor` 会检查 Husky 与 lint-staged 是否同时存在
+- `pnpm exec repo doctor` 会检查 Lefthook 依赖和三个钩子任务是否就绪
 - `pnpm run repo:check` 会成为最自然的人工入口
 
 ## 依赖与构建建议

@@ -19,7 +19,7 @@ it.each(['stable', 'prerelease'])('keeps %s preparation hooks ordered across rea
     }
     return native(command, args, settings)
   }) as typeof native
-  const options: ReleaseCiOptions = { ...h.options, spawn, github, mode: 'auto', env: { ...h.env, GITHUB_REPOSITORY: 'acme/repo', HUSKY: '0' }, config: { ...h.options.config, qualityScripts: ['quality'], hooks: { beforeVersion: ['before'], afterVersion: ['after'] } } }
+  const options: ReleaseCiOptions = { ...h.options, spawn, github, mode: 'auto', env: { ...h.env, GITHUB_REPOSITORY: 'acme/repo', LEFTHOOK: '0' }, config: { ...h.options.config, qualityScripts: ['quality'], hooks: { beforeVersion: ['before'], afterVersion: ['after'] } } }
   if (kind === 'prerelease') {
     await enterPrerelease('beta', options)
     options.branch = 'preview/1.x'

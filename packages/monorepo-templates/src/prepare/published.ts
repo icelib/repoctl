@@ -51,12 +51,6 @@ export const publishedToolingConfigs = {
     'export default await defineEslintConfig()',
     '',
   ].join('\n'),
-  'lint-staged.config.js': [
-    `import { defineLintStagedConfig } from 'repoctl/tooling'`,
-    '',
-    'export default await defineLintStagedConfig()',
-    '',
-  ].join('\n'),
   'stylelint.config.js': [
     `import { defineStylelintConfig } from 'repoctl/tooling'`,
     '',

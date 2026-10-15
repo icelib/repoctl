@@ -51,9 +51,9 @@ repo check --markdown --redact --out reports/check-plan.md
 
 ## 2. pre-commit
 
-`repo verify pre-commit` 默认执行 lint-staged。适合在提交前只处理 staged 文件，避免每次提交都跑整仓校验。
+`repo verify pre-commit` 默认执行 Lefthook。适合在提交前只处理 staged 文件，避免每次提交都跑整仓校验。
 
-推荐的 lint-staged 行为包括：
+推荐的 Lefthook 行为包括：
 
 | 文件类型                   | 推荐处理                                 |
 | -------------------------- | ---------------------------------------- |
@@ -63,11 +63,13 @@ repo check --markdown --redact --out reports/check-plan.md
 
 ## 3. staged typecheck
 
-`repo verify staged-typecheck <files...>` 会根据文件路径向上查找最近的 workspace，并执行该 workspace 的 `typecheck`。
+`repo verify staged-typecheck [files...]` 会根据文件路径向上查找最近的 workspace，并执行该 workspace 的 `typecheck`。
 
 ```bash
 repo verify staged-typecheck packages/ui/src/button.ts templates/client/src/App.vue
 ```
+
+不传文件时会从 Git 读取暂存文件。
 
 它解决的是 monorepo 里常见的问题：一个提交只改了某个包，不应该让所有 Vue 和 TypeScript workspace 都重复跑类型检查。
 
@@ -112,7 +114,7 @@ repo check --edit-file .git/COMMIT_EDITMSG
 | 场景               | 推荐命令                                          |
 | ------------------ | ------------------------------------------------- |
 | 本地提交前快速复现 | `repo check`                                      |
-| lint-staged 调试   | `repo check --staged --dry-run`                   |
+| Lefthook 调试      | `repo check --staged --dry-run`                   |
 | 推送前完整检查     | `repo check --full`                               |
 | CI 门禁            | `repo doctor --strict` 后接 `repo check --full`   |
 | 只生成计划         | `repo check --json --out reports/check-plan.json` |
@@ -130,7 +132,7 @@ affected 模式选择变更包及其直接、传递消费者，包含 private �
 
 默认比较 `origin/main` 与 `HEAD` 的 merge base 到 `HEAD`，并纳入当前检出的暂存、未暂存和未跟踪文件。`--head` 必须指向当前 HEAD。引用缺失、浅克隆或历史不足、非当前 head、Git 不可用，以及 workspace 位于 Git 根目录下层时，都会明确全量回退。无法安全发现 workspace 时直接失败，不返回误导性的零影响计划。删除文件和跨包重命名两侧保留归属；包清单修改、新增或删除触发全量，因为依赖关系可能已经改变。
 
-默认全局输入包括根 package/workspace/lock/Turbo 文件、TypeScript/lint/test/commit 配置、`.npmrc`、`.pnpmfile.*`、Node 版本文件、`.github/**`、`.husky/**`、`scripts/**` 和 `patches/**`。Turbo `globalDependencies` 与可重复的 `--global-input` glob 会追加到规则中。无法归属的未知文件也触发全量。根 Markdown、`docs/**` 和许可证/notice 文档默认忽略，但全局规则优先；workspace 包内文件仍属于该包输入。存在变更时，无法读取的 Turbo 配置或未解析图诊断（包括 catalog）也会保守全量回退。可在 JSON 的 `globalInputs`、`fallback` 中审查完整规则和原因。
+默认全局输入包括根 package/workspace/lock/Turbo 文件、TypeScript/lint/test/commit 配置、`.npmrc`、`.pnpmfile.*`、Node 版本文件、`.github/**`、`lefthook.yml`、`scripts/**` 和 `patches/**`。Turbo `globalDependencies` 与可重复的 `--global-input` glob 会追加到规则中。无法归属的未知文件也触发全量。根 Markdown、`docs/**` 和许可证/notice 文档默认忽略，但全局规则优先；workspace 包内文件仍属于该包输入。存在变更时，无法读取的 Turbo 配置或未解析图诊断（包括 catalog）也会保守全量回退。可在 JSON 的 `globalInputs`、`fallback` 中审查完整规则和原因。
 
 执行顺序为 `build → lint → typecheck → tsd → test`，缺少脚本会跳过。pnpm recursive 接收精确计划过滤条件，由 pnpm 处理依赖顺序。build 还包含 affected/过滤集合以外的依赖，记录在 `prerequisiteTargets`，以便测试使用构建产物。全量回退优先执行对应根脚本；根脚本不存在时，改为运行全部选中包的对应脚本。显式过滤始终限制检查范围，包括回退时；build 前置依赖仍可能位于过滤集合之外。根脚本自行负责调用 Turbo/pnpm。
 
@@ -149,7 +151,7 @@ repo check --full --report reports/check-result.md --report-format markdown
 
 JSON 的 `schemaVersion` 为 `1`，包含模式、目录、开始与结束时间、毫秒耗时、退出码，以及逐项的实际 executable 和 args。状态固定为 `success`、`failed`、`skipped`、`interrupted`，不随语言变化。失败后停止后续任务，未执行任务的时间和退出码保留 null，并记录跳过原因。CLI 保留失败退出码；操作系统允许正常处理 SIGINT/SIGTERM 时，中断也会落盘。SIGKILL、断电或报告目录不可写时无法保证保存。
 
-报告记录根脚本或 verify 阶段，不展开 Turbo、lint-staged 内部任务。staged 模式的类型检查由 pre-commit 中的 lint-staged 配置执行，单独的 staged-typecheck 没有显式文件参数，会标记为 skipped。报告不收集环境变量值和子进程输出；`--redact` 会替换目录及命令参数中的 workspace/home 路径前缀。
+报告记录根脚本或 verify 阶段，不展开 Turbo、Lefthook 内部任务。staged 模式的 workspace 类型检查在 Lefthook 的 pre-commit 流程中执行一次，报告将 pre-commit 记为一个阶段。报告不收集环境变量值和子进程输出；`--redact` 会替换目录及命令参数中的 workspace/home 路径前缀。
 
 程序化 API `runCheckWithReport({ cwd, full: true, signal })` 返回同样的报告，不退出调用方进程；可传入 `AbortSignal` 取消正在执行的命令。
 

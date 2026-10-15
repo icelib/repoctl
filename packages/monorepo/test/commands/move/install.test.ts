@@ -18,7 +18,7 @@ it.each([{ to: 'libs/core' }, { name: '@org/core' }, { to: 'libs/core', name: '@
       cwd: h.workspace,
       encoding: 'utf8',
       timeout: 30_000,
-      env: { ...process.env, HOME: h.home, USERPROFILE: h.home, COREPACK_ENABLE_NETWORK: '0', HUSKY: '0' },
+      env: { ...process.env, HOME: h.home, USERPROFILE: h.home, COREPACK_ENABLE_NETWORK: '0', LEFTHOOK: '0' },
     })
     expect(result.status, `${result.error ?? ''}\n${result.stderr}\n${result.stdout}`).toBe(0)
   }

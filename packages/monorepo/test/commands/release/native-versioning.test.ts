@@ -12,7 +12,7 @@ afterEach(cleanupReleaseTempRoots)
 
 async function fixture() {
   const cwd = await createTempWorkspace('main')
-  const env = { ...process.env, HUSKY: '0', GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 'test@example.invalid', GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 'test@example.invalid' }
+  const env = { ...process.env, LEFTHOOK: '0', GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 'test@example.invalid', GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 'test@example.invalid' }
   const git = (...args: string[]) => {
     const result = spawnSync('git', args, { cwd, env, encoding: 'utf8' })
     if (result.status !== 0) {

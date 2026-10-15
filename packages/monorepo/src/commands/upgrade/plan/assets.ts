@@ -10,6 +10,8 @@ import { renderReleaseBranchesWorkflow } from '../../release/lines/workflow'
 import { migrateLegacyToolingReferences } from '../../tooling-migration'
 import { isAgentsMarkdownEquivalent, mergeAgentsMarkdown } from '../agents'
 import { createBaselinePlanner } from '../baseline/plan'
+import { hookGroup, hookTargets, prepareHooksUpgrade } from '../hooks'
+import { removeDefaultHookTooling } from '../hooks/inspect'
 import { setPkgJson } from '../pkg-json'
 import { isLegacyReleaseWorkflow, releaseWorkflowMarker } from '../release-migration/classify'
 import { isTextEquivalent, mergeGitignore } from '../text'
@@ -17,6 +19,7 @@ import { mergeWorkspaceManifest, normalizeWorkspaceManifest } from '../workspace
 
 export async function planAssets(context: UpgradeContext) {
   const { plan, read, put, options, config } = context
+  const hooks = await prepareHooksUpgrade(context)
   const baseline = await createBaselinePlanner(context)
   const repoName = await new GitClient({ baseDir: plan.cwd }).getRepoName()
   async function walk(directory: string) {
@@ -36,6 +39,10 @@ export async function planAssets(context: UpgradeContext) {
           throw new Error(`Asset disappeared: ${assetPath}`)
         }
         const before = await read('target', filename)
+        if (hooks.skipTargets.has(filename)) {
+          await put(filename, before, hooks.manual ? 'custom-hooks-protected' : 'hooks-protected', hooks.manual ? 'Preserved legacy Git hooks and dependencies. Migrate custom hooks/configuration to lefthook.yml manually before removing Husky and lint-staged.' : 'Git hooks are preserved as a complete setup.', { skip: true })
+          continue
+        }
         let after = source
         let upstream = source
         let reason = 'managed-asset'
@@ -94,6 +101,10 @@ export async function planAssets(context: UpgradeContext) {
           upstream = after
           reason = 'repository-issue-links'
         }
+        else if (filename === 'repoctl.config.ts' && hooks.migrate) {
+          after = Buffer.from(removeDefaultHookTooling(hooks.config ?? source.toString()))
+          reason = 'hooks-semantic-merge'
+        }
         else if (/\.(?:js|mjs|ts|mts|cjs|cts)$/.test(filename)) {
           upstream = Buffer.from(migrateLegacyToolingReferences(source.toString(), 'repoctl/tooling'))
           const original = (before ?? source).toString()
@@ -114,6 +125,9 @@ export async function planAssets(context: UpgradeContext) {
         }
         const file = await put(filename, after, reason, reason.replaceAll('-', ' '), { skip, force: filename === '.github/workflows/release.yml' && options.overwriteRelease === true })
         baseline.annotate(file, result)
+        if (hooks.migrate && hookTargets.includes(filename)) {
+          file.group = hookGroup
+        }
       }
       catch (error) {
         context.conflict(filename, error)
@@ -121,6 +135,12 @@ export async function planAssets(context: UpgradeContext) {
     }
   }
   await walk('')
+  if (hooks.migrate) {
+    for (const filename of hooks.files) {
+      await put(filename, null, 'legacy-hooks-removed', 'Remove recognized default hook files after migrating the complete setup.', { group: hookGroup })
+      baseline.retire(filename)
+    }
+  }
   await baseline.removals()
   return baseline
 }

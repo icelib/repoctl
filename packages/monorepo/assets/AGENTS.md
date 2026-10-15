@@ -55,3 +55,7 @@ pnpm exec repo check
 - Node.js 22.13 or newer
 - pnpm (run `corepack enable` so the declared workspace version is used)
 - CLI output is English by default; `--lang zh-CN` or `REPOCTL_LANG=zh-CN` selects Simplified Chinese
+
+## Git hooks
+
+Lefthook reads `lefthook.yml`. Keep pre-commit jobs sequential: ESLint fixes, Stylelint fixes (including Vue style blocks), then one `repo verify staged-typecheck` call. Use `stage_fixed: true` for fixes and `glob_matcher: doublestar` for root and nested files. Do not call `repo verify pre-commit` from inside the Lefthook configuration.

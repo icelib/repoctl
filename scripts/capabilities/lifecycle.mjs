@@ -36,7 +36,7 @@ async function until(predicate, label, timeout = 20000) {
 
 function launch(file, args, cwd, ci = true) {
   let output = ''
-  const env = { ...process.env, HUSKY: '0', TURBO_TELEMETRY_DISABLED: '1' }
+  const env = { ...process.env, LEFTHOOK: '0', TURBO_TELEMETRY_DISABLED: '1' }
   if (ci) {
     env.CI = 'true'
   }

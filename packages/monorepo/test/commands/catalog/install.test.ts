@@ -19,7 +19,7 @@ it('lets pnpm resolve migrated default/named catalogs and aliases, update the lo
     'packages/a': { dependencies: { [dependency]: '^1.1.0' }, devDependencies: { alias }, peerDependencies: { [dependency]: '^1 || ^2' } },
     'packages/b': { dependencies: { [dependency]: '^1.1.0' }, devDependencies: { alias } },
   })
-  const env = { ...process.env, HOME: h.home, USERPROFILE: h.home, COREPACK_ENABLE_NETWORK: '0', HUSKY: '0' }
+  const env = { ...process.env, HOME: h.home, USERPROFILE: h.home, COREPACK_ENABLE_NETWORK: '0', LEFTHOOK: '0' }
   const run = (executable: string, args: string[], cwd = h.workspace) => new Promise<string>((resolve, reject) => {
     const child = spawn(executable, args, { cwd, env })
     let output = ''

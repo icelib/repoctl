@@ -132,7 +132,7 @@ describe('commander program', () => {
       init: initMock,
       initMetadata: initMetadataMock,
       initTooling: initToolingMock,
-      initToolingTargets: ['commitlint', 'eslint', 'stylelint', 'lint-staged', 'tsconfig', 'vitest'],
+      initToolingTargets: ['commitlint', 'eslint', 'stylelint', 'lefthook', 'tsconfig', 'vitest'],
       inspectMonorepoConfig: inspectMonorepoConfigMock,
       normalizeInitToolingTargets: vi.fn((input: string[]) => input),
       resolveFullWorkspaceCheckPlan: vi.fn(async () => ({ cwd: '/repo', mode: 'full', commands: [] })),

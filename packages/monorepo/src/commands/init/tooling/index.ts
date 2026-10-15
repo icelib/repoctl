@@ -5,6 +5,7 @@ import { logger } from '@/core/logger'
 import { localize } from '@/i18n'
 import fs from '@/utils/fs'
 import { loadMonorepoConfig } from '../../../core/config'
+import { ensureLefthookBuildApproval } from './build-approval'
 import { initToolingPresets, resolveToolingImportSource, resolveToolingPackageName } from './presets'
 import { initToolingTargets } from './types'
 
@@ -124,6 +125,9 @@ export async function initTooling(cwd: string, options: InitToolingExecutionOpti
   const updatedPackageJson = mergeDevDependencies(packageJson, additions)
   if (updatedPackageJson) {
     await fs.writeFile(pkgJsonPath, `${JSON.stringify(packageJson, undefined, 2)}\n`, 'utf8')
+  }
+  if (selectedTargets.includes('lefthook')) {
+    await ensureLefthookBuildApproval(cwd)
   }
 
   return {

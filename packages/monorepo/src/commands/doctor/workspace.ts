@@ -10,8 +10,6 @@ export function collectWorkspaceChecks(context: DoctorContext, selected?: Readon
     hasWorkspaceManifest,
     hasRepoctlConfig,
     hasLegacyMonorepoConfig,
-    hasHuskyPreCommit,
-    hasLintStagedConfig,
     packageCount,
     workspaceDir,
     workspacePackageDirs,
@@ -80,25 +78,6 @@ export function collectWorkspaceChecks(context: DoctorContext, selected?: Readon
         status: 'warn',
         detail: localize('No custom configuration file was found; the CLI will use defaults.', '未找到自定义配置文件；CLI 将使用默认配置。'),
         fix: localize('Run repo upgrade --yes or add repoctl.config.ts manually.', '运行 repo upgrade --yes，或手动添加 repoctl.config.ts。'),
-      }))
-    }
-  }
-  if (includes('commit-hooks')) {
-    if (hasHuskyPreCommit && hasLintStagedConfig) {
-      checks.push(createCheck({
-        id: 'commit-hooks',
-        title: localize('Commit hooks', '提交钩子'),
-        status: 'pass',
-        detail: localize('Found .husky/pre-commit and lint-staged.config.js.', '已检测到 .husky/pre-commit 和 lint-staged.config.js。'),
-      }))
-    }
-    else {
-      checks.push(createCheck({
-        id: 'commit-hooks',
-        title: localize('Commit hooks', '提交钩子'),
-        status: 'warn',
-        detail: localize('Husky and lint-staged are not both configured.', 'Husky 和 lint-staged 尚未同时配置。'),
-        fix: localize('Run repo upgrade --yes to synchronize the default hooks.', '运行 repo upgrade --yes 同步默认钩子。'),
       }))
     }
   }
