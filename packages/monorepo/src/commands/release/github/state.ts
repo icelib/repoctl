@@ -54,12 +54,37 @@ export async function writeReleaseState(request: GitHubRequest, key: string, sta
       if (!missing(error)) {
         throw error
       }
-      try {
-        await request('POST', '/git/refs', { ref: `refs/heads/${branch}`, sha: state.packages[0]?.target })
+      // Keep release checkpoints independent of source history and workflow permissions.
+      const { data: tree } = await request<{ sha: string }>('POST', '/git/trees', {
+        tree: [{
+          path: '.repoctl-release/README.md',
+          mode: '100644',
+          type: 'blob',
+          content: '# Release checkpoints\n\nManaged by repoctl. Package source commits are recorded in each checkpoint.\n',
+        }],
+      })
+      if (!tree?.sha) {
+        throw new ReleaseCommandError('GitHub returned no release state tree')
       }
-      catch {
-        // 并发创建或响应丢失时确认远端分支；读取失败不能视为创建成功。
-        await request('GET', `/git/ref/heads/${branch}`)
+      const { data: commit } = await request<{ sha: string }>('POST', '/git/commits', {
+        message: 'chore(release): initialize release checkpoints [skip ci]',
+        tree: tree.sha,
+        parents: [],
+      })
+      if (!commit?.sha) {
+        throw new ReleaseCommandError('GitHub returned no release state commit')
+      }
+      try {
+        await request('POST', '/git/refs', { ref: `refs/heads/${branch}`, sha: commit.sha })
+      }
+      catch (creationError) {
+        // A concurrent creator or lost response may have initialized the branch.
+        try {
+          await request('GET', `/git/ref/heads/${branch}`)
+        }
+        catch {
+          throw creationError
+        }
       }
     }
   }
