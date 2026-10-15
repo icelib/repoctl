@@ -27,6 +27,8 @@ pnpm exec repo doctor
 
 pre-commit 串行执行，遇到失败立即停止。ESLint 和 Stylelint 都会修改 Vue 文件，因此不能并发运行。两项任务均启用 `stage_fixed: true`，自动暂存修复结果。`glob_matcher: doublestar` 让匹配规则同时覆盖根目录和嵌套文件。
 
+修复命令通过 `git diff -z` 和 `xargs -0` 读取暂存路径，避免 Windows 上的空格、中文和单引号被错误转义。定制文件范围时，需要同步修改命令中的 Git pathspec 与对应的 `glob`、`exclude`。Git for Windows 提供所需的 shell 和 `xargs`。
+
 最后一个任务只调用一次不带文件参数的 `repo verify staged-typecheck`。repoctl 用 Git 的 NUL 分隔输出读取暂存文件，排除删除项，再按文件所属 workspace 去重执行 `typecheck`。涉及根目录时只运行根级检查，避免重复检查子包。Vue workspace 通过脚本运行 `vue-tsc`，其他 TypeScript workspace 运行 `tsc`。
 
 也可以传入明确的文件列表：

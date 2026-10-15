@@ -27,6 +27,8 @@ Existing workspaces using `onlyBuiltDependencies` keep that permission format fo
 
 The pre-commit pipeline is sequential and stops on failure. ESLint and Stylelint both edit Vue files, so they must not run concurrently. Both jobs set `stage_fixed: true`. `glob_matcher: doublestar` makes the file patterns include both root files and nested files.
 
+Fixer commands read staged paths through `git diff -z` and `xargs -0`, preserving spaces, Chinese characters and apostrophes on Windows too. Keep each command's Git pathspecs aligned with its `glob` and `exclude` filters when customizing file selection. Git for Windows supplies the required shell and `xargs`.
+
 The final pre-commit job calls `repo verify staged-typecheck` once without file arguments. repoctl reads staged filenames using Git's NUL-delimited output, excludes deletions, finds the owning workspaces and runs each workspace's `typecheck` once. A root-level change uses the root typecheck instead of repeating child checks. Vue workspaces use `vue-tsc`; other TypeScript workspaces use `tsc` through their scripts.
 
 You can also pass explicit files:

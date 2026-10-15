@@ -6,11 +6,20 @@ pre-commit:
   jobs:
     - name: eslint
       glob: '**/*.{js,jsx,mjs,ts,tsx,mts,cts,vue,astro,json,md,mdx,html,yml,yaml}'
-      run: pnpm exec eslint --fix {staged_files}
+      # Avoid Lefthook 2.2.2's Windows shell quoting for apostrophes in paths.
+      # Keep these Git pathspecs aligned with glob above.
+      run: >-
+        git diff --cached --name-only --diff-filter=ACMR -z --
+        '*.js' '*.jsx' '*.mjs' '*.ts' '*.tsx' '*.mts' '*.cts' '*.vue' '*.astro'
+        '*.json' '*.md' '*.mdx' '*.html' '*.yml' '*.yaml'
+        | xargs -0 -r pnpm exec eslint --fix --
       stage_fixed: true
     - name: stylelint
       glob: '**/*.{vue,css,scss,sass,less}'
-      run: pnpm exec stylelint --fix --allow-empty-input {staged_files}
+      run: >-
+        git diff --cached --name-only --diff-filter=ACMR -z --
+        '*.vue' '*.css' '*.scss' '*.sass' '*.less'
+        | xargs -0 -r pnpm exec stylelint --fix --allow-empty-input --
       stage_fixed: true
     - name: typecheck
       run: pnpm exec repo verify staged-typecheck

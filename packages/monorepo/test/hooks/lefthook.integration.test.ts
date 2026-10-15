@@ -21,15 +21,27 @@ afterEach(() => {
 describe('native Lefthook Git hooks', () => {
   it('fixes root and nested Vue files in order and forwards commit-msg arguments', () => {
     const cwd = repository()
+    // Exercise the pnpm shim through xargs as the published hooks do.
+    write(cwd, 'package.json', '{"private":true}\n')
+    const configuration = fs.readFileSync(path.join(cwd, 'lefthook.yml'), 'utf8')
+    write(cwd, 'lefthook.yml', configuration.replaceAll('node fix.cjs', 'pnpm exec node fix.cjs'))
     const filename = 'src/中文 component\'s.vue'
     write(cwd, filename, 'BAD_JS\nBAD_CSS\n')
-    write(cwd, 'root.ts', 'BAD_JS\n')
-    git(cwd, 'add', filename, 'root.ts')
+    const codeFiles = ['root.ts', '-root.ts', 'src/$(echo injected).ts']
+    if (process.platform !== 'win32') {
+      codeFiles.push('src/line\nbreak.ts', 'src/double"quote.ts')
+    }
+    for (const codeFile of codeFiles) {
+      write(cwd, codeFile, 'BAD_JS\n')
+    }
+    git(cwd, 'add', '--', filename, ...codeFiles)
     const result = commit(cwd)
     expect(result.output, result.output).not.toContain('unstaged content reached fixer')
     expect(result.status, result.output).toBe(0)
     expect(git(cwd, 'show', `HEAD:${filename}`)).toBe('FIXED\nFIXED')
-    expect(git(cwd, 'show', 'HEAD:root.ts')).toBe('FIXED')
+    for (const codeFile of codeFiles) {
+      expect(git(cwd, 'show', `HEAD:${codeFile}`)).toBe('FIXED')
+    }
     expect(fs.readFileSync(path.join(cwd, 'order.log'), 'utf8')).toBe('eslint\nstylelint\ntypecheck\n')
     expect(fs.readFileSync(path.join(cwd, 'message.log'), 'utf8')).toBe('feat: verify hooks\n')
   })
@@ -127,6 +139,11 @@ describe('native Lefthook Git hooks', () => {
     expect(result.status, result.output).toBe(0)
     expect(git(cwd, 'show', 'HEAD:renamed 中文.ts')).toBe('FIXED')
     expect(git(cwd, 'ls-files')).not.toContain('deleted.ts')
+    fs.writeFileSync(path.join(cwd, 'order.log'), '')
+    git(cwd, 'rm', 'renamed 中文.ts')
+    const deletionOnly = commit(cwd)
+    expect(deletionOnly.status, deletionOnly.output).toBe(0)
+    expect(fs.readFileSync(path.join(cwd, 'order.log'), 'utf8')).toBe('typecheck\n')
   })
 
   it('runs pre-push jobs in order and rejects an invalid commit message', () => {

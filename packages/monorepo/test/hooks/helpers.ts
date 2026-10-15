@@ -54,8 +54,8 @@ export function write(cwd: string, filename: string, content: string) {
 export function createHookRepository(cwd: string, configuration = defaultConfig) {
   initializeGit(cwd)
   const config = YAML.parse(configuration)
-  config['pre-commit'].jobs[0].run = 'node fix.cjs eslint {staged_files}'
-  config['pre-commit'].jobs[1].run = 'node fix.cjs stylelint {staged_files}'
+  config['pre-commit'].jobs[0].run = config['pre-commit'].jobs[0].run.replace('pnpm exec eslint --fix --', 'node fix.cjs eslint')
+  config['pre-commit'].jobs[1].run = config['pre-commit'].jobs[1].run.replace('pnpm exec stylelint --fix --allow-empty-input --', 'node fix.cjs stylelint')
   config['pre-commit'].jobs[2].run = 'node check.cjs'
   config['commit-msg'].jobs[0].run = 'node message.cjs "{1}"'
   for (const job of config['pre-push'].jobs) {
@@ -68,7 +68,7 @@ const fs = require('node:fs')
 const [kind, ...files] = process.argv.slice(2)
 fs.appendFileSync('order.log', kind + '\\n')
 for (const file of files) {
-  if (!fs.existsSync(file)) throw new Error('deleted file passed to fixer')
+  if (!fs.existsSync(file)) throw new Error('invalid file passed to fixer: ' + JSON.stringify(file))
   const value = fs.readFileSync(file, 'utf8')
   if (value.includes('UNSTAGED_SENTINEL')) throw new Error('unstaged content reached fixer')
   fs.writeFileSync(file, value.replaceAll(kind === 'eslint' ? 'BAD_JS' : 'BAD_CSS', 'FIXED'))
