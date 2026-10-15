@@ -3,6 +3,7 @@ import path from 'node:path'
 import { getRepoctlConfigCandidates } from '../../../core/config'
 import fs from '../../../utils/fs'
 import { legacyStagedConfigNames } from '../../../utils/legacy-hooks'
+import { removeDefaultStagedFactory } from './defaults'
 
 const defaultHookCommands: Record<string, string[]> = {
   'pre-commit': ['pnpm exec repo verify pre-commit', 'pnpm exec lint-staged'],
@@ -14,7 +15,7 @@ const defaultToolingPattern = /\b(?:lintStaged|husky)\s*:\s*\{\s*(?:(?:repoComma
 const legacyToolingPattern = /\b(?:lintStaged|husky)['"]?\s*:/
 
 export function removeDefaultHookTooling(content: string) {
-  return content.replace(defaultToolingPattern, '')
+  return removeDefaultStagedFactory(content).replace(defaultToolingPattern, '')
 }
 
 function normalizeHook(content: string) {

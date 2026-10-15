@@ -115,6 +115,31 @@ describe('built repoctl hook upgrades', () => {
     expect(doctor.checks.find(check => check.id === 'commit-hooks')?.status).toBe('warn')
   })
 
+  it.each([false, true])('migrates the historical inline default factory with CRLF=%s', async (crlf) => {
+    const cwd = legacyRepository()
+    let config = fs.readFileSync(new URL('./fixtures/legacy-repoctl-config.txt', import.meta.url), 'utf8').replace('**/fixtures/**', 'keep/**')
+    if (crlf) {
+      config = config.replaceAll('\n', '\r\n')
+    }
+    write(cwd, 'repoctl.config.ts', config)
+    await upgradeMonorepo({ cwd, yes: true, targets })
+    const migrated = fs.readFileSync(path.join(cwd, 'repoctl.config.ts'), 'utf8')
+    expect(migrated).toContain('keep/**')
+    expect(migrated).not.toContain('lintStaged')
+    expect(migrated).not.toContain('createLintStagedConfig')
+    expect(fs.existsSync(path.join(cwd, '.husky/pre-commit'))).toBe(false)
+    expect(JSON.parse(fs.readFileSync(path.join(cwd, 'package.json'), 'utf8')).devDependencies.lefthook).toBe('2.2.2')
+  })
+
+  it('preserves a modified inline factory for manual migration', async () => {
+    const cwd = legacyRepository()
+    const config = fs.readFileSync(new URL('./fixtures/legacy-repoctl-config.txt', import.meta.url), 'utf8').replace('eslint --fix', 'company-check')
+    write(cwd, 'repoctl.config.ts', config)
+    await upgradeMonorepo({ cwd, yes: true, targets })
+    expect(fs.readFileSync(path.join(cwd, 'repoctl.config.ts'), 'utf8')).toBe(config)
+    expect(fs.existsSync(path.join(cwd, 'lefthook.yml'))).toBe(false)
+  })
+
   it('previews without writes, rejects partial groups and detects stale hook files', async () => {
     const cwd = legacyRepository()
     const oldPackage = fs.readFileSync(path.join(cwd, 'package.json'), 'utf8')
