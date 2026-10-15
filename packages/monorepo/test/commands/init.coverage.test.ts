@@ -166,7 +166,7 @@ describe('init helpers coverage', () => {
     vi.doMock('@/commands/init/setReadme', () => ({ default: setReadmeMock }))
     vi.doMock('@/commands/init/tooling', () => ({
       initTooling: initToolingMock,
-      initToolingTargets: ['commitlint', 'eslint', 'stylelint', 'lint-staged', 'tsconfig', 'vitest'],
+      initToolingTargets: ['commitlint', 'eslint', 'stylelint', 'lefthook', 'tsconfig', 'vitest'],
       normalizeInitToolingTargets: (input: string[]) => input,
     }))
     vi.doMock('@/commands/init/tooling/types', () => ({
@@ -243,7 +243,7 @@ describe('init helpers coverage', () => {
     })
     await init('/repo')
     expect(initToolingMock).toHaveBeenCalledWith('/repo', {
-      targets: ['commitlint', 'eslint', 'stylelint', 'lint-staged', 'tsconfig', 'vitest'],
+      targets: ['commitlint', 'eslint', 'stylelint', 'lefthook', 'tsconfig', 'vitest'],
       force: true,
     })
   })

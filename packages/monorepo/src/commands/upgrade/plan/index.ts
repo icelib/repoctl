@@ -3,12 +3,16 @@ import process from 'node:process'
 import { areTemplateAssetsPrepared } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import { assetsDir } from '../../../constants'
+import { withLegacyHookConfig } from '../../../core/config/legacy-hooks'
+import { hookGroup, hookTargets } from '../hooks'
 import { planMigrations } from '../migrations/plan'
+import { migrationGroup } from '../migrations/record'
 import { planAssets } from './assets'
 import { createContext } from './context'
 
 /** Read-only: even asset preparation must be explicitly performed before previewing. */
-export async function planUpgrade(options: UpgradeOptions = {}): Promise<UpgradePlan> {
+
+async function createUpgradePlan(options: UpgradeOptions): Promise<UpgradePlan> {
   let plan: UpgradePlan = { schemaVersion: 1, cwd: path.resolve(options.cwd ?? process.cwd()), rootDir: path.resolve(options.cwd ?? process.cwd(), options.outDir ?? ''), assetDir: assetsDir, status: 'blocked', targets: [], discovery: null, inputs: [], files: [], blockers: [] }
   try {
     if (!await areTemplateAssetsPrepared()) {
@@ -19,6 +23,11 @@ export async function planUpgrade(options: UpgradeOptions = {}): Promise<Upgrade
     plan = context.plan
     const baseline = await planAssets(context)
     const migrations = await planMigrations(context)
+    if (plan.files.some(file => hookTargets.includes(file.path) && file.group === migrationGroup)) {
+      for (const file of plan.files.filter(file => file.group === hookGroup)) {
+        file.group = migrationGroup
+      }
+    }
     await baseline.finalize()
     await migrations.finalize()
     plan.files.sort((a, b) => a.path.localeCompare(b.path))
@@ -30,4 +39,8 @@ export async function planUpgrade(options: UpgradeOptions = {}): Promise<Upgrade
     plan.blockers.push({ id: 'invalid-upgrade-input', path: null, detail: error instanceof Error ? error.message : String(error) })
   }
   return plan
+}
+
+export function planUpgrade(options: UpgradeOptions = {}): Promise<UpgradePlan> {
+  return withLegacyHookConfig(() => createUpgradePlan(options))
 }

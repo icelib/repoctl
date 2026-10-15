@@ -4,7 +4,7 @@ export const initToolingTargets = [
   'commitlint',
   'eslint',
   'stylelint',
-  'lint-staged',
+  'lefthook',
   'tsconfig',
   'vitest',
 ] as const

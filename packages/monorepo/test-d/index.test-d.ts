@@ -1,7 +1,8 @@
 /* eslint-disable perfectionist/sort-imports */
-import type { CliOpts, CreateChoiceOption, CreateNewProjectPlan, DoctorReport, DoctorStatus, MonorepoCommitlintConfig, MonorepoTsconfig, MonorepoVitestConfigResult, MonorepoVitestProjectConfigResult, PackageJson, WorkspacePackageSummaryData } from '..'
-import { clearWorkspaceCache, createMonorepoCommitlintConfig, createMonorepoEslintConfig, createMonorepoLintStagedConfig, createMonorepoStylelintConfig, createMonorepoTsconfig, createMonorepoVitestConfig, defineCommitlintConfig, defineEslintConfig, defineVitestConfig, defineVitestProjectConfig, getCreateChoices, getFileHash, getTemplateMap, getWorkspacePackageSummaries, resolveCreateNewProjectPlan, runDoctor, templateMap } from '..'
-import { expectAssignable, expectType } from 'tsd'
+import type { CliOpts, CreateChoiceOption, CreateNewProjectPlan, DoctorReport, DoctorStatus, MonorepoCommitlintConfig, MonorepoConfig, MonorepoTsconfig, MonorepoVitestConfigResult, MonorepoVitestProjectConfigResult, PackageJson, WorkspacePackageSummaryData } from '..'
+import { clearWorkspaceCache, createMonorepoCommitlintConfig, createMonorepoEslintConfig, createMonorepoStylelintConfig, createMonorepoTsconfig, createMonorepoVitestConfig, defineCommitlintConfig, defineEslintConfig, defineVitestConfig, defineVitestProjectConfig, getCreateChoices, getFileHash, getTemplateMap, getWorkspacePackageSummaries, resolveCreateNewProjectPlan, runDoctor, templateMap } from '..'
+import * as tooling from '..'
+import { expectAssignable, expectError, expectType } from 'tsd'
 
 expectType<string>(getFileHash('demo'))
 expectType<void>(clearWorkspaceCache())
@@ -25,7 +26,12 @@ expectAssignable<object>(createMonorepoEslintConfig())
 expectAssignable<object>(createMonorepoEslintConfig({ ignores: ['dist/**'] }, { rules: { 'no-console': 'off' } }))
 expectAssignable<object>(createMonorepoStylelintConfig())
 expectAssignable<MonorepoTsconfig>(createMonorepoTsconfig())
-expectAssignable<Record<string, unknown>>(createMonorepoLintStagedConfig())
+tooling.initTooling('.', { targets: ['lefthook'] })
+expectError(tooling.initTooling('.', { targets: ['lint-staged'] }))
+expectError<MonorepoConfig>({ tooling: { lintStaged: {} } })
+expectError<MonorepoConfig>({ tooling: { husky: {} } })
+expectError(tooling.defineLintStagedConfig())
+expectError(tooling.createMonorepoLintStagedConfig())
 expectAssignable<{ test: object }>(createMonorepoVitestConfig())
 expectType<Promise<MonorepoCommitlintConfig>>(defineCommitlintConfig({ cwd: '.' }))
 expectAssignable<Promise<object>>(defineEslintConfig({ options: { ignores: ['dist/**'] }, configs: [{ rules: { 'no-console': 'off' } }] }))

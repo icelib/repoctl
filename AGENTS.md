@@ -27,9 +27,9 @@ This repository is the source workspace for repoctl, a task-first CLI for pnpm a
 
 ## Coding Style & Naming Conventions
 
-Follow the root `.editorconfig`: two-space indentation, LF line endings, UTF-8. Prefer TypeScript (`.ts`/`.tsx`) and Vue SFCs; name files with kebab-case (`user-table.vue`) and exported symbols with PascalCase for components or camelCase for utilities. ESLint (`@icebreakers/eslint-config`) and Stylelint enforce formatting; run `pnpm lint` before committing, and rely on Husky + lint-staged to auto-fix staged files. Any style-related code changes (CSS, SCSS, Less, Vue style blocks, and similar files) must pass Stylelint checks before commit. All changed JavaScript, TypeScript, and Vue code must pass ESLint checks before commit.
+Follow the root `.editorconfig`: two-space indentation, LF line endings, UTF-8. Prefer TypeScript (`.ts`/`.tsx`) and Vue SFCs; name files with kebab-case (`user-table.vue`) and exported symbols with PascalCase for components or camelCase for utilities. ESLint (`@icebreakers/eslint-config`) and Stylelint enforce formatting; run `pnpm lint` before committing, and rely on Lefthook to auto-fix staged files. Any style-related code changes (CSS, SCSS, Less, Vue style blocks, and similar files) must pass Stylelint checks before commit. All changed JavaScript, TypeScript, and Vue code must pass ESLint checks before commit.
 
-`lint-staged.config.js` must include Stylelint checks for staged style files so style validation also runs during pre-commit. It must also route staged TypeScript and Vue files into workspace `typecheck` scripts so Vue workspaces run `vue-tsc` and non-Vue TypeScript workspaces run `tsc`.
+`lefthook.yml` must include Stylelint checks for staged style files so style validation also runs during pre-commit. Its final pre-commit job must call `repo verify staged-typecheck` once to route staged TypeScript, Vue and workspace package.json files into workspace `typecheck` scripts so Vue workspaces run `vue-tsc` and non-Vue TypeScript workspaces run `tsc`.
 
 When a single code file exceeds 300 lines, treat it as a refactor signal and split it into smaller modules before commit whenever the change touches that area. Do not keep appending responsibilities to an already large file when a folder-based split would make the design clearer.
 

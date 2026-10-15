@@ -1,0 +1,32 @@
+# repoctl-managed: hooks/v1
+glob_matcher: doublestar
+
+pre-commit:
+  piped: true
+  jobs:
+    - name: eslint
+      glob: '**/*.{js,jsx,mjs,ts,tsx,mts,cts,vue,astro,json,md,mdx,html,yml,yaml}'
+      run: pnpm exec eslint --fix {staged_files}
+      stage_fixed: true
+    - name: stylelint
+      glob: '**/*.{vue,css,scss,sass,less}'
+      exclude:
+        - apps/mock/src/stylelint-demo/**
+        - packages/eslint/fixtures/output/**
+      run: pnpm exec stylelint --fix --allow-empty-input {staged_files}
+      stage_fixed: true
+    - name: typecheck
+      run: pnpm exec repo verify staged-typecheck
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: pnpm exec repo verify commit-msg "{1}"
+
+pre-push:
+  piped: true
+  jobs:
+    - name: lint
+      run: pnpm lint
+    - name: typecheck
+      run: pnpm typecheck

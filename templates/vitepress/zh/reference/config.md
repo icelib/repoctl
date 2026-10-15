@@ -75,7 +75,7 @@ repo config validate --json
 repo config inspect --command ai --set 'format="json"' --set 'force=false' --json
 ```
 
-配置加载会在 CLI 执行，以及读取配置的 API 写入文件之前检查 repoctl 自有字段。未知字段、错误类型、非法枚举和冲突的覆盖策略会返回稳定规则 ID 与字段路径；可选字段请省略，不要填 `null`。ESLint、Stylelint、Commitlint、Vitest 原生透传、插件函数和 lint-staged 回调保留原有扩展边界，C12 配置工厂、继承配置和环境层继续可用。
+配置加载会在 CLI 执行，以及读取配置的 API 写入文件之前检查 repoctl 自有字段。未知字段、错误类型、非法枚举和冲突的覆盖策略会返回稳定规则 ID 与字段路径；可选字段请省略，不要填 `null`。ESLint、Stylelint、Commitlint、Vitest 原生透传、插件函数保留原有扩展边界，C12 配置工厂、继承配置和环境层继续可用。
 
 `config validate` 只读检查，失败退出码为 1。JSON 包含 `schemaVersion`、`valid`、`file` 和 `diagnostics`，诊断字段为 `id`、`path`、`actualType`、`expected`、`suggestion`。加载失败使用 `config.load-failed`，不输出配置代码抛出的任意内容。配置文件仍是受信任的 JavaScript，加载时会求值；本命令不会隔离配置代码自身的行为。
 
@@ -83,7 +83,7 @@ repo config inspect --command ai --set 'format="json"' --set 'force=false' --jso
 
 配置 CLI 报告默认隐藏环境变量映射、脚本内容、工具原生配置及敏感键；`--redact` 额外替换 cwd、配置目录和 home 路径。程序化报告使用 `explainMonorepoConfig`、`validateConfigFile`。`loadMonorepoConfigDetails` 与原有 `inspectMonorepoConfig` 为需要回调的代码保留运行时对象，请勿直接序列化这些原始对象作为排障报告。
 
-旧版生成配置中的 `tooling.lintStaged.monorepoCommand` 应改为 `tooling.lintStaged.repoCommand`；旧字段此前被忽略，现在会明确报错。
+已移除的 `tooling.lintStaged` 和 `tooling.husky` 字段应迁移到原生 `lefthook.yml`。upgrade 和 doctor 仍可读取旧字段，用于迁移默认配置或报告自定义配置；普通命令会拒绝这些字段。
 
 ## 配置的定位
 

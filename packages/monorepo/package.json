@@ -107,7 +107,6 @@
     "git-url-parse": "^16.1.0",
     "json5": "^2.2.3",
     "klaw": "^4.1.0",
-    "lint-staged": "^17.6.0",
     "micromatch": "^4.0.8",
     "node-diff3": "~3.2.1",
     "p-queue": "^9.3.3",

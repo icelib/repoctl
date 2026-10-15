@@ -1,5 +1,5 @@
 ---
-description: repoctl 文档站的工具专题入口，汇总 pnpm、Turborepo、版本管理、Husky、lint-staged 和 Renovate。
+description: repoctl 文档站的工具专题入口，汇总 pnpm、Turborepo、版本管理、Lefthook 和 Renovate。
 ---
 
 # 工具专题
@@ -8,14 +8,13 @@ description: repoctl 文档站的工具专题入口，汇总 pnpm、Turborepo、
 
 ## 1. 工具地图
 
-| 工具            | 在 repoctl 工作流里的位置                       | 详细页面                        |
-| --------------- | ----------------------------------------------- | ------------------------------- |
-| pnpm            | workspace、依赖安装、根脚本和包内脚本执行       | [pnpm](./pnpm.md)               |
-| Turborepo       | build、lint、typecheck、test 等任务编排         | [turborepo](./turborepo.md)     |
-| pnpm versioning | 多包版本、变更记录和发布准备                    | [versioning](./changeset.md)    |
-| Husky           | Git hook 入口                                   | [husky](./husky.md)             |
-| lint-staged     | staged 文件级 lint、stylelint 和 typecheck 路由 | [lint-staged](./lint-staged.md) |
-| Renovate        | 依赖更新和升级 PR 治理                          | [renovate](./renovate.md)       |
+| 工具            | 在 repoctl 工作流里的位置                 | 详细页面                     |
+| --------------- | ----------------------------------------- | ---------------------------- |
+| pnpm            | workspace、依赖安装、根脚本和包内脚本执行 | [pnpm](./pnpm.md)            |
+| Turborepo       | build、lint、typecheck、test 等任务编排   | [turborepo](./turborepo.md)  |
+| pnpm versioning | 多包版本、变更记录和发布准备              | [versioning](./changeset.md) |
+| Lefthook        | Git hook 入口                             | [Lefthook](./lefthook.md)    |
+| Renovate        | 依赖更新和升级 PR 治理                    | [renovate](./renovate.md)    |
 
 ## 2. 和 repoctl 的关系
 
@@ -29,10 +28,10 @@ repoctl 不隐藏这些工具。它主要做三件事：
 
 ## 3. 按目标阅读
 
-| 目标                      | 建议页面                                               |
-| ------------------------- | ------------------------------------------------------ |
-| 让 workspace 包能互相引用 | [pnpm](./pnpm.md)                                      |
-| 提升整仓任务速度          | [turborepo](./turborepo.md)                            |
-| 建立规范发版链路          | [pnpm versioning](./changeset.md)                      |
-| 提交前自动修复格式和 lint | [Husky](./husky.md) 与 [lint-staged](./lint-staged.md) |
-| 降低依赖升级成本          | [Renovate](./renovate.md)                              |
+| 目标                      | 建议页面                          |
+| ------------------------- | --------------------------------- |
+| 让 workspace 包能互相引用 | [pnpm](./pnpm.md)                 |
+| 提升整仓任务速度          | [turborepo](./turborepo.md)       |
+| 建立规范发版链路          | [pnpm versioning](./changeset.md) |
+| 提交前自动修复格式和 lint | [Lefthook](./lefthook.md)         |
+| 降低依赖升级成本          | [Renovate](./renovate.md)         |

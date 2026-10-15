@@ -46,7 +46,7 @@
 | 任务编排 | `turborepo`                             |
 | 语言     | TypeScript 优先                         |
 | 校验链路 | ESLint + Stylelint + typecheck + Vitest |
-| 提交规范 | Husky + lint-staged + commitlint        |
+| 提交规范 | Lefthook + commitlint                   |
 | 发包     | pnpm versioning                         |
 | 命令入口 | `repo` 为主，`repoctl` 为完整包名入口   |
 
@@ -92,7 +92,7 @@ pnpm run repo:check
 - 有没有安装 CLI 依赖
 - 根脚本齐不齐
 - 是否仍残留已废弃的 `monorepo.config.ts`
-- Husky / lint-staged 链路是不是半残状态
+- Lefthook 链路是不是半残状态
 
 ### 3. `repo upgrade` 这种面向存量仓库的同步命令
 

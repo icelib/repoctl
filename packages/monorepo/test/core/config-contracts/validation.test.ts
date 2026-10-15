@@ -42,9 +42,8 @@ describe('built runtime config contracts', () => {
 
   it('preserves native tools, functions, regexes and custom template metadata', async () => {
     const cwd = await fixture(`const plugin = { customToken: 'sensitive-value' };
-export default { tooling: { eslint: { extra: plugin }, lintStaged: { config: { '*.ts': () => 'tsc' } }, vitest: { overrides: { plugins: [plugin] } }, vitestProject: { alias: [{ find: /foo/, replacement: 'bar' }] } }, commands: { create: { templateMap: { custom: { source: 'src', target: 'apps/custom', label: 'Custom', category: 'app' } } } } }`)
+export default { tooling: { eslint: { extra: plugin }, vitest: { overrides: { plugins: [plugin] } }, vitestProject: { alias: [{ find: /foo/, replacement: 'bar' }] } }, commands: { create: { templateMap: { custom: { source: 'src', target: 'apps/custom', label: 'Custom', category: 'app' } } } } }`)
     const loaded = await loadMonorepoConfigDetails(cwd)
-    expect(typeof (loaded.config.tooling?.lintStaged?.config as Record<string, unknown>)?.['*.ts']).toBe('function')
     expect(loaded.config.tooling?.vitestProject?.alias?.[0]?.find).toBeInstanceOf(RegExp)
     const report = await explainMonorepoConfig(cwd)
     expect(report.valid).toBe(true)
@@ -53,6 +52,10 @@ export default { tooling: { eslint: { extra: plugin }, lintStaged: { config: { '
     const cycle: Record<string, unknown> = {}
     cycle['self'] = cycle
     expect(sanitizeConfigReport(cycle)).toEqual({ self: '[circular]' })
+  })
+
+  it('rejects removed hook APIs in ordinary configuration validation', () => {
+    expect(validateMonorepoConfig({ tooling: { husky: {}, lintStaged: {} } }).map(item => item.path)).toEqual(['tooling.husky', 'tooling.lintStaged'])
   })
 
   it('never serializes thrown configuration values or falls back to an empty valid report', async () => {

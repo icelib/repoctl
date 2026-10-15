@@ -3,7 +3,6 @@
 exports[`targets > core assets 1`] = `
 [
   ".changeset",
-  ".husky",
   ".vscode",
   ".editorconfig",
   ".gitattributes",
@@ -11,7 +10,7 @@ exports[`targets > core assets 1`] = `
   ".npmrc",
   "commitlint.config.ts",
   "eslint.config.js",
-  "lint-staged.config.js",
+  "lefthook.yml",
   "stylelint.config.js",
   "repoctl.config.ts",
   "package.json",
@@ -30,7 +29,6 @@ exports[`targets > core assets 1`] = `
 exports[`targets > normal 1`] = `
 [
   ".changeset",
-  ".husky",
   ".vscode",
   ".editorconfig",
   ".gitattributes",
@@ -38,7 +36,7 @@ exports[`targets > normal 1`] = `
   ".npmrc",
   "commitlint.config.ts",
   "eslint.config.js",
-  "lint-staged.config.js",
+  "lefthook.yml",
   "stylelint.config.js",
   "repoctl.config.ts",
   "package.json",

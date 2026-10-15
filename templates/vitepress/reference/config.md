@@ -71,7 +71,7 @@ repo config validate --json
 repo config inspect --command ai --set 'format="json"' --set 'force=false' --json
 ```
 
-Runtime loading validates repoctl-owned fields before CLI actions and before config-consuming APIs write files. Unknown fields, wrong types, invalid enums and conflicting overwrite policies fail with stable diagnostic IDs and field paths. Omit optional fields instead of setting them to `null`. Native ESLint, Stylelint, Commitlint and Vitest overrides, plugin functions and lint-staged callbacks retain their extension boundary. C12 config factories, inherited configurations and environment layers remain supported.
+Runtime loading validates repoctl-owned fields before CLI actions and before config-consuming APIs write files. Unknown fields, wrong types, invalid enums and conflicting overwrite policies fail with stable diagnostic IDs and field paths. Omit optional fields instead of setting them to `null`. Native ESLint, Stylelint, Commitlint and Vitest overrides, plugin functions retain their extension boundary. C12 config factories, inherited configurations and environment layers remain supported.
 
 `config validate` is read-only and exits with code 1 on failure. JSON includes `schemaVersion`, `valid`, `file` and `diagnostics`; each diagnostic has `id`, `path`, `actualType`, `expected` and `suggestion`. Evaluation/import failures use `config.load-failed` and do not include arbitrary thrown values. Config files are trusted JavaScript and are evaluated to load them; this command does not sandbox their own code.
 
@@ -79,7 +79,7 @@ Runtime loading validates repoctl-owned fields before CLI actions and before con
 
 Config CLI reports always hide environment maps, scripts, native tool payloads and sensitive keys. `--redact` additionally replaces cwd, config directory and home paths. The programmatic `explainMonorepoConfig` and `validateConfigFile` APIs return safe reports; `loadMonorepoConfigDetails` and the existing `inspectMonorepoConfig` retain runtime objects for code that consumes callbacks. Avoid serializing those raw objects for support reports.
 
-Older generated configs may use `tooling.lintStaged.monorepoCommand`; replace that field with `tooling.lintStaged.repoCommand`. The old name was ignored by the runtime and is now diagnosed instead of silently falling back.
+The removed `tooling.lintStaged` and `tooling.husky` fields must be migrated to native `lefthook.yml`. Upgrade and doctor can inspect legacy settings to migrate defaults or report custom setups; ordinary commands reject those fields.
 
 ## Cleaning workspace packages
 

@@ -43,7 +43,7 @@ repo doctor --strict
 - `repoctl` 是否作为 CLI 依赖安装。
 - 根脚本是否齐全。
 - 是否仍残留已废弃的 `monorepo.config.ts`。
-- Husky 与 lint-staged 是否都接上。
+- Lefthook 是否都接上。
 
 ## 保存诊断报告
 

@@ -11,7 +11,6 @@ import { publishedToolingConfigs, removeSourceRepoReleaseToolingBuildStepContent
 
 export { removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedWorkspaceContent } from './published'
 
-const huskySkippedEntryPattern = /[\\/]_$/
 // npm intentionally excludes files named `.npmrc` from published tarballs.
 // Keep the managed config under a publishable name and restore the dotfile
 // when it is copied into a generated workspace.
@@ -123,11 +122,11 @@ async function copyAssets(repoRoot: string, overwriteExisting: boolean) {
     }
     const to = path.join(assetsDir, toPublishedAssetPath(target))
     const stats = await fs.stat(from)
-    const filter = target === '.husky'
-      ? (src: string) => !huskySkippedEntryPattern.test(src)
-      : undefined
     const refreshManagedMetadata = ['package.json', '.npmrc', 'pnpm-workspace.yaml', 'AGENTS.md', 'CLAUDE.md'].includes(target)
-    await copyEntry(from, to, overwriteExisting || refreshManagedMetadata, filter)
+    await copyEntry(from, to, overwriteExisting || refreshManagedMetadata)
+    if (target === 'lefthook.yml') {
+      await fs.copyFile(path.join(monorepoAssetRoot, target), to)
+    }
     if (target === 'tsconfig.json') {
       await fs.writeFile(to, `${JSON.stringify({
         extends: 'repoctl/tsconfig.json',
@@ -216,6 +215,8 @@ export async function prepareAssets(options: PrepareAssetsOptions = {}) {
   await resetDir(templatesDir, overwriteExisting)
   // Remove the old ignored filename when refreshing an existing local cache.
   await fs.rm(path.join(assetsDir, '.npmrc'), { force: true })
+  await fs.rm(path.join(assetsDir, '.husky'), { recursive: true, force: true })
+  await fs.rm(path.join(assetsDir, 'lint-staged.config.js'), { force: true })
   await copyAssets(repoRoot, overwriteExisting)
   await sanitizePublishedWorkspace()
   await removePublishedReleaseState()

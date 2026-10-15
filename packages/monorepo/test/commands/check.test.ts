@@ -38,7 +38,7 @@ describe('runRecommendedCheck', () => {
     const plan = resolveRecommendedCheckPlan({ cwd: '/repo', staged: true })
 
     expect(plan.mode).toBe('staged')
-    expect(plan.commands.map(command => command.name)).toEqual(['pre-commit', 'staged-typecheck'])
+    expect(plan.commands.map(command => command.name)).toEqual(['pre-commit'])
   })
 
   it('keeps dry-run repo commands mapped to existing verify subcommands', async () => {
@@ -148,12 +148,12 @@ describe('runRecommendedCheck', () => {
     expect(spawnMock).toHaveBeenNthCalledWith(2, 'pnpm', ['typecheck'], expect.objectContaining({ cwd: '/repo' }))
   })
 
-  it('routes staged checks to pre-commit and staged typecheck', async () => {
+  it('runs the native pre-commit pipeline without a duplicate typecheck', async () => {
     const { runRecommendedCheck } = await import('@/commands/check')
     await runRecommendedCheck({ cwd: '/repo', staged: true })
 
     expect(verifyPreCommitMock).toHaveBeenCalledWith({ cwd: '/repo' })
-    expect(verifyStagedTypecheckMock).toHaveBeenCalledWith([], { cwd: '/repo' })
+    expect(verifyStagedTypecheckMock).not.toHaveBeenCalled()
   })
 
   it('defaults to pre-commit verification', async () => {

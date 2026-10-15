@@ -31,7 +31,6 @@ export function getRootLevelTasksForFile(filePath: string) {
   const basename = path.basename(filePath)
   if (
     filePath.startsWith('.github/')
-    || filePath.startsWith('.husky/')
     || basename === 'package.json'
     || filePath === 'pnpm-lock.yaml'
     || filePath === 'turbo.json'
@@ -39,7 +38,7 @@ export function getRootLevelTasksForFile(filePath: string) {
     || basename.startsWith('tsconfig')
     || filePath === 'commitlint.config.ts'
     || filePath === 'eslint.config.js'
-    || filePath === 'lint-staged.config.js'
+    || filePath === 'lefthook.yml'
     || filePath === 'stylelint.config.js'
     || filePath === 'vitest.config.ts'
     || filePath.startsWith('scripts/')

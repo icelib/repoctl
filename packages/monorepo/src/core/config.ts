@@ -5,6 +5,7 @@ import { realpath } from 'node:fs/promises'
 import { loadConfig } from 'c12'
 import path from 'pathe'
 import { commandConfigDirectory } from './config/context'
+import { legacyHookConfigEnabled } from './config/legacy-hooks'
 import { validatedConfigLoading } from './config/loading'
 import { mergeConfigValues } from './config/merge'
 import { assertMonorepoConfig, ConfigValidationError } from './config/validation'
@@ -122,12 +123,13 @@ export function defineMonorepoConfig(config: MonorepoConfig) {
  * @returns 配置文件路径和解析后的配置对象；未找到时 file 为 null、config 为空对象
  */
 export async function loadMonorepoConfigDetails(cwd: string, options: { refresh?: boolean } = {}): Promise<LoadedMonorepoConfig> {
-  const key = path.resolve(cwd)
+  const directory = path.resolve(cwd)
+  const key = `${directory}:${legacyHookConfigEnabled() ? 'legacy-hooks' : 'current'}`
   if (options.refresh) {
     cache.delete(key)
   }
   if (!cache.has(key)) {
-    cache.set(key, loadConfigInternal(key, options.refresh))
+    cache.set(key, loadConfigInternal(directory, options.refresh))
   }
   return cache.get(key)!
 }
@@ -179,9 +181,7 @@ export type {
   CreateChoiceOption,
   CreateCommandConfig,
   EslintToolingConfig,
-  HuskyToolingConfig,
   InitCommandConfig,
-  LintStagedToolingConfig,
   MirrorCommandConfig,
   MonorepoConfig,
   ReleaseAfterPublishHookConfig,

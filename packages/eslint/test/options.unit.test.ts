@@ -188,7 +188,7 @@ describe('createBaseRuleSet', () => {
     expect(createBaseRuleSet(false)['e18e/ban-dependencies']).toEqual(['warn', {
       allowed: [
         'axios',
-        'lint-staged',
+        'lefthook',
       ],
     }])
     expect(createBaseRuleSet(false)['e18e/prefer-array-to-sorted']).toBe('off')

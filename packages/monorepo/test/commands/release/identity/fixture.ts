@@ -22,7 +22,7 @@ export async function createIdentityFixture() {
   roots.push(cwd)
   const env: NodeJS.ProcessEnv = {
     ...process.env,
-    HUSKY: '0',
+    LEFTHOOK: '0',
     GIT_AUTHOR_NAME: 'Test',
     GIT_AUTHOR_EMAIL: 'test@example.invalid',
     GIT_COMMITTER_NAME: 'Test',

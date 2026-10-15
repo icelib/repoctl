@@ -11,7 +11,6 @@ import type {
 import type { ViteUserConfig } from 'vitest/config'
 import type {
   EslintToolingConfig,
-  LintStagedToolingConfig,
   VitestProjectToolingConfig,
   VitestToolingConfig,
 } from '../types'
@@ -32,15 +31,6 @@ export type MonorepoEslintConfig = IcebreakerEslintConfig
  *
  */
 export type MonorepoStylelintConfig = IcebreakerStylelintConfig
-
-/**
- * `lint-staged` 最终配置对象。
- *
- * key 为 glob pattern，value 为命令数组或命令生成函数。
- */
-export interface MonorepoLintStagedConfig {
-  [pattern: string]: string[] | ((files: string[]) => string | string[])
-}
 
 /**
  * `tsconfig.json` 最终导出的配置对象。
@@ -70,11 +60,6 @@ export interface DefineEslintConfigOptions extends DefineConfigOptions<EslintToo
    */
   configs?: IcebreakerEslintUserConfigItem[]
 }
-
-/**
- * `createMonorepoLintStagedConfig()` 与 `defineLintStagedConfig()` 的配置项。
- */
-export interface MonorepoLintStagedConfigOptions extends LintStagedToolingConfig {}
 
 /**
  * `createMonorepoVitestConfig()` 与 `defineVitestConfig()` 的共享配置项。

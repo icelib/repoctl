@@ -1,4 +1,0 @@
-#!/usr/bin/env sh
-set -e
-
-pnpm exec repo verify commit-msg "$1"

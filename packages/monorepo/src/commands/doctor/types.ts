@@ -60,8 +60,8 @@ export interface DoctorContext {
   hasWorkspaceManifest: boolean
   hasRepoctlConfig: boolean
   hasLegacyMonorepoConfig: boolean
-  hasHuskyPreCommit: boolean
-  hasLintStagedConfig: boolean
+  hasLefthookConfig: boolean
+  hasLegacyHooks: boolean
   isSourceWorkspace: boolean
   manifests: DoctorManifest[]
   workspaceManifestError: boolean

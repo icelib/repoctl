@@ -13,7 +13,7 @@ describe('coverage binder', () => {
 
   it('executes getTemplateTargets helper', async () => {
     await vi.resetModules()
-    const rawMock = vi.fn(async () => 'README.md\npackage.json\n')
+    const rawMock = vi.fn(async () => 'README.md\0package.json\0')
     vi.doMock('simple-git', () => ({
       simpleGit: vi.fn(() => ({ raw: rawMock })),
     }))

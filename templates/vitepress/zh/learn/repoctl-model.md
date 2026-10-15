@@ -57,7 +57,7 @@ repoctl 把 monorepo 里最容易分散的动作收敛为五条主线：
 
 | 主线   | 代表命令                      | 解决的问题                                                |
 | ------ | ----------------------------- | --------------------------------------------------------- |
-| 初始化 | `repo init` / `repo upgrade`  | 生成或同步 workspace、根脚本、Husky、lint-staged 等资产   |
+| 初始化 | `repo init` / `repo upgrade`  | 生成或同步 workspace、根脚本、Lefthook 等资产             |
 | 诊断   | `repo doctor`                 | 判断仓库根目录、运行时、脚本、配置和提交链路是否就绪      |
 | 创建   | `repo templates` / `repo new` | 使用内置模板生成库、应用、服务、文档站和 CLI              |
 | 校验   | `repo check` / `repo verify`  | 统一 pre-commit、staged typecheck、pre-push 和 commit-msg |

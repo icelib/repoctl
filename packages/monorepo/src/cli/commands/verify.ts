@@ -13,7 +13,7 @@ export function registerVerifyCommands(program: Command, cwd: string) {
     })
 
   verifyCommand.command('pre-commit')
-    .description(localize('Run lint-staged verification', '执行 lint-staged 校验'))
+    .description(localize('Run Lefthook verification', '执行 Lefthook 校验'))
     .alias('commit')
     .action(async () => {
       const { verifyPreCommit } = await import('@/commands')
@@ -35,6 +35,6 @@ export function registerVerifyCommands(program: Command, cwd: string) {
     .argument('[files...]')
     .action(async (files: string[] = []) => {
       const { verifyStagedTypecheck } = await import('@/commands')
-      verifyStagedTypecheck(files, { cwd })
+      verifyStagedTypecheck(files.length ? files : undefined, { cwd })
     })
 }

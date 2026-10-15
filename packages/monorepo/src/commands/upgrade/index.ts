@@ -4,6 +4,7 @@ import process from 'node:process'
 import { checkbox, ensureTemplateAssetsPrepared } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import { loadMonorepoConfigDetails } from '../../core/config'
+import { withLegacyHookConfig } from '../../core/config/legacy-hooks'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import { applyUpgradePlan } from './apply'
@@ -26,7 +27,7 @@ export async function upgradeMonorepo(options: UpgradeOptions): Promise<UpgradeP
   await ensureTemplateAssetsPrepared()
   let plan = await planUpgrade(options)
   if (process.stdin.isTTY && process.stdout.isTTY && plan.status === 'ready') {
-    const interactive = options.interactive ?? (await loadMonorepoConfigDetails(plan.cwd)).config.commands?.upgrade?.interactive
+    const interactive = options.interactive ?? (await withLegacyHookConfig(() => loadMonorepoConfigDetails(plan.cwd))).config.commands?.upgrade?.interactive
     if (interactive) {
       const targets = await checkbox({ message: localize('Select the files you need', '选择你需要的文件'), choices: plan.targets.map(value => ({ value, checked: true })) })
       plan = await planUpgrade({ ...options, targets })
@@ -35,7 +36,7 @@ export async function upgradeMonorepo(options: UpgradeOptions): Promise<UpgradeP
   if (plan.status === 'blocked') {
     throw new Error(plan.blockers.map(item => `${item.id}: ${item.path ?? ''} ${item.detail}`).join('\n'))
   }
-  for (const file of plan.files.filter(file => file.status === 'conflict')) {
+  for (const file of plan.files.filter(file => file.status === 'conflict' || file.reason === 'custom-hooks-protected')) {
     logger.warn(`${file.path}: ${file.reason}. ${file.detail}`)
   }
   const files = await selectUpgradeFiles(plan)

@@ -249,7 +249,7 @@ Usage:
 - --all: generate every built-in tooling config
 - --force: overwrite existing tooling config files
   Notes:
-- Built-in tooling targets: commitlint, eslint, stylelint, lint-staged, tsconfig, vitest
+- Built-in tooling targets: commitlint, eslint, stylelint, lefthook, tsconfig, vitest
 - Generated files also update root package.json devDependencies
 
 ## tooling devcontainer

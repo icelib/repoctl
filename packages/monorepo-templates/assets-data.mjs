@@ -1,6 +1,5 @@
 const coreAssetTargets = [
   '.changeset',
-  '.husky',
   '.vscode',
   '.editorconfig',
   '.gitattributes',
@@ -8,7 +7,7 @@ const coreAssetTargets = [
   '.npmrc',
   'commitlint.config.ts',
   'eslint.config.js',
-  'lint-staged.config.js',
+  'lefthook.yml',
   'stylelint.config.js',
   'repoctl.config.ts',
   'package.json',

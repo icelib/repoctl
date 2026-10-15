@@ -4,7 +4,6 @@ import type {
   UserConfigItem as IcebreakerEslintUserConfigItem,
 } from '@icebreakers/eslint-config'
 import type { StylelintConfig as IcebreakerStylelintConfigOptions } from '@icebreakers/stylelint-config'
-import type { Configuration as LintStagedConfiguration } from 'lint-staged'
 import type { ViteUserConfig } from 'vitest/config'
 import type { PublicApiConfig } from '../../commands/api-report/types'
 import type { ProjectReferencesConfig } from '../project-references'
@@ -45,24 +44,6 @@ export interface StylelintToolingConfig extends IcebreakerStylelintConfigOptions
    * 额外的 stylelint rules。
    * @default undefined
    */
-}
-
-/**
- * `tooling.lintStaged` 配置块。
- */
-export interface LintStagedToolingConfig {
-  /**
-   * 调用 repo CLI 的基础命令。
-   * 通常保持为 `pnpm exec repo`，以便 Husky 与 lint-staged 入口统一。
-   * @default 'pnpm exec repo'
-   */
-  repoCommand?: string
-  /**
-   * 直接透传完整的 lint-staged 原生配置。
-   * 一旦提供，monorepo 默认规则将不再自动注入。
-   * @default undefined
-   */
-  config?: LintStagedConfiguration
 }
 
 /**
@@ -202,25 +183,6 @@ export interface VitestProjectToolingConfig {
 }
 
 /**
- * `tooling.husky` 配置块。
- */
-export interface HuskyToolingConfig {
-  /**
-   * pre-commit 钩子执行命令。
-   * 未设置时默认运行 `pnpm exec lint-staged`。
-   * @default undefined
-   */
-  preCommitCommand?: string
-  /**
-   * commit-msg 钩子执行命令。
-   * 可通过 `{editFile}` 占位符注入 commit message 文件路径。
-   * 未设置时默认运行 `pnpm exec commitlint --edit {editFile}`。
-   * @default undefined
-   */
-  commitMsgCommand?: string
-}
-
-/**
  * `repoctl.config.ts` 中 `tooling` 总配置。
  *
  * 每个字段分别映射到对应的配置工厂与验证命令。
@@ -231,10 +193,8 @@ export interface ToolingConfig {
   commitlint?: CommitlintToolingConfig
   eslint?: EslintToolingConfig
   stylelint?: StylelintToolingConfig
-  lintStaged?: LintStagedToolingConfig
   tsconfig?: TsconfigToolingConfig
   projectReferences?: ProjectReferencesConfig
   vitest?: VitestToolingConfig
   vitestProject?: VitestProjectToolingConfig
-  husky?: HuskyToolingConfig
 }

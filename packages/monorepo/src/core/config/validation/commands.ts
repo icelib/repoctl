@@ -6,7 +6,7 @@ import type { Schema } from './schema'
 import { array, boolean, choices, isRecord, names, nonempty, object, positive, record, string, strings, union } from './schema'
 
 export const dependencyTypes = array(choices('dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'))
-export const toolingTargets = array(choices('commitlint', 'eslint', 'stylelint', 'lint-staged', 'tsconfig', 'vitest'))
+export const toolingTargets = array(choices('commitlint', 'eslint', 'stylelint', 'lefthook', 'tsconfig', 'vitest'))
 
 const npmRemote = { ...object({ kind: choices('npm'), packageName: nonempty, version: nonempty, registry: nonempty }, ['kind', 'packageName', 'version']), accepts: (value: unknown) => isRecord(value) && value['kind'] === 'npm' }
 const gitRemote = { ...object({ kind: choices('git'), repository: nonempty, ref: nonempty }, ['kind', 'repository', 'ref']), accepts: (value: unknown) => isRecord(value) && value['kind'] === 'git' }

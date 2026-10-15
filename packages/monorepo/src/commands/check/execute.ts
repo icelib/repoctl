@@ -62,7 +62,7 @@ export async function runCheckWithReport(options: CheckExecutionOptions): Promis
     }
     if (task.name === 'staged-typecheck') {
       // The existing check --staged route passes no explicit file arguments.
-      // Configured lint-staged typechecks run inside the preceding pre-commit stage.
+      // Configured Lefthook typechecks run inside the preceding pre-commit stage.
       task.reason = 'no_explicit_staged_files'
       continue
     }

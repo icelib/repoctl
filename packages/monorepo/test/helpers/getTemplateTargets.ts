@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { shouldSkipTemplatePath } from '@icebreakers/monorepo-templates'
 import { simpleGit } from 'simple-git'
@@ -12,9 +13,10 @@ async function getTrackedFilesInDir(dir: string) {
     '--cached',
     '--others',
     '--exclude-standard',
+    '-z',
     dir,
   ])
-  return result.split('\n').filter(Boolean).sort((left, right) => left.localeCompare(right))
+  return result.split('\0').filter(entry => entry && existsSync(path.resolve(rootDir, entry))).sort((left, right) => left.localeCompare(right))
 }
 export async function getTemplateTargets() {
   return Promise.all(

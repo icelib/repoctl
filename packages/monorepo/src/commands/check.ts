@@ -3,7 +3,7 @@ import process from 'node:process'
 import { loadMonorepoConfig } from '../core/config'
 import { localize } from '../i18n'
 import fs from '../utils/fs'
-import { verifyCommitMsg, verifyPreCommit, verifyStagedTypecheck } from './verify'
+import { verifyCommitMsg, verifyPreCommit } from './verify'
 
 export interface RecommendedCheckOptions {
   cwd: string
@@ -68,11 +68,6 @@ export function resolveRecommendedCheckPlan(options: RecommendedCheckOptions): R
           name: 'pre-commit',
           command: 'repo verify pre-commit',
           description: localize('Run pre-commit verification.', '执行 pre-commit 校验。'),
-        },
-        {
-          name: 'staged-typecheck',
-          command: 'repo verify staged-typecheck <staged files>',
-          description: localize('Route typecheck to workspaces containing staged TypeScript or Vue files.', '按暂存 TypeScript/Vue 文件所在 workspace 路由 typecheck。'),
         },
       ],
     }
@@ -148,7 +143,7 @@ export async function runFullWorkspaceCheck(cwd: string, spawn: typeof spawnSync
 }
 
 export async function runRecommendedCheck(options: RecommendedCheckOptions) {
-  const { cwd, full, staged, editFile, spawn } = options
+  const { cwd, full, editFile, spawn } = options
 
   if (editFile) {
     await verifyCommitMsg({ cwd, editFile })
@@ -157,12 +152,6 @@ export async function runRecommendedCheck(options: RecommendedCheckOptions) {
 
   if (full) {
     await runFullWorkspaceCheck(cwd, spawn)
-    return
-  }
-
-  if (staged) {
-    await verifyPreCommit({ cwd })
-    verifyStagedTypecheck([], { cwd })
     return
   }
 

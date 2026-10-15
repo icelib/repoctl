@@ -13,7 +13,7 @@ it('updates the lockfile only through explicit pnpm and frozen-installs the rema
   const pnpm = (args: string[]) => {
     const result = spawnSync(process.env['npm_execpath'] ?? 'pnpm', args, {
       cwd: h.workspace,
-      env: { ...process.env, HOME: h.home, USERPROFILE: h.home, COREPACK_ENABLE_NETWORK: '0', HUSKY: '0' },
+      env: { ...process.env, HOME: h.home, USERPROFILE: h.home, COREPACK_ENABLE_NETWORK: '0', LEFTHOOK: '0' },
       encoding: 'utf8',
       timeout: 30_000,
     })

@@ -18,7 +18,7 @@ export function containerHarness(workspace, packDirectory) {
       const result = execFileSync(command, args, {
         encoding: 'utf8',
         cwd: repoRoot,
-        env: { ...process.env, CI: 'true', HUSKY: '0', TURBO_TELEMETRY_DISABLED: '1' },
+        env: { ...process.env, CI: 'true', LEFTHOOK: '0', TURBO_TELEMETRY_DISABLED: '1' },
         timeout: 600_000,
         maxBuffer: 12 * 1024 * 1024,
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -44,7 +44,7 @@ export function containerHarness(workspace, packDirectory) {
     start() {
       assert.deepEqual(ids(), [])
       console.log(`Starting Dev Container ${runId}; logs: ${logDirectory}`)
-      devcontainer(['up', '--workspace-folder', workspace, '--id-label', label, '--mount', `type=bind,source=${packDirectory},target=/repoctl-packs`, '--remote-env', 'CI=true', '--remote-env', 'HUSKY=0', '--remote-env', 'TURBO_TELEMETRY_DISABLED=1'])
+      devcontainer(['up', '--workspace-folder', workspace, '--id-label', label, '--mount', `type=bind,source=${packDirectory},target=/repoctl-packs`, '--remote-env', 'CI=true', '--remote-env', 'LEFTHOOK=0', '--remote-env', 'TURBO_TELEMETRY_DISABLED=1'])
       const containers = ids()
       assert.equal(containers.length, 1)
       containerId = containers[0]

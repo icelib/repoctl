@@ -42,7 +42,7 @@ on:
         type: string
 
 env:
-  HUSKY: 0
+  LEFTHOOK: 0
   NPM_CONFIG_PROVENANCE: true
   npm_config_registry: https://registry.npmjs.org
 

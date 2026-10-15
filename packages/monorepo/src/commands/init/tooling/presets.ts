@@ -1,7 +1,10 @@
 import type { InitToolingContext, InitToolingPreset, InitToolingTarget } from './types'
-import { version } from '@/constants'
+import path from 'node:path'
+import { ensureTemplateAssetsPrepared } from '@icebreakers/monorepo-templates'
+import { assetsDir, version } from '@/constants'
 import { localize } from '@/i18n'
 import { defineTsconfigConfig } from '@/tooling'
+import fs from '@/utils/fs'
 import rootPackageJson from '../../../../../../package.json'
 import monorepoPackageJson from '../../../../package.json'
 
@@ -74,7 +77,7 @@ export function resolveToolingImportSource(): InitToolingContext['toolingImportS
 }
 
 export const initToolingPresets: Record<InitToolingTarget, InitToolingPreset> = {
-  'commitlint': {
+  commitlint: {
     target: 'commitlint',
     filepath: 'commitlint.config.ts',
     getContent: ({ toolingImportSource }) => createConfigModule('defineCommitlintConfig', toolingImportSource),
@@ -83,7 +86,7 @@ export const initToolingPresets: Record<InitToolingTarget, InitToolingPreset> = 
       '@commitlint/cli': getDependencyVersion('@commitlint/cli'),
     }),
   },
-  'eslint': {
+  eslint: {
     target: 'eslint',
     filepath: 'eslint.config.js',
     getContent: ({ toolingImportSource }) => createConfigModule('defineEslintConfig', toolingImportSource),
@@ -92,7 +95,7 @@ export const initToolingPresets: Record<InitToolingTarget, InitToolingPreset> = 
       eslint: getDependencyVersion('eslint'),
     }),
   },
-  'stylelint': {
+  stylelint: {
     target: 'stylelint',
     filepath: 'stylelint.config.js',
     getContent: ({ toolingImportSource }) => createConfigModule('defineStylelintConfig', toolingImportSource),
@@ -101,16 +104,19 @@ export const initToolingPresets: Record<InitToolingTarget, InitToolingPreset> = 
       stylelint: getDependencyVersion('stylelint'),
     }),
   },
-  'lint-staged': {
-    target: 'lint-staged',
-    filepath: 'lint-staged.config.js',
-    getContent: ({ toolingImportSource }) => createConfigModule('defineLintStagedConfig', toolingImportSource),
+  lefthook: {
+    target: 'lefthook',
+    filepath: 'lefthook.yml',
+    getContent: async () => {
+      await ensureTemplateAssetsPrepared()
+      return fs.readFile(path.join(assetsDir, 'lefthook.yml'), 'utf8')
+    },
     getDependencies: ({ toolingPackageName }) => ({
       ...getToolingPackageDependency(toolingPackageName),
-      'lint-staged': getDependencyVersion('lint-staged'),
+      lefthook: getDependencyVersion('lefthook'),
     }),
   },
-  'tsconfig': {
+  tsconfig: {
     target: 'tsconfig',
     filepath: 'tsconfig.json',
     getContent: async ({ cwd }) => {
@@ -122,7 +128,7 @@ export const initToolingPresets: Record<InitToolingTarget, InitToolingPreset> = 
       typescript: getDependencyVersion('typescript'),
     }),
   },
-  'vitest': {
+  vitest: {
     target: 'vitest',
     filepath: 'vitest.config.ts',
     getContent: ({ toolingImportSource }) => [

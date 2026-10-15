@@ -24,7 +24,7 @@ function hasScript(pkgJson: DoctorPackageJson, name: string) {
 async function findLegacyToolingFiles(context: DoctorContext) {
   const rootFiles = context.isSourceWorkspace
     ? []
-    : ['eslint.config.js', 'stylelint.config.js', 'lint-staged.config.js', 'vitest.config.ts']
+    : ['eslint.config.js', 'stylelint.config.js', 'vitest.config.ts']
   const files = [...rootFiles]
   for (const baseDir of ['apps', 'packages', 'examples']) {
     const absoluteBase = `${context.workspaceDir}/${baseDir}`

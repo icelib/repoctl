@@ -20,7 +20,7 @@ import { icebreaker } from '@icebreakers/commitlint-config'
 export default icebreaker()
 ```
 
-在脚本或 Husky 钩子中调用：
+在脚本或 Lefthook 钩子中调用：
 
 ```bash
 pnpm commitlint --from=HEAD~1
@@ -78,9 +78,12 @@ export default icebreaker({
 
 ## 推荐流程
 
-1. 安装 Husky 并配置 `commit-msg` 钩子：
-   ```bash
-   pnpm husky add .husky/commit-msg "pnpm commitlint --edit \"$1\""
+1. 安装 Lefthook 并配置 `commit-msg` 钩子：
+   ```yaml
+   # lefthook.yml
+   commit-msg:
+     jobs:
+       - run: pnpm exec commitlint --edit "{1}"
    ```
 2. 通过 `pnpm commit`（Changeset）或自定义的 CLI 引导书写 Commit。
 3. 在 CI 中运行 `pnpm lint`、`pnpm test`，并在发布脚本中保留 commitlint 校验。
@@ -89,7 +92,7 @@ export default icebreaker({
 
 - commitlint 找不到配置时，请确认文件名为 `commitlint.config.ts`（或 `.cjs`），且位于仓库根目录。
 - 如需扩展交互式提示，直接传入 `prompt` 即可，无需手动拼装 Schema。
-- 若需在某些脚本中临时关闭校验，可在环境变量中设置 `COMMITLINT_DISABLED=true` 并跳过钩子。
+- 若需在某些脚本中临时关闭校验，可在环境变量中设置 `LEFTHOOK=0` 跳过钩子。
 
 ## 项目链接
 

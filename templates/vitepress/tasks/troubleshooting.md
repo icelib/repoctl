@@ -43,7 +43,7 @@ repo doctor --strict
 - The `repoctl` CLI dependency.
 - Recommended root scripts.
 - Conflicting config files.
-- Husky and lint-staged wiring.
+- Lefthook wiring.
 
 ## Save A Diagnostic Report
 

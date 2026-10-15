@@ -11,8 +11,7 @@ repoctl coordinates established tools instead of replacing them.
 | [pnpm](./pnpm.md)                 | Workspaces, dependency installation, and versioning |
 | [Turborepo](./turborepo.md)       | Task graph execution and caching                    |
 | [pnpm Versioning](./changeset.md) | Change intents, versions, and changelogs            |
-| [Husky](./husky.md)               | Git hook entrypoints                                |
-| [lint-staged](./lint-staged.md)   | Checks scoped to staged files                       |
+| [Lefthook](./lefthook.md)         | Git hook entrypoints                                |
 | [Renovate](./renovate.md)         | Automated dependency updates                        |
 | [llms.txt](./llms-txt.md)         | AI-readable documentation discovery                 |
 

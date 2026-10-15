@@ -3,6 +3,7 @@ import { readdir, realpath } from 'node:fs/promises'
 import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
 import YAML from 'yaml'
 import fs from '../../utils/fs'
+import { legacyStagedConfigNames } from '../../utils/legacy-hooks'
 import { getWorkspacePatterns } from './helpers'
 import { discoverDoctorManifests } from './manifest/discovery'
 import { record } from './manifest/types'
@@ -44,6 +45,13 @@ async function findWorkspacePackageDirs(workspaceDir: string) {
   return result.sort((left, right) => left.localeCompare(right))
 }
 
+async function hasLegacyHookFiles(workspaceDir: string) {
+  const huskyDir = `${workspaceDir}/.husky`
+  const hookFiles = await fs.pathExists(huskyDir) ? await readdir(huskyDir) : []
+  const configs = await Promise.all(legacyStagedConfigNames.map(file => fs.pathExists(`${workspaceDir}/${file}`)))
+  return hookFiles.some(file => file !== '_' && file !== '.gitignore') || configs.some(Boolean)
+}
+
 export async function collectDoctorContext(cwd: string): Promise<DoctorContext> {
   const workspaceDir = await realpath(await findWorkspaceDir(cwd) ?? cwd)
   const packageJsonPath = `${workspaceDir}/package.json`
@@ -53,15 +61,15 @@ export async function collectDoctorContext(cwd: string): Promise<DoctorContext> 
     hasWorkspaceManifest,
     hasRepoctlConfig,
     hasLegacyMonorepoConfig,
-    hasHuskyPreCommit,
-    hasLintStagedConfig,
+    hasLefthookConfig,
+    hasLegacyHooks,
   ] = await Promise.all([
     fs.pathExists(packageJsonPath),
     fs.pathExists(workspaceManifestPath),
     fs.pathExists(`${workspaceDir}/repoctl.config.ts`),
     fs.pathExists(`${workspaceDir}/monorepo.config.ts`),
-    fs.pathExists(`${workspaceDir}/.husky/pre-commit`),
-    fs.pathExists(`${workspaceDir}/lint-staged.config.js`),
+    fs.pathExists(`${workspaceDir}/lefthook.yml`),
+    hasLegacyHookFiles(workspaceDir),
   ])
   let workspacePatterns: string[] = []
   let workspaceManifestError = false
@@ -95,8 +103,8 @@ export async function collectDoctorContext(cwd: string): Promise<DoctorContext> 
     hasWorkspaceManifest,
     hasRepoctlConfig,
     hasLegacyMonorepoConfig,
-    hasHuskyPreCommit,
-    hasLintStagedConfig,
+    hasLefthookConfig,
+    hasLegacyHooks,
     isSourceWorkspace: await isRepoctlSourceWorkspace(workspaceDir),
   }
 }

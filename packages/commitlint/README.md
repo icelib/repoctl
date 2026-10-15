@@ -22,7 +22,7 @@ import { icebreaker } from '@icebreakers/commitlint-config'
 export default icebreaker()
 ```
 
-Add a script or Husky hook to run commitlint:
+Add a script or Lefthook hook to run commitlint:
 
 ```bash
 pnpm commitlint --from=HEAD~1
@@ -80,9 +80,12 @@ The factory keeps commit prompts in sync with any custom type definitions. If yo
 
 ## Suggested Workflow
 
-1. Install Husky and configure a `commit-msg` hook:
-   ```bash
-   pnpm husky add .husky/commit-msg "pnpm commitlint --edit \"$1\""
+1. Install Lefthook and configure a `commit-msg` hook:
+   ```yaml
+   # lefthook.yml
+   commit-msg:
+     jobs:
+       - run: pnpm exec commitlint --edit "{1}"
    ```
 2. Use `pnpm commit` (Changeset prompt) or your own CLI for guided commits.
 3. Add `pnpm lint` and `pnpm test` to CI so commits fail fast when rules change.
@@ -91,7 +94,7 @@ The factory keeps commit prompts in sync with any custom type definitions. If yo
 
 - If commitlint cannot find the config file, ensure it is named `commitlint.config.ts` (or `.cjs`) at the repository root.
 - For workspaces that ship custom prompts, pass a `prompt` object instead of re-building the schema by hand.
-- To disable commits in scripts (e.g. release bots), set `COMMITLINT_DISABLED=true` and skip the hook execution.
+- To disable commits in scripts (e.g. release bots), set `LEFTHOOK=0` to skip hook execution.
 
 ## Project links
 

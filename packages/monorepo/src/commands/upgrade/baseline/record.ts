@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer'
 import { toWorkspaceAssetPath } from '../../../utils'
+import { legacyStagedConfigNames } from '../../../utils/legacy-hooks'
 import { hash, relativeFile } from '../plan/files'
 import { getAssetTargets } from '../targets'
 
@@ -14,7 +15,7 @@ export interface RootAssetBaseline {
 }
 
 export function isRootAsset(filename: string) {
-  return getAssetTargets().some(target => filename === target || filename.startsWith(`${target}/`))
+  return legacyStagedConfigNames.includes(filename) || /^\.husky\/(?:pre-commit|commit-msg|pre-push)$/u.test(filename) || getAssetTargets().some(target => filename === target || filename.startsWith(`${target}/`))
 }
 
 export const baselinePath = (filename: string) => `${baselineDirectory}/${hash(Buffer.from(filename))}.json`
