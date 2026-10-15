@@ -50,6 +50,10 @@
   dir: packages/commitlint
   intents:
     - auto-pr-935
+"@icebreakers/commitlint-config@4.1.3":
+  dir: packages/commitlint
+  intents:
+    - lefthook-migration
 "@icebreakers/eslint-config@7.1.1":
   dir: packages/eslint
   intents:
@@ -80,6 +84,10 @@
     - auto-pr-880
     - auto-pr-881
     - auto-pr-898
+"@icebreakers/eslint-config@8.0.10":
+  dir: packages/eslint
+  intents:
+    - lefthook-migration
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -286,6 +294,11 @@
   dir: packages/monorepo-templates
   intents:
     - clever-peaches-attack
+"@icebreakers/monorepo-templates@3.0.0":
+  dir: packages/monorepo-templates
+  intents:
+    - lefthook-migration
+    - quiet-clouds-wait
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -508,6 +521,12 @@
   dir: packages/monorepo
   intents:
     - heavy-worms-ring
+"@icebreakers/monorepo@6.0.0":
+  dir: packages/monorepo
+  intents:
+    - independent-release-checkpoints
+    - lefthook-migration
+    - quiet-pr-resource-admission
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -813,6 +832,11 @@ repoctl@5.9.0:
   dir: packages/repoctl
   intents:
     - heavy-worms-ring
+repoctl@6.0.0:
+  dir: packages/repoctl
+  intents:
+    - independent-release-checkpoints
+    - lefthook-migration
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:

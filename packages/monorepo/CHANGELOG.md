@@ -1,5 +1,22 @@
 # @icebreakers/monorepo
 
+## 6.0.0
+
+### Major Changes
+
+- Replace Husky and lint-staged with native Lefthook jobs in source and generated workspaces. Remove the Husky/lint-staged tooling fields, exported types and configuration factories, and replace the lint-staged init target with lefthook. Default hook upgrades migrate configuration, dependencies and installation scripts together; custom hooks require manual migration. Failed checks block commits while retaining completed fixes and protecting unstaged changes.
+
+### Patch Changes
+
+- fix(release): Initialize release checkpoint storage with an independent root commit containing only checkpoint documentation, avoiding source workflows and an unnecessary workflow permission requirement. Preserve the original branch creation error when reconciliation fails while retaining concurrent initialization and checkpoint recovery.
+
+- 完善源码仓库 PR CI 资源准入与取消行为，防止普通标签打断已批准的验证，并校验筛选期间的提交变化和目标分支身份。
+
+- Updated dependencies:
+  - @icebreakers/commitlint-config@4.1.3
+  - @icebreakers/eslint-config@8.0.10
+  - @icebreakers/monorepo-templates@3.0.0
+
 ## 5.10.3
 
 ### Patch Changes
