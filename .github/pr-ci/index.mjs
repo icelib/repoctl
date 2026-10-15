@@ -40,13 +40,14 @@ async function main() {
       return `${key}=${value}\n`
     })
     await fs.appendFile(process.env.GITHUB_OUTPUT, lines.join(''))
-    await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, `Approved PR #${number}\n\nHead: ${outputs.head_sha}\n\nBase: ${outputs.base_sha}\n\nTest merge: ${outputs.merge_sha}\n`)
+    await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, `Approved PR #${number}\n\nHead: ${outputs.head_sha}\n\nBase: ${outputs.base_ref} (${outputs.base_sha})\n\nTest merge: ${outputs.merge_sha}\n`)
   }
   else if (process.argv[2] === 'report') {
     const result = await reportValidation(client, {
       number,
       headSha: process.env.HEAD_SHA,
       baseSha: process.env.BASE_SHA,
+      baseRef: process.env.BASE_REF,
       runCi: process.env.RUN_CI === 'true',
       runDevcontainer: process.env.RUN_DEVCONTAINER === 'true',
       results: {

@@ -10,7 +10,7 @@ describe('approved PR preparation', () => {
       return { action: 'committed', number: 42, path: '.changeset/auto-pr-42.md', sha: preparedSha }
     })
     const result = await prepareValidation(h.client, h.options)
-    expect(result).toMatchObject({ head_sha: preparedSha, base_sha: baseSha, merge_sha: mergeSha, run_ci: true, run_devcontainer: false })
+    expect(result).toMatchObject({ head_sha: preparedSha, base_sha: baseSha, base_ref: 'main', merge_sha: mergeSha, run_ci: true, run_devcontainer: false })
     expect(h.options.processIntent).toHaveBeenCalledWith(h.client, 42, { expectedHeadSha: headSha })
     expect(h.client.createStatus).toHaveBeenCalledWith(preparedSha, expect.objectContaining({ state: 'pending', context: 'PR Validation' }))
     expect(h.client.compareCommits).toHaveBeenCalledWith(baseSha, preparedSha)

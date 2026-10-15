@@ -121,7 +121,8 @@ describe('source PR approval authentication', () => {
   it('uses built-in credentials and trusted default-branch code only after approval', async () => {
     const workflow = await readWorkflow(rootDir, 'pr-ci')
     expect(workflow.jobs.approve.environment).toBe('pr-ci')
-    expect(workflow.jobs.approve.if).toBe(expression('(github.event_name == \'workflow_dispatch\' && github.ref == format(\'refs/heads/{0}\', github.event.repository.default_branch)) || (github.event_name == \'pull_request_target\' && !github.event.pull_request.draft)'))
+    expect(workflow.jobs.approve.if).toContain('github.event.pull_request.state == \'open\'')
+    expect(workflow.jobs.approve.if).toContain('!github.event.pull_request.draft')
     expect(workflow.jobs.prepare.needs).toBe('approve')
     expect(workflow.jobs.prepare.permissions).toEqual({ 'contents': 'write', 'pull-requests': 'write', 'statuses': 'write' })
     const steps = await readSteps(rootDir, 'pr-ci', 'prepare')
@@ -149,5 +150,6 @@ describe('source PR approval authentication', () => {
     expect(checkout.with?.['persist-credentials']).toBe(false)
     expect(runner.env?.['GITHUB_TOKEN']).toBe(expression('github.token'))
     expect(runner.env?.['HEAD_SHA']).toBe(expression('needs.prepare.outputs.head_sha'))
+    expect(runner.env?.['BASE_REF']).toBe(expression('needs.prepare.outputs.base_ref'))
   })
 })

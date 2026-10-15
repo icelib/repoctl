@@ -7,6 +7,7 @@ function reportOptions() {
     number: 42,
     headSha,
     baseSha,
+    baseRef: 'main',
     runCi: true,
     runDevcontainer: false,
     results: { ci: 'success', devcontainer: 'skipped', releaseIntent: 'success' },
@@ -43,7 +44,7 @@ it('allows explicitly inapplicable CI and Dev Container checks to be skipped', a
   await expect(reportValidation(h.client, options)).resolves.toHaveProperty('success', true)
 })
 
-it.each(['head', 'base', 'closed', 'draft'])('invalidates successful jobs after the PR becomes %s', async (kind) => {
+it.each(['head', 'base', 'retargeted', 'closed', 'draft'])('invalidates successful jobs after the PR becomes %s', async (kind) => {
   const h = fixture()
   if (kind === 'head') {
     h.pr.head.sha = preparedSha
@@ -52,6 +53,9 @@ it.each(['head', 'base', 'closed', 'draft'])('invalidates successful jobs after 
     h.client.getRef.mockResolvedValue({ object: {
       sha: preparedSha,
     } })
+  }
+  if (kind === 'retargeted') {
+    h.pr.base.ref = 'other-base'
   }
   if (kind === 'closed') {
     h.pr.state = 'closed'

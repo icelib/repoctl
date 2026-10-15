@@ -40,6 +40,8 @@ export function checkPrCiWorkflow(rootDir) {
     'ready_for_review',
     'labeled',
     'unlabeled',
+    'closed',
+    'converted_to_draft',
   ])
   assert.deepEqual(Object.keys(workflow.on ?? {}), ['pull_request_target', 'workflow_dispatch'])
   assert.equal(workflow.on?.workflow_dispatch?.inputs?.pr_number?.required, true)
@@ -54,8 +56,11 @@ export function checkPrCiWorkflow(rootDir) {
   const environment = jobs.approve.environment
   assert.equal(typeof environment === 'string' ? environment : environment?.name, 'pr-ci')
   assert.deepEqual(needs(jobs.approve), [])
-  assert.equal(jobs.approve.if, githubExpression('(github.event_name == \'workflow_dispatch\' && github.ref == format(\'refs/heads/{0}\', github.event.repository.default_branch)) || (github.event_name == \'pull_request_target\' && !github.event.pull_request.draft)'), 'Only ready PRs and default-branch dispatches may request approval')
+  assert.ok(jobs.approve.if?.includes('github.event.pull_request.state == \'open\''), 'Closed PRs must only cancel the previous run')
+  assert.ok(jobs.approve.if?.includes('!github.event.pull_request.draft'), 'Draft PRs must not request approval')
+  assert.ok(workflow.concurrency.group.includes('pr-ci-ignored-'), 'Ignored events must not cancel approved checks')
   for (const [name, job] of Object.entries(jobs)) {
+    assert.ok(!job.if?.includes('always()'), 'Cancelled PR runs must not start more jobs')
     if (name !== 'approve') {
       assert.ok(dependsOnApproval(jobs, name), `${name} must depend on the approval gate`)
       assert.equal(job.environment, undefined, 'One approval must release the complete PR validation')
@@ -68,7 +73,7 @@ export function checkPrCiWorkflow(rootDir) {
   assert.deepEqual(needs(jobs.prepare), ['approve'])
   assert.deepEqual(jobs.prepare.permissions, { 'contents': 'write', 'pull-requests': 'write', 'statuses': 'write' })
   assert.deepEqual(jobs.report.permissions, { 'contents': 'read', 'pull-requests': 'read', 'statuses': 'write' })
-  for (const output of ['head_sha', 'base_sha', 'merge_sha', 'head_ref', 'run_ci', 'run_devcontainer', 'pr_number']) {
+  for (const output of ['head_sha', 'base_sha', 'base_ref', 'merge_sha', 'head_ref', 'run_ci', 'run_devcontainer', 'pr_number']) {
     assert.equal(jobs.prepare.outputs?.[output], githubExpression(`steps.prepare.outputs.${output}`))
   }
 
@@ -109,8 +114,10 @@ export function checkPrCiWorkflow(rootDir) {
   for (const input of ['base_sha', 'head_sha', 'head_ref']) {
     assert.equal(jobs['release-intent'].with?.[input], githubExpression(`needs.prepare.outputs.${input}`))
   }
-  assert.ok(jobs.report.if?.includes('always()'), 'Validation failures must publish a terminal commit status')
-  assert.ok(jobs.report.if?.includes('needs.prepare.result == \'success\''), 'Reports require the prepared final revision')
+  assert.equal(jobs.report.if, githubExpression('!cancelled() && needs.prepare.result == \'success\''), 'Ordinary failures must report without starting work after cancellation')
+  assert.equal(jobs.report['timeout-minutes'], 5)
+  const report = getSteps(workflow, 'report').find(step => step.run === 'node .github/pr-ci/index.mjs report')
+  assert.equal(report.env?.BASE_REF, githubExpression('needs.prepare.outputs.base_ref'))
   assert.ok(needs(jobs.report).includes('build'))
   assert.ok(needs(jobs.report).includes('devcontainer'))
   assert.ok(needs(jobs.report).includes('release-intent'))

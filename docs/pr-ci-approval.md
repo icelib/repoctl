@@ -1,12 +1,26 @@
 # PR 检查审批
 
-本源码仓库的 PR 创建、更新、重新打开、转为 ready 或标签变化，只会创建等待 `pr-ci` 环境审批的 **PR Checks** 运行。批准前不启动 runner，也不生成 changeset、构建或测试。草稿 PR 跳过审批任务，转为 ready 后才产生可批准的运行。
+维护者通过选择批准哪些 PR，把有限的并发资源集中到当前关注、准备推进合并的少数 PR。已批准 PR 保持完整的适用矩阵并行，批准数量由维护者控制。
 
-每次运行只需批准一次。不同 PR 可以同时批准和验证；同一 PR 的新运行会取消旧运行。合并及合并后的 **Release** 继续使用原有流程，Release PR 的验证也要审批。Release 使用内置令牌创建 PR 时，会显式启动一条待审批的 PR Checks，避免令牌的事件抑制导致没有审批入口。
+本源码仓库的 PR 创建、更新、重新打开、转为 ready 或增删 `release:major/minor` 标签，只会创建等待 `pr-ci` 环境审批的 **PR Checks** 运行。批准前不分配 runner，不 checkout、不安装依赖，也不生成 changeset、构建或测试。草稿 PR 跳过审批任务，转为 ready 后才产生可批准的运行。
+
+普通标签变化的运行会跳过全部 job，并使用独立并发组，避免取消已批准的检查。关闭、合并 PR 或转回草稿使用原 PR 的并发组取消旧运行，但不启动任何 job。重新打开或转为 ready 后需要重新批准。
+
+每次运行只需批准一次。不同 PR 可以同时批准和验证；同一 PR 的新提交、发布级别标签变化或默认分支手动调度会取消旧运行。合并后的 **Release** 继续使用原有流程，Release PR 的验证也要审批。Release 使用内置令牌创建 PR 时，会显式启动一条待审批的 PR Checks，避免令牌的事件抑制导致没有审批入口。
+
+取消运行后不再启动后续验证或汇总任务；GitHub 停止正在运行的进程仍需短暂收尾。已写入的 pending 状态可以保留，必须以新的批准运行完成验证，不能据此合并。普通失败继续回写失败汇总，汇总任务最多运行 5 分钟。
 
 ## 环境配置
 
 在 **Settings → Environments** 创建 `pr-ci`，打开 **Required reviewers**，添加 `sonofmagic`，关闭 **Prevent self-review**，允许使用同一身份创建 PR 和批准检查。关闭 **Allow administrators to bypass configured protection rules**。审批任务在 GitHub 确认批准之前等待，不占用 runner。
+
+在 **Settings → Actions → General** 将 fork PR 审核策略设为所有外部贡献者均需审核（`all_external_contributors`），已有贡献记录的外部账号也需要先经过 GitHub 原生审核。该审核与 `pr-ci` 环境审批分别生效。配置后回读，核验实际 reviewer、禁止管理员绕过，以及 fork 审核策略：
+
+```bash
+gh api repos/icelib/repoctl/environments/pr-ci \
+  --jq '{name, can_admins_bypass, protection_rules}'
+gh api repos/icelib/repoctl/actions/permissions/fork-pr-contributor-approval
+```
 
 环境审批与 GitHub App 配置互相独立。本仓 PR 准备阶段使用内置 `GITHUB_TOKEN`；GitHub App 继续用于 Release 和手动 backfill，配置见 [自动提交认证](./github-app-automation.md)。
 
@@ -61,7 +75,7 @@ gh api --method POST -H 'X-GitHub-Api-Version: 2026-03-10' \
 
 在 PR 的 Checks 或 Actions 中打开名称对应该 PR 的 **PR Checks** 运行，点击 **Review deployments**，选择 `pr-ci`，点击 **Approve and deploy**。批准只放行所选运行。
 
-批准后，受信任的准备脚本先补充自动 changeset，再固定最终 head、最新目标分支 base 和两者组成的测试 merge SHA。CI、Dev Container 和发布意图检查验证这些固定提交，最后将 **PR Validation** 状态写到最终 PR head 上。CI 和 Dev Container 保留原有路径筛选；不适用的检查可以跳过。
+批准后，受信任的准备脚本先补充自动 changeset，再筛选适用检查，重新核对 PR 状态、分支身份和最新提交，固定最终 head、目标分支名称、base 和两者组成的测试 merge SHA。CI、Dev Container 和发布意图检查验证这些固定提交，最后将 **PR Validation** 状态写到最终 PR head 上。CI 和 Dev Container 保留原有路径筛选；不适用的检查可以跳过。汇总同时核对目标分支名称与提交，换到同 SHA 的另一目标分支也需重新验证。
 
 人工 changeset 保留。fork PR 若改动可发布包，需要作者自行补 changeset；审批后若发现缺失，会提示作者并停止验证。执行 PR 代码的检查只有读取权限，写入 changeset 和结果的任务只执行受信任脚本。
 
@@ -101,7 +115,9 @@ gh run watch <run-id> --repo icelib/repoctl --exit-status
 gh pr view <pr-number> --repo icelib/repoctl --json headRefOid,statusCheckRollup,mergeStateStatus
 ```
 
-AI 按当次任务选择批准哪些 PR。这里没有全仓串行锁，也不自动合并 PR。合并前确认该 PR 的最新 **PR Checks** 运行已经批准并成功，且最新 head 上 **PR Validation** 链接指向该运行，同时满足现有审核要求。同一 head 的标签变化或手动启动也可能产生新运行；等待审批时旧成功状态仍可能显示在 head 上，不能据此合并。若 head 或目标分支变化，旧验证结果不能作为最新基线的验证依据。
+AI 仅批准用户或维护者在当次任务中明确选中的 PR。禁止为“全部跑绿”批量批准无人关注的 PR，也禁止批量手动调度检查来绕过准入。这里没有全仓串行锁，也不自动合并 PR。合并前确认该 PR 最新需要批准的 **PR Checks** 运行已经批准并成功，且最新 head 上 **PR Validation** 链接指向该运行，同时满足现有审核要求。忽略普通标签导致的全跳过运行。
+
+同一 head 的发布级别标签变化或手动启动也可能产生新审批运行；等待审批时旧成功状态仍可能显示在 head 上，不能据此合并。若 head、目标分支名称或 base 变化，旧验证结果不能作为最新基线的验证依据。
 
 ## 重试与提交变化
 
@@ -110,7 +126,7 @@ AI 按当次任务选择批准哪些 PR。这里没有全仓串行锁，也不�
 - 自动 changeset 会改变 head，但内置 `GITHUB_TOKEN` 的提交不触发新的 PR 工作流。此时 **Re-run all jobs** 会重读旧事件中的 head，准备阶段会拒绝；需要从默认分支手动创建新运行，再批准。
 - base 变化、合并冲突或准备失败，也应在解决问题后创建并批准新的运行。
 
-手动启动的 PR Checks 只允许默认分支 `main`，并读取当前 PR 的最新 head：
+手动启动的 PR Checks 只允许默认分支 `main`，并读取当前 PR 的最新 head；从其他分支或 tag 调度的运行跳过全部 job，使用独立并发组，不会取消对应 PR 的有效检查：
 
 ```bash
 gh workflow run pr-ci.yml --repo icelib/repoctl --ref main -f pr_number=<pr-number>
@@ -122,6 +138,8 @@ gh workflow run pr-ci.yml --repo icelib/repoctl --ref main -f pr_number=<pr-numb
 
 生成项目保留自动 PR CI、自动 changeset 和发布意图检查。消费者工作流独立维护在 `packages/monorepo/assets/.github/workflows/`；本仓审批工作流和 `.github/pr-ci/` 不进入分发资产。
 
-验收时确认：新建、push、reopen、ready 和标签变化都先等待审批；网页和 API 批准后完整执行适用检查；最终状态对应 changeset 后的 head；两条已批准 PR 可以并行；失败或提交变化不能得到成功汇总。合并后的 Release 应照常运行。
+先运行 build、lint、typecheck、tsd、tests 和 `pnpm check:workflows`。资源策略测试直接解析实际 YAML，覆盖服务端条件、并发组隔离与取消后的报告行为。包内测试还覆盖筛选检查时的提交变化、同 SHA 更换目标分支、自动 changeset、Release PR 调度和消费者资产隔离。
+
+合入默认分支后，用明确选定的验收 PR 触发新事件，记录 PR/运行 ID、测试 head/base/merge、待审批时的 runner 名称及最终结果。确认两条已批准 PR 可以并行，未批准的对照 PR 没有 runner；普通标签不会打断有效检查；发布级别标签需要重新批准；新提交、关闭和转草稿能取消旧运行；失败或提交变化不能得到成功汇总。关闭本次创建的临时验收 PR，让其任务正常取消。适用的完整 CI、Dev Container 及合并后的 Release 应照常运行。
 
 参考：[环境部署保护](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments)、[待部署环境 API](https://docs.github.com/en/rest/actions/workflow-runs#get-pending-deployments-for-a-workflow-run)、[批准待部署环境 API](https://docs.github.com/en/rest/actions/workflow-runs#review-pending-deployments-for-a-workflow-run)。
