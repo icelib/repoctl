@@ -40,6 +40,17 @@ Generated Vue files or other SFC files that include style blocks are also requir
 
 ## Testing Guidelines
 
+### Source Repository PR CI Admission
+
+- Approve CI only for PRs explicitly selected by the user or maintainer in the current task. Never batch-approve unrelated PRs or batch-dispatch checks to bypass admission.
+- All source PR validation in GitHub Actions starts behind the protected `pr-ci` environment. Before approval, workflows must not start runners, checkouts, dependency installation, changeset generation, builds, or tests. Local development checks run normally.
+- Selected PRs keep the full applicable parallel matrix. Maintainers control admission by choosing which PRs to approve; do not add a global serial lock or a fixed active-PR limit.
+- New commits and changes to `release:major` / `release:minor` require a new approval. Ordinary labels must not cancel approved validation. Closing a PR or converting it to draft cancels its old run without scheduling validation or reports.
+- Cancelled runs may leave a pending `PR Validation` status. Before merging, verify that the latest approved run succeeded, its head and base still match the PR, and `PR Validation` points to that run. An older green status on the same head is insufficient.
+- These admission rules apply to this source repository. Consumer workflows are maintained independently and retain automatic PR CI.
+
+### Test Execution
+
 Vitest powers unit tests located in `test/*.test.ts`. Mirror existing naming by matching the unit under test (`monorepo` utilities map to `packages/monorepo/test/*.test.ts`). Aim for meaningful assertions rather than snapshot defaults, and add coverage checks with `pnpm test -- --coverage`, which writes reports to `coverage/`. When introducing new public APIs, include integration-style tests in the relevant app workspace. AI-assisted validation must run a full test matrix when available, including unit, integration, and E2E tests.
 
 Before running tests, build the packages first and run tests against build artifacts instead of source-only execution to better match real delivery behavior.

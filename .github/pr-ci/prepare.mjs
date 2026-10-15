@@ -15,23 +15,28 @@ function openPullRequest(pr, repository) {
   }
 }
 
+async function frozenPullRequest(client, initial, headSha, baseSha, previousHeadSha) {
+  const pr = await client.getPullRequest(initial.number)
+  openPullRequest(pr, client.repository)
+  const sameBranches = pr.base.ref === initial.base.ref
+    && pr.head.ref === initial.head.ref
+    && pr.head.repo.full_name === initial.head.repo.full_name
+  const base = await client.getRef(`heads/${initial.base.ref}`)
+  const head = initial.head.repo.full_name === client.repository
+    ? await client.getRef(`heads/${initial.head.ref}`)
+    : undefined
+  if (!sameBranches || base.object.sha !== baseSha || (head && head.object.sha !== headSha)
+    || (pr.head.sha !== headSha && pr.head.sha !== previousHeadSha)) {
+    throw new Error('PR or base changed during preparation; approve the latest run.')
+  }
+  return pr
+}
+
 async function frozenMerge(client, initial, headSha, baseSha, previousHeadSha, wait) {
   // PR metadata and its test merge can lag behind our changeset push. The branch ref
   // must already match our exact commit before allowing that known stale PR head.
   for (let attempt = 0; attempt < 12; attempt++) {
-    const pr = await client.getPullRequest(initial.number)
-    openPullRequest(pr, client.repository)
-    const sameBranches = pr.base.ref === initial.base.ref
-      && pr.head.ref === initial.head.ref
-      && pr.head.repo.full_name === initial.head.repo.full_name
-    const base = await client.getRef(`heads/${initial.base.ref}`)
-    const head = initial.head.repo.full_name === client.repository
-      ? await client.getRef(`heads/${initial.head.ref}`)
-      : undefined
-    if (!sameBranches || base.object.sha !== baseSha || (head && head.object.sha !== headSha)
-      || (pr.head.sha !== headSha && pr.head.sha !== previousHeadSha)) {
-      throw new Error('PR or base changed during preparation; approve the latest run.')
-    }
+    const pr = await frozenPullRequest(client, initial, headSha, baseSha, previousHeadSha)
     if (pr.head.sha === headSha && pr.mergeable === true && /^[0-9a-f]{40}$/.test(pr.merge_commit_sha ?? '')) {
       const commit = await client.getCommit(pr.merge_commit_sha)
       if (commit.parents?.length === 2 && commit.parents[0].sha === baseSha && commit.parents[1].sha === headSha) {
@@ -68,11 +73,14 @@ export async function prepareValidation(client, { number, expectedHeadSha, targe
     // Compare responses are pinned to both SHAs but list at most 300 files.
     const files = comparison.files ?? []
     const paths = validationPaths(files, files.length >= 300 ? Infinity : files.length)
+    // Recheck the live branches after selecting checks, before releasing runners.
+    await frozenPullRequest(client, initial, headSha, base.object.sha)
     await validationStatus(client, headSha, 'pending', 'Approved; validating the final PR merge commit.', targetUrl)
     return {
       pr_number: number,
       head_sha: headSha,
       base_sha: base.object.sha,
+      base_ref: initial.base.ref,
       merge_sha: mergeSha,
       head_ref: pr.head.ref,
       ...paths,

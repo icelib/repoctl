@@ -7,7 +7,7 @@ export function validationStatus(client, sha, state, description, targetUrl) {
   })
 }
 
-export async function reportValidation(client, { number, headSha, baseSha, runCi, runDevcontainer, results, targetUrl }) {
+export async function reportValidation(client, { number, headSha, baseSha, baseRef, runCi, runDevcontainer, results, targetUrl }) {
   const status = await client.getStatus(headSha)
   const latest = status.statuses.find(item => item.context === 'PR Validation')
   if (latest?.target_url !== targetUrl) {
@@ -15,7 +15,8 @@ export async function reportValidation(client, { number, headSha, baseSha, runCi
   }
   const pr = await client.getPullRequest(number)
   const base = await client.getRef(`heads/${pr.base.ref}`)
-  const current = pr.state === 'open' && !pr.draft && pr.head.sha === headSha && base.object.sha === baseSha
+  const current = pr.state === 'open' && !pr.draft && pr.head.sha === headSha
+    && pr.base.ref === baseRef && base.object.sha === baseSha
   const success = current
     && results.releaseIntent === 'success'
     && results.ci === (runCi ? 'success' : 'skipped')
