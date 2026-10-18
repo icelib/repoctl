@@ -7,6 +7,7 @@ import process from 'node:process'
 import { pathToFileURL } from 'node:url'
 import { execa } from 'execa'
 import { afterEach } from 'vitest'
+import { version as repoctlVersion } from '../../../package.json'
 
 const roots: string[] = []
 afterEach(async () => {
@@ -17,7 +18,7 @@ export async function loadRepo(): Promise<typeof Api> {
   return import(pathToFileURL(path.resolve(import.meta.dirname, '../../../dist/index.mjs')).href)
 }
 
-export const manifest: OrganizationPresetManifest = { schemaVersion: 1, requires: { repoctl: '>=5 <6' } }
+export const manifest: OrganizationPresetManifest = { schemaVersion: 1, requires: { repoctl: repoctlVersion } }
 
 export async function fixture() {
   const root = await realpath(await mkdtemp(path.join(tmpdir(), 'repoctl-presets-')))

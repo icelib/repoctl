@@ -15,6 +15,8 @@ export function archives(root) {
   const packs = path.join(root, 'packs')
   mkdirSync(packs)
   const overrides = packDependencies(packs)
+  const engineArchive = overrides['@icebreakers/monorepo'].slice(5)
+  const engineMetadata = JSON.parse(execFileSync('tar', ['-xOf', engineArchive, 'package/package.json'], { encoding: 'utf8' }))
   const templateArchive = overrides['@icebreakers/monorepo-templates'].slice(5)
   const generatedManifest = JSON.parse(execFileSync('tar', ['-xOf', templateArchive, 'package/assets/package.json'], { encoding: 'utf8' }))
   assert.equal(generatedManifest.devDependencies['make-fetch-happen'], undefined, 'Public metadata caching is source-only fixture tooling')
@@ -27,7 +29,7 @@ export function archives(root) {
   mkdirSync(path.join(source, 'assets'), { recursive: true })
   const marker = path.join(root, 'preset-code-executed')
   writeFileSync(path.join(source, 'entry.cjs'), `require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'unexpected')\n`)
-  writeJson(path.join(source, 'repoctl.preset.json'), { schemaVersion: 1, requires: { repoctl: '>=5 <6' }, assets: [{ source: 'assets/check.mjs', target }] })
+  writeJson(path.join(source, 'repoctl.preset.json'), { schemaVersion: 1, requires: { repoctl: engineMetadata.version }, assets: [{ source: 'assets/check.mjs', target }] })
   for (const version of ['1.0.0', '2.0.0']) {
     const manifest = { name, version, exports: { '.': './entry.cjs' }, files: ['assets', 'repoctl.preset.json', 'entry.cjs'], scripts: { prepare: 'node entry.cjs', postinstall: 'node entry.cjs' } }
     writeJson(path.join(source, 'package.json'), manifest)
