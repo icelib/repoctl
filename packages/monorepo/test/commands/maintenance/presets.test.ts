@@ -86,7 +86,7 @@ it.each(['range', 'lock', 'installed', 'source', 'removal', 'unconfigured'])('bl
     await h.write('repoctl.config.mjs', 'export default {}\n')
   }
   else {
-    await h.json(`node_modules/${presetName}/repoctl.preset.json`, { schemaVersion: 1, requires: { repoctl: '>=5 <6' }, assets: [{ source: 'assets/new.mjs', target: presetTarget }] })
+    await h.json(`node_modules/${presetName}/repoctl.preset.json`, { schemaVersion: 1, requires: { repoctl: h.version }, assets: [{ source: 'assets/new.mjs', target: presetTarget }] })
   }
   const head = ['range', 'lock', 'removal', 'unconfigured'].includes(kind) ? h.commit('invalid identity') : h.head
   const report = await prepareMaintenanceUpgrade({ ...h.options, head })

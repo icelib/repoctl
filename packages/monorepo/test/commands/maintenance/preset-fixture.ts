@@ -26,7 +26,7 @@ export async function presetFixture(options: { sameBytes?: boolean, conflict?: b
     await json(`node_modules/${presetName}/package.json`, { name: presetName, version, exports: { '.': './entry.cjs' } })
     await h.write(`node_modules/${presetName}/entry.cjs`, 'throw new Error("preset code must not execute")\n')
     const assets = [{ source: presetSource, target: presetTarget }, ...(options.attributes ? [{ source: 'assets/attributes', target: '.gitattributes' }] : []), ...(version !== '1.0.0' && options.extra ? [{ source: 'assets/new.mjs', target: 'scripts/new-standard.mjs' }] : [])]
-    await json(`node_modules/${presetName}/repoctl.preset.json`, { schemaVersion: 1, requires: { repoctl: '>=5 <6' }, assets })
+    await json(`node_modules/${presetName}/repoctl.preset.json`, { schemaVersion: 1, requires: { repoctl: h.version }, assets })
     await h.write(`node_modules/${presetName}/${presetSource}`, content)
     if (options.attributes) {
       await h.write(`node_modules/${presetName}/assets/attributes`, `scripts/*.mjs ${version === '1.0.0' ? '-text' : 'text eol=crlf'}\n`)

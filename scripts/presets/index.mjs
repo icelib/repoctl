@@ -34,6 +34,14 @@ function inspectMetadata(directory) {
 }
 let server
 try {
+  const workspaces = ['first', 'second'].map((name) => {
+    const parent = path.join(root, name)
+    mkdirSync(parent)
+    return { name, workspace: createWorkspace(parent, []) }
+  })
+  const packedWorkspace = YAML.parse(readFileSync(path.join(workspaces[0].workspace, 'pnpm-workspace.yaml'), 'utf8'))
+  const engineArchive = packedWorkspace.overrides['@icebreakers/monorepo'].slice(5)
+  const engineMetadata = JSON.parse(run('tar', ['-xOf', engineArchive, 'package/package.json'], root))
   const source = path.join(root, 'preset')
   const packs = path.join(root, 'preset-packs')
   mkdirSync(source)
@@ -53,7 +61,7 @@ try {
   }
   const preset = {
     schemaVersion: 1,
-    requires: { repoctl: '>=5 <6' },
+    requires: { repoctl: engineMetadata.version },
     config: { commands: { ai: { baseDir: 'organization', force: true }, clean: { includePrivate: false } } },
     templates: { 'org-sdk': { source: 'templates/sdk', target: 'packages/sdk', label: 'Organization SDK', category: 'library' } },
     capabilities: [{ id: 'playwright', reason: 'Browser coverage' }, { id: 'storybook', reason: 'Component documentation' }],
@@ -73,12 +81,7 @@ try {
   const [{ port }] = await once(server, 'message')
   const registryUrl = `http://127.0.0.1:${port}/`
   const cacheDir = path.join(root, 'template-cache')
-  const workspaces = []
-  for (const name of ['first', 'second']) {
-    const parent = path.join(root, name)
-    mkdirSync(parent)
-    const workspace = createWorkspace(parent, [])
-    workspaces.push(workspace)
+  for (const { name, workspace } of workspaces) {
     assert.equal(json(path.join(workspace, 'package.json')).scripts['test:packaged-presets'], undefined)
     assert.ok(!readFileSync(path.join(workspace, '.github/workflows/ci.yml'), 'utf8').includes('test:packaged-presets'))
     const packageFile = path.join(workspace, 'package.json')
@@ -124,8 +127,8 @@ try {
     assert.equal(JSON.parse(invoke(['presets', 'apply', 'preset-plan.json', '--json'])).status, 'unchanged')
     assert.ok(!existsSync(marker))
   }
-  const first = workspaces[0]
-  const second = workspaces[1]
+  const first = workspaces[0].workspace
+  const second = workspaces[1].workspace
   const firstCli = path.join(first, 'node_modules/repoctl/bin/repoctl.js')
   const fetched = JSON.parse(run(process.execPath, [firstCli, 'templates', 'fetch', 'org-sdk', '--json'], first))
   assert.equal(fetched.resolved.version, '1.2.3')
