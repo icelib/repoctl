@@ -37,17 +37,17 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
-    "@tanstack/vue-query": "^5.104.1",
-    "@tanstack/vue-query-devtools": "^6.3.1",
-    "@tanstack/vue-table": "^9.2.8",
-    "@tanstack/vue-virtual": "^3.13.40",
+    "@tanstack/vue-query": "^5.104.2",
+    "@tanstack/vue-query-devtools": "^6.3.2",
+    "@tanstack/vue-table": "^9.3.1",
+    "@tanstack/vue-virtual": "^3.13.43",
     "@trpc/client": "^11.19.0",
     "clsx": "^2.1.1",
     "pinia": "^4.0.3",
     "tailwind-merge": "^3.7.0",
     "tailwind-variants": "^3.3.1",
     "vue": "^3.5.43",
-    "vue-i18n": "^11.4.13",
+    "vue-i18n": "^11.4.14",
     "vue-router": "^5.4.0"
   },
   "devDependencies": {
@@ -56,7 +56,7 @@
     "@hono/trpc-server": "^0.4.2",
     "@tailwindcss/vite": "^4.3.3",
     "@trpc/server": "^11.19.0",
-    "@vitejs/plugin-vue": "^6.0.9",
+    "@vitejs/plugin-vue": "^6.0.10",
     "@vitejs/plugin-vue-jsx": "^5.1.6",
     "@vue/tsconfig": "^0.9.1",
     "consola": "^3.4.2",
@@ -66,8 +66,8 @@
     "vite": "^8.3.4",
     "vite-plugin-vue-devtools": "^8.2.1",
     "vite-tsconfig-paths": "^6.1.1",
-    "vue-tsc": "3.3.12",
+    "vue-tsc": "3.3.13",
     "wrangler": "^4.135.0",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   }
 }
