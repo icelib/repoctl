@@ -19,6 +19,7 @@ export function checkConsumerWorkflows(workspace) {
     }
   }
   assert.equal(existsSync(path.join(github, 'workflows/pr-ci.yml')), false)
+  assert.equal(existsSync(path.join(github, 'workflows/pr-ci-manual.yml')), false)
   assert.equal(existsSync(path.join(github, 'workflows/devcontainer.yml')), false)
   assert.equal(existsSync(path.join(github, 'pr-ci')), false)
   const releaseContent = readFileSync(path.join(github, 'workflows/release.yml'), 'utf8')

@@ -2,9 +2,11 @@ import { execFileSync } from 'node:child_process'
 import fs from 'node:fs/promises'
 import process from 'node:process'
 import { createGitHubClient } from '../auto-changeset/github.mjs'
+import { prepareManualValidation, reportManualValidation } from './manual.mjs'
 import { prepareValidation } from './prepare.mjs'
 import { requestReleaseValidation } from './release.mjs'
 import { reportValidation } from './status.mjs'
+import { releaseLabels } from './target.mjs'
 
 async function main() {
   const number = Number(process.env.PR_NUMBER)
@@ -29,10 +31,26 @@ async function main() {
       await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, `Release PR #${requested}: PR checks requested; waiting for pr-ci approval.\n`)
     }
   }
-  else if (process.argv[2] === 'prepare') {
+  else if (process.argv[2] === 'prepare' || process.argv[2] === 'prepare-manual') {
     const event = JSON.parse(await fs.readFile(process.env.GITHUB_EVENT_PATH, 'utf8'))
-    const expectedHeadSha = event.pull_request?.head.sha
-    const outputs = await prepareValidation(client, { number, expectedHeadSha, targetUrl })
+    const manual = process.argv[2] === 'prepare-manual'
+    if (manual ? process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch' : process.env.GITHUB_EVENT_NAME !== 'pull_request') {
+      throw new Error('PR preparation must match its native or manual event.')
+    }
+    const prepare = manual ? prepareManualValidation : prepareValidation
+    const outputs = await prepare(client, {
+      number,
+      targetUrl,
+      ...(!manual && {
+        expectedHeadSha: event.pull_request.head.sha,
+        expectedBaseSha: event.pull_request.base.sha,
+        expectedBaseRef: event.pull_request.base.ref,
+        expectedHeadRef: event.pull_request.head.ref,
+        expectedHeadRepository: event.pull_request.head.repo.full_name,
+        expectedReleaseLabels: releaseLabels(event.pull_request),
+        expectedMergeSha: process.env.GITHUB_SHA,
+      }),
+    })
     const lines = Object.entries(outputs).map(([key, value]) => {
       if (/[\r\n]/.test(String(value))) {
         throw new Error(`Invalid multiline workflow output: ${key}`)
@@ -42,12 +60,16 @@ async function main() {
     await fs.appendFile(process.env.GITHUB_OUTPUT, lines.join(''))
     await fs.appendFile(process.env.GITHUB_STEP_SUMMARY, `Approved PR #${number}\n\nHead: ${outputs.head_sha}\n\nBase: ${outputs.base_ref} (${outputs.base_sha})\n\nTest merge: ${outputs.merge_sha}\n`)
   }
-  else if (process.argv[2] === 'report') {
-    const result = await reportValidation(client, {
+  else if (process.argv[2] === 'report' || process.argv[2] === 'report-manual') {
+    const report = process.argv[2] === 'report-manual' ? reportManualValidation : reportValidation
+    const result = await report(client, {
       number,
       headSha: process.env.HEAD_SHA,
       baseSha: process.env.BASE_SHA,
       baseRef: process.env.BASE_REF,
+      headRef: process.env.HEAD_REF,
+      headRepository: process.env.HEAD_REPOSITORY,
+      releaseLabels: JSON.parse(process.env.RELEASE_LABELS),
       runCi: process.env.RUN_CI === 'true',
       runDevcontainer: process.env.RUN_DEVCONTAINER === 'true',
       results: {
@@ -63,7 +85,7 @@ async function main() {
     }
   }
   else {
-    throw new Error('Use prepare, report or release.')
+    throw new Error('Use prepare, report, prepare-manual, report-manual or release.')
   }
 }
 

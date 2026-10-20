@@ -4,7 +4,7 @@ import { sanitizePublishedCiWorkflowContent } from '../workflows'
 import { sanitizePublishedReleaseWorkflowContent } from './release'
 
 const consumerWorkflowNames = ['ci.yml', 'release-intent-auto.yml', 'release-intent-check.yml']
-const sourceOnlyGithubPaths = ['pr-ci', 'workflows/pr-ci.yml', 'workflows/devcontainer.yml']
+const sourceOnlyGithubPaths = ['pr-ci', 'workflows/pr-ci.yml', 'workflows/pr-ci-manual.yml', 'workflows/devcontainer.yml']
 
 function isPublishedSourcePath(sourceRoot: string, source: string) {
   const relative = path.relative(sourceRoot, source).split(path.sep).join('/')

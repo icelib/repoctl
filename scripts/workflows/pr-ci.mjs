@@ -1,124 +1,48 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
-import { assertPinnedActions, getSteps, githubExpression, readWorkflow } from './shared.mjs'
-
-function needs(job) {
-  return Array.isArray(job.needs) ? job.needs : job.needs ? [job.needs] : []
-}
-
-function dependsOnApproval(jobs, name, visited = new Set()) {
-  if (name === 'approve') {
-    return true
-  }
-  assert.ok(jobs[name], `Unknown dependency: ${name}`)
-  assert.ok(!visited.has(name), 'PR workflow dependencies must not contain cycles')
-  return needs(jobs[name]).some((dependency) => {
-    return dependsOnApproval(jobs, dependency, new Set([...visited, name]))
-  })
-}
+import { checkApproval, checkOrchestration, checkValidators } from './pr-ci/jobs.mjs'
+import { githubExpression, readWorkflow } from './shared.mjs'
 
 function checkPullRequestEntrypoints(rootDir) {
   const directory = path.join(rootDir, '.github', 'workflows')
   for (const filename of fs.readdirSync(directory).filter(name => /\.ya?ml$/u.test(name))) {
     const { workflow } = readWorkflow(rootDir, filename)
-    assert.equal(workflow.on?.pull_request, undefined, `${filename} must not bypass PR approval`)
     if (filename !== 'pr-ci.yml') {
+      assert.equal(workflow.on?.pull_request, undefined, `${filename} must not bypass PR approval`)
       assert.equal(workflow.on?.pull_request_target, undefined, `${filename} must not bypass PR approval`)
     }
   }
 }
 
+function checkConcurrency(workflow, manual) {
+  assert.deepEqual(workflow.permissions, { contents: 'read' })
+  assert.equal(workflow.concurrency?.['cancel-in-progress'], true)
+  assert.equal(workflow.concurrency?.queue, undefined, 'Selected PRs retain the complete parallel matrix')
+  const group = workflow.concurrency?.group
+  assert.ok(group?.includes('format(\'pr-ci-{0}\''), 'Native and manual runs must share the same per-PR cancellation group')
+  assert.ok(group.includes(manual ? 'inputs.pr_number' : 'pull_request.number'))
+  assert.ok(group.includes('pr-ci-ignored-'), 'Ignored events must not cancel approved checks')
+}
+
 export function checkPrCiWorkflow(rootDir) {
   checkPullRequestEntrypoints(rootDir)
   const { workflow } = readWorkflow(rootDir, 'pr-ci.yml')
-  assert.equal(workflow['run-name'], `PR checks for #${githubExpression('github.event.pull_request.number || inputs.pr_number')}`, 'Run names must retain the PR number after YAML parsing')
-  assert.deepEqual(workflow.on?.pull_request_target?.types, [
-    'opened',
-    'synchronize',
-    'reopened',
-    'ready_for_review',
-    'labeled',
-    'unlabeled',
-    'closed',
-    'converted_to_draft',
-  ])
-  assert.deepEqual(Object.keys(workflow.on ?? {}), ['pull_request_target', 'workflow_dispatch'])
-  assert.equal(workflow.on?.workflow_dispatch?.inputs?.pr_number?.required, true)
-  assert.deepEqual(workflow.permissions, { contents: 'read' })
-  assert.equal(workflow.concurrency?.['cancel-in-progress'], true)
-  assert.ok(workflow.concurrency?.group?.includes('pull_request.number'), 'Concurrency must isolate each PR')
-  assert.ok(workflow.concurrency?.group?.includes('inputs.pr_number'), 'Manual dispatches must share the PR cancellation group')
-  assert.equal(workflow.concurrency?.queue, undefined, 'PRs may validate in parallel')
+  assert.equal(workflow['run-name'], `PR checks for #${githubExpression('github.event.pull_request.number')}`)
+  assert.deepEqual(Object.keys(workflow.on ?? {}), ['pull_request', 'pull_request_target'])
+  assert.deepEqual(workflow.on.pull_request.types, ['opened', 'synchronize', 'reopened', 'ready_for_review', 'labeled', 'unlabeled'])
+  assert.deepEqual(workflow.on.pull_request_target.types, ['closed', 'converted_to_draft'])
+  checkConcurrency(workflow, false)
+  checkApproval(workflow, false)
+  checkOrchestration(workflow, false)
+  checkValidators(workflow, false)
 
-  const jobs = workflow.jobs
-  assert.ok(jobs.approve, 'A PR run must begin with one approval job')
-  const environment = jobs.approve.environment
-  assert.equal(typeof environment === 'string' ? environment : environment?.name, 'pr-ci')
-  assert.deepEqual(needs(jobs.approve), [])
-  assert.ok(jobs.approve.if?.includes('github.event.pull_request.state == \'open\''), 'Closed PRs must only cancel the previous run')
-  assert.ok(jobs.approve.if?.includes('!github.event.pull_request.draft'), 'Draft PRs must not request approval')
-  assert.ok(workflow.concurrency.group.includes('pr-ci-ignored-'), 'Ignored events must not cancel approved checks')
-  for (const [name, job] of Object.entries(jobs)) {
-    assert.ok(!job.if?.includes('always()'), 'Cancelled PR runs must not start more jobs')
-    if (name !== 'approve') {
-      assert.ok(dependsOnApproval(jobs, name), `${name} must depend on the approval gate`)
-      assert.equal(job.environment, undefined, 'One approval must release the complete PR validation')
-    }
-    if (job.steps) {
-      assertPinnedActions(job.steps, name)
-    }
-  }
-
-  assert.deepEqual(needs(jobs.prepare), ['approve'])
-  assert.deepEqual(jobs.prepare.permissions, { 'contents': 'write', 'pull-requests': 'write', 'statuses': 'write' })
-  assert.deepEqual(jobs.report.permissions, { 'contents': 'read', 'pull-requests': 'read', 'statuses': 'write' })
-  for (const output of ['head_sha', 'base_sha', 'base_ref', 'merge_sha', 'head_ref', 'run_ci', 'run_devcontainer', 'pr_number']) {
-    assert.equal(jobs.prepare.outputs?.[output], githubExpression(`steps.prepare.outputs.${output}`))
-  }
-
-  for (const name of ['prepare', 'report']) {
-    const steps = getSteps(workflow, name)
-    const checkout = steps.find(step => step.uses?.startsWith('actions/checkout@'))
-    assert.equal(checkout?.with?.ref, githubExpression('github.event_name == \'workflow_dispatch\' && github.event.repository.default_branch || github.sha'), 'Write-capable jobs must check out trusted base workflow code')
-    assert.equal(checkout?.with?.['persist-credentials'], false)
-    assert.ok(!steps.some(step => step.uses?.startsWith('actions/create-github-app-token@')), 'Automatic changesets must not trigger another PR run through App credentials')
-    const command = steps.find(step => step.run === `node .github/pr-ci/index.mjs ${name}`)
-    assert.ok(command, `${name} must delegate to the trusted PR orchestrator`)
-    assert.equal(command.env?.GITHUB_TOKEN, githubExpression('github.token'))
-  }
-
-  for (const [name, filename] of [
-    ['build', 'ci.yml'],
-    ['devcontainer', 'devcontainer.yml'],
-    ['release-intent', 'release-intent-check.yml'],
-  ]) {
-    const job = jobs[name]
-    assert.ok(job, `${name} validation must be included`)
-    assert.ok(needs(job).includes('prepare'))
-    assert.equal(job.uses, `./.github/workflows/${filename}`)
-    assert.equal(job.with?.ref, githubExpression('needs.prepare.outputs.merge_sha'))
-    assert.deepEqual(job.permissions, { contents: 'read' })
-    if (name === 'build') {
-      assert.deepEqual(job.secrets, {
-        TURBO_TOKEN: githubExpression('github.event.pull_request.head.repo.full_name == github.repository && secrets.TURBO_TOKEN || \'\''),
-        CODECOV_TOKEN: githubExpression('github.event.pull_request.head.repo.full_name == github.repository && secrets.CODECOV_TOKEN || \'\''),
-      }, 'Only explicit cache and coverage secrets may reach approved same-repository CI')
-    }
-    else {
-      assert.equal(job.secrets, undefined, 'PR validation must not inherit repository secrets')
-    }
-  }
-  assert.equal(jobs.build.if, githubExpression('needs.prepare.outputs.run_ci == \'true\''))
-  assert.equal(jobs.devcontainer.if, githubExpression('needs.prepare.outputs.run_devcontainer == \'true\''))
-  for (const input of ['base_sha', 'head_sha', 'head_ref']) {
-    assert.equal(jobs['release-intent'].with?.[input], githubExpression(`needs.prepare.outputs.${input}`))
-  }
-  assert.equal(jobs.report.if, githubExpression('!cancelled() && needs.prepare.result == \'success\''), 'Ordinary failures must report without starting work after cancellation')
-  assert.equal(jobs.report['timeout-minutes'], 5)
-  const report = getSteps(workflow, 'report').find(step => step.run === 'node .github/pr-ci/index.mjs report')
-  assert.equal(report.env?.BASE_REF, githubExpression('needs.prepare.outputs.base_ref'))
-  assert.ok(needs(jobs.report).includes('build'))
-  assert.ok(needs(jobs.report).includes('devcontainer'))
-  assert.ok(needs(jobs.report).includes('release-intent'))
+  const { workflow: manual } = readWorkflow(rootDir, 'pr-ci-manual.yml')
+  assert.deepEqual(Object.keys(manual.on ?? {}), ['workflow_dispatch'])
+  assert.equal(manual.on.workflow_dispatch.inputs?.pr_number?.required, true)
+  assert.equal(manual.on.workflow_dispatch.inputs?.pr_number?.type, 'string')
+  checkConcurrency(manual, true)
+  checkApproval(manual, true)
+  checkOrchestration(manual, true)
+  checkValidators(manual, true)
 }

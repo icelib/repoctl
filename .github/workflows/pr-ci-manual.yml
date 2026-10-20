@@ -1,0 +1,159 @@
+name: Manual PR Checks
+run-name: 'Manual PR checks for #${{ inputs.pr_number }}'
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Open PR to approve and diagnose
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Share cancellation with native PR checks only for a default-branch dispatch.
+concurrency:
+  group: >-
+    ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      && format('pr-ci-{0}', inputs.pr_number)
+      || format('pr-ci-ignored-{0}', github.run_id) }}
+  cancel-in-progress: true
+
+jobs:
+  approve:
+    name: Approve manual PR checks
+    if: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+    environment: pr-ci
+    runs-on: ubuntu-latest
+    outputs:
+      approval_attempt: ${{ steps.approval.outputs.attempt }}
+    steps:
+      - name: Approval received
+        id: approval
+        env:
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          echo "attempt=$RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+          echo "PR checks approved. Freezing the validation commits."
+
+  prepare:
+    name: Prepare approved PR
+    needs: approve
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    outputs:
+      head_sha: ${{ steps.prepare.outputs.head_sha }}
+      base_sha: ${{ steps.prepare.outputs.base_sha }}
+      base_ref: ${{ steps.prepare.outputs.base_ref }}
+      merge_sha: ${{ steps.prepare.outputs.merge_sha }}
+      head_ref: ${{ steps.prepare.outputs.head_ref }}
+      head_repository: ${{ steps.prepare.outputs.head_repository }}
+      release_labels: ${{ steps.prepare.outputs.release_labels }}
+      run_ci: ${{ steps.prepare.outputs.run_ci }}
+      run_devcontainer: ${{ steps.prepare.outputs.run_devcontainer }}
+      pr_number: ${{ steps.prepare.outputs.pr_number }}
+    steps:
+      - name: Require approval for this preparation attempt
+        env:
+          APPROVAL_ATTEMPT: ${{ needs.approve.outputs.approval_attempt }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          if [ "$APPROVAL_ATTEMPT" != "$RUN_ATTEMPT" ]; then
+            echo "::error::Preparation must have a fresh approval. Re-run all jobs or dispatch a new manual run."
+            exit 1
+          fi
+      - name: Check out approved event revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Freeze validation commits
+        id: prepare
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: node .github/pr-ci/index.mjs prepare-manual
+
+  release-intent:
+    name: Release Intent
+    needs: prepare
+    permissions:
+      contents: read
+    uses: ./.github/workflows/release-intent-check.yml
+    with:
+      ref: ${{ needs.prepare.outputs.merge_sha }}
+      base_sha: ${{ needs.prepare.outputs.base_sha }}
+      head_sha: ${{ needs.prepare.outputs.head_sha }}
+      head_ref: ${{ needs.prepare.outputs.head_ref }}
+
+  build:
+    name: CI
+    needs: [prepare, release-intent]
+    if: ${{ needs.prepare.outputs.run_ci == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.prepare.outputs.merge_sha }}
+    secrets:
+      TURBO_TOKEN: ${{ needs.prepare.outputs.head_repository == github.repository && secrets.TURBO_TOKEN || '' }}
+      CODECOV_TOKEN: ${{ needs.prepare.outputs.head_repository == github.repository && secrets.CODECOV_TOKEN || '' }}
+
+  devcontainer:
+    name: Dev Container
+    needs: [prepare, release-intent]
+    if: ${{ needs.prepare.outputs.run_devcontainer == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/devcontainer.yml
+    with:
+      ref: ${{ needs.prepare.outputs.merge_sha }}
+
+  report:
+    name: Report manual PR validation
+    needs: [approve, prepare, release-intent, build, devcontainer]
+    if: ${{ !cancelled() && needs.approve.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Reject incomplete preparation
+        if: ${{ needs.prepare.result != 'success' }}
+        run: |
+          echo "::error::PR preparation did not succeed. Approve and validate the current PR snapshot."
+          exit 1
+      - name: Check out approved event revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - name: Summarize frozen PR validation
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
+          HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
+          BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
+          BASE_REF: ${{ needs.prepare.outputs.base_ref }}
+          HEAD_REF: ${{ needs.prepare.outputs.head_ref }}
+          HEAD_REPOSITORY: ${{ needs.prepare.outputs.head_repository }}
+          RELEASE_LABELS: ${{ needs.prepare.outputs.release_labels }}
+          RUN_CI: ${{ needs.prepare.outputs.run_ci }}
+          RUN_DEVCONTAINER: ${{ needs.prepare.outputs.run_devcontainer }}
+          CI_RESULT: ${{ needs.build.result }}
+          DEVCONTAINER_RESULT: ${{ needs.devcontainer.result }}
+          RELEASE_INTENT_RESULT: ${{ needs.release-intent.result }}
+        run: node .github/pr-ci/index.mjs report-manual
