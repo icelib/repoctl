@@ -66,6 +66,27 @@ describe('Release PR approval request', () => {
     expect(url.searchParams.get('head')).toBe('acme:release/pnpm-version-support%2F2.x')
   })
 
+  it('dispatches built-in-token Release diagnostics to the isolated manual workflow', async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response(null, { status: 204 }))
+    const client = createGitHubClient({ token: 'test-token', repository: 'acme/repo', fetchImpl })
+    await client.dispatchPrValidation(42, 'main')
+    const [url, request] = fetchImpl.mock.calls[0]!
+    expect(new URL(url as string).pathname).toBe('/repos/acme/repo/actions/workflows/pr-ci-manual.yml/dispatches')
+    expect(request?.method).toBe('POST')
+    expect(JSON.parse(request?.body as string)).toEqual({ ref: 'main', inputs: { pr_number: '42' } })
+  })
+
+  it('reads a fork head ref from its own repository without changing the base repository', async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ object: { sha: headSha } }), { status: 200 }))
+    const client = createGitHubClient({ token: 'test-token', repository: 'acme/repo', fetchImpl })
+    await client.getRef('heads/feature/fix', 'contributor/fork')
+    await client.getRef('heads/main')
+    expect(fetchImpl.mock.calls.map(([url]) => new URL(url as string).pathname)).toEqual([
+      '/repos/contributor/fork/git/ref/heads/feature/fix',
+      '/repos/acme/repo/git/ref/heads/main',
+    ])
+  })
+
   it.each(['app token', 'publish', 'incomplete preparation', 'no releases'])('does not dispatch for %s', async (kind) => {
     const h = fixture()
     if (kind === 'app token') {

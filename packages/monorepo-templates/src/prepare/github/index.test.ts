@@ -18,6 +18,7 @@ async function createFixture() {
   await Promise.all([
     outputFile(path.join(root, '.github/workflows/ci.yml'), 'on: [workflow_call]\njobs: {}\n'),
     outputFile(path.join(root, '.github/workflows/pr-ci.yml'), 'on: [pull_request_target]\njobs: {}\n'),
+    outputFile(path.join(root, '.github/workflows/pr-ci-manual.yml'), 'on: [workflow_dispatch]\njobs: {}\n'),
     outputFile(path.join(root, '.github/workflows/devcontainer.yml'), 'on: [workflow_call]\njobs: {}\n'),
     outputFile(path.join(root, '.github/workflows/release.yml'), 'on: [push]\njobs: {}\n'),
     outputFile(path.join(root, '.github/pr-ci/index.mjs'), 'throw new Error("Source-only approval tooling")\n'),
@@ -28,6 +29,7 @@ async function createFixture() {
     outputFile(path.join(consumerRoot, 'release-intent-check.yml'), 'on: [pull_request]\njobs: {}\n'),
     outputFile(path.join(assets, '.github/workflows/ci.yml'), 'on: [workflow_call]\njobs: {}\n'),
     outputFile(path.join(assets, '.github/workflows/pr-ci.yml'), 'stale source approval workflow\n'),
+    outputFile(path.join(assets, '.github/workflows/pr-ci-manual.yml'), 'stale source manual approval workflow\n'),
     outputFile(path.join(assets, '.github/workflows/devcontainer.yml'), 'stale source devcontainer workflow\n'),
     outputFile(path.join(assets, '.github/pr-ci/index.mjs'), 'stale source-only tooling\n'),
   ])
@@ -73,6 +75,10 @@ it.each([true, false])('publishes automatic consumer workflows and removes sourc
     await outputFile(path.join(github, 'pr-ci/index.mjs'), 'stale approval tooling\n')
     expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(false)
     await preparePublishedGithubAssets(fixture.root, fixture.assets, false)
+    await outputFile(path.join(github, 'workflows/pr-ci-manual.yml'), 'stale manual approval workflow\n')
+    expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(false)
+    await preparePublishedGithubAssets(fixture.root, fixture.assets, false)
+    await expect(access(path.join(github, 'workflows/pr-ci-manual.yml'))).rejects.toMatchObject({ code: 'ENOENT' })
     await writeFile(path.join(github, 'workflows/release-intent-check.yml'), 'on: [workflow_call]\njobs: {}\n')
     expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(false)
   }

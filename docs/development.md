@@ -2,7 +2,9 @@
 
 使用 Node.js 22.13+ 和根 `package.json` 指定的 pnpm 版本。先执行 `pnpm install`；安装后的 `postinstall` 会构建工作区。
 
-PR 验证的网页和 AI 审批操作见 [PR 检查审批](./pr-ci-approval.md)；Release 与手动 changeset backfill 的认证配置见 [自动提交认证](./github-app-automation.md)。
+提交可发布包的改动前执行 `pnpm change`，将 changeset 一并提交；变更 `release:major` / `release:minor` 标签时也要同步发布意图。源码 PR CI 只读，审批后先检查 Release Intent，通过后才启动完整的适用 CI 和 Dev Container 矩阵，所有任务通过 GitHub 原生 checks 展示。
+
+PR 验证的网页和 AI 审批操作见 [PR 检查审批](./pr-ci-approval.md)。手动诊断使用默认分支上的 `pr-ci-manual.yml`，其 `Manual PR Validation` 状态与原生 `PR Validation` job 分开。Release 与手动 changeset backfill 的认证配置见 [自动提交认证](./github-app-automation.md)。
 
 ## 选择开发入口
 

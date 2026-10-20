@@ -118,38 +118,61 @@ describe('source PR approval authentication', () => {
     expect(consumer.jobs.generate.environment).toBeUndefined()
   })
 
-  it('uses built-in credentials and trusted default-branch code only after approval', async () => {
+  it('uses read-only credentials and immutable event code only after native approval', async () => {
     const workflow = await readWorkflow(rootDir, 'pr-ci')
     expect(workflow.jobs.approve.environment).toBe('pr-ci')
     expect(workflow.jobs.approve.if).toContain('github.event.pull_request.state == \'open\'')
     expect(workflow.jobs.approve.if).toContain('!github.event.pull_request.draft')
     expect(workflow.jobs.prepare.needs).toBe('approve')
-    expect(workflow.jobs.prepare.permissions).toEqual({ 'contents': 'write', 'pull-requests': 'write', 'statuses': 'write' })
+    expect(workflow.jobs.prepare.permissions).toEqual({ 'contents': 'read', 'pull-requests': 'read' })
     const steps = await readSteps(rootDir, 'pr-ci', 'prepare')
     const checkout = steps.find(step => step.uses?.startsWith('actions/checkout@'))!
     const runner = steps.find(step => step.run === 'node .github/pr-ci/index.mjs prepare')!
-    expect(checkout.with?.['ref']).toBe(expression('github.event_name == \'workflow_dispatch\' && github.event.repository.default_branch || github.sha'))
+    expect(checkout.with?.['ref']).toBe(expression('github.sha'))
     expect(checkout.with?.['persist-credentials']).toBe(false)
     expect(steps.some(step => step.uses?.startsWith('actions/create-github-app-token@'))).toBe(false)
     expect(runner.env?.['GITHUB_TOKEN']).toBe(expression('github.token'))
     expect(JSON.stringify(steps)).not.toContain('REPOCTL_APP_PRIVATE_KEY')
   })
 
-  it('gives validators read-only permissions and writes final status with trusted reporting code', async () => {
+  it('gives validators read-only permissions and exposes the final native check through trusted reporting code', async () => {
     const workflow = await readWorkflow(rootDir, 'pr-ci')
     for (const job of ['build', 'devcontainer', 'release-intent']) {
       expect(workflow.jobs[job].permissions).toEqual({ contents: 'read' })
-      expect(workflow.jobs[job].needs).toBe('prepare')
+      expect(workflow.jobs[job].needs).toEqual(job === 'release-intent' ? 'prepare' : ['prepare', 'release-intent'])
       expect(workflow.jobs[job].secrets).not.toBe('inherit')
     }
-    expect(workflow.jobs.report.permissions).toEqual({ 'contents': 'read', 'pull-requests': 'read', 'statuses': 'write' })
+    expect(workflow.jobs.report.name).toContain('PR Validation')
+    expect(workflow.jobs.report.name).toContain('Ignored PR event')
+    expect(workflow.jobs.report.permissions).toEqual({ 'contents': 'read', 'pull-requests': 'read' })
     const steps = await readSteps(rootDir, 'pr-ci', 'report')
     const checkout = steps.find(step => step.uses?.startsWith('actions/checkout@'))!
     const runner = steps.find(step => step.run === 'node .github/pr-ci/index.mjs report')!
-    expect(checkout.with?.['ref']).toBe(expression('github.event_name == \'workflow_dispatch\' && github.event.repository.default_branch || github.sha'))
+    expect(checkout.with?.['ref']).toBe(expression('github.sha'))
     expect(checkout.with?.['persist-credentials']).toBe(false)
     expect(runner.env?.['GITHUB_TOKEN']).toBe(expression('github.token'))
     expect(runner.env?.['HEAD_SHA']).toBe(expression('needs.prepare.outputs.head_sha'))
     expect(runner.env?.['BASE_REF']).toBe(expression('needs.prepare.outputs.base_ref'))
+    expect(runner.env?.['HEAD_REF']).toBe(expression('needs.prepare.outputs.head_ref'))
+    expect(runner.env?.['HEAD_REPOSITORY']).toBe(expression('needs.prepare.outputs.head_repository'))
+    expect(runner.env?.['RELEASE_LABELS']).toBe(expression('needs.prepare.outputs.release_labels'))
+  })
+
+  it('isolates manual status writes to trusted immutable default-branch code after approval', async () => {
+    const workflow = await readWorkflow(rootDir, 'pr-ci-manual')
+    expect(Object.keys(workflow.on)).toEqual(['workflow_dispatch'])
+    expect(workflow.jobs.approve.environment).toBe('pr-ci')
+    expect(workflow.jobs.approve.if).toContain('github.event.repository.default_branch')
+    for (const job of ['prepare', 'report']) {
+      expect(workflow.jobs[job].permissions).toEqual({ 'contents': 'read', 'pull-requests': 'read', 'statuses': 'write' })
+      const steps = await readSteps(rootDir, 'pr-ci-manual', job)
+      const checkout = steps.find(step => step.uses?.startsWith('actions/checkout@'))!
+      const runner = steps.find(step => step.run === `node .github/pr-ci/index.mjs ${job}-manual`)!
+      expect(checkout.with?.['ref']).toBe(expression('github.sha'))
+      expect(checkout.with?.['persist-credentials']).toBe(false)
+      expect(runner.env?.['GITHUB_TOKEN']).toBe(expression('github.token'))
+      expect(steps.some(step => step.uses?.startsWith('actions/create-github-app-token@'))).toBe(false)
+      expect(JSON.stringify(steps)).not.toContain('REPOCTL_APP_PRIVATE_KEY')
+    }
   })
 })

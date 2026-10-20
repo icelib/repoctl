@@ -141,7 +141,7 @@ jobs:
           REPO_RELEASE_RECOVERY_SOURCE_SHA: ${{ inputs.source-sha }}
         run: pnpm exec repo release ci --stage prepare
 
-      # Source repository only: GITHUB_TOKEN PR events do not trigger pull_request_target.
+      # Source repository only: GITHUB_TOKEN PR events do not trigger native PR checks.
       - name: Request Release PR approval
         id: pr-ci-approval
         if: ${{ steps.release-prepare.outcome == 'success' }}
