@@ -2,7 +2,7 @@ import { expect, it } from 'vitest'
 import { prepareValidation } from '../../../../.github/pr-ci/prepare.mjs'
 import { baseSha, fixture, headSha, preparedSha } from './fixture'
 
-it.each(['head', 'branch head', 'base', 'base ref', 'head ref', 'fork', 'closed', 'draft', 'conflict'])('refuses a changed %s while selecting checks', async (kind) => {
+it.each(['head', 'branch head', 'base', 'base ref', 'head ref', 'fork', 'release label', 'closed', 'draft', 'conflict'])('refuses a changed %s while selecting checks', async (kind) => {
   const h = fixture()
   let branchSha = headSha
   let currentBaseSha = baseSha
@@ -26,6 +26,9 @@ it.each(['head', 'branch head', 'base', 'base ref', 'head ref', 'fork', 'closed'
     if (kind === 'fork') {
       h.pr.head.repo.full_name = 'other/repo'
     }
+    if (kind === 'release label') {
+      h.pr.labels = [{ name: 'release:major' }]
+    }
     if (kind === 'closed') {
       h.pr.state = 'closed'
     }
@@ -40,5 +43,5 @@ it.each(['head', 'branch head', 'base', 'base ref', 'head ref', 'fork', 'closed'
 
   await expect(prepareValidation(h.client, h.options)).rejects.toThrow()
   expect(h.options.wait).not.toHaveBeenCalled()
-  expect(h.client.createStatus).toHaveBeenCalledExactlyOnceWith(headSha, expect.objectContaining({ state: 'failure' }))
+  expect(h.client.createStatus).not.toHaveBeenCalled()
 })

@@ -1,5 +1,5 @@
 export async function requestReleaseValidation(client, { receipt, usesEventToken, baseBranch, defaultBranch, headSha, headRef }) {
-  // App/PAT events already trigger pull_request_target. Only the suppressed token needs dispatch.
+  // App/PAT events trigger native PR checks. Only the suppressed token needs manual dispatch.
   if (!usesEventToken || receipt.action !== 'prepare' || !receipt.done.includes('prepare') || headRef === baseBranch) {
     return false
   }

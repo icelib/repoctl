@@ -21,6 +21,7 @@ describe('built workspace package manager API', () => {
       expect(ci.on.pull_request).toBeDefined()
       expect(ci.on.workflow_call).toBeUndefined()
       await expect(access(path.join(fixture.assetsDir, '.github/workflows/pr-ci.yml'))).rejects.toMatchObject({ code: 'ENOENT' })
+      await expect(access(path.join(fixture.assetsDir, '.github/workflows/pr-ci-manual.yml'))).rejects.toMatchObject({ code: 'ENOENT' })
       await expect(access(path.join(fixture.assetsDir, '.github/pr-ci'))).rejects.toMatchObject({ code: 'ENOENT' })
       const releaseContent = await readFile(path.join(fixture.assetsDir, '.github/workflows/release.yml'), 'utf8')
       expect(releaseContent).not.toContain('pr-ci')

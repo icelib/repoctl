@@ -1,29 +1,24 @@
 name: PR Checks
-run-name: 'PR checks for #${{ github.event.pull_request.number || inputs.pr_number }}'
+run-name: 'PR checks for #${{ github.event.pull_request.number }}'
 
 on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
   pull_request_target:
-    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled, closed, converted_to_draft]
-  workflow_dispatch:
-    inputs:
-      pr_number:
-        description: Open PR to approve and validate
-        required: true
-        type: string
+    types: [closed, converted_to_draft]
 
 permissions:
   contents: read
 
-# Closing/drafting a PR only cancels its previous run. Ignored events must not
-# enter that group: even a run with every job skipped would cancel approved CI.
+# Closing/drafting a PR only cancels its previous run. Ordinary labels use an
+# isolated group so an ignored event cannot cancel approved validation.
 concurrency:
   group: >-
-    ${{ ((github.event_name == 'pull_request_target'
-      && (!contains(fromJSON('["labeled", "unlabeled"]'), github.event.action)
-        || contains(fromJSON('["release:major", "release:minor"]'), github.event.label.name)))
-      || (github.event_name == 'workflow_dispatch'
-        && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)))
-      && format('pr-ci-{0}', github.event.pull_request.number || inputs.pr_number)
+    ${{ (github.event_name == 'pull_request_target'
+      || (github.event_name == 'pull_request'
+        && (!contains(fromJSON('["labeled", "unlabeled"]'), github.event.action)
+          || contains(fromJSON('["release:major", "release:minor"]'), github.event.label.name))))
+      && format('pr-ci-{0}', github.event.pull_request.number)
       || format('pr-ci-ignored-{0}', github.run_id) }}
   cancel-in-progress: true
 
@@ -31,17 +26,15 @@ jobs:
   approve:
     name: Approve PR checks
     if: >-
-      ${{ (github.event_name == 'workflow_dispatch'
-        && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
-        || (github.event_name == 'pull_request_target'
-          && github.event.pull_request.state == 'open' && !github.event.pull_request.draft
-          && (!contains(fromJSON('["labeled", "unlabeled"]'), github.event.action)
-            || contains(fromJSON('["release:major", "release:minor"]'), github.event.label.name))) }}
+      ${{ github.event_name == 'pull_request'
+        && github.event.pull_request.state == 'open' && !github.event.pull_request.draft
+        && (!contains(fromJSON('["labeled", "unlabeled"]'), github.event.action)
+          || contains(fromJSON('["release:major", "release:minor"]'), github.event.label.name)) }}
     environment: pr-ci
     runs-on: ubuntu-latest
     steps:
       - name: Approval received
-        run: echo "PR checks approved. Preparing the final commit for validation."
+        run: echo "PR checks approved. Freezing the validation commits."
 
   prepare:
     name: Prepare approved PR
@@ -49,56 +42,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
-      contents: write
-      pull-requests: write
-      statuses: write
+      contents: read
+      pull-requests: read
     outputs:
       head_sha: ${{ steps.prepare.outputs.head_sha }}
       base_sha: ${{ steps.prepare.outputs.base_sha }}
       base_ref: ${{ steps.prepare.outputs.base_ref }}
       merge_sha: ${{ steps.prepare.outputs.merge_sha }}
       head_ref: ${{ steps.prepare.outputs.head_ref }}
+      head_repository: ${{ steps.prepare.outputs.head_repository }}
+      release_labels: ${{ steps.prepare.outputs.release_labels }}
       run_ci: ${{ steps.prepare.outputs.run_ci }}
       run_devcontainer: ${{ steps.prepare.outputs.run_devcontainer }}
       pr_number: ${{ steps.prepare.outputs.pr_number }}
     steps:
-      - name: Check out trusted workflow source
+      - name: Check out approved event revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || github.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-      - name: Prepare changeset and freeze validation commits
+      - name: Freeze validation commits
         id: prepare
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: node .github/pr-ci/index.mjs prepare
-
-  build:
-    name: CI
-    needs: prepare
-    if: ${{ needs.prepare.outputs.run_ci == 'true' }}
-    permissions:
-      contents: read
-    uses: ./.github/workflows/ci.yml
-    with:
-      ref: ${{ needs.prepare.outputs.merge_sha }}
-    secrets:
-      TURBO_TOKEN: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.TURBO_TOKEN || '' }}
-      CODECOV_TOKEN: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.CODECOV_TOKEN || '' }}
-
-  devcontainer:
-    name: Dev Container
-    needs: prepare
-    if: ${{ needs.prepare.outputs.run_devcontainer == 'true' }}
-    permissions:
-      contents: read
-    uses: ./.github/workflows/devcontainer.yml
-    with:
-      ref: ${{ needs.prepare.outputs.merge_sha }}
 
   release-intent:
     name: Release Intent
@@ -112,32 +83,67 @@ jobs:
       head_sha: ${{ needs.prepare.outputs.head_sha }}
       head_ref: ${{ needs.prepare.outputs.head_ref }}
 
+  build:
+    name: CI
+    needs: [prepare, release-intent]
+    if: ${{ needs.prepare.outputs.run_ci == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ needs.prepare.outputs.merge_sha }}
+    secrets:
+      TURBO_TOKEN: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.TURBO_TOKEN || '' }}
+      CODECOV_TOKEN: ${{ github.event.pull_request.head.repo.full_name == github.repository && secrets.CODECOV_TOKEN || '' }}
+
+  devcontainer:
+    name: Dev Container
+    needs: [prepare, release-intent]
+    if: ${{ needs.prepare.outputs.run_devcontainer == 'true' }}
+    permissions:
+      contents: read
+    uses: ./.github/workflows/devcontainer.yml
+    with:
+      ref: ${{ needs.prepare.outputs.merge_sha }}
+
   report:
-    name: Report PR validation
-    needs: [approve, prepare, build, devcontainer, release-intent]
-    if: ${{ !cancelled() && needs.prepare.result == 'success' }}
+    name: >-
+      ${{ github.event_name == 'pull_request'
+        && github.event.pull_request.state == 'open' && !github.event.pull_request.draft
+        && (!contains(fromJSON('["labeled", "unlabeled"]'), github.event.action)
+          || contains(fromJSON('["release:major", "release:minor"]'), github.event.label.name))
+        && 'PR Validation' || 'Ignored PR event' }}
+    needs: [approve, prepare, release-intent, build, devcontainer]
+    if: ${{ !cancelled() && needs.approve.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
       pull-requests: read
-      statuses: write
     steps:
-      - name: Check out trusted workflow source
+      - name: Reject incomplete preparation
+        if: ${{ needs.prepare.result != 'success' }}
+        run: |
+          echo "::error::PR preparation did not succeed. Approve and validate the current PR snapshot."
+          exit 1
+      - name: Check out approved event revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.repository.default_branch || github.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-      - name: Report results on the final PR commit
+      - name: Summarize frozen PR validation
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ needs.prepare.outputs.pr_number }}
           HEAD_SHA: ${{ needs.prepare.outputs.head_sha }}
           BASE_SHA: ${{ needs.prepare.outputs.base_sha }}
           BASE_REF: ${{ needs.prepare.outputs.base_ref }}
+          HEAD_REF: ${{ needs.prepare.outputs.head_ref }}
+          HEAD_REPOSITORY: ${{ needs.prepare.outputs.head_repository }}
+          RELEASE_LABELS: ${{ needs.prepare.outputs.release_labels }}
           RUN_CI: ${{ needs.prepare.outputs.run_ci }}
           RUN_DEVCONTAINER: ${{ needs.prepare.outputs.run_devcontainer }}
           CI_RESULT: ${{ needs.build.result }}
