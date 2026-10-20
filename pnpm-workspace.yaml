@@ -10,10 +10,10 @@ catalog:
   commander: ^15.0.0
   comment-json: ^5.0.0
   esbuild: ^0.28.2
-  postcss: ^8.5.29
+  postcss: ^8.5.30
   semver: ^7.8.5
   stylelint: ^17.16.0
-  vitest: ^5.0.3
+  vitest: ^5.0.4
   yaml: ^2.9.1
 
 minimumReleaseAge: 0
@@ -37,12 +37,12 @@ allowBuilds:
   vue-demi: true
   workerd: true
 overrides:
-  prettier: 3.9.9
+  prettier: 3.9.10
   typescript: 6.0.3
   # ATTW relies on the compiler internals of its pinned TypeScript version.
   '@arethetypeswrong/core>typescript': 5.9.3
   vite: 8.3.4
-  postcss: 8.5.29
+  postcss: 8.5.30
   postcss-selector-parser: 7.1.6
   js-yaml: 5.4.3
   nanoid: 6.0.2
@@ -52,5 +52,5 @@ overrides:
   minimatch@>=4 <10>brace-expansion: 2.1.7
   cross-spawn: 7.0.6
   adm-zip: 0.6.1
-  uuid: 14.0.2
+  uuid: 14.0.3
   esbuild: 0.28.2

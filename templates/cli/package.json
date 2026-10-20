@@ -39,7 +39,7 @@
     "consola": "^3.4.2"
   },
   "devDependencies": {
-    "tsdown": "0.23.0"
+    "tsdown": "0.23.1"
   },
   "publishConfig": {
     "bin": {
