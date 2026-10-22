@@ -1,6 +1,6 @@
-import type { CleanCommandConfig } from '..'
+import type { CleanCommandConfig } from '@icebreakers/monorepo'
+import { cleanProjects } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
-import { cleanProjects } from '..'
 
 expectAssignable<CleanCommandConfig>({ dryRun: true, autoConfirm: true, pinnedVersion: 'next', includePrivate: false, ignorePackages: ['keep'] })
 expectType<Promise<void>>(cleanProjects('.', { dryRun: true }))

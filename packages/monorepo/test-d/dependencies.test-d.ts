@@ -1,6 +1,6 @@
-import type { DependenciesCommandConfig, DependencyApplyResult, DependencyFixOptions, DependencyFixPlan, DependencyReport, MonorepoConfig } from '..'
+import type { DependenciesCommandConfig, DependencyApplyResult, DependencyFixOptions, DependencyFixPlan, DependencyReport, MonorepoConfig } from '@icebreakers/monorepo'
+import { applyDependencyFixPlan, checkDependencies, planDependencyFix } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
-import { applyDependencyFixPlan, checkDependencies, planDependencyFix } from '..'
 
 const options: DependencyFixOptions = { dependency: 'typescript', section: 'devDependencies', to: '^5.0.0' }
 expectType<Promise<DependencyReport>>(checkDependencies('.'))

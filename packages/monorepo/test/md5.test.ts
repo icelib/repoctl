@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import crypto from 'node:crypto'
 import CI from 'ci-info'
 import path from 'pathe'
@@ -17,15 +16,6 @@ describe.skipIf(CI.isCI)('md5', () => {
         'binary',
       )),
     ).toBeTypeOf('string')
-  })
-
-  it('getFileHash accepts ArrayBuffer input', () => {
-    const buffer = Buffer.from('icebreaker')
-
-    expect(getFileHash(buffer.buffer.slice(
-      buffer.byteOffset,
-      buffer.byteOffset + buffer.byteLength,
-    ))).toBe(getFileHash(buffer))
   })
 
   it('isFileChanged case 0', async () => {

@@ -3,7 +3,14 @@ import type { MonorepoConfig } from 'repoctl'
 export default {
   commands: {
     release: {
+      // repoctl-source-only:start
+      nightly: { provider: 'npm', schedule: '17 19 * * *' },
+      qualityScripts: ['build', 'lint', 'typecheck', 'tsd', 'test'],
+      // repoctl-source-only:end
       hooks: {
+        // repoctl-source-only:start
+        verify: ['check:workflows'],
+        // repoctl-source-only:end
         afterPublish: [{ script: 'release:sync-npmmirror', continueOnError: true, idempotent: true }],
       },
     },

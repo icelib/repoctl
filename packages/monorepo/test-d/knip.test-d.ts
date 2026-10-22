@@ -1,6 +1,6 @@
-import type { KnipCheckPlan, KnipCheckReport, KnipConfigurationSuggestions } from '..'
+import type { KnipCheckPlan, KnipCheckReport, KnipConfigurationSuggestions } from '@icebreakers/monorepo'
+import { getKnipConfigurationSuggestions, planKnipCheck, runKnipCheck, saveKnipBaseline } from '@icebreakers/monorepo'
 import { expectError, expectType } from 'tsd'
-import { getKnipConfigurationSuggestions, planKnipCheck, runKnipCheck, saveKnipBaseline } from '..'
 
 expectType<Promise<KnipCheckPlan>>(planKnipCheck('.', { config: 'knip.ts' }))
 expectType<Promise<KnipCheckReport>>(runKnipCheck('.', { baseline: 'knip-baseline.json', newOnly: true }))

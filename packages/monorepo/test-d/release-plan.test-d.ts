@@ -1,6 +1,6 @@
-import type { ReleasePlan, ReleasePlanOptions } from '..'
+import type { ReleasePlan, ReleasePlanOptions } from '@icebreakers/monorepo'
+import { createReleasePlan } from '@icebreakers/monorepo'
 import { expectAssignable, expectType } from 'tsd'
-import { createReleasePlan } from '..'
 
 expectAssignable<ReleasePlanOptions>({ cwd: '.' })
 expectType<Promise<ReleasePlan>>(createReleasePlan({ cwd: '.' }))

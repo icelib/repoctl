@@ -1,42 +1,34 @@
+import type { ExpectedWorkspaceLocators } from './consumer/dependencies'
 import type { ConsumerEntry, PackageCheckResult, PackedPackage } from './types'
-import { mkdir, realpath, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
-import { satisfies, validRange } from 'semver'
 import { stringify } from 'yaml'
+import { checkDependencyRanges, consumerDependency } from './consumer/dependencies'
 import { dependencyReferences } from './dependencies'
 import { execute, failureMessage } from './process'
 
-function checkDependencyRanges(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[]) {
-  for (const { name, alias, range, field, protocol } of dependencyReferences(pkg.manifest, pkg.result.directory)) {
-    const file = `package.json:${field}.${alias}`
-    const local = packages.find(candidate => candidate.manifest.name === name)
-    if (protocol !== 'registry') {
-      pkg.result.diagnostics.push({ source: 'repoctl', code: 'UNCONVERTED_LOCAL_DEPENDENCY', severity: 'error', file, message: `Packed dependency ${alias} still uses ${protocol}: instead of a publishable registry version.` })
-    }
-    if (!local && results.some(candidate => candidate.name === name)) {
-      pkg.result.diagnostics.push({ source: 'repoctl', code: 'WORKSPACE_DEPENDENCY_UNAVAILABLE', severity: 'error', file, message: `Workspace dependency ${name} has no checked tarball (private, skipped, or failed packing).` })
-    }
-    if (local && (!validRange(range) || !satisfies(String(local.manifest.version), range))) {
-      pkg.result.diagnostics.push({ source: 'repoctl', code: 'WORKSPACE_DEPENDENCY_RANGE', severity: 'error', file, message: `Packed dependency ${name}@${range} does not accept workspace tarball version ${local.manifest.version}.` })
-    }
-  }
-}
-
-export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[], entries: ConsumerEntry[], directory: string, timeout: number, options: { env?: NodeJS.ProcessEnv, signal?: AbortSignal | undefined, packageManager?: string } = {}) {
+export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[], entries: ConsumerEntry[], directory: string, timeout: number, options: { env?: NodeJS.ProcessEnv, signal?: AbortSignal | undefined, packageManager?: string, expectedWorkspaceLocators?: ExpectedWorkspaceLocators } = {}) {
   const { result } = pkg
   const { packageManager } = options
-  checkDependencyRanges(pkg, packages, results)
+  checkDependencyRanges(pkg, packages, results, options.expectedWorkspaceLocators)
   if (result.diagnostics.some(item => item.severity === 'error')) {
     return
   }
+  const checkTypes = entries.length > 0 && result.files.some(file => /\.d\.[cm]?ts$/u.test(file))
+  // The consumer exercises Node entrypoints. Install its ambient types as test
+  // tooling, using the engine's exact dependency version rather than source types.
+  const nodeTypes = checkTypes
+    ? JSON.parse(await readFile(createRequire(import.meta.url).resolve('@types/node/package.json'), 'utf8')) as { version: string }
+    : undefined
   await mkdir(directory, { recursive: true })
   await writeFile(path.join(directory, 'package.json'), JSON.stringify({
     name: 'repoctl-package-consumer',
     private: true,
     ...(packageManager ? { packageManager } : {}),
     dependencies: { [String(pkg.manifest.name)]: `file:${result.tarball}` },
+    ...(nodeTypes ? { devDependencies: { '@types/node': nodeTypes.version } } : {}),
   }, null, 2))
   // Overrides use packed files, never workspace source directories. Keep this consumer
   // outside the source workspace so pnpm cannot discover its packages or configuration.
@@ -45,7 +37,8 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
     overrides: Object.fromEntries([
       ...packages.map(item => [String(item.manifest.name), `file:${item.result.tarball}`]),
       ...packages.flatMap(item => dependencyReferences(item.manifest, item.result.directory).flatMap((reference) => {
-        const local = packages.find(candidate => candidate.manifest.name === reference.name)
+        const target = consumerDependency(item, reference, options.expectedWorkspaceLocators)?.name ?? reference.name
+        const local = packages.find(candidate => candidate.manifest.name === target)
         return local ? [[`${item.manifest.name}>${reference.alias}`, `file:${local.result.tarball}`]] : []
       })),
     ]),
@@ -73,11 +66,11 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
         result.diagnostics.push({ source: 'node', code: 'RUNTIME_IMPORT', severity: 'error', entry: entry.subpath, file: entry.target, message: failureMessage(command) })
       }
     }
-    if (result.files.some(file => /\.d\.[cm]?ts$/u.test(file))) {
+    if (checkTypes) {
       const file = `consume-${index}.${entry.format === 'esm' ? 'mts' : 'cts'}`
       const importText = !entry.runtime ? `import type * as subject from ${JSON.stringify(specifier)}` : entry.format === 'esm' ? `import * as subject from ${JSON.stringify(specifier)}` : `import subject = require(${JSON.stringify(specifier)})`
       await writeFile(path.join(directory, file), `${importText};\ntype Consumer = typeof subject;\n`)
-      const types = await execute(process.execPath, [tsc, '--noEmit', '--strict', '--module', 'nodenext', '--target', 'es2022', file], directory, timeout, options)
+      const types = await execute(process.execPath, [tsc, '--noEmit', '--strict', '--skipLibCheck', 'false', '--module', 'nodenext', '--target', 'es2022', '--types', 'node', file], directory, timeout, options)
       result.commands.push(types)
       if (types.exitCode !== 0) {
         result.diagnostics.push({ source: 'repoctl', code: 'TYPESCRIPT_CONSUMER', severity: 'error', entry: entry.subpath, file: entry.target, message: failureMessage(types) })

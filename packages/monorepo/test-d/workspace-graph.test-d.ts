@@ -1,6 +1,6 @@
-import type { WorkspaceDependencyType, WorkspaceGraph, WorkspaceGraphNode, WorkspaceGraphOptions, WorkspaceImpactResult, WorkspaceWhyResult } from '..'
+import type { WorkspaceDependencyType, WorkspaceGraph, WorkspaceGraphNode, WorkspaceGraphOptions, WorkspaceImpactResult, WorkspaceWhyResult } from '@icebreakers/monorepo'
+import { filterWorkspaceGraph, getWorkspaceGraph, getWorkspaceImpact, resolveWorkspaceGraphNode, whyWorkspaceDependency } from '@icebreakers/monorepo'
 import { expectAssignable, expectError, expectType } from 'tsd'
-import { filterWorkspaceGraph, getWorkspaceGraph, getWorkspaceImpact, resolveWorkspaceGraphNode, whyWorkspaceDependency } from '..'
 
 expectType<Promise<WorkspaceGraph>>(getWorkspaceGraph('.'))
 expectAssignable<WorkspaceGraphOptions>({ ignorePrivatePackage: false, packages: ['example'], dependencyTypes: ['peerDependencies'] })

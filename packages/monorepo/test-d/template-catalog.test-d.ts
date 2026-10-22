@@ -1,6 +1,6 @@
-import type { CreateTemplateDefinition, TemplateCatalog, TemplateCatalogEntry, TemplateHealthReport } from '..'
+import type { CreateTemplateDefinition, TemplateCatalog, TemplateCatalogEntry, TemplateHealthReport } from '@icebreakers/monorepo'
+import { checkTemplates, defineMonorepoConfig, resolveTemplateCatalog } from '@icebreakers/monorepo'
 import { expectAssignable, expectType } from 'tsd'
-import { checkTemplates, defineMonorepoConfig, resolveTemplateCatalog } from '..'
 
 expectType<Promise<TemplateCatalog>>(resolveTemplateCatalog({ cwd: '.', templatesDir: './templates' }))
 expectType<Promise<TemplateHealthReport>>(checkTemplates({ cwd: '.' }))

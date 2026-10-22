@@ -1,6 +1,6 @@
-import type { GitHubOperations, ReleaseAfterPublishHookConfig, releaseCi, ReleaseLifecycleState, ReleaseStateSnapshot } from '..'
+import type { GitHubOperations, ReleaseAfterPublishHookConfig, releaseCi, ReleaseLifecycleState, ReleaseStateSnapshot } from '@icebreakers/monorepo'
+import { parsePublishSummary, prepareStable, publishStable } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
-import { parsePublishSummary, prepareStable, publishStable } from '..'
 
 type ReleaseOptions = Parameters<typeof publishStable>[0]
 const options: ReleaseOptions = { cwd: '.', sleep: async (_milliseconds: number) => {} }

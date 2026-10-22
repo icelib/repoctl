@@ -1,6 +1,6 @@
-import type { UpgradeApplyResult, UpgradeBaselineChange, UpgradeMergeDetails, UpgradeMigrationsPlan, UpgradeMigrationStep, UpgradeOptions, UpgradePlan } from '..'
+import type { UpgradeApplyResult, UpgradeBaselineChange, UpgradeMergeDetails, UpgradeMigrationsPlan, UpgradeMigrationStep, UpgradeOptions, UpgradePlan } from '@icebreakers/monorepo'
+import { applyUpgradePlan, formatUpgradePlan, planUpgrade, upgradeMonorepo } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
-import { applyUpgradePlan, formatUpgradePlan, planUpgrade, upgradeMonorepo } from '..'
 
 expectType<Promise<UpgradePlan>>(planUpgrade({ cwd: '/workspace', targets: ['package.json'] }))
 expectType<Promise<UpgradePlan>>(upgradeMonorepo({ cwd: '/workspace', dryRun: true }))

@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsdown'
+import { antfuDeclarationHooks } from './declarations/antfu.ts'
 
 export default defineConfig({
   checks: {
@@ -14,7 +15,12 @@ export default defineConfig({
   },
   clean: true,
   fixedExtension: false,
+  hooks: antfuDeclarationHooks(),
   deps: {
+    dts: {
+      neverBundle: true,
+      alwaysBundle: ['@antfu/eslint-config'],
+    },
     neverBundle: ['eslint-plugin-mdx'],
     onlyBundle: false,
   },

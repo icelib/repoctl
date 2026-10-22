@@ -6,7 +6,7 @@ import path from 'pathe'
 import YAML from 'yaml'
 import { GitClient } from '../../../core/git'
 import { toWorkspaceAssetPath, updateIssueTemplateConfig } from '../../../utils'
-import { renderReleaseBranchesWorkflow } from '../../release/lines/workflow'
+import { renderReleaseWorkflow } from '../../release/lines/workflow'
 import { migrateLegacyToolingReferences } from '../../tooling-migration'
 import { isAgentsMarkdownEquivalent, mergeAgentsMarkdown } from '../agents'
 import { createBaselinePlanner } from '../baseline/plan'
@@ -61,9 +61,9 @@ export async function planAssets(context: UpgradeContext) {
           skip = true
         }
         else if (filename === '.github/workflows/release.yml') {
-          after = Buffer.from(renderReleaseBranchesWorkflow(source.toString(), context.releaseConfig?.branches))
+          after = Buffer.from(renderReleaseWorkflow(source.toString(), context.releaseConfig))
           upstream = after
-          reason = context.releaseConfig?.branches ? 'release-branch-mapping' : 'managed-asset'
+          reason = context.releaseConfig?.nightly ? 'release-nightly-configuration' : context.releaseConfig?.branches ? 'release-branch-mapping' : 'managed-asset'
         }
         else if (filename === 'package.json') {
           if (before === null) {

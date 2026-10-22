@@ -6,6 +6,7 @@ import { templateChoices } from '../../template-data.mjs'
 import { assetsDir, packageDir, templatesDir } from '../paths'
 import { toPublishGitignorePath } from '../utils/gitignore'
 import { shouldSkipTemplatePath } from '../utils/template-filter'
+import { sanitizePublishedConfigContent } from './config'
 import { preparePublishedGithubAssets } from './github'
 import { publishedToolingConfigs, removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedManifestContent, sanitizePublishedWorkspaceContent } from './published'
 
@@ -122,8 +123,11 @@ async function copyAssets(repoRoot: string, overwriteExisting: boolean) {
     }
     const to = path.join(assetsDir, toPublishedAssetPath(target))
     const stats = await fs.stat(from)
-    const refreshManagedMetadata = ['package.json', '.npmrc', 'pnpm-workspace.yaml', 'AGENTS.md', 'CLAUDE.md'].includes(target)
+    const refreshManagedMetadata = ['package.json', '.npmrc', 'pnpm-workspace.yaml', 'repoctl.config.ts', 'AGENTS.md', 'CLAUDE.md'].includes(target)
     await copyEntry(from, to, overwriteExisting || refreshManagedMetadata)
+    if (target === 'repoctl.config.ts') {
+      await fs.writeFile(to, sanitizePublishedConfigContent(await fs.readFile(from, 'utf8')))
+    }
     if (target === 'lefthook.yml') {
       await fs.copyFile(path.join(monorepoAssetRoot, target), to)
     }
