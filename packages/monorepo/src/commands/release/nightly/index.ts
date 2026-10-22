@@ -87,9 +87,7 @@ async function nightly(options: NightlyOptions, execute: boolean): Promise<Night
         }
       }
     }
-    const qualityEnv = { ...env }
-    delete qualityEnv['REPOCTL_SNAPSHOT_PUBLISH']
-    await runUncachedQualityScripts({ ...options, cwd: report.source, env: qualityEnv }, (command, args, settings) => {
+    await runUncachedQualityScripts({ ...options, cwd: report.source, env }, (command, args, settings) => {
       nightlyCommand(report, settings, command, args)
     })
     assertSnapshotSource(snapshotOptions)
