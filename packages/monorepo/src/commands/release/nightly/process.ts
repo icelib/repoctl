@@ -5,7 +5,7 @@ import crossSpawn from 'cross-spawn'
 export function nightlyCommand(report: NightlyReport, options: NightlyOptions, executable: string, args: string[]) {
   const result = (options.spawn ?? crossSpawn.sync)(executable, args, {
     cwd: options.cwd,
-    env: { ...(options.env ?? process.env), COREPACK_ENABLE_AUTO_PIN: '0', COREPACK_ENABLE_NETWORK: '0', NO_COLOR: '1', FORCE_COLOR: '0' },
+    env: { ...(options.env ?? process.env), COREPACK_ENABLE_AUTO_PIN: '0', NO_COLOR: '1', FORCE_COLOR: '0' },
     encoding: 'utf8',
     shell: false,
     stdio: ['ignore', 'pipe', 'pipe'],
