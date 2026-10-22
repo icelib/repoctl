@@ -5,6 +5,7 @@ import { collectBoundaryChecks } from './boundaries'
 import { collectHooksCheck } from './hooks'
 import { collectInstallationChecks } from './installation'
 import { collectManifestChecks } from './manifest'
+import { collectNightlyChecks, nightlyDoctorIds } from './nightly'
 import { collectReleaseChecks } from './release'
 import { checkNodeVersion, checkNodeVersionFiles } from './runtime/node'
 import { collectPnpmChecks } from './runtime/pnpm'
@@ -50,6 +51,7 @@ const manifestIds = [
 
 const collectors: DoctorCollector[] = [
   { ids: templateDriftRuleIds, collect: collectTemplateDriftChecks },
+  { ids: nightlyDoctorIds, collect: collectNightlyChecks },
   { ids: ['package-json', 'workspace-manifest', 'config-file', 'workspace-patterns', 'workspace-package-coverage'], collect: collectWorkspaceChecks },
   { ids: ['commit-hooks'], collect: async context => [await collectHooksCheck(context)] },
   { ids: manifestIds, collect: collectManifestChecks },

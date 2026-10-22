@@ -1,6 +1,6 @@
-import type { WorkspaceArtifactPlan, WorkspaceArtifactResult } from '..'
+import type { WorkspaceArtifactPlan, WorkspaceArtifactResult } from '@icebreakers/monorepo'
+import { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from '@icebreakers/monorepo'
 import { expectType } from 'tsd'
-import { applyWorkspaceArtifactPlan, planWorkspaceArtifact } from '..'
 
 const plan = planWorkspaceArtifact('.', { target: 'service', mode: 'deploy', output: '../runtime', entry: 'dist/index.js', offline: true })
 expectType<Promise<WorkspaceArtifactPlan>>(plan)

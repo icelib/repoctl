@@ -147,6 +147,67 @@ Recovery preserves GitHub's workflow environment for trusted publishing and prov
 
 Validation scripts (`qualityScripts` and `hooks.verify`) do not inherit control inputs for the current release, such as its mode or recovery source. They retain ordinary CI and authentication environment variables. Other lifecycle hooks keep their release context.
 
+## Managed nightly publication
+
+The managed Release workflow includes a manual nightly entrypoint. Open **Actions → Release → Run workflow**, select the repository's default branch, and choose **nightly**. Leave the `source-sha`, `package` and `version` recovery inputs empty. The optional `dry-run` input inspects source and provider state without building or publishing. Nightly selects all public workspace packages from the snapshot plan and does not consume release intents or change stable versions, ledger, changelogs or Git tags.
+
+New projects include this manual workflow without an automatic schedule. To enable a daily check at 03:17 Asia/Shanghai (19:17 UTC), add:
+
+```ts
+export default {
+  commands: {
+    release: {
+      nightly: {
+        provider: 'npm',
+        schedule: '17 19 * * *',
+      },
+    },
+  },
+}
+```
+
+`provider` defaults to `npm`. Omit `schedule` to keep manual runs only; schedules use five-field UTC cron expressions and GitHub may delay them. After changing either setting, preview and apply the managed asset upgrade:
+
+```bash
+pnpm exec repo upgrade --json > ../repoctl-upgrade-plan.json
+# Review the saved plan before applying it.
+pnpm exec repo upgrade --apply ../repoctl-upgrade-plan.json
+```
+
+Commit the configuration, workflow and `.repoctl/baselines/root` records to the default branch. Existing projects first need a repoctl version that includes nightly and an updated lockfile. Fresh scaffolds record a Release workflow baseline; preserve it for future merges. Missing baselines and conflicting local edits require explicit resolution; `--yes` does not bypass them. Custom workflows stay protected, and preset-owned workflows are updated through `repo presets plan` / `repo presets apply`. `repo init --preset standard` does not install workflows; `--overwrite-release` is an explicit full replacement of a custom Release workflow. Remove `schedule` and synchronize again to disable automatic runs. `repo doctor` checks provider, schedule and workflow drift.
+
+### Choose a provider
+
+| Provider        | Installation                     | Same-commit manual run                                                            | Requirements                                                                                                                                |
+| --------------- | -------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm` (default) | `<package>@snapshot-nightly`     | New build identity and snapshot versions                                          | npm Trusted Publisher for every public package, matching the repository, `release.yml` and environment; `contents: read`, `id-token: write` |
+| `pkg-pr-new`    | Full-commit URLs from the report | Verify existing bytes, reuse identical artifacts and upload only missing packages | Official pkg.pr.new GitHub App installed for the repository; `contents: read`; no npm token or npm Trusted Publisher                        |
+
+For npm, run the `oidc-audit` workflow mode before first use and check every package's npm settings. Nightly repeats the audit for its exact package plan before uploading, uses OIDC/provenance, confirms exact versions and `snapshot-nightly` tags, and verifies that `latest` did not change. Install one of your project's published packages with:
+
+```bash
+pnpm add -D <package>@snapshot-nightly
+```
+
+To use `pkg-pr-new`, install the [official GitHub App](https://github.com/apps/pkg-pr-new), grant it access to this repository, set `provider: 'pkg-pr-new'` and synchronize the workflow. This provider returns URLs shaped like `https://pkg.pr.new/<owner>/<repo>/<package>@<full-commit-sha>` and rewrites internal dependencies to the same batch. It does not publish npm dist-tags. Existing URL metadata or bytes that disagree with the prepared artifact fail the run rather than being overwritten.
+
+Scheduled npm checks skip only when every current public package is already available for the current commit and the same build identity. Missing or partially published packages require preparation; registry/query failures fail the run. A manual npm run always starts a new batch, even for the same commit. Both scheduled and manual pkg-pr-new runs rebuild and compare bytes, reusing only identical artifacts at that commit's URLs and uploading only missing packages.
+
+### Checks and diagnostics
+
+Nightly runs configured `qualityScripts` and `hooks.verify`, prepares real tarballs from committed source outside the checkout, and validates package exports, types and isolated installation. Versions include the base version, nightly marker, full commit SHA and build digest. After publication, a clean consumer installs the actual tags or URLs and checks identities, entrypoints and types. Formal versioning and post-publication hooks remain part of the normal release flow.
+
+The workflow uses Node 24, the workspace's pinned pnpm, checkout without persisted credentials and the existing publication concurrency group. Reports, tarballs and consumer diagnostics are retained for 14 days, including failed runs; the Actions summary contains the result and install commands.
+
+The workflow command is:
+
+```bash
+REPOCTL_SNAPSHOT_PUBLISH=1 pnpm exec repo release nightly \
+  --publish --output "$RUNNER_TEMP/repoctl-nightly" --json
+```
+
+`repo release nightly`, `createNightlyPlan(options)` and `releaseNightly(options)` require a complete GitHub Actions schedule or nightly dispatch context on the default branch, even for a dry run. Without `--publish`, execution prepares artifacts; `--dry-run` only inspects and emits an external report. Use the snapshot command below for local preparation.
+
 ## PR and nightly snapshots
 
 Use a snapshot for downstream validation before a stable release. Commit the source first and preview the complete set of public workspace packages:
@@ -162,7 +223,7 @@ Snapshot planning through the CLI and API does not load or execute `repoctl.conf
 
 Without `--publish`, the command prepares installable tarballs. It extracts committed HEAD outside the repository, installs the frozen lockfile, rewrites internal references to exact snapshot versions, runs the root `build` script, and checks the packed files with publint, Are the Types Wrong, and isolated consumers. Original manifests, intents, ledger, changelogs and Git refs stay unchanged on success, failure or interruption. Failed and completed runs retain `snapshot-report.json`, tarballs, and diagnostic consumers under the reported directory. A hard interruption can leave partial output; rerun the same identity to reconcile registry evidence. Source symlinks, Git submodules and `publishConfig.directory` are currently rejected; the root build script and frozen lockfile are required.
 
-Add `--publish` only in an explicitly authorized GitHub Actions job with `REPOCTL_SNAPSHOT_PUBLISH=1`. `GITHUB_SHA` must match the requested commit and the event repository must match `GITHUB_REPOSITORY`. PR publication requires a same-repository `pull_request` event; forks and `pull_request_target` cannot publish. Nightly publication accepts `schedule` or `workflow_dispatch`. Keep fork jobs on preparation only and scope credentials to the trusted publishing job. Existing stable and prerelease workflows are not changed.
+Add `--publish` only in an explicitly authorized GitHub Actions job with `REPOCTL_SNAPSHOT_PUBLISH=1`. `GITHUB_SHA` must match the requested commit and the event repository must match `GITHUB_REPOSITORY`. PR publication requires a same-repository `pull_request` event; forks and `pull_request_target` cannot publish. Nightly publication accepts `schedule` or `workflow_dispatch`. Keep fork jobs on preparation only and scope credentials to the trusted publishing job. The snapshot command does not edit workflow files.
 
 Publication defaults to the public npm registry; `--registry <https-url>` explicitly selects another registry (HTTP is supported only for a local test registry). Uploads reuse the bounded publication/recovery adapter and never create GitHub Releases or Git tags. Repeated identities compare exact package metadata and SHA-512 tarball integrity before skipping an upload. Unknown registry state or conflicting bytes stop publication. A changed or non-reproducible build needs a new `--build-id`.
 

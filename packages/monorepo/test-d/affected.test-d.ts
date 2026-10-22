@@ -1,6 +1,6 @@
-import type { AffectedCheckOptions, AffectedCheckPlan, CheckExecutionReport } from '..'
+import type { AffectedCheckOptions, AffectedCheckPlan, CheckExecutionReport } from '@icebreakers/monorepo'
+import { resolveAffectedCheckPlan, runCheckWithReport } from '@icebreakers/monorepo'
 import { expectAssignable, expectType } from 'tsd'
-import { resolveAffectedCheckPlan, runCheckWithReport } from '..'
 
 expectAssignable<AffectedCheckOptions>({ cwd: '.', base: 'origin/main', head: 'HEAD', filters: ['app'], globalInputs: ['shared/**'] })
 expectType<Promise<AffectedCheckPlan>>(resolveAffectedCheckPlan({ cwd: '.' }))

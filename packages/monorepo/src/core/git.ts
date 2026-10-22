@@ -1,4 +1,4 @@
-import type { ConfigValues, SimpleGit, SimpleGitOptions } from '@/types'
+import type { ConfigValues, GitUrlMetadata, SimpleGit, SimpleGitOptions } from '@/types'
 import gitUrlParse from 'git-url-parse'
 import { simpleGit } from 'simple-git'
 
@@ -41,9 +41,9 @@ export class GitClient {
   }
 
   /**
-   * 解析 remote.origin.url，返回 git-url-parse 的结构，便于获取仓库元信息。
+   * 解析 remote.origin.url，返回稳定的 Git 仓库元信息与 URL 格式化方法。
    */
-  async getGitUrl() {
+  async getGitUrl(): Promise<GitUrlMetadata | undefined> {
     const config = await this.getConfig()
     const x = config['remote.origin.url']
     if (typeof x === 'string') {

@@ -1,8 +1,9 @@
 import CI from 'ci-info'
 import gitUrlParse from 'git-url-parse'
 import { vi } from 'vitest'
-import { GitClient } from '@/core/git'
 import { logger } from '@/core/logger'
+// eslint-disable-next-line antfu/no-import-dist -- Exercise the shipped Git metadata API.
+import { GitClient } from '../dist/index.mjs'
 
 describe('git client', () => {
   const client = new GitClient({
@@ -36,6 +37,33 @@ describe('git client', () => {
     })
     expect(await client.getRepoName()).toBe('ice/awesome')
     spy.mockRestore()
+  })
+
+  it('preserves parsed URL fields and protocol formatting through the public entrypoint', async () => {
+    const spy = vi.spyOn(client, 'getConfig').mockResolvedValue({
+      'remote.origin.url': 'https://github.com/ice/awesome/blob/main/src/index.ts?plain=1#L5',
+    })
+    try {
+      const metadata = await client.getGitUrl()
+      expect(metadata).toMatchObject({
+        source: 'github.com',
+        resource: 'github.com',
+        owner: 'ice',
+        name: 'awesome',
+        full_name: 'ice/awesome',
+        ref: 'main',
+        filepath: 'src/index.ts',
+        filepathtype: 'blob',
+        protocol: 'https',
+        protocols: ['https'],
+        query: { plain: '1' },
+        hash: 'L5',
+      })
+      expect(metadata?.toString('ssh')).toBe('git@github.com:ice/awesome')
+    }
+    finally {
+      spy.mockRestore()
+    }
   })
 
   it.skipIf(CI.isCI)('getUser', async () => {

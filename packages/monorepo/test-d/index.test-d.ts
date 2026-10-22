@@ -1,7 +1,6 @@
-/* eslint-disable perfectionist/sort-imports */
-import type { CliOpts, CreateChoiceOption, CreateNewProjectPlan, DoctorReport, DoctorStatus, MonorepoCommitlintConfig, MonorepoConfig, MonorepoTsconfig, MonorepoVitestConfigResult, MonorepoVitestProjectConfigResult, PackageJson, WorkspacePackageSummaryData } from '..'
-import { clearWorkspaceCache, createMonorepoCommitlintConfig, createMonorepoEslintConfig, createMonorepoStylelintConfig, createMonorepoTsconfig, createMonorepoVitestConfig, defineCommitlintConfig, defineEslintConfig, defineVitestConfig, defineVitestProjectConfig, getCreateChoices, getFileHash, getTemplateMap, getWorkspacePackageSummaries, resolveCreateNewProjectPlan, runDoctor, templateMap } from '..'
-import * as tooling from '..'
+import type { CliOpts, CreateChoiceOption, CreateNewProjectPlan, DoctorReport, DoctorStatus, MonorepoCommitlintConfig, MonorepoConfig, MonorepoTsconfig, MonorepoVitestConfigResult, MonorepoVitestProjectConfigResult, PackageJson, WorkspacePackageSummaryData } from '@icebreakers/monorepo'
+import { clearWorkspaceCache, createMonorepoCommitlintConfig, createMonorepoEslintConfig, createMonorepoStylelintConfig, createMonorepoTsconfig, createMonorepoVitestConfig, defineCommitlintConfig, defineEslintConfig, defineVitestConfig, defineVitestProjectConfig, getCreateChoices, getFileHash, getTemplateMap, getWorkspacePackageSummaries, resolveCreateNewProjectPlan, runDoctor, templateMap } from '@icebreakers/monorepo'
+import * as tooling from '@icebreakers/monorepo'
 import { expectAssignable, expectError, expectType } from 'tsd'
 
 expectType<string>(getFileHash('demo'))

@@ -21,7 +21,17 @@ export interface ReleaseRegistryConfig {
   visibilityTimeoutMs?: number
 }
 
+export type NightlyProvider = 'npm' | 'pkg-pr-new'
+
+export interface ReleaseNightlyConfig {
+  /** Nightly publication backend. @default 'npm' */
+  provider?: NightlyProvider
+  /** Five-field UTC cron. Omit for manual nightly only; synchronize with repo upgrade. */
+  schedule?: string
+}
+
 export interface ReleaseCommandConfig {
+  nightly?: ReleaseNightlyConfig
   registry?: ReleaseRegistryConfig
   /** Stable, maintenance and prerelease branch mappings. */
   branches?: ReleaseBranchesConfig

@@ -1,4 +1,4 @@
-import type { ReleaseCiOptions, ReleaseCiStage, ReleaseCommandConfig, ReleaseRegistryConfig } from '..'
+import type { ReleaseCiOptions, ReleaseCiStage, ReleaseCommandConfig, ReleaseRegistryConfig } from '@icebreakers/monorepo'
 import { expectAssignable, expectError } from 'tsd'
 
 expectAssignable<ReleaseCiStage>('confirm')

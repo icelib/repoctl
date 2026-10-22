@@ -1,6 +1,6 @@
-import type { releaseCi, ReleaseOidcAuditOptions, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from '..'
+import type { releaseCi, ReleaseOidcAuditOptions, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from '@icebreakers/monorepo'
+import { auditReleaseOidc } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
-import { auditReleaseOidc } from '..'
 
 expectType<Promise<ReleaseOidcAuditReport>>(auditReleaseOidc({ cwd: '.', fetch: globalThis.fetch, env: {} }))
 expectAssignable<ReleaseOidcAuditOptions>({ cwd: '.' })

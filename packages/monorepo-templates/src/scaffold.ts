@@ -7,6 +7,7 @@ import { prepareTemplateInstanceSource } from './instances/source'
 import { recordWorkspaceTemplateInstances } from './instances/workspace'
 import { assetsDir as defaultAssetsDir, templatesDir as defaultTemplatesDir } from './paths'
 import { ensureTemplateAssetsPrepared } from './runtime-assets'
+import { registerScaffoldReleaseBaseline } from './scaffold/release-baseline'
 import { toWorkspaceAssetPath, toWorkspaceGitignorePath } from './utils/gitignore'
 import { shouldSkipTemplatePath } from './utils/template-filter'
 
@@ -185,6 +186,9 @@ export async function scaffoldWorkspace(options: ScaffoldWorkspaceOptions) {
 
   if (!templateKeys.length) {
     await options.afterScaffold?.()
+    if (includeAssets && targetMode === 'prepare' && path.resolve(assetsDir) === path.resolve(defaultAssetsDir)) {
+      await registerScaffoldReleaseBaseline(targetDir, assetsDir)
+    }
     return
   }
 
@@ -200,6 +204,9 @@ export async function scaffoldWorkspace(options: ScaffoldWorkspaceOptions) {
     await scaffoldTemplate({ sourceDir: from, targetDir: to })
   }
   await options.afterScaffold?.()
+  if (includeAssets && targetMode === 'prepare' && path.resolve(assetsDir) === path.resolve(defaultAssetsDir)) {
+    await registerScaffoldReleaseBaseline(targetDir, assetsDir)
+  }
   await recordWorkspaceTemplateInstances(targetDir, templateKeys, templatesDir, originals)
 }
 

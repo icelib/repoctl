@@ -1,15 +1,12 @@
 import type { SnapshotOptions, SnapshotReport } from './types'
-import { rename, writeFile } from 'node:fs/promises'
-import path from 'node:path'
-import { prepareSnapshotArtifacts } from './artifacts'
 import { assertSnapshotAuthorization } from './identity'
-import { isolateSnapshot } from './isolate'
-import { writeSnapshotManifests } from './manifests'
 import { createSnapshotPlan } from './plan'
+import { checkpointSnapshot, prepareNightlySnapshot } from './prepare'
 import { isolatedSnapshotEnvironment } from './process'
 import { publishSnapshotArtifacts } from './publish'
 
 export { createSnapshotPlan } from './plan'
+export { prepareNightlySnapshot } from './prepare'
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './types'
 
 /** Prepare immutable package artifacts in an archive of HEAD; original files and Git refs are never versioned. */
@@ -21,20 +18,10 @@ export async function releaseSnapshot(options: SnapshotOptions): Promise<Snapsho
   if (options.publish) {
     await assertSnapshotAuthorization(options)
   }
-  const checkpoint = async () => {
-    if (report.outputDirectory) {
-      const target = path.join(report.outputDirectory, 'snapshot-report.json')
-      await writeFile(`${target}.tmp`, `${JSON.stringify(report, null, 2)}\n`)
-      await rename(`${target}.tmp`, target)
-    }
-  }
+  const checkpoint = () => checkpointSnapshot(report)
   try {
-    const source = await isolateSnapshot(report, options)
+    await prepareNightlySnapshot(report, options, { provider: 'npm', repository: '' })
     const isolatedOptions = { ...options, env: isolatedSnapshotEnvironment(options, report.outputDirectory!) }
-    await checkpoint()
-    await writeSnapshotManifests(source, report)
-    await prepareSnapshotArtifacts(source, report, isolatedOptions)
-    await checkpoint()
     if (options.publish) {
       await publishSnapshotArtifacts(report, isolatedOptions, checkpoint)
     }

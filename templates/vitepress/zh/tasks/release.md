@@ -153,9 +153,66 @@ HTTP 404 或 `OIDC token exchange error - package not found` 本身无法区分�
 
 根据 [npm 首次发布验证策略](https://github.blog/changelog/2026-10-02-unvalidated-npm-trusted-publishing-configurations-now-expire/)，创建后 48 小时内没有首次成功发布的配置会过期。只有 npm 页面明确显示 `Expired` 时，才按过期处理：删除并重建该包的配置，在 48 小时内完成首次发布；单纯编辑不会重置它。“配置存在”“交换成功”“首次成功发布”是不同证据；核验不能重置或完成这个时限。首次成功发布后不再受初始 48 小时限制。实际发布继续使用 OIDC/provenance，不在发布 job 增加 npm token 兜底。
 
-## 下一步
+## 受管 nightly 发布
 
-阅读[发包与变更日志](/zh/learn/monorepo/publish)，再查看[报告与输出](/zh/tasks/reports)了解 CI 产物。
+受管 Release 工作流包含手动 nightly 入口。在 **Actions → Release → Run workflow** 中选择仓库默认分支，将 mode 设为 **nightly**，并留空 `source-sha`、`package`、`version` 恢复输入。可选的 `dry-run` 输入只检查源码与渠道状态，不构建或上传。nightly 从快照计划中选取全部公开工作区包，不消费发布意图，也不改写正式版本、ledger、changelog 或 Git tag。
+
+新项目默认提供手动入口，不自动定时发布。若要每天北京时间 03:17（UTC 19:17）检查一次，添加：
+
+```ts
+export default {
+  commands: {
+    release: {
+      nightly: {
+        provider: 'npm',
+        schedule: '17 19 * * *',
+      },
+    },
+  },
+}
+```
+
+`provider` 默认为 `npm`。省略 `schedule` 时仅支持手动运行；定时配置使用五字段 UTC cron，GitHub 可能延迟调度。修改任一设置后，都需要预览并应用受管资产升级：
+
+```bash
+pnpm exec repo upgrade --json > ../repoctl-upgrade-plan.json
+# 审查保存的计划后再应用。
+pnpm exec repo upgrade --apply ../repoctl-upgrade-plan.json
+```
+
+将配置、工作流和 `.repoctl/baselines/root` 基线记录一起提交到默认分支。已有项目需先升级到包含 nightly 能力的 repoctl 版本并更新锁文件。新项目会记录 Release 工作流基线，应保留它供后续升级合并使用。缺失基线或本地改动冲突需要显式处理，`--yes` 不会绕过。自定义工作流仍受保护，preset 管理的工作流通过 `repo presets plan` / `repo presets apply` 更新。`repo init --preset standard` 不安装工作流；`--overwrite-release` 表示主动完整替换自定义 Release 工作流。删除 `schedule` 并重新同步可关闭自动运行，保留手动入口。`repo doctor` 会检查渠道、定时配置和工作流是否一致。
+
+### 选择发布渠道
+
+| 渠道          | 安装方式                     | 同提交手动重跑                           | 前置条件                                                                                                           |
+| ------------- | ---------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `npm`（默认） | `<package>@snapshot-nightly` | 生成新的构建身份与快照版本               | 每个公开包配置匹配仓库、`release.yml` 与 environment 的 npm Trusted Publisher；`contents: read`、`id-token: write` |
+| `pkg-pr-new`  | 报告中的完整提交 URL         | 核验已有字节，复用相同产物，仅上传缺失包 | 为仓库安装官方 pkg.pr.new GitHub App；`contents: read`；无需 npm token 或 npm Trusted Publisher                    |
+
+npm 首次使用前，在工作流中运行 `oidc-audit` 并核对每个包的 npm 设置。nightly 上传前会针对实际包计划再次核验，通过 OIDC/provenance 发布，确认精确版本与 `snapshot-nightly` 标签，并检查 `latest` 未变化。安装项目发布的包：
+
+```bash
+pnpm add -D <package>@snapshot-nightly
+```
+
+使用 `pkg-pr-new` 时，先安装[官方 GitHub App](https://github.com/apps/pkg-pr-new) 并授权该仓库，再设置 `provider: 'pkg-pr-new'` 并同步工作流。报告返回 `https://pkg.pr.new/<owner>/<repo>/<package>@<完整提交-SHA>` 形式的 URL，内部依赖指向同批 URL。该渠道不发布 npm dist-tag；已有 URL 的元数据或字节与准备产物不一致时，任务失败，不覆盖已有内容。
+
+npm 定时任务只有在全部公开包都对应当前提交和同一构建身份时才跳过。缺失包或部分发布会重新准备；registry 查询失败会使任务失败。npm 手动运行始终准备新批次，同一提交也会生成新版本。pkg-pr-new 的定时与手动运行都会重新构建并比较字节，只复用该提交 URL 下完全一致的产物，仅上传缺失包。
+
+### 检查与诊断
+
+nightly 执行配置的 `qualityScripts` 和 `hooks.verify`，在检出目录以外从已提交源码构建真实 tarball，并验证包导出、类型和隔离安装。版本包含基础版本、nightly 标记、完整提交 SHA 和构建摘要。发布后，干净消费者通过实际标签或 URL 安装，再核验身份、运行入口和类型。正式版本准备与发布后 hooks 仍属于普通发布流程。
+
+工作流使用 Node 24、仓库锁定的 pnpm、不保留凭据的 checkout，并复用现有发布并发组。成功与失败均保留报告、tarball 和消费者诊断 14 天；Actions 摘要提供结果与安装命令。
+
+工作流执行：
+
+```bash
+REPOCTL_SNAPSHOT_PUBLISH=1 pnpm exec repo release nightly \
+  --publish --output "$RUNNER_TEMP/repoctl-nightly" --json
+```
+
+`repo release nightly`、`createNightlyPlan(options)` 和 `releaseNightly(options)` 要求完整的 GitHub Actions schedule 或 nightly 手动调度上下文，并位于默认分支；dry-run 也需要这些条件。不带 `--publish` 时准备产物，`--dry-run` 只检查并生成仓库外部报告。本地准备使用下面的 snapshot 命令。
 
 ## PR 与 nightly 临时包
 
@@ -172,8 +229,12 @@ CLI 和 API 的快照计划均不加载或执行 `repoctl.config.*`，仅根据�
 
 不带 `--publish` 时只准备可安装 tarball。流程在仓库以外提取已提交 HEAD，使用 frozen lockfile 安装依赖，改写内部引用为精确快照版本，执行根 `build`，再通过 publint、Are the Types Wrong 与隔离消费者验证真实产物。成功、失败或中断都不回写原仓库清单、intents、ledger、changelog 或 Git refs。成功与失败均保留报告目录下的 `snapshot-report.json`、tarball 和消费者诊断。强制中断可能留下未完成的临时目录；用相同身份重跑会核验 registry 证据。当前拒绝源码符号链接、Git submodule 和 `publishConfig.directory`；要求根 build 脚本与 frozen lockfile。
 
-仅在显式授权的 GitHub Actions job 中使用 `--publish` 并设置 `REPOCTL_SNAPSHOT_PUBLISH=1`。`GITHUB_SHA` 必须与请求提交一致，event 仓库必须匹配 `GITHUB_REPOSITORY`。PR 仅允许同仓库 `pull_request`，拒绝 fork 与 `pull_request_target`；nightly 仅允许 `schedule` 或 `workflow_dispatch`。fork job 只准备产物，凭据限定在可信发布 job。现有 stable 与 prerelease workflow 不会被修改。
+仅在显式授权的 GitHub Actions job 中使用 `--publish` 并设置 `REPOCTL_SNAPSHOT_PUBLISH=1`。`GITHUB_SHA` 必须与请求提交一致，event 仓库必须匹配 `GITHUB_REPOSITORY`。PR 仅允许同仓库 `pull_request`，拒绝 fork 与 `pull_request_target`；nightly 仅允许 `schedule` 或 `workflow_dispatch`。fork job 只准备产物，凭据限定在可信发布 job。snapshot 命令本身不修改工作流文件。
 
 默认发布到公共 npm；`--registry <https-url>` 可显式指定其他 registry（只有本地测试 registry 允许 HTTP）。上传复用现有有界重试与恢复适配，不创建 GitHub Release 或 Git tag。重复身份先比较精确版本元数据与 tarball 的 SHA-512 完整性再跳过上传；状态未知或内容冲突会停止。源码产物发生变化或构建无法复现时使用新的 `--build-id`。
 
 公开 API 为 `createSnapshotPlan(options)` 与 `releaseSnapshot(options)`。两者均返回 `schemaVersion: 1`、原生计划、快照身份、候选、精确版本、目标 tag 与安装说明；后者追加保留产物和校验结果。准备失败返回 `status: failed` 与 `error`，CLI 以退出码 1 结束。
+
+## 下一步
+
+阅读[发包与变更日志](/zh/learn/monorepo/publish)，再查看[报告与输出](/zh/tasks/reports)了解 CI 产物。

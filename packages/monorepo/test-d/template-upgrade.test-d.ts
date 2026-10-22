@@ -1,6 +1,6 @@
-import type { TemplateUpgradeOptions, TemplateUpgradePlan, TemplateUpgradeRecoveryResult, TemplateUpgradeResult } from '..'
+import type { TemplateUpgradeOptions, TemplateUpgradePlan, TemplateUpgradeRecoveryResult, TemplateUpgradeResult } from '@icebreakers/monorepo'
+import { applyTemplateUpgradePlan, planTemplateUpgrade, recoverTemplateUpgrade } from '@icebreakers/monorepo'
 import { expectError, expectType } from 'tsd'
-import { applyTemplateUpgradePlan, planTemplateUpgrade, recoverTemplateUpgrade } from '..'
 
 declare const options: TemplateUpgradeOptions
 declare const plan: TemplateUpgradePlan

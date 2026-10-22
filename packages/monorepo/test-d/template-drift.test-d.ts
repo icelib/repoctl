@@ -1,6 +1,6 @@
-import type { TemplateDriftFile, TemplateDriftOwner, TemplateDriftReport } from '..'
+import type { TemplateDriftFile, TemplateDriftOwner, TemplateDriftReport } from '@icebreakers/monorepo'
+import { checkTemplateDrift, formatTemplateDriftReport, hasTemplateDriftIssues } from '@icebreakers/monorepo'
 import { expectError, expectType } from 'tsd'
-import { checkTemplateDrift, formatTemplateDriftReport, hasTemplateDriftIssues } from '..'
 
 expectType<Promise<TemplateDriftReport>>(checkTemplateDrift('/workspace', { remote: false }))
 declare const report: TemplateDriftReport

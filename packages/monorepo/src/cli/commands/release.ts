@@ -6,6 +6,7 @@ import { resolveCommandConfig } from '../../core/config'
 import { resolveCommandValues } from '../../core/config/resolution'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
+import { registerNightly } from './release/nightly'
 import { registerNpmMirror } from './release/npmmirror'
 import { registerReleasePlan } from './release/plan'
 import { registerSnapshot } from './release/snapshot'
@@ -32,6 +33,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
   const releaseCommand = program.command('release').description(localize('Release and pnpm versioning commands', '发布与 pnpm versioning 工具集'))
   registerReleasePlan(releaseCommand, cwd)
   registerSnapshot(releaseCommand, cwd)
+  registerNightly(releaseCommand, cwd)
   registerNpmMirror(releaseCommand, cwd)
 
   releaseCommand.command('ci')
