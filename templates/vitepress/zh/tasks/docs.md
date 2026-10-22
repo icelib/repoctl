@@ -126,6 +126,8 @@ repoctl 在隔离源码目录内依次运行 `pnpm install --frozen-lockfile`、
 
 构建失败后，修复原因并针对相同发布记录重跑文档工作流，不会重新发布 npm。若正式站 runner 在部署期间消失，先重跑同一部署，让适配器核实平台结果；未解决的 `deploying` 操作不能被另一正式部署覆盖。预览站则允许串行的受管工作流用最新 main 来源替换中断的旧部署。已完成部署和无关联发布批次会跳过。保留 `repoctl-release-state` 分支；短期 Actions artifact 仅用于诊断，不能代替部署基线。
 
+未完成的正式部署会保存站点配置、发布记录、请求的修正提交和已核验的源码树。重试时使用相同的发布记录和修正输入，计划器会重新核验保存的输入与部署标识，构建也使用保存的配置，即使 main 已修改配置或删除该站点。省略 `release` 时使用当前正式基线；首次部署还没有正式基线时，使用未完成部署的发布记录。若已有旧基线，而新版本部署尚未完成，必须明确指定新版本的发布记录。保存的状态损坏或不一致时，会在构建和上传前停止恢复。
+
 如果修复需要修改产品源码或构建脚本，应发布新的稳定基线；相同发布记录始终使用原来的源码。
 
 程序化 API 为 `planDocsDeployment(options)` 与 `deployDocs(options)`。`DocsOptions` 接受站点、通道、来源/发布/修正选择，以及可选配置、环境和 `DocsStateStore`。状态适配器需实现 `readAutomationState`、支持 revision 检查的 `writeAutomationState`、`readBranchHead`；查询失败必须抛出，不得假装没有历史状态。

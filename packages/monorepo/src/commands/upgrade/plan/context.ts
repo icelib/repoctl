@@ -7,7 +7,7 @@ import { getRepoctlConfigCandidates, loadMonorepoConfigDetails } from '../../../
 import { resolveCommandValues, selectCommandOverrides } from '../../../core/config/resolution'
 import { getAssetTargets } from '../targets'
 import { fileDiff } from './diff'
-import { canonicalDirectory, hash, readOptional, relativeFile } from './files'
+import { canonicalDirectory, hash, readUpgradeInput, relativeFile } from './files'
 
 export async function createContext(opts: UpgradeOptions) {
   const cwd = await canonicalDirectory(path.resolve(opts.cwd ?? process.cwd()))
@@ -25,8 +25,7 @@ export async function createContext(opts: UpgradeOptions) {
     if (buffers.has(key)) {
       return buffers.get(key)!
     }
-    const root = area === 'target' ? plan.rootDir : area === 'asset' ? plan.assetDir : path.dirname(filename)
-    const content = await readOptional(root, area === 'config' ? path.basename(filename) : filename)
+    const content = await readUpgradeInput(plan, { area, path: filename })
     buffers.set(key, content)
     plan.inputs.push({ area, path: filename, hash: content === null ? null : hash(content) })
     return content

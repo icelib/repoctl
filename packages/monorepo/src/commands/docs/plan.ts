@@ -1,24 +1,21 @@
-import type { DocsContext } from './config'
-import type { DocsDeploymentPlan, DocsOptions } from './types'
+import type { DocsDeploymentPlan, DocsOptions, StableDocsSnapshot } from './types'
 import { createHash } from 'node:crypto'
 import { readReleaseCompletion } from '../release/completion'
-import { docsContext } from './config'
 import { checkReleaseCoverage, coveredPackages } from './coverage'
 import { assertMainSource, git, isAncestor, withSource } from './git'
 import { applyDocsPatches } from './patches'
-import { readDocsState } from './state'
+import { assertRecoveredPlan, prepareDocsContext } from './recovery'
 
-export async function prepareDocsPlan(options: DocsOptions, context: DocsContext) {
-  const previous = await readDocsState(context, options.site, options.channel)
-  const current = previous.state.current
-  const blockers: string[] = []
+export async function prepareDocsPlan(options: DocsOptions) {
   if (options.channel === 'preview' && (options.release || options.commits?.length)) {
     throw new Error('Preview only accepts a source SHA, not stable release records or corrections')
   }
   if (options.channel === 'stable' && options.sourceSha) {
     throw new Error('Stable documentation requires a completed release record, never an arbitrary source SHA')
   }
-  const releaseId = options.channel === 'stable' ? options.release ?? current?.releaseId : undefined
+  const { context, previous, releaseId, requestedCommits, recovery } = await prepareDocsContext(options)
+  const current = previous.state.current
+  const blockers: string[] = []
   const record = releaseId ? await readReleaseCompletion(context.github, releaseId) : undefined
   if (options.channel === 'stable' && !record) {
     throw new Error('No stable documentation baseline exists; wait for a complete stable release and provide its record ID')
@@ -45,7 +42,7 @@ export async function prepareDocsPlan(options: DocsOptions, context: DocsContext
     let commits: string[] = []
     try {
       if (!unrelated) {
-        commits = applyDocsPatches(options.cwd, source, sourceSha, [...(current?.commits ?? []), ...(options.commits ?? [])], context.site)
+        commits = applyDocsPatches(options.cwd, source, sourceSha, [...(current?.commits ?? []), ...requestedCommits], context.site)
       }
     }
     catch (error) {
@@ -70,11 +67,17 @@ export async function prepareDocsPlan(options: DocsOptions, context: DocsContext
       skipped: unrelated || current?.deploymentId === deploymentId,
       blockers,
     }
-    return { plan, previous }
+    if (recovery) {
+      assertRecoveredPlan(plan, recovery, previous.state.pending!.deploymentId)
+    }
+    const snapshot: StableDocsSnapshot | undefined = releaseId
+      ? { releaseId, requestedCommits, sourceSha, commits, treeSha, config: context.site }
+      : undefined
+    return { plan, previous, context, snapshot }
   })
 }
 
 /** Inspect a frozen checkout without installing, building, deploying, or writing remote state. */
 export async function planDocsDeployment(options: DocsOptions): Promise<DocsDeploymentPlan> {
-  return (await prepareDocsPlan(options, await docsContext(options))).plan
+  return (await prepareDocsPlan(options)).plan
 }

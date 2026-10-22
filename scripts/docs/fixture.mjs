@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { linkSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 import { promisify } from 'node:util'
@@ -54,6 +55,17 @@ export function fixture(root) {
   writeFileSync(path.join(workspace, 'unexpected.mjs'), 'throw new Error("Planning must never execute build or deployment")\n')
   run('corepack', ['enable'], workspace)
   run('pnpm', ['install', '--ignore-scripts', '--registry', registry], workspace)
+  // Package stores may install read-only assets as hard links. Exercise that
+  // topology even on filesystems where pnpm normally prefers copy-on-write.
+  const installed = createRequire(path.join(workspace, 'package.json'))
+  const repoctl = createRequire(installed.resolve('repoctl/package.json'))
+  const monorepo = createRequire(repoctl.resolve('@icebreakers/monorepo/package.json'))
+  const templates = path.dirname(monorepo.resolve('@icebreakers/monorepo-templates/package.json'))
+  const links = path.join(root, 'asset-links')
+  mkdirSync(links)
+  for (const filename of ['lefthook.yml', ...workflows]) {
+    linkSync(path.join(templates, 'assets', filename), path.join(links, path.basename(filename)))
+  }
   const cli = path.join(workspace, 'node_modules/repoctl/bin/repo.js')
   const git = args => run('git', args, workspace).trim()
   git(['init', '-b', 'main'])

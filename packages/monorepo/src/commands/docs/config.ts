@@ -34,7 +34,7 @@ export function validateSite(site: DocsSiteConfig) {
   }
 }
 
-export async function docsContext(options: DocsOptions) {
+export function docsIdentity(options: DocsOptions) {
   if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(options.site)) {
     throw new Error('Documentation site IDs must use lowercase letters, digits and hyphens')
   }
@@ -46,6 +46,15 @@ export async function docsContext(options: DocsOptions) {
   if (!repository || !/^[\w.-]+\/[\w.-]+$/.test(repository)) {
     throw new Error('GITHUB_REPOSITORY is required for documentation deployment identity')
   }
+  const github = options.github ?? new GitHubClient({
+    repository,
+    ...(env['GITHUB_TOKEN'] ? { token: env['GITHUB_TOKEN'] } : {}),
+    ...(env['GITHUB_API_URL'] ? { apiUrl: env['GITHUB_API_URL'] } : {}),
+  })
+  return { env, repository, github, key: `docs/${options.site}/${options.channel}` }
+}
+
+export async function resolveDocsSite(options: DocsOptions) {
   const config = options.config === undefined
     ? await resolveCommandConfig('docs', options.cwd)
     : resolveCommandValues('docs', options.config).values
@@ -54,12 +63,8 @@ export async function docsContext(options: DocsOptions) {
     throw new Error(`Documentation site ${options.site} is not configured`)
   }
   validateSite(site)
-  const github = options.github ?? new GitHubClient({
-    repository,
-    ...(env['GITHUB_TOKEN'] ? { token: env['GITHUB_TOKEN'] } : {}),
-    ...(env['GITHUB_API_URL'] ? { apiUrl: env['GITHUB_API_URL'] } : {}),
-  })
-  return { env, repository, site, github, key: `docs/${options.site}/${options.channel}` }
+  return site
 }
 
-export type DocsContext = Awaited<ReturnType<typeof docsContext>>
+export type DocsIdentity = ReturnType<typeof docsIdentity>
+export type DocsContext = DocsIdentity & { site: DocsSiteConfig }

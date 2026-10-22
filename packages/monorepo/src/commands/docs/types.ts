@@ -1,5 +1,5 @@
 import type { spawnSync } from 'node:child_process'
-import type { DocsChannel, DocsCommandConfig } from '../../types/docs'
+import type { DocsChannel, DocsCommandConfig, DocsSiteConfig } from '../../types/docs'
 import type { ReleaseCompletionRecord } from '../release/completion/types'
 import type { GitHubOperations } from '../release/github'
 
@@ -11,7 +11,7 @@ export interface DocsOptions {
   channel: DocsChannel
   /** Full source SHA; preview only. */
   sourceSha?: string
-  /** Persisted completion record ID; stable only. Omit when correcting the current stable site. */
+  /** Stable completion ID. Omit for the current baseline, or its pending first deployment when no current baseline exists. */
   release?: string
   /** Selected, single-parent commits already merged into origin/main. */
   commits?: string[]
@@ -67,5 +67,16 @@ export interface DocsDeploymentState {
     deploymentId: string
     runId: string
     phase: 'building' | 'deploying'
+    /** Stable retries use these immutable inputs even when main changes or removes the site. */
+    snapshot?: StableDocsSnapshot
   }
+}
+
+export interface StableDocsSnapshot {
+  releaseId: string
+  requestedCommits: string[]
+  sourceSha: string
+  commits: string[]
+  treeSha: string
+  config: DocsSiteConfig
 }

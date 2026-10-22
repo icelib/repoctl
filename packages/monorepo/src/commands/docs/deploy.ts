@@ -1,7 +1,6 @@
 import type { DocsDeploymentResult, DocsDeploymentState, DocsOptions } from './types'
 import { randomUUID } from 'node:crypto'
 import path from 'pathe'
-import { docsContext } from './config'
 import { docsEnvironment, readDeploymentResult, runDocsProcess } from './execute'
 import { git, withSource } from './git'
 import { applyDocsPatches } from './patches'
@@ -10,8 +9,7 @@ import { readDocsState } from './state'
 
 /** Build and deploy an independently retryable, immutable documentation snapshot. */
 export async function deployDocs(options: DocsOptions): Promise<DocsDeploymentResult> {
-  const context = await docsContext(options)
-  const { plan, previous } = await prepareDocsPlan(options, context)
+  const { plan, previous, context, snapshot } = await prepareDocsPlan(options)
   if (!plan.eligible) {
     throw new Error(`Documentation deployment blocked:\n${plan.blockers.join('\n')}`)
   }
@@ -31,7 +29,7 @@ export async function deployDocs(options: DocsOptions): Promise<DocsDeploymentRe
   }
   let state: DocsDeploymentState = {
     ...previous.state,
-    pending: { deploymentId: plan.deploymentId, runId, phase: resumeProvider ? 'deploying' : 'building' },
+    pending: { deploymentId: plan.deploymentId, runId, phase: resumeProvider ? 'deploying' : 'building', ...(snapshot ? { snapshot } : {}) },
   }
   // Claim the revision before any side effect, not after a provider has already deployed.
   let revision = await context.github.writeAutomationState(context.key, state, previous.revision)
@@ -53,7 +51,7 @@ export async function deployDocs(options: DocsOptions): Promise<DocsDeploymentRe
       if (options.channel === 'preview' && await context.github.readBranchHead('main') !== plan.sourceSha) {
         throw new Error('Main advanced during the preview build; refusing to deploy an outdated preview')
       }
-      state = { ...state, pending: { deploymentId: plan.deploymentId, runId, phase: 'deploying' } }
+      state = { ...state, pending: { ...state.pending!, phase: 'deploying' } }
       revision = await context.github.writeAutomationState(context.key, state, revision)
       providerStarted = true
       runDocsProcess(options, source, ['run', context.site[options.channel].deployScript], env)
