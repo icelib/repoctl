@@ -91,6 +91,8 @@ The plan uses `schemaVersion: 1` and reports the source, package versions, selec
 
 Merge a dedicated documentation correction into `main`, then choose its full commit SHA in the Documentation workflow's `commits` input. Select the site and `stable` channel. Omit `release` to correct the current stable site, or supply its completion record explicitly. Multiple commits use a space-separated list in the intended order.
 
+A release that publishes none of the site's covered packages cannot become a correction baseline: selecting corrections with that record blocks deployment. Omit `release` to apply the selected patches to the current stable baseline. A related new stable release can still carry existing corrections and apply newly selected ones.
+
 Preview the correction locally first:
 
 ```bash

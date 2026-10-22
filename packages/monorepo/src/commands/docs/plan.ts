@@ -33,7 +33,10 @@ export async function prepareDocsPlan(options: DocsOptions) {
   }
   return withSource(options.cwd, sourceSha, async (source) => {
     const names = record ? (await coveredPackages(source, context.site)).map(pkg => pkg.manifest.name!) : []
-    const unrelated = Boolean(record && !record.releasedPackages.some(name => names.includes(name)) && !options.commits?.length)
+    const unrelated = Boolean(record && !record.releasedPackages.some(name => names.includes(name)))
+    if (unrelated && requestedCommits.length) {
+      blockers.push('Unrelated release cannot supply a documentation correction baseline; omit --release to use the current stable baseline, or select a release that publishes a covered package')
+    }
     if (!unrelated && current && !isAncestor(options.cwd, current.sourceSha, sourceSha)) {
       blockers.push('A newer documentation source is already deployed; an older run cannot replace it')
     }
@@ -64,7 +67,7 @@ export async function prepareDocsPlan(options: DocsOptions) {
       deploymentId,
       ...(previous.revision ? { baseRevision: previous.revision } : {}),
       eligible: blockers.length === 0,
-      skipped: unrelated || current?.deploymentId === deploymentId,
+      skipped: unrelated ? requestedCommits.length === 0 : current?.deploymentId === deploymentId,
       blockers,
     }
     if (recovery) {
