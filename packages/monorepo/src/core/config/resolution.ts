@@ -25,6 +25,7 @@ const defaults = {
   create: { offline: false, renameJson: false, defaultTemplate: 'tsdown' },
   deps: { groups: [] },
   doctor: {},
+  docs: { sites: {} },
   env: { tasks: ['build'], frameworkInference: true },
   init: { skipReadme: false, skipPkgJson: false, skipChangeset: false, skipIssueTemplateConfig: false, tooling: [], force: false },
   mirror: { env: chinaMirrorsEnvs },

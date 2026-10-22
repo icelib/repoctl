@@ -20,6 +20,13 @@ describe('built workspace package manager API', () => {
       const ci = YAML.parse(await readFile(path.join(fixture.assetsDir, '.github/workflows/ci.yml'), 'utf8'))
       expect(ci.on.pull_request).toBeDefined()
       expect(ci.on.workflow_call).toBeUndefined()
+      for (const name of ['repoctl-docs.yml', 'repoctl-docs-deploy.yml']) {
+        const prepared = await readFile(path.join(fixture.assetsDir, '.github/workflows', name), 'utf8')
+        const authored = await readFile(path.join(fixture.root, 'packages/monorepo/assets/.github/workflows', name), 'utf8')
+        expect(prepared).toBe(authored)
+        expect(prepared).not.toContain('Source workspace only')
+        expect(prepared).not.toContain('outdated cached documentation workflow')
+      }
       await expect(access(path.join(fixture.assetsDir, '.github/workflows/pr-ci.yml'))).rejects.toMatchObject({ code: 'ENOENT' })
       await expect(access(path.join(fixture.assetsDir, '.github/workflows/pr-ci-manual.yml'))).rejects.toMatchObject({ code: 'ENOENT' })
       await expect(access(path.join(fixture.assetsDir, '.github/pr-ci'))).rejects.toMatchObject({ code: 'ENOENT' })

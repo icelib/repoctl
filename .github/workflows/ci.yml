@@ -101,6 +101,10 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-doctor
 
+      - name: Check packaged documentation publication
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        run: pnpm test:packaged-docs
+
       - name: Check packaged Nimbus documentation
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
         run: pnpm test:packaged-nimbus

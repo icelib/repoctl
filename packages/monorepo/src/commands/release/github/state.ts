@@ -22,13 +22,20 @@ function statePath(key: string) {
   return `/contents/.repoctl-release/${key}.json`
 }
 
-export async function readReleaseState(request: GitHubRequest, key: string): Promise<ReleaseStateSnapshot | undefined> {
+function automationPath(key: string) {
+  if (!/^(?:releases\/[a-f0-9]{64}|docs\/[a-z0-9][a-z0-9-]*\/(?:stable|preview))$/.test(key)) {
+    throw new ReleaseCommandError('Invalid automation state key')
+  }
+  return `/contents/.repoctl-automation/${key}.json`
+}
+
+async function readState(request: GitHubRequest, endpoint: string) {
   try {
-    const { data } = await request<{ sha: string, content: string }>('GET', `${statePath(key)}?ref=${branch}`)
+    const { data } = await request<{ sha: string, content: string }>('GET', `${endpoint}?ref=${branch}`)
     if (!data?.sha || !data.content) {
       throw new ReleaseCommandError('GitHub returned an invalid release checkpoint')
     }
-    return { revision: data.sha, state: JSON.parse(Buffer.from(data.content, 'base64').toString('utf8')) as ReleaseLifecycleState }
+    return { revision: data.sha, value: JSON.parse(Buffer.from(data.content, 'base64').toString('utf8')) as unknown }
   }
   catch (error) {
     if (missing(error)) {
@@ -38,6 +45,15 @@ export async function readReleaseState(request: GitHubRequest, key: string): Pro
   }
 }
 
+export async function readReleaseState(request: GitHubRequest, key: string): Promise<ReleaseStateSnapshot | undefined> {
+  const snapshot = await readState(request, statePath(key))
+  return snapshot ? { revision: snapshot.revision, state: snapshot.value as ReleaseLifecycleState } : undefined
+}
+
+export function readAutomationState(request: GitHubRequest, key: string) {
+  return readState(request, automationPath(key))
+}
+
 function transient(error: unknown) {
   if (!error || typeof error !== 'object' || !('status' in error) || typeof error.status !== 'number') {
     return false
@@ -45,7 +61,7 @@ function transient(error: unknown) {
   return error.status === 0 || error.status === 429 || error.status >= 500
 }
 
-export async function writeReleaseState(request: GitHubRequest, key: string, state: ReleaseLifecycleState, revision?: string, options: ReleaseStateWriteOptions = {}) {
+async function writeState(request: GitHubRequest, endpoint: string, state: unknown, revision?: string, options: ReleaseStateWriteOptions = {}) {
   if (!revision) {
     try {
       await request('GET', `/git/ref/heads/${branch}`)
@@ -95,7 +111,7 @@ export async function writeReleaseState(request: GitHubRequest, key: string, sta
   let error: unknown
   for (let attempt = 1; attempt <= attempts; attempt += 1) {
     try {
-      const { data } = await request<{ content: { sha: string } }>('PUT', statePath(key), {
+      const { data } = await request<{ content: { sha: string } }>('PUT', endpoint, {
         message: 'chore(release): checkpoint release lifecycle [skip ci]',
         branch,
         content: Buffer.from(content).toString('base64'),
@@ -110,8 +126,8 @@ export async function writeReleaseState(request: GitHubRequest, key: string, sta
       error = caught
       // A failed response may follow a committed write. Reconcile before retrying,
       // and never adopt a concurrent writer's revision to make our PUT succeed.
-      const recovered = await readReleaseState(request, key)
-      if (recovered && JSON.stringify(recovered.state) === content) {
+      const recovered = await readState(request, endpoint)
+      if (recovered && JSON.stringify(recovered.value) === content) {
         return recovered.revision
       }
       if (recovered?.revision !== revision || !transient(caught) || attempt === attempts) {
@@ -121,4 +137,12 @@ export async function writeReleaseState(request: GitHubRequest, key: string, sta
     }
   }
   throw new ReleaseCommandError(`Release checkpoint write failed or another publisher advanced it; retry after the other run finishes. ${error instanceof Error ? error.message : String(error)}`)
+}
+
+export function writeReleaseState(request: GitHubRequest, key: string, state: ReleaseLifecycleState, revision?: string, options?: ReleaseStateWriteOptions) {
+  return writeState(request, statePath(key), state, revision, options)
+}
+
+export function writeAutomationState(request: GitHubRequest, key: string, value: unknown, revision?: string, options?: ReleaseStateWriteOptions) {
+  return writeState(request, automationPath(key), value, revision, options)
 }

@@ -18,6 +18,8 @@ export interface StageReceipt {
   publish: boolean
   done: ReleaseCiStage[]
   candidates: PublishedPackage[]
+  releaseRecord?: string
+  docsSites?: string[]
   sourceDirectory?: string
   stages: Array<{ stage: ReleaseCiStage, elapsedMs: number, status: 'complete' | 'failed', count: number, pending: string[] }>
 }
@@ -99,11 +101,20 @@ export async function readReceipt(options: ReleaseCiOptions) {
   }
 }
 
-export async function stageOutput(options: ReleaseCiOptions, values: Record<string, boolean>) {
+export async function stageOutput(options: ReleaseCiOptions, values: Record<string, boolean | string>) {
   const filename = getReleaseEnv(options)['GITHUB_OUTPUT']
   if (filename) {
     await appendFile(filename, `${Object.entries(values).map(([key, value]) => `${key}=${value}`).join('\n')}\n`)
   }
+}
+
+export function receiptOutput(options: ReleaseCiOptions, receipt: StageReceipt) {
+  return stageOutput(options, {
+    'run': receipt.action !== 'skip',
+    'publish': receipt.publish,
+    'release-record': receipt.releaseRecord ?? '',
+    'docs-sites': JSON.stringify(receipt.docsSites ?? []),
+  })
 }
 
 export async function reportStage(receipt: StageReceipt, options: ReleaseCiOptions, stage: ReleaseCiStage, started: number, status: 'complete' | 'failed', progressCwd = options.cwd) {

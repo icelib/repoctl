@@ -55,6 +55,15 @@ export async function planAssets(context: UpgradeContext) {
           reason = 'license-protected'
           skip = true
         }
+        else if (filename === '.github/workflows/repoctl-docs.yml' && !Object.keys(context.docsConfig?.sites ?? {}).length) {
+          reason = 'docs-not-configured'
+          skip = true
+        }
+        else if (['.github/workflows/repoctl-docs.yml', '.github/workflows/repoctl-docs-deploy.yml'].includes(filename)
+          && before !== null && !before.toString().startsWith('# repoctl-managed: docs')) {
+          reason = 'custom-docs-protected'
+          skip = true
+        }
         else if (filename === '.github/workflows/release.yml' && before !== null && !options.overwriteRelease
           && !before.toString().includes(releaseWorkflowMarker) && !isLegacyReleaseWorkflow(before.toString())) {
           reason = 'custom-release-protected'

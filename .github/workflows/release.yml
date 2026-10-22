@@ -61,6 +61,9 @@ jobs:
     if: ${{ inputs.mode != 'oidc-audit' }}
     name: Release
     runs-on: ubuntu-latest
+    outputs:
+      release-record: ${{ steps.release-finalize.outputs.release-record }}
+      docs-sites: ${{ steps.release-finalize.outputs.docs-sites }}
     steps:
       - name: Validate GitHub App configuration
         env:
@@ -199,6 +202,20 @@ jobs:
             repoctl-ci-progress.json
           if-no-files-found: ignore
           retention-days: 14
+
+  docs:
+    needs: release
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.release.outputs.release-record != '' && needs.release.outputs.docs-sites != '' && needs.release.outputs.docs-sites != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        site: ${{ fromJSON(needs.release.outputs.docs-sites) }}
+    uses: ./.github/workflows/repoctl-docs-deploy.yml
+    with:
+      site: ${{ matrix.site }}
+      channel: stable
+      release: ${{ needs.release.outputs.release-record }}
+    secrets: inherit
 
   oidc-audit:
     name: Audit npm OIDC

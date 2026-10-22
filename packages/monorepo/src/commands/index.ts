@@ -140,15 +140,16 @@ export type { AdmissionDeclaration, DependencyAdmissionConfig, DependencyAdmissi
 export { applyCatalogMigrationPlan, checkCatalogs, planCatalogMigration } from './deps/catalog'
 export { checkPeerDependencies } from './deps/peers'
 export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport } from './deps/peers'
+export { deployDocs, planDocsDeployment } from './docs'
+export type { DocsDeploymentPlan, DocsDeploymentResult, DocsOptions, DocsStateStore } from './docs'
 export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
-
 export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
 
 export { inspectInstallSecurity } from './doctor/security'
 
 export type { InstallBuildDecision, InstallPolicyKey, InstallSecurityExpectations, InstallSecurityOptions, InstallSecurityPresetPlan, InstallSecurityReport, InstallSecuritySetting } from './doctor/security'
-export { applyInstallSecurityPreset, planInstallSecurityPreset } from './doctor/security/preset'
 
+export { applyInstallSecurityPreset, planInstallSecurityPreset } from './doctor/security/preset'
 export { checkEnvironmentCache } from './env-cache'
 
 export type * from './env-cache'
@@ -162,10 +163,12 @@ export { applyDevContainerPlan, planDevContainer } from './init/devcontainer'
 export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
 
 export type { MaintenanceFile, MaintenancePresetChange, MaintenancePresetUpgrade, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
+
 export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseCiStage, ReleaseCiStageResult, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+export type { ReleaseCompletionRecord } from './release/completion'
 export { resolveReleaseBranches } from './release/lines'
 export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
 

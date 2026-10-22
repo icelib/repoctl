@@ -27,6 +27,8 @@ async function createFixture() {
     outputFile(path.join(consumerRoot, 'ci.yml'), 'on: [pull_request]\njobs:\n  test:\n    steps:\n      - run: pnpm check:workflows\n      - run: pnpm test\n'),
     outputFile(path.join(consumerRoot, 'release-intent-auto.yml'), 'on: [pull_request_target]\njobs: {}\n'),
     outputFile(path.join(consumerRoot, 'release-intent-check.yml'), 'on: [pull_request]\njobs: {}\n'),
+    outputFile(path.join(consumerRoot, 'repoctl-docs.yml'), 'on: [push]\njobs: {}\n'),
+    outputFile(path.join(consumerRoot, 'repoctl-docs-deploy.yml'), 'on: [workflow_call]\njobs: {}\n'),
     outputFile(path.join(assets, '.github/workflows/ci.yml'), 'on: [workflow_call]\njobs: {}\n'),
     outputFile(path.join(assets, '.github/workflows/pr-ci.yml'), 'stale source approval workflow\n'),
     outputFile(path.join(assets, '.github/workflows/pr-ci-manual.yml'), 'stale source manual approval workflow\n'),
@@ -47,6 +49,8 @@ it.each([true, false])('publishes automatic consumer workflows and removes sourc
       'release-intent-auto.yml',
       'release-intent-check.yml',
       'release.yml',
+      'repoctl-docs-deploy.yml',
+      'repoctl-docs.yml',
     ])
     const ci = YAML.parse(await readFile(path.join(github, 'workflows/ci.yml'), 'utf8'))
     expect(ci.on).toEqual(['pull_request'])

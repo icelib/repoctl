@@ -32,6 +32,8 @@ export async function createPackageManagerFixture() {
     'packages/monorepo/assets/.github/workflows/ci.yml',
     'packages/monorepo/assets/.github/workflows/release-intent-auto.yml',
     'packages/monorepo/assets/.github/workflows/release-intent-check.yml',
+    'packages/monorepo/assets/.github/workflows/repoctl-docs.yml',
+    'packages/monorepo/assets/.github/workflows/repoctl-docs-deploy.yml',
     'packages/monorepo/resources/skills/repoctl/SKILL.md',
   ]
 
@@ -49,6 +51,10 @@ export async function createPackageManagerFixture() {
     outputFile(path.join(root, '.github/workflows/pr-ci.yml'), 'on: [pull_request_target]\njobs: {}\n'),
     outputFile(path.join(root, '.github/workflows/pr-ci-manual.yml'), 'on: [workflow_dispatch]\njobs: {}\n'),
     outputFile(path.join(root, '.github/workflows/ci.yml'), 'on: [workflow_call]\njobs: {}\n'),
+    ...['repoctl-docs.yml', 'repoctl-docs-deploy.yml'].flatMap(name => [
+      outputFile(path.join(root, '.github/workflows', name), 'name: Source workspace only\non: [push]\njobs: {}\n'),
+      outputFile(path.join(assetsDir, '.github/workflows', name), 'outdated cached documentation workflow\n'),
+    ]),
     outputFile(path.join(assetsDir, '.github/workflows/pr-ci.yml'), 'outdated cached approval workflow\n'),
     outputFile(path.join(assetsDir, '.github/workflows/pr-ci-manual.yml'), 'outdated cached manual approval workflow\n'),
     outputFile(path.join(assetsDir, '.github/pr-ci/index.mjs'), 'outdated cached approval tooling\n'),

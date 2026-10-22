@@ -1,18 +1,21 @@
+import type { ReleaseCompletionResult } from '../completion/types'
 import type { PublishedPackage, ReleaseCiOptions } from '../types'
 import type { openLifecycle } from './session'
 import { writeFile } from 'node:fs/promises'
 import path from 'pathe'
 import semver from 'semver'
 import { logger } from '../../../core/logger'
+import { recordReleaseCompletion } from '../completion'
 import { ReleaseCommandError } from '../errors'
 import { runReleaseHooks } from '../hooks'
-import { assertReleaseLineVersions } from '../lines'
+import { assertReleaseLineVersions, resolveReleaseBranch } from '../lines'
 import { publishMetadata } from '../metadata'
 import { getPublishCandidates, publishWithRetry } from '../publish'
 import { confirmVisibility } from '../publish/registry'
 import { packageKey, PublishState } from '../publish/state'
 import { clearPublishSummary } from '../shared'
 import { finishHooks } from './hooks'
+import { releaseStateKey } from './key'
 import { openLifecycle as open } from './session'
 
 type Session = Exclude<Awaited<ReturnType<typeof openLifecycle>>, undefined | { preview: PublishedPackage[] }>
@@ -113,9 +116,10 @@ async function finalize(session: Session, options: ReleaseCiOptions) {
   state.complete = true
   await save()
   logger.success(`Release lifecycle complete: ${packages.map(packageKey).join(', ')}`)
+  return recordReleaseCompletion(options, state, releaseStateKey(state.repository, 'latest', state.candidates), session.rule ?? await resolveReleaseBranch(options))
 }
 
-export async function publishLifecycle(options: ReleaseCiOptions, selected?: PublishedPackage[], distTag = 'latest') {
+export async function publishLifecycle(options: ReleaseCiOptions, selected?: PublishedPackage[], distTag = 'latest', completed?: (result: ReleaseCompletionResult) => void) {
   const session = await open(options, selected, distTag)
   if (!session) {
     return []
@@ -131,7 +135,10 @@ export async function publishLifecycle(options: ReleaseCiOptions, selected?: Pub
     await confirm(session, options, distTag)
   }
   if (stage === 'all' || stage === 'finalize') {
-    await finalize(session, options)
+    const completion = await finalize(session, options)
+    if (completion) {
+      completed?.(completion)
+    }
   }
   return session.packages
 }

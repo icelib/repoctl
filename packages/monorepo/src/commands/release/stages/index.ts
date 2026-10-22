@@ -19,7 +19,7 @@ import { reconcileRelease } from '../reconcile'
 import { assertLaneAssignments, assertStableLaneAssignments, getReleaseEnv, hasPendingIntents, resolveReleaseMode } from '../shared'
 import { assertStablePublish } from '../stable'
 import { readReleaseTriggerContext, shouldRunRelease } from '../trigger'
-import { readReceipt, reportStage, saveReceipt, stageDirectory, stageIdentity, stageOutput } from './receipt'
+import { readReceipt, receiptOutput, reportStage, saveReceipt, stageDirectory, stageIdentity } from './receipt'
 import { stagedSource } from './source'
 import { authorizeVerification } from './verification'
 
@@ -108,7 +108,7 @@ export async function releaseCiStage(options: ReleaseCiOptions) {
     throw new ReleaseCommandError(`Release ${stage} requires the preceding stage to complete; restart at plan if interrupted`)
   }
   if (receipt.done.includes(stage)) {
-    await stageOutput(options, { run: receipt.action !== 'skip', publish: receipt.publish })
+    await receiptOutput(options, receipt)
     return receipt
   }
   await saveReceipt(receipt, options)
@@ -159,7 +159,10 @@ export async function releaseCiStage(options: ReleaseCiOptions) {
           if (selected?.some(pkg => !receipt.candidates.some(candidate => candidate.name === pkg.name && candidate.version === pkg.version))) {
             throw new ReleaseCommandError('Recovery package/version does not match prepared candidates')
           }
-          await publishLifecycle({ ...effective, stage, github }, selected, rule.distTag)
+          await publishLifecycle({ ...effective, stage, github }, selected, rule.distTag, (completion) => {
+            receipt.releaseRecord = completion.record.id
+            receipt.docsSites = completion.sites
+          })
         }
       }
     }
@@ -169,7 +172,7 @@ export async function releaseCiStage(options: ReleaseCiOptions) {
     if (!receipt.done.includes(stage)) {
       receipt.done.push(stage)
     }
-    await stageOutput(options, { run: receipt.action !== 'skip', publish: receipt.publish })
+    await receiptOutput(options, receipt)
     receipt.identity = await stageIdentity(options)
     receipt.effectiveIdentity = await stageIdentity(effective)
     await reportStage(receipt, options, stage, started, 'complete', effective.cwd)

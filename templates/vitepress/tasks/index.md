@@ -64,6 +64,10 @@ pnpm exec repo check --markdown --redact --out reports/check-plan.md
 
 Continue with [Add checks to CI](/tasks/ci).
 
+## I Want Documentation To Follow Published Versions
+
+Configure separate preview and stable targets, then let a complete stable release select the production source. Existing-version corrections can publish independently through selected documentation commits. Continue with [Publish documentation](/tasks/docs).
+
 ## I Want To Debug CI Or Another Machine
 
 ```bash
