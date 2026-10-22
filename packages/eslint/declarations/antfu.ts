@@ -1,5 +1,5 @@
-import type { TsdownHooks } from 'tsdown'
-import { copyFile, readFile, writeFile } from 'node:fs/promises'
+import type { CopyOptionsFn, TsdownHooks } from 'tsdown'
+import { readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 
@@ -61,6 +61,12 @@ async function readAntfuSource(directory: string) {
   return { version, dependencyRoot }
 }
 
+// tsdown assigns shared copies to one format, including single-format and watch builds.
+export const antfuLicenseCopy: CopyOptionsFn = async ({ cwd }) => {
+  const { dependencyRoot } = await readAntfuSource(cwd)
+  return { from: path.join(dependencyRoot, 'LICENSE'), rename: 'ANTFU-LICENSE' }
+}
+
 /** Post-process both ESM and CJS declaration builds without modifying dependency files. */
 export function antfuDeclarationHooks(): Partial<TsdownHooks> {
   return {
@@ -68,7 +74,7 @@ export function antfuDeclarationHooks(): Partial<TsdownHooks> {
       await readAntfuSource(options.cwd)
     },
     'build:done': async ({ options, chunks }) => {
-      const { version, dependencyRoot } = await readAntfuSource(options.cwd)
+      const { version } = await readAntfuSource(options.cwd)
       const declarations = chunks.filter(chunk => /^index\.d\.(?:ts|cts)$/u.test(chunk.fileName))
       if (!declarations.length) {
         throw new Error('Expected bundled @antfu/eslint-config declarations in the ESLint package build.')
@@ -79,7 +85,6 @@ export function antfuDeclarationHooks(): Partial<TsdownHooks> {
         const notice = `// Includes @antfu/eslint-config ${version} declarations (MIT); see ANTFU-LICENSE.\n`
         await writeFile(filename, notice + correctAntfuDeclarations(source, version))
       }
-      await copyFile(path.join(dependencyRoot, 'LICENSE'), path.join(options.outDir, 'ANTFU-LICENSE'))
     },
   }
 }

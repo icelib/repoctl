@@ -1,5 +1,5 @@
 import { defineConfig } from 'tsdown'
-import { antfuDeclarationHooks } from './declarations/antfu.ts'
+import { antfuDeclarationHooks, antfuLicenseCopy } from './declarations/antfu.ts'
 
 export default defineConfig({
   checks: {
@@ -15,6 +15,7 @@ export default defineConfig({
   },
   clean: true,
   fixedExtension: false,
+  copy: antfuLicenseCopy,
   hooks: antfuDeclarationHooks(),
   deps: {
     dts: {
