@@ -7,6 +7,7 @@ import process from 'node:process'
 import { matchesSnapshotMetadata } from '../snapshot/identity'
 import { checkInstalledEntries } from './consumer/entries'
 import { consumerEnvironment, consumerPnpmOptions } from './consumer/environment'
+import { installNightlyConsumer } from './consumer/install'
 import { consumerRunner } from './consumer/run'
 
 /** Exercise the real published channel with no workspace links or dependency overrides. */
@@ -44,7 +45,7 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
     if (await run('pnpm', [...consumerPnpmOptions, '--version']) !== pin[1]) {
       throw new Error(`Nightly consumer requires pnpm ${pin[1]}.`)
     }
-    await run('pnpm', [...consumerPnpmOptions, 'install', '--ignore-scripts', '--no-frozen-lockfile', '--registry=https://registry.npmjs.org/'])
+    await installNightlyConsumer(report, options, directory, run)
     const validated = []
     for (const pkg of report.packages) {
       const installed = await realpath(path.join(directory, 'node_modules', pkg.name))
