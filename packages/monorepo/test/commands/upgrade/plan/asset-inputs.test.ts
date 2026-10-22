@@ -2,24 +2,13 @@ import { link } from 'node:fs/promises'
 import { applyUpgradePlan, planUpgrade } from '@icebreakers/monorepo'
 import path from 'pathe'
 import { expect, it } from 'vitest'
-import { fixture, snapshot } from './fixture'
+import { fixture, sharedInstalledPackage, snapshot } from './fixture'
 import { instrument } from './instrument'
-
-const sharedAssets = `
-  const lstat = fs.lstat
-  fs.lstat = async (filename, options) => {
-    const info = await lstat(filename, options)
-    if (path.resolve(filename).startsWith(path.resolve(plan.assetDir) + path.sep) && info.isFile()) {
-      Object.defineProperty(info, 'nlink', { value: options?.bigint ? 2n : 2 })
-    }
-    return info
-  }
-`
 
 it('plans and applies read-only package assets with multiple hard links', async () => {
   const h = await fixture()
   const plan = await planUpgrade({ cwd: h.cwd, targets: ['.editorconfig'] })
-  const output = await instrument(plan, sharedAssets, `
+  const output = await instrument(plan, sharedInstalledPackage, `
     const { planUpgrade } = await import(entry)
     const reviewed = await planUpgrade({ cwd: root, targets: ['.editorconfig'] })
     if (reviewed.status !== 'ready') throw new Error(JSON.stringify(reviewed.blockers))
@@ -33,7 +22,7 @@ it('rejects changed package asset bytes before applying a reviewed plan', async 
   const plan = await planUpgrade({ cwd: h.cwd, targets: ['.editorconfig'] })
   const before = await snapshot(h.root)
   const output = await instrument(plan, `
-    ${sharedAssets}
+    ${sharedInstalledPackage}
     const readFile = fs.readFile
     fs.readFile = async (filename, ...args) => {
       const content = await readFile(filename, ...args)
@@ -46,22 +35,22 @@ it('rejects changed package asset bytes before applying a reviewed plan', async 
   expect(await snapshot(h.root)).toEqual(before)
 })
 
-it('still rejects symbolic links in package asset inputs before writing', async () => {
+it.each(['.editorconfig', '../package.json'])('still rejects symbolic links in installed package input %s before writing', async (filename) => {
   const h = await fixture()
   const plan = await planUpgrade({ cwd: h.cwd, targets: ['.editorconfig'] })
   const before = await snapshot(h.root)
   const output = await instrument(plan, `
-    ${sharedAssets}
+    ${sharedInstalledPackage}
     const originalLstat = fs.lstat
     fs.lstat = async (filename, options) => {
       const info = await originalLstat(filename, options)
-      if (path.resolve(filename) === path.resolve(plan.assetDir, '.editorconfig')) {
+      if (path.resolve(filename) === path.resolve(plan.assetDir, ${JSON.stringify(filename)})) {
         info.isSymbolicLink = () => true
       }
       return info
     }
   `)
-  expect(output).toContain('Linked or non-file upgrade target: .editorconfig')
+  expect(output).toContain(`Linked or non-file upgrade target: ${path.basename(filename)}`)
   expect(await snapshot(h.root)).toEqual(before)
 })
 

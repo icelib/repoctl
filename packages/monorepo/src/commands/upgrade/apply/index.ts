@@ -10,7 +10,7 @@ import { hookGroup } from '../hooks'
 import { finishHooksUpgrade } from '../hooks/git'
 import { applyMigrationFiles } from '../migrations/apply'
 import { ledgerPath, migrationGroup } from '../migrations/record'
-import { canonicalDirectory, hash, readUpgradeInput } from '../plan/files'
+import { canonicalDirectory, hash, normalizeUpgradeInput, readUpgradeInput } from '../plan/files'
 import { writeUpgradeTransaction } from './transaction'
 import { cleanDirectories, ensureParent } from './transaction/state'
 import { actionable, validateUpgradePlan } from './validate'
@@ -37,11 +37,12 @@ async function applyLocked(cwd: string, plan: UpgradePlan, options: UpgradeApply
   const files = upgradeOperations(plan.files.filter(file => selected.has(file.path)))
   let pending = 0
   let applied = 0
-  for (const input of plan.inputs) {
+  for (const original of plan.inputs) {
+    const input = { ...original, ...normalizeUpgradeInput(plan, original) }
     const current = await readUpgradeInput(plan, input)
     const currentHash = current === null ? null : hash(current)
     const relative = input.area === 'config' ? path.relative(plan.rootDir, input.path) : input.path
-    const file = input.area !== 'asset' ? files.find(item => item.path === relative) : undefined
+    const file = ['target', 'config'].includes(input.area) ? files.find(item => item.path === relative) : undefined
     if (currentHash === input.hash) {
       if (file && input.area === 'target') {
         pending++

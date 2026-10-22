@@ -50,7 +50,8 @@ export interface UpgradeFilePlan {
 }
 
 export interface UpgradeInput {
-  area: 'target' | 'asset' | 'config'
+  /** package is the installed template package's read-only package.json. */
+  area: 'target' | 'asset' | 'package' | 'config'
   path: string
   hash: string | null
 }

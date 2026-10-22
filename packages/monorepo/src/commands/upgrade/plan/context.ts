@@ -7,7 +7,7 @@ import { getRepoctlConfigCandidates, loadMonorepoConfigDetails } from '../../../
 import { resolveCommandValues, selectCommandOverrides } from '../../../core/config/resolution'
 import { getAssetTargets } from '../targets'
 import { fileDiff } from './diff'
-import { canonicalDirectory, hash, readUpgradeInput, relativeFile } from './files'
+import { canonicalDirectory, hash, normalizeUpgradeInput, readUpgradeInput, relativeFile } from './files'
 
 export async function createContext(opts: UpgradeOptions) {
   const cwd = await canonicalDirectory(path.resolve(opts.cwd ?? process.cwd()))
@@ -21,13 +21,14 @@ export async function createContext(opts: UpgradeOptions) {
   const plan: UpgradePlan = { schemaVersion: 1, cwd, rootDir, assetDir: path.resolve(await canonicalDirectory(assetsDir)), status: 'ready', targets, discovery: null, inputs: [], files: [], blockers: [] }
   const buffers = new Map<string, Buffer | null>()
   async function read(area: UpgradeInput['area'], filename: string) {
-    const key = `${area}:${filename}`
+    const input = normalizeUpgradeInput(plan, { area, path: filename })
+    const key = `${input.area}:${input.path}`
     if (buffers.has(key)) {
       return buffers.get(key)!
     }
-    const content = await readUpgradeInput(plan, { area, path: filename })
+    const content = await readUpgradeInput(plan, input)
     buffers.set(key, content)
-    plan.inputs.push({ area, path: filename, hash: content === null ? null : hash(content) })
+    plan.inputs.push({ ...input, hash: content === null ? null : hash(content) })
     return content
   }
   for (const candidate of new Set([...getRepoctlConfigCandidates(cwd), ...loaded.files])) {

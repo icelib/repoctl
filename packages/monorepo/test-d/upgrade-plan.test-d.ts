@@ -8,6 +8,8 @@ expectType<Promise<void>>(upgradeMonorepo({ cwd: '/workspace' }))
 declare const plan: UpgradePlan
 expectType<Promise<UpgradeApplyResult>>(applyUpgradePlan('/workspace', plan, { files: ['package.json'] }))
 expectType<string>(formatUpgradePlan(plan, 'markdown'))
+expectAssignable<UpgradePlan['inputs'][number]>({ area: 'package', path: 'package.json', hash: null })
+expectNotAssignable<UpgradePlan['inputs'][number]>({ area: 'installed', path: 'package.json', hash: null })
 expectAssignable<UpgradeOptions>({ dryRun: true, noOverwrite: true })
 expectNotAssignable<UpgradeOptions>({ targets: [42] })
 expectType<UpgradeBaselineChange | undefined>(plan.files[0]!.baseline)

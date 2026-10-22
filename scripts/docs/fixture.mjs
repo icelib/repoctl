@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { linkSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { linkSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
@@ -61,11 +61,21 @@ export function fixture(root) {
   const repoctl = createRequire(installed.resolve('repoctl/package.json'))
   const monorepo = createRequire(repoctl.resolve('@icebreakers/monorepo/package.json'))
   const templates = path.dirname(monorepo.resolve('@icebreakers/monorepo-templates/package.json'))
-  const links = path.join(root, 'asset-links')
-  mkdirSync(links)
-  for (const filename of ['lefthook.yml', ...workflows]) {
-    linkSync(path.join(templates, 'assets', filename), path.join(links, path.basename(filename)))
+  const links = path.join(root, 'package-links')
+  function linkPackage(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const filename = path.join(directory, entry.name)
+      if (entry.isDirectory() && entry.name !== 'node_modules') {
+        linkPackage(filename)
+      }
+      else if (entry.isFile()) {
+        const target = path.join(links, path.relative(templates, filename))
+        mkdirSync(path.dirname(target), { recursive: true })
+        linkSync(filename, target)
+      }
+    }
   }
+  linkPackage(templates)
   const cli = path.join(workspace, 'node_modules/repoctl/bin/repo.js')
   const git = args => run('git', args, workspace).trim()
   git(['init', '-b', 'main'])

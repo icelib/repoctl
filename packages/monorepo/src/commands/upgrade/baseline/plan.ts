@@ -33,8 +33,7 @@ export async function createBaselinePlanner(context: UpgradeContext) {
     const record = parseBaseline((await read('target', filename))!, filename)
     stored.set(record.path, record)
   }
-  const metadataPath = path.resolve(plan.assetDir, '../package.json')
-  const metadata = JSON.parse((await read('config', metadataPath))!.toString()) as { name: string, version: string }
+  const metadata = JSON.parse((await read('package', 'package.json'))!.toString()) as { name: string, version: string }
   if (metadata.name !== templatePackage || typeof metadata.version !== 'string' || !metadata.version) {
     throw new Error('Invalid template package identity.')
   }

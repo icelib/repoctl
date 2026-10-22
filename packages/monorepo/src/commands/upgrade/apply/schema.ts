@@ -20,7 +20,8 @@ export function validateUpgradePlanFiles(plan: UpgradePlan) {
     throw new Error('Invalid upgrade discovery precondition.')
   }
   for (const input of plan.inputs) {
-    if (!['target', 'asset', 'config'].includes(input.area) || typeof input.path !== 'string' || !digest(input.hash)) {
+    if (!['target', 'asset', 'package', 'config'].includes(input.area) || typeof input.path !== 'string' || !digest(input.hash)
+      || (input.area === 'package' && input.path !== 'package.json')) {
       throw new Error('Invalid upgrade input.')
     }
   }
