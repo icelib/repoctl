@@ -23,7 +23,7 @@ it.each(packages)('resolves $name declarations in the same module format as each
       undefined,
       mode,
     ).resolvedModule
-    expect(resolved?.resolvedFileName).toBe(path.join(directory, target))
+    expect(resolved && path.normalize(resolved.resolvedFileName)).toBe(path.join(directory, target))
     expect(resolved?.packageId?.name).toBe(pkg.name.replace(/\/stylelint$/u, ''))
   }
 })

@@ -44,7 +44,7 @@ it.each(['mts', 'cts'])('checks strict built %s declarations with the supported 
   options.paths = { eslint: [peer!.resolvedFileName] }
   const host = ts.createCompilerHost(options)
   const getSourceFile = host.getSourceFile.bind(host)
-  host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) => fileName === filename
+  host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) => path.normalize(fileName) === filename
     ? ts.createSourceFile(fileName, consumer, languageVersion, true)
     : getSourceFile(fileName, languageVersion, onError, shouldCreateNewSourceFile)
   const diagnostics = ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host))
