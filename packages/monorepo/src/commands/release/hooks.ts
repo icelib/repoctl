@@ -47,6 +47,9 @@ function verificationEnvironment(options: ReleaseOptions) {
     'REPO_RELEASE_RECOVERY_SOURCE_SHA',
     'REPO_RELEASE_SOURCE_SHA',
     'REPO_RELEASE_ACKNOWLEDGE_HOOKS',
+    'REPOCTL_NIGHTLY_PROVIDER',
+    'REPOCTL_NIGHTLY_SCHEDULE',
+    'REPOCTL_SNAPSHOT_PUBLISH',
   ]) {
     delete env[variable]
   }
