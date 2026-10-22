@@ -293,6 +293,6 @@ UnoCSS 规则会从被检查文件所在目录向上查找 `uno.config.*` 或
 
 ## 项目链接
 
-- 文档：https://repoctl.icebreaker.top
+- 文档：https://repo.icebreaker.top
 - 仓库：https://github.com/icelib/repoctl/tree/main/packages/stylelint-plugin-tailwindcss
 - 问题反馈：https://github.com/icelib/repoctl/issues

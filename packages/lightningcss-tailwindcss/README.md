@@ -106,6 +106,6 @@ If you need to inspect the consuming project's installed Tailwind runtime or con
 
 ## Project links
 
-- Documentation: https://repoctl.icebreaker.top
+- Documentation: https://repo.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/lightningcss-tailwindcss
 - Issues: https://github.com/icelib/repoctl/issues

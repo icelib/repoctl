@@ -19,10 +19,10 @@ const nimbus = getTemplateDefinition('nimbus')
 
 受管 Release 工作流支持从仓库默认分支手动发布 nightly，默认使用 npm 的 `snapshot-nightly`；也可以通过 `commands.release.nightly.provider` 选择 `pkg-pr-new`。自动发布需要显式配置 `commands.release.nightly.schedule` UTC cron，再审查并应用 `repo upgrade`，同步工作流。源仓库专用的定时配置与质量策略不会进入模板。
 
-新项目会在 `.repoctl/baselines/root` 记录 Release 工作流基线，需与项目一起提交，供后续升级合并使用。已有的自定义工作流与 preset 管理工作流继续保留其归属及冲突检查。配置方法和渠道要求见[发布任务文档](https://repoctl.icebreaker.top/zh/tasks/release)。
+新项目会在 `.repoctl/baselines/root` 记录 Release 工作流基线，需与项目一起提交，供后续升级合并使用。已有的自定义工作流与 preset 管理工作流继续保留其归属及冲突检查。配置方法和渠道要求见[发布任务文档](https://repo.icebreaker.top/zh/tasks/release)。
 
 ## 项目链接
 
-- 文档：https://repoctl.icebreaker.top
+- 文档：https://repo.icebreaker.top
 - 仓库：https://github.com/icelib/repoctl/tree/main/packages/monorepo-templates
 - 问题反馈：https://github.com/icelib/repoctl/issues

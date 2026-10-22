@@ -15,6 +15,9 @@ export async function createContext(opts: UpgradeOptions) {
   const config = loaded.config.commands?.upgrade ?? {}
   const options = { ...opts, ...resolveCommandValues('upgrade', config, selectCommandOverrides('upgrade', opts)).values, cwd }
   const rootDir = await canonicalDirectory(path.resolve(cwd, options.outDir ?? ''))
+  // Deployment opt-in belongs to the destination workspace, even when upgrade
+  // options come from a different invocation directory via --out-dir.
+  const targetConfig = rootDir === cwd ? loaded : await loadMonorepoConfigDetails(rootDir, { refresh: true })
   const base = getAssetTargets(options.core ?? false)
   const configured = config.targets?.length ? (options.mergeTargets === false ? config.targets : [...base, ...config.targets]) : base
   const targets = [...new Set(opts.targets ?? configured)].map(relativeFile).sort()
@@ -31,7 +34,7 @@ export async function createContext(opts: UpgradeOptions) {
     plan.inputs.push({ ...input, hash: content === null ? null : hash(content) })
     return content
   }
-  for (const candidate of new Set([...getRepoctlConfigCandidates(cwd), ...loaded.files])) {
+  for (const candidate of new Set([...getRepoctlConfigCandidates(cwd), ...loaded.files, ...getRepoctlConfigCandidates(rootDir), ...targetConfig.files])) {
     await read('config', candidate)
   }
   function conflict(filename: string, error: unknown) {
@@ -56,7 +59,7 @@ export async function createContext(opts: UpgradeOptions) {
     }
     return file
   }
-  return { plan, options, config, releaseConfig: loaded.config.commands?.release, docsConfig: loaded.config.commands?.docs, read, put, conflict }
+  return { plan, options, config, releaseConfig: loaded.config.commands?.release, docsConfig: targetConfig.config.commands?.docs, read, put, conflict }
 }
 
 export type UpgradeContext = Awaited<ReturnType<typeof createContext>>

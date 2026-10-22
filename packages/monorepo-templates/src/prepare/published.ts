@@ -1,6 +1,6 @@
 import YAML from 'yaml'
 
-const sourceScriptNames = new Set(['tooling:build', 'check:no-tracked-build-artifacts', 'check:nimbus-upgrade', 'check:workflows', 'test:dev-scenarios', 'test:worker-types'])
+const sourceScriptNames = new Set(['tooling:build', 'check:no-tracked-build-artifacts', 'check:nimbus-upgrade', 'check:workflows', 'test:dev-scenarios', 'test:worker-types', 'docs:build', 'docs:deploy:preview', 'docs:deploy:stable', 'docs:test', 'docs:lint'])
 
 export const isSourceOnlyScript = (name: string) => name.startsWith('dev:') || sourceScriptNames.has(name) || name.startsWith('test:packaged-')
 
@@ -24,10 +24,10 @@ export function sanitizePublishedManifestContent(content: string) {
     // Source profiles reference packages and scripts that consumers do not receive.
     manifest.scripts['dev'] = 'turbo run dev --concurrency=20'
     if (manifest.scripts['lint']) {
-      manifest.scripts['lint'] = manifest.scripts['lint'].replace(/^pnpm run tooling:build && /u, '')
+      manifest.scripts['lint'] = manifest.scripts['lint'].replace(/^pnpm run tooling:build && /u, '').replace(' && pnpm docs:lint', '')
     }
     if (manifest.scripts['test']) {
-      manifest.scripts['test'] = manifest.scripts['test'].replace(' && pnpm test:dev-scenarios', '')
+      manifest.scripts['test'] = manifest.scripts['test'].replace(' && pnpm test:dev-scenarios', '').replace(' && pnpm docs:test', '')
     }
     for (const name of ['test', 'test:dev']) {
       if (manifest.scripts[name]) {

@@ -40,7 +40,7 @@ async function leaveWhileLoading(page, url) {
   await page.goBack()
 }
 
-export async function checkWebsiteBrowser(website) {
+export async function checkWebsiteBrowser(website, channel = 'preview') {
   const server = await serveWebsite(path.join(website, '.vitepress/dist'))
   let browser
   try {
@@ -84,6 +84,15 @@ export async function checkWebsiteBrowser(website) {
       await page.locator('h1').first().waitFor()
       assert.equal(await page.locator('html').getAttribute('lang'), route.startsWith('/zh') ? 'zh-CN' : 'en-US')
       assert.ok(await page.locator('h1').first().textContent())
+      const banner = page.locator('.repoctl-preview-banner')
+      assert.equal(await banner.count(), channel === 'preview' ? 1 : 0)
+      if (channel === 'preview') {
+        assert.ok((await banner.textContent()).includes(route.startsWith('/zh') ? '尚未发布' : 'unreleased'))
+        assert.equal(await banner.locator('a').getAttribute('href'), route.startsWith('/zh') ? 'https://repo.icebreaker.top/zh/' : 'https://repo.icebreaker.top')
+        const bannerBox = await banner.boundingBox()
+        const navBox = await page.locator('.VPNav').boundingBox()
+        assert.ok(bannerBox && navBox && navBox.y >= bannerBox.y + bannerBox.height, 'preview banner does not cover navigation')
+      }
     }
     await page.goto(`${server.url}/reference/commands`)
     assert.ok(await page.locator('pre.shiki').count() > 0, 'code remains highlighted')
@@ -92,6 +101,11 @@ export async function checkWebsiteBrowser(website) {
     await page.locator('.VPLocalSearchBox .result').first().waitFor()
     await page.keyboard.press('Escape')
     await page.setViewportSize({ width: 390, height: 844 })
+    if (channel === 'preview') {
+      const bannerBox = await page.locator('.repoctl-preview-banner').boundingBox()
+      const navBox = await page.locator('.VPNav').boundingBox()
+      assert.ok(bannerBox && navBox && navBox.y >= bannerBox.y + bannerBox.height, 'mobile preview banner does not cover navigation')
+    }
     await page.locator('.VPNavBarHamburger').click()
     await page.locator('.VPNavScreen').waitFor({ state: 'visible' })
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, 'mobile layout fits the viewport')

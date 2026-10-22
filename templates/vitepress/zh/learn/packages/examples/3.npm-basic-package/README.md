@@ -1,1 +1,1 @@
-https://repoctl.icebreaker.top/
+https://repo.icebreaker.top/

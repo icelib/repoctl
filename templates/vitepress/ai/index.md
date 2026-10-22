@@ -9,7 +9,7 @@ outline: deep
 | Field         | Value                                                |
 | ------------- | ---------------------------------------------------- |
 | Product       | repoctl, task-first CLI for monorepos                |
-| Official site | https://repoctl.icebreaker.top                       |
+| Official site | https://repo.icebreaker.top                          |
 | Source        | https://github.com/icelib/repoctl                    |
 | npm package   | `repoctl` — https://www.npmjs.com/package/repoctl    |
 | Install       | `pnpm add -D repoctl`                                |

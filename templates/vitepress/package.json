@@ -6,7 +6,7 @@
   "description": "Documentation website for repoctl",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
-  "homepage": "https://repoctl.icebreaker.top",
+  "homepage": "https://repo.icebreaker.top",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/icelib/repoctl.git",
@@ -29,8 +29,6 @@
     "check:locales": "node --experimental-strip-types scripts/check-locales.ts",
     "build": "pnpm run check:locales && vitepress build",
     "preview": "vitepress preview",
-    "deploy": "wrangler deploy",
-    "deploy:preview": "wrangler versions upload",
     "deploy:dry-run": "wrangler deploy --dry-run",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

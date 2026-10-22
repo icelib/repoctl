@@ -27,10 +27,10 @@ Generated workspaces retain automatic pull-request CI and release-intent workflo
 
 The managed Release workflow includes manual nightly publication from the repository's default branch. It defaults to npm `snapshot-nightly`; `commands.release.nightly.provider` can select `pkg-pr-new`. Automatic runs require an explicit `commands.release.nightly.schedule` UTC cron and a reviewed `repo upgrade` to synchronize the workflow. Source-repository schedules and quality policies are not copied.
 
-Fresh scaffolds record the Release workflow baseline under `.repoctl/baselines/root` for later upgrades. Commit it with the workspace; existing custom or preset-owned workflows retain their ownership and conflict checks. See the [release task](https://repoctl.icebreaker.top/tasks/release) for setup and provider requirements.
+Fresh scaffolds record the Release workflow baseline under `.repoctl/baselines/root` for later upgrades. Commit it with the workspace; existing custom or preset-owned workflows retain their ownership and conflict checks. See the [release task](https://repo.icebreaker.top/tasks/release) for setup and provider requirements.
 
 ## Project links
 
-- Documentation: https://repoctl.icebreaker.top
+- Documentation: https://repo.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/monorepo-templates
 - Issues: https://github.com/icelib/repoctl/issues

@@ -70,3 +70,26 @@ it('keeps generated tests runnable without source repository check scripts', () 
   })
   expect(sanitizePublishedManifestContent(content)).toBe(content)
 })
+
+it('keeps source website deployment scripts and checks out of generated consumers', () => {
+  const source = {
+    scripts: {
+      'docs:build': 'node scripts/docs-deployment/build.mjs',
+      'docs:deploy:preview': 'node scripts/docs-deployment/deploy.mjs preview',
+      'docs:deploy:stable': 'node scripts/docs-deployment/deploy.mjs stable',
+      'docs:test': 'node --test scripts/docs-deployment/deployment.test.mjs',
+      'docs:lint': 'eslint scripts/docs-deployment',
+      'docs:custom': 'keep-consumer-command',
+      'test': 'vitest run && pnpm test:dev-scenarios && pnpm docs:test',
+      'lint': 'pnpm run tooling:build && turbo run lint && pnpm docs:lint',
+    },
+  }
+  const content = sanitizePublishedManifestContent(JSON.stringify(source))
+  expect(JSON.parse(content).scripts).toEqual({
+    'dev': 'turbo run dev --concurrency=20',
+    'docs:custom': 'keep-consumer-command',
+    'test': 'vitest run',
+    'lint': 'turbo run lint',
+  })
+  expect(sanitizePublishedManifestContent(content)).toBe(content)
+})

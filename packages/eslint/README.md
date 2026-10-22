@@ -314,6 +314,6 @@ You may also pass other flat configs (e.g. from in-house presets) as additional 
 
 ## Project links
 
-- Documentation: https://repoctl.icebreaker.top
+- Documentation: https://repo.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/eslint
 - Issues: https://github.com/icelib/repoctl/issues

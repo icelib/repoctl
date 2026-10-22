@@ -1,7 +1,7 @@
 import type { HeadConfig, TransformContext } from 'vitepress'
+import type { DocsDeployment } from './deployment'
+import { getDocsDeployment } from './deployment'
 import { faqContent } from './home/faq'
-
-export const siteOrigin = 'https://repoctl.icebreaker.top'
 
 function routeFromPage(page: string) {
   const withoutExtension = page.replace(/\.md$/, '')
@@ -21,7 +21,8 @@ function localeRoutes(page: string) {
   return { english, chinese }
 }
 
-export function createPageHead({ page, title, description }: TransformContext): HeadConfig[] {
+export function createPageHead({ page, title, description }: TransformContext, deployment: DocsDeployment = getDocsDeployment(undefined)): HeadConfig[] {
+  const siteOrigin = deployment.origin
   const { english, chinese } = localeRoutes(page)
   const isChinese = page.startsWith('zh/')
   const current = isChinese ? chinese : english
@@ -50,6 +51,7 @@ export function createPageHead({ page, title, description }: TransformContext): 
   }
 
   return [
+    ...(deployment.preview ? [['meta', { name: 'robots', content: 'noindex, nofollow, noarchive' }] as HeadConfig] : []),
     ['link', { rel: 'canonical', href: canonical }],
     ['link', { rel: 'alternate', hreflang: 'en', href: `${siteOrigin}${english}` }],
     ['link', { rel: 'alternate', hreflang: 'zh-CN', href: `${siteOrigin}${chinese}` }],

@@ -79,6 +79,6 @@ Set `GITHUB_TOKEN` (or `GH_TOKEN`) with a token that can read public repo metada
 
 ## Project links
 
-- Documentation: https://repoctl.icebreaker.top
+- Documentation: https://repo.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/changelog-github
 - Issues: https://github.com/icelib/repoctl/issues

@@ -204,36 +204,32 @@ The planning step uses the API to avoid creating an untracked report before sele
 
 The repoctl documentation is deployed as the `repoctl-docs` Cloudflare Worker. VitePress produces static assets, and Workers Static Assets serves them without an application handler or an `ASSETS` binding.
 
-### Workers Builds settings
+### Preview and stable channels
 
-| Setting               | Value                                                   |
-| --------------------- | ------------------------------------------------------- |
-| Repository root       | Repository root                                         |
-| Production branch     | `main`                                                  |
-| Build command         | `pnpm --filter @icebreakers/website build`              |
-| Production deploy     | `pnpm --filter @icebreakers/website run deploy`         |
-| Non-production deploy | `pnpm --filter @icebreakers/website run deploy:preview` |
+| Channel | Domain                     | Worker              | Update trigger                       |
+| ------- | -------------------------- | ------------------- | ------------------------------------ |
+| Stable  | `repo.icebreaker.top`      | `repoctl-docs`      | A completed, eligible stable release |
+| Preview | `next.repo.icebreaker.top` | `repoctl-docs-next` | A push to `main`                     |
 
-The build command checks locale parity before VitePress generates `.vitepress/dist`. The Worker config serves the generated `404.html` for missing routes and keeps `public/_redirects` active for legacy `/en/*` links.
+The source repository opts into [documentation releases](/tasks/docs) with the `website` site. GitHub Actions runs `repo docs plan` and `repo docs deploy`; the stable job uses the exact release completion record. Cloudflare Workers Builds Git integration is disabled so a merge cannot deploy directly to production. The previous `deploy` and `deploy:preview` package scripts have been removed.
 
-### Preview, release, and rollback
+The build checks locale parity before VitePress generates `.vitepress/dist`. `REPO_DOCS_CHANNEL=preview` produces a visible unreleased notice, crawler exclusion files and `noindex` metadata. An ordinary local build defaults to preview. A managed stable build explicitly selects `stable` and emits the canonical sitemap for `repo.icebreaker.top`. Missing routes use `404.html`; `public/_redirects` keeps legacy `/en/*` links working.
 
-Run a local validation before changing production:
+### Validate and retry
+
+Run local validation without publishing:
 
 ```bash
 pnpm --filter @icebreakers/website build
 pnpm --filter @icebreakers/website run deploy:dry-run
-pnpm --filter @icebreakers/website exec wrangler dev
+pnpm --filter @icebreakers/website exec wrangler dev --env next
 ```
 
-Non-production Workers Builds upload a preview version. Promote a validated build through the production deploy command. To roll back, inspect the version history and select the last known-good version:
+Use the Documentation workflow to retry a failed deployment with the same stable release record, or to select pure documentation corrections. Do not promote preview assets or invoke a production rollback outside the managed state: that would make the published site and its recorded baseline disagree. The existing production site remains until the first complete, eligible release establishes a managed baseline.
 
-```bash
-pnpm --filter @icebreakers/website exec wrangler versions list
-pnpm --filter @icebreakers/website exec wrangler rollback <VERSION_ID>
-```
+`repo.icebreaker.top` is the canonical custom domain. Cloudflare Redirect Rules permanently redirect `repoctl.icebreaker.top/*` and `monorepo.icebreaker.top/*` to this host, preserving the path and query string. Domain redirects are managed at the zone level because Workers Static Assets `_redirects` does not support host matching. The preview host is excluded from these redirects.
 
-`repoctl.icebreaker.top` is the canonical custom domain. Cloudflare Redirect Rules send `repo.icebreaker.top/*` and `monorepo.icebreaker.top/*` to the canonical host with a permanent redirect while preserving the path and query string.
+The stable Worker retains the `repoctl.icebreaker.top` custom-domain binding so future deployments preserve its DNS and TLS entry point. The zone redirect runs before the Worker and sends visitors to the canonical host.
 
 ## Keep Reading
 

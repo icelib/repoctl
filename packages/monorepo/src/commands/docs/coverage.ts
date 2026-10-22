@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises'
 import micromatch from 'micromatch'
 import path from 'pathe'
 import { isIntentConsumed, parseIntent, readLedger, readPendingIntents } from '../release/intents'
+import { changedCatalogDependencies } from './catalog'
 import { assertSha, git, isAncestor } from './git'
 import { coveredPackages } from './packages'
 
@@ -45,6 +46,12 @@ export async function checkReleaseCoverage(source: string, record: ReleaseComple
     const manifest = `${directory}/package.json`
     if (changed.includes(manifest)) {
       selected.add(manifest)
+    }
+    else {
+      // The manifest is identical to its published source, but catalog values live outside it.
+      for (const dependency of await changedCatalogDependencies(source, proof.sourceSha, pkg.manifest)) {
+        blockers.push(`Unpublished catalog dependency for ${name}: ${dependency}`)
+      }
     }
     if (selected.size) {
       blockers.push(`Unpublished inputs for ${name}: ${[...selected].sort().join(', ')}`)

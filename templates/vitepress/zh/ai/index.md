@@ -17,7 +17,7 @@ AI 文档入口用于给 Cursor、Claude Code、Codex 和其他 AI 编程工具�
 
 ## 2. 在 AI 工具里怎么用
 
-优先把 `https://repoctl.icebreaker.top/llms.txt` 作为入口提供给 AI 工具。只有当工具不能继续抓取链接，或者你需要离线提供完整上下文时，再使用 `https://repoctl.icebreaker.top/llms-full.txt`。
+优先把 `https://repo.icebreaker.top/llms.txt` 作为入口提供给 AI 工具。只有当工具不能继续抓取链接，或者你需要离线提供完整上下文时，再使用 `https://repo.icebreaker.top/llms-full.txt`。
 
 ```txt
 先给 llms.txt

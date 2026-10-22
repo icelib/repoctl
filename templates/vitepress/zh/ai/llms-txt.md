@@ -16,7 +16,7 @@ description: 使用 llms.txt 为大语言模型提供更易读取的 repoctl 文
 
 ## 1. 使用方式
 
-访问 `https://repoctl.icebreaker.top/llms.txt` 可以获取当前文档的 LLM 索引。如果需要一次性提供完整上下文，可以使用 `https://repoctl.icebreaker.top/llms-full.txt`。
+访问 `https://repo.icebreaker.top/llms.txt` 可以获取当前文档的 LLM 索引。如果需要一次性提供完整上下文，可以使用 `https://repo.icebreaker.top/llms-full.txt`。
 
 当你在 Cursor、Claude Code、Codex 或其他 AI 编程工具里引用 repoctl 文档时，优先提供 `llms.txt`，再按需要补充具体页面链接。
 

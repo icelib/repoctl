@@ -118,7 +118,7 @@ dev-configs 相关开发包、测试、fixtures 和 demo 与 repoctl 在同一�
 
 ## 相关链接
 
-- 文档：https://repoctl.icebreaker.top
+- 文档：https://repo.icebreaker.top
 - GitHub：https://github.com/icelib/repoctl
 - Issues：https://github.com/icelib/repoctl/issues
 - 安全策略：[SECURITY.md](SECURITY.md)
