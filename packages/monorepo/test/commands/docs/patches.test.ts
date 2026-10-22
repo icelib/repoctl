@@ -56,7 +56,9 @@ describe('selected stable documentation corrections', () => {
     const correction = commit(cwd)
     const exact = ((_command: string, args: string[], input: { cwd: string, env: NodeJS.ProcessEnv }) => {
       if (args[1] === 'docs:stable') {
-        expect(readFileSync(path.join(input.cwd, 'website/index.md'), 'utf8')).toBe(content)
+        const rendered = readFileSync(path.join(input.cwd, 'website/index.md'), 'utf8')
+        // Git may check out CRLF on Windows; retain the hard-break spaces when comparing.
+        expect(rendered.replaceAll('\r\n', '\n')).toBe(content)
         writeFileSync(input.env['REPO_DOCS_RESULT_FILE']!, JSON.stringify({ versionId: 'whitespace-preserved' }))
       }
       return { status: 0, stdout: '', stderr: '' }
