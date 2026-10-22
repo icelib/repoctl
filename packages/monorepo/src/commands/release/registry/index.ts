@@ -9,8 +9,11 @@ import { registrySettings } from './settings'
 
 export interface RegistryVersion {
   'version': string
+  'name'?: string
   'gitHead'?: string
   'dist-tags'?: Record<string, string>
+  'dist'?: { integrity?: string }
+  'repoctlSnapshot'?: unknown
 }
 
 export function sleep(milliseconds: number, options: ReleaseOptions) {
@@ -76,7 +79,7 @@ class RegistryClient {
     }
   }
 
-  async inspect(pkg: PublishedPackage, deadline: number, fields: 'version' | 'metadata' = 'metadata'): Promise<RegistryVersion | undefined> {
+  async inspect(pkg: PublishedPackage, deadline: number, fields: 'version' | 'metadata' | 'manifest' = 'metadata'): Promise<RegistryVersion | undefined> {
     const settings = registrySettings(this.options)
     const http = await this.publicHttp(pkg.name)
     let reason = 'request deadline exhausted'
@@ -106,8 +109,11 @@ class RegistryClient {
             data = { ...(data as object), 'dist-tags': tags ?? {} }
           }
         }
+        else if (fields === 'manifest' && this.versions.has(packageKey(pkg))) {
+          data = this.versions.get(packageKey(pkg))
+        }
         else {
-          const result = await queryNpm(['view', packageKey(pkg), ...(fields === 'version' ? ['version'] : ['--json'])], timeout, this.options)
+          const result = await queryNpm(['view', packageKey(pkg), ...(fields === 'version' ? ['version'] : ['--json']), ...(fields === 'manifest' ? ['--prefer-online'] : [])], timeout, this.options)
           const output = `${String(result.stdout ?? '')}\n${String(result.stderr ?? '')}`
           if (result.status !== 0) {
             if (!result.error && /\bE404\b/.test(output)) {
@@ -122,6 +128,10 @@ class RegistryClient {
         }
         if (!data || typeof data !== 'object' || (data as RegistryVersion).version !== pkg.version) {
           throw new ReleaseCommandError(`npm returned invalid metadata for ${packageKey(pkg)}; registry state is unknown`)
+        }
+        // A CLI version-only response is insufficient for immutable artifact confirmation.
+        if (fields === 'manifest') {
+          this.versions.set(packageKey(pkg), data as RegistryVersion)
         }
         return data as RegistryVersion
       }
