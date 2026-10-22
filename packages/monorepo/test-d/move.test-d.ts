@@ -1,6 +1,6 @@
-import type { WorkspaceMoveOptions, WorkspaceMovePlan, WorkspaceMoveResult } from '..'
+import type { WorkspaceMoveOptions, WorkspaceMovePlan, WorkspaceMoveResult } from '@icebreakers/monorepo'
+import { applyWorkspaceMovePlan, planWorkspaceMove } from '@icebreakers/monorepo'
 import { expectError, expectType } from 'tsd'
-import { applyWorkspaceMovePlan, planWorkspaceMove } from '..'
 
 const options: WorkspaceMoveOptions = { target: 'old', to: 'libs/core', name: '@org/core' }
 expectType<Promise<WorkspaceMovePlan>>(planWorkspaceMove('.', options))

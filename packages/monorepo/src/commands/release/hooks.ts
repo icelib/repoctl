@@ -19,9 +19,9 @@ function validateScriptName(script: string) {
   return normalizedScript
 }
 
-function runScripts(scripts: string[], options: ReleaseOptions, extraEnv?: NodeJS.ProcessEnv) {
+function runScripts(scripts: string[], options: ReleaseOptions, extraEnv?: NodeJS.ProcessEnv, execute = run) {
   for (const script of scripts) {
-    run('pnpm', ['run', validateScriptName(script)], {
+    execute('pnpm', ['run', validateScriptName(script)], {
       ...options,
       ...(extraEnv
         ? {
@@ -53,15 +53,20 @@ function verificationEnvironment(options: ReleaseOptions) {
   return env
 }
 
+/** Nightly never consumes a stable release receipt or skips its own verification. */
+export async function runUncachedQualityScripts(options: ReleaseOptions, execute = run) {
+  const config = resolveCommandValues('release', options.config).values
+  const verificationOptions = { ...options, env: verificationEnvironment(options) }
+  runScripts(config.qualityScripts!, verificationOptions, undefined, execute)
+  runScripts(config.hooks?.verify ?? [], verificationOptions, undefined, execute)
+}
+
 export async function runQualityScripts(options: ReleaseOptions) {
   if (hasVerification(options)) {
     return
   }
   await assertWorkspaceDependencyProtocols(options.cwd)
-  const config = resolveCommandValues('release', options.config).values
-  const verificationOptions = { ...options, env: verificationEnvironment(options) }
-  runScripts(config.qualityScripts!, verificationOptions)
-  runScripts(config.hooks?.verify ?? [], verificationOptions)
+  await runUncachedQualityScripts(options)
 }
 
 export function runReleaseHooks(phase: ReleaseHookPhase, options: ReleaseOptions) {

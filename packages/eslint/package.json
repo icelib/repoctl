@@ -22,14 +22,24 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+      "import": {
+        "types": "./index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
     "./stylelint": {
-      "types": "./dist/stylelint.d.ts",
-      "import": "./dist/stylelint.js",
-      "require": "./dist/stylelint.cjs"
+      "import": {
+        "types": "./dist/stylelint.d.ts",
+        "default": "./dist/stylelint.js"
+      },
+      "require": {
+        "types": "./dist/stylelint.d.cts",
+        "default": "./dist/stylelint.cjs"
+      }
     },
     "./*": "./*"
   },
@@ -57,6 +67,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
+    "eslint": "^9.10.0 || ^10.0.0",
     "eslint-plugin-pnpm": "^1.9.1",
     "tailwindcss": "^3.3.0 || ^4.1.17"
   },
@@ -72,18 +83,22 @@
     "@antfu/eslint-config": "9.5.1",
     "@eslint-react/eslint-plugin": "^5.27.1",
     "@icebreakers/stylelint-config": "workspace:*",
+    "@stylistic/eslint-plugin": "^5.10.0",
+    "@typescript-eslint/parser": "^8.68.0",
     "@typescript-eslint/rule-tester": "^8.71.2",
     "@typescript-eslint/typescript-estree": "^8.71.2",
     "@typescript-eslint/utils": "^8.71.2",
     "@vue/compiler-sfc": "^3.5.44",
     "@weapp-vite/eslint": "^0.2.10",
     "defu": "^6.1.7",
+    "eslint-config-flat-gitignore": "^2.4.0",
     "eslint-flat-config-utils": "3.2.0",
     "eslint-plugin-better-tailwindcss": "^4.9.1",
     "eslint-plugin-format": "2.0.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
-    "eslint-plugin-tailwindcss": "4.4.0"
+    "eslint-plugin-tailwindcss": "4.4.0",
+    "eslint-processor-vue-blocks": "^2.0.0"
   },
   "publishConfig": {
     "access": "public",

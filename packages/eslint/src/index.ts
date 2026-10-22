@@ -5,6 +5,7 @@ export type {
   BetterTailwindcssConfig,
   BetterTailwindcssOption,
   IcebreakerFormatterOptions,
+  OptionsConfig,
   StylelintBridgeConfig,
   StylelintBridgeOption,
   TailwindcssConfig,

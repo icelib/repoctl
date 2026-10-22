@@ -1,6 +1,6 @@
-import type { TemplateInstanceInfo, TemplateLinkPlan } from '..'
+import type { TemplateInstanceInfo, TemplateLinkPlan } from '@icebreakers/monorepo'
+import { applyTemplateLinkPlan, listTemplateInstances, planTemplateLink, rebuildTemplateInstanceBaseline } from '@icebreakers/monorepo'
 import { expectError, expectType } from 'tsd'
-import { applyTemplateLinkPlan, listTemplateInstances, planTemplateLink, rebuildTemplateInstanceBaseline } from '..'
 
 expectType<Promise<TemplateInstanceInfo[]>>(listTemplateInstances('/workspace'))
 expectType<Promise<TemplateLinkPlan>>(planTemplateLink({ cwd: '/workspace', target: 'packages/library', template: 'tsdown', version: '2.1.0' }))

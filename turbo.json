@@ -3,6 +3,11 @@
   "globalDependencies": [
     "pnpm-lock.yaml"
   ],
+  "globalPassThroughEnv": [
+    "WRANGLER_SEND_METRICS",
+    "WRANGLER_HIDE_BANNER",
+    "WRANGLER_NO_SKILLS_UPDATE_PROMPTS"
+  ],
   "tasks": {
     "build": {
       "dependsOn": [
@@ -11,6 +16,7 @@
       "inputs": [
         "src/**",
         "lib/**",
+        "declarations/**",
         "worker/**",
         "wrangler.{json,jsonc,toml}",
         ".dev.vars*",
@@ -87,6 +93,7 @@
       "inputs": [
         "src/**",
         "lib/**",
+        "declarations/**",
         "worker/**",
         "wrangler.{json,jsonc,toml}",
         ".dev.vars*",

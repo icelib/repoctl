@@ -1,6 +1,6 @@
-import type { PrePushVerifyOptions } from '..'
+import type { PrePushVerifyOptions } from '@icebreakers/monorepo'
+import { verifyPrePush } from '@icebreakers/monorepo'
 import { expectAssignable, expectType } from 'tsd'
-import { verifyPrePush } from '..'
 
 expectAssignable<PrePushVerifyOptions>({ cwd: '.', stdinText: '' })
 expectAssignable<PrePushVerifyOptions>({ workspaces: ['apps/admin', 'domains/payments/lib'] })

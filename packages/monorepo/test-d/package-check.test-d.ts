@@ -1,6 +1,6 @@
-import type { PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport } from '..'
+import type { PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport } from '@icebreakers/monorepo'
+import { checkPackages } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
-import { checkPackages } from '..'
 
 expectType<Promise<PackageCheckReport>>(checkPackages({ cwd: '.', filters: ['@scope/*'], keepTemp: true }))
 expectAssignable<PackageCheckOptions>({ cwd: '.', includePrivate: true, buildScript: 'build:release', timeoutMs: 1000 })

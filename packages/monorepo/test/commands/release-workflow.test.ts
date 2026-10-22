@@ -22,7 +22,7 @@ describe('release workflow', () => {
     const workflow = YAML.parse(await fs.readFile(`${root}/.github/workflows/release.yml`, 'utf8'))
     const audit = workflow.jobs['oidc-audit']
     expect(workflow.on.workflow_dispatch.inputs.mode.options).toContain('oidc-audit')
-    expect(workflow.jobs.release.if).toBe('$' + '{{ inputs.mode != \'oidc-audit\' }}')
+    expect(workflow.jobs.release.if).toBe('$' + '{{ github.event_name != \'schedule\' && inputs.mode != \'nightly\' && inputs.mode != \'oidc-audit\' }}')
     expect(audit.if).toBe('$' + '{{ github.event_name == \'workflow_dispatch\' && inputs.mode == \'oidc-audit\' }}')
     expect(audit.permissions).toEqual({ 'contents': 'read', 'id-token': 'write' })
     const steps = audit.steps as Array<{ uses?: string, run?: string, with?: Record<string, unknown>, env?: Record<string, string> }>

@@ -172,10 +172,12 @@ export type { ReleaseCompletionRecord } from './release/completion'
 export { resolveReleaseBranches } from './release/lines'
 export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
 
+export { createNightlyPlan, releaseNightly } from './release/nightly'
+
+export type { NightlyConsumerReport, NightlyOptions, NightlyPackage, NightlyReport } from './release/nightly'
+
 export { auditReleaseOidc } from './release/oidc'
-
 export type { ReleaseOidcAuditOptions, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from './release/oidc'
-
 export { createReleasePlan } from './release/plan'
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
 export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'

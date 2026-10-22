@@ -44,7 +44,7 @@ export async function checkWebsiteBrowser(website) {
   const server = await serveWebsite(path.join(website, '.vitepress/dist'))
   let browser
   try {
-    browser = await chromium.launch({ channel: process.env.PLAYWRIGHT_CHANNEL || undefined })
+    browser = await chromium.launch({ headless: true, channel: process.env.PLAYWRIGHT_CHANNEL || undefined })
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' })
     const errors = []
     page.on('pageerror', error => errors.push(error.message))

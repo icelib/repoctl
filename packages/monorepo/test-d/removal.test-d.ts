@@ -1,6 +1,6 @@
-import type { WorkspaceRemovalOptions, WorkspaceRemovalPlan, WorkspaceRemovalResult } from '..'
+import type { WorkspaceRemovalOptions, WorkspaceRemovalPlan, WorkspaceRemovalResult } from '@icebreakers/monorepo'
+import { applyWorkspaceRemovalPlan, planWorkspaceRemoval } from '@icebreakers/monorepo'
 import { expectError, expectType } from 'tsd'
-import { applyWorkspaceRemovalPlan, planWorkspaceRemoval } from '..'
 
 const options: WorkspaceRemovalOptions = { target: '@scope/old', removeReferences: true }
 expectType<Promise<WorkspaceRemovalPlan>>(planWorkspaceRemoval('.', options))

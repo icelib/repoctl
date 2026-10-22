@@ -1,6 +1,6 @@
-import type { DocsCommandConfig, DocsDeploymentPlan, DocsDeploymentResult, DocsOptions, ReleaseCompletionRecord } from '..'
+import type { DocsCommandConfig, DocsDeploymentPlan, DocsDeploymentResult, DocsOptions, ReleaseCompletionRecord } from '@icebreakers/monorepo'
+import { deployDocs, planDocsDeployment } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
-import { deployDocs, planDocsDeployment } from '..'
 
 expectAssignable<DocsCommandConfig>({ sites: { website: {
   packages: ['core'],

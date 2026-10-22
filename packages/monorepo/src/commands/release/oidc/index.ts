@@ -12,8 +12,13 @@ export type { ReleaseOidcAuditOptions, ReleaseOidcAuditReport, ReleaseOidcPackag
 /** 逐包核验官方 npm 的短时凭据交换；不发布、不执行 hooks，也不保存凭据。 */
 export async function auditReleaseOidc(options: ReleaseOidcAuditOptions): Promise<ReleaseOidcAuditReport> {
   clearWorkspaceCache()
-  const { packages } = await getWorkspaceData(options.cwd)
-  const candidates = packages.filter(({ manifest }) => typeof manifest.name === 'string' && typeof manifest.version === 'string')
+  const { packages } = await getWorkspaceData(options.cwd, { ignoreRootPackage: !options.packageNames })
+  const available = packages.filter(({ manifest }) => typeof manifest.name === 'string' && typeof manifest.version === 'string')
+  const candidates = options.packageNames ? available.filter(pkg => options.packageNames!.includes(pkg.manifest.name!)) : available
+  if (options.packageNames && (new Set(options.packageNames).size !== options.packageNames.length
+    || candidates.length !== options.packageNames.length || new Set(candidates.map(pkg => pkg.manifest.name)).size !== candidates.length)) {
+    throw new ReleaseCommandError('OIDC audit candidates do not exactly match the public workspace package plan; no credentials were requested')
+  }
   if (!candidates.length) {
     throw new ReleaseCommandError('OIDC audit found no versioned publishable workspace packages')
   }

@@ -1,6 +1,6 @@
-import type { ReleaseBranchesConfig, ReleaseBranchRule, ReleaseCommandConfig, ReleasePlan } from '..'
+import type { ReleaseBranchesConfig, ReleaseBranchRule, ReleaseCommandConfig, ReleasePlan } from '@icebreakers/monorepo'
+import { createReleasePlan, exitPrerelease, resolveReleaseBranches } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
-import { createReleasePlan, exitPrerelease, resolveReleaseBranches } from '..'
 
 const branches: ReleaseBranchesConfig = {
   stable: 'master',
