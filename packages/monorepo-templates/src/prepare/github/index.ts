@@ -3,7 +3,7 @@ import path from 'node:path'
 import { sanitizePublishedCiWorkflowContent } from '../workflows'
 import { sanitizePublishedReleaseWorkflowContent } from './release'
 
-const consumerWorkflowNames = ['ci.yml', 'release-intent-auto.yml', 'release-intent-check.yml']
+const consumerWorkflowNames = ['ci.yml', 'release-intent-auto.yml', 'release-intent-check.yml', 'repoctl-docs.yml', 'repoctl-docs-deploy.yml']
 const sourceOnlyGithubPaths = ['pr-ci', 'nightly', 'workflows/pr-ci.yml', 'workflows/pr-ci-manual.yml', 'workflows/devcontainer.yml']
 
 function isPublishedSourcePath(sourceRoot: string, source: string) {

@@ -6,6 +6,16 @@ Use [`repo workspace prepare`](./artifacts.md) to preview a native Turbo prune b
 
 This page focuses on high-value repoctl commands and options.
 
+## `repo docs plan` / `repo docs deploy`
+
+```bash
+repo docs plan guide --channel preview --source-sha <full-main-sha> --json
+repo docs plan guide --channel stable --release <completion-record-id> --json
+repo docs plan guide --channel stable --commits <correction-sha> --json
+```
+
+`plan` reads publication evidence and checks the frozen source. `deploy` accepts the same selection and runs the configured build/deployment scripts; stable execution belongs in the serialized managed GitHub workflow. Configure `commands.docs.sites` explicitly. See [documentation publication](/tasks/docs) for workflow setup, independent corrections, adapter outputs and recovery.
+
 ## Main Entry
 
 ```bash

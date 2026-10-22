@@ -28,6 +28,8 @@ async function createFixture() {
     outputFile(path.join(consumerRoot, 'ci.yml'), 'on: [pull_request]\njobs:\n  test:\n    steps:\n      - run: pnpm check:workflows\n      - run: pnpm test\n'),
     outputFile(path.join(consumerRoot, 'release-intent-auto.yml'), 'on: [pull_request_target]\njobs: {}\n'),
     outputFile(path.join(consumerRoot, 'release-intent-check.yml'), 'on: [pull_request]\njobs: {}\n'),
+    outputFile(path.join(consumerRoot, 'repoctl-docs.yml'), 'on: [push]\njobs: {}\n'),
+    outputFile(path.join(consumerRoot, 'repoctl-docs-deploy.yml'), 'on: [workflow_call]\njobs: {}\n'),
     outputFile(path.join(assets, '.github/workflows/ci.yml'), 'on: [workflow_call]\njobs: {}\n'),
     outputFile(path.join(assets, '.github/workflows/pr-ci.yml'), 'stale source approval workflow\n'),
     outputFile(path.join(assets, '.github/workflows/pr-ci-manual.yml'), 'stale source manual approval workflow\n'),
@@ -49,6 +51,8 @@ it.each([true, false])('publishes automatic consumer workflows and removes sourc
       'release-intent-auto.yml',
       'release-intent-check.yml',
       'release.yml',
+      'repoctl-docs-deploy.yml',
+      'repoctl-docs.yml',
     ])
     const ci = YAML.parse(await readFile(path.join(github, 'workflows/ci.yml'), 'utf8'))
     expect(ci.on).toEqual(['pull_request'])
@@ -95,7 +99,7 @@ it.each([true, false])('publishes automatic consumer workflows and removes sourc
   }
 })
 
-it('prepares the actual source release workflow with manual nightly and no source cron', async () => {
+it('preserves stable docs while preparing manual consumer nightly without the source cron', async () => {
   const fixture = await createFixture()
   try {
     const source = await readFile(new URL('../../../../../.github/workflows/release.yml', import.meta.url), 'utf8')
@@ -107,8 +111,18 @@ it('prepares the actual source release workflow with manual nightly and no sourc
     expect(release.on.push.branches).toEqual(['main', 'alpha', 'beta', 'rc', 'next'])
     expect(release.on.schedule).toBeUndefined()
     expect(release.on.workflow_dispatch.inputs.mode.options).toEqual(['auto', 'prepare', 'publish', 'publish-unpublished', 'reconcile', 'oidc-audit', 'nightly'])
-    expect(Object.keys(release.jobs).sort()).toEqual(['nightly', 'oidc-audit', 'release'])
+    expect(Object.keys(release.jobs).sort()).toEqual(['docs', 'nightly', 'oidc-audit', 'release'])
     expect(release.jobs.release.if).toBe('$' + '{{ github.event_name != \'schedule\' && inputs.mode != \'nightly\' && inputs.mode != \'oidc-audit\' }}')
+    expect(release.jobs.release.outputs).toEqual({
+      'release-record': '$' + '{{ steps.release-finalize.outputs.release-record }}',
+      'docs-sites': '$' + '{{ steps.release-finalize.outputs.docs-sites }}',
+    })
+    expect(release.jobs.docs).toEqual(YAML.parse(source).jobs.docs)
+    expect(release.jobs.docs).toMatchObject({
+      needs: 'release',
+      uses: './.github/workflows/repoctl-docs-deploy.yml',
+      with: { channel: 'stable', release: '$' + '{{ needs.release.outputs.release-record }}' },
+    })
     expect(content).not.toContain('.github/nightly/')
     expect(content).not.toContain('pnpm run tooling:build')
     expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(true)

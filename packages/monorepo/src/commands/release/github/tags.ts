@@ -4,6 +4,17 @@ import { GitHubApiError } from './errors'
 
 interface GitObject { sha: string, type: string }
 
+export async function readBranchHead(request: GitHubRequest, branch: string) {
+  if (!/^[a-z\d][\w./-]*$/i.test(branch) || branch.includes('..') || branch.includes('//') || branch.endsWith('/')) {
+    throw new ReleaseCommandError('Invalid Git branch name')
+  }
+  const object = (await request<{ object: GitObject }>('GET', `/git/ref/heads/${encodeURIComponent(branch)}`)).data?.object
+  if (object?.type !== 'commit' || !/^[a-f0-9]{40}$/.test(object.sha)) {
+    throw new ReleaseCommandError(`Cannot resolve branch head for ${branch}`)
+  }
+  return object.sha
+}
+
 export async function readTagTarget(request: GitHubRequest, tag: string) {
   let object: GitObject | undefined
   try {

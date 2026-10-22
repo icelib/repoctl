@@ -64,6 +64,10 @@ pnpm exec repo check --markdown --redact --out reports/check-plan.md
 
 继续看：[把校验加入 CI](/zh/tasks/ci)。
 
+## 我要让文档跟随已发布版本
+
+配置独立的预览和正式目标，由完整稳定发布确定正式站来源。已有版本的文档修正可通过明确选中的文档提交单独发布。继续看：[文档发布](/zh/tasks/docs)。
+
 ## 我要调试 CI 或同事机器问题
 
 ```bash

@@ -8,6 +8,8 @@ repoctl.config.ts
 
 `monorepo.config.ts` 已不再作为运行时配置入口。迁移旧仓库时请改名为 `repoctl.config.ts`。
 
+`commands.docs.sites` 用于逐站点启用随版本发布的文档。每站配置产品包、根构建/部署脚本、预览与正式目标，以及允许独立修正的路径。完整配置和适配器约定见[文档发布](/zh/tasks/docs)。省略该映射时不会启用文档部署。
+
 repoctl 支持 `ts`、`mts`、`cts`、`js`、`mjs`、`cjs` 等配置文件后缀。新项目优先使用 `repoctl.config.ts`，这样能保留类型提示和更清晰的迁移路径。
 
 ## 最小配置

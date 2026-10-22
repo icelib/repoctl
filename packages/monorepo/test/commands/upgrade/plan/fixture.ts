@@ -6,6 +6,19 @@ import path from 'pathe'
 import { afterEach } from 'vitest'
 
 const roots: string[] = []
+
+/** Model package-store links without mutating the shared source installation. */
+export const sharedInstalledPackage = `
+  const lstat = fs.lstat
+  fs.lstat = async (filename, options) => {
+    const info = await lstat(filename, options)
+    if (path.resolve(filename).startsWith(path.dirname(path.resolve(plan.assetDir)) + path.sep) && info.isFile()) {
+      Object.defineProperty(info, 'nlink', { value: options?.bigint ? 2n : 2 })
+    }
+    return info
+  }
+`
+
 afterEach(async () => {
   await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true })))
 })

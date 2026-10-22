@@ -4,6 +4,7 @@ import type { EnvCacheConfig, EnvCacheSuppression } from '../../../types/env-cac
 import type { ReleaseBranchesConfig } from '../../../types/release'
 import type { Schema } from './schema'
 import { isNightlySchedule } from '../../nightly/config'
+import { docsSchema } from './docs'
 import { array, boolean, choices, isRecord, names, nonempty, object, positive, record, string, strings, union } from './schema'
 
 export const dependencyTypes = array(choices('dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'))
@@ -33,6 +34,7 @@ export const commandSchemas = {
   create: object({ offline: boolean, cacheDir: nonempty, name: string, renameJson: boolean, type: nonempty, templatesDir: nonempty, templateMap: record(templateValue), choices: array(object({ value: nonempty, name: string, description: string, short: string, disabled: union(boolean, string) }, ['value'])), defaultTemplate: nonempty }),
   deps: object({ groups: array(object({ name: nonempty, workspaces: names, dependencies: names, sections: dependencyTypes, reason: nonempty, ignore: boolean }, ['name', 'workspaces', 'dependencies', 'reason'])) }),
   doctor,
+  docs: docsSchema,
   env,
   init: object({ skipReadme: boolean, skipPkgJson: boolean, skipChangeset: boolean, skipIssueTemplateConfig: boolean, tooling: toolingTargets, preset: choices('minimal', 'standard'), force: boolean }),
   mirror: object({ env: record(string) }),

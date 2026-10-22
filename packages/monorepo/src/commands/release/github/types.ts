@@ -75,6 +75,12 @@ export interface UpdateReleaseOptions {
 export type GitHubRequest = <T>(method: string, endpoint: string, body?: unknown) => Promise<{ status: number, data: T | undefined }>
 
 export interface GitHubOperations {
+  /** Read namespaced automation state without changing release checkpoint schemas. */
+  readAutomationState?: (key: string) => Promise<{ revision: string, value: unknown } | undefined>
+  /** Compare-and-swap a namespaced automation record. */
+  writeAutomationState?: (key: string, value: unknown, revision?: string) => Promise<string>
+  /** Resolve the current remote branch head without checkout credentials. */
+  readBranchHead?: (branch: string) => Promise<string>
   /** 读取跨 runner 的发布阶段记录；查询失败必须抛出。 */
   readReleaseState?: (key: string) => Promise<ReleaseStateSnapshot | undefined>
   /** 以远端 revision 比较并交换，阻止并发覆盖。 */

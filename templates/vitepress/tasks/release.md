@@ -2,6 +2,8 @@
 
 Use this task when a change is ready to version and publish. Keep the release plan reviewable before any registry write.
 
+To keep production documentation aligned with published packages while main updates a preview site, configure [documentation publication](/tasks/docs).
+
 ## Prerequisites
 
 - `repo doctor` reports a valid package manager and release configuration.

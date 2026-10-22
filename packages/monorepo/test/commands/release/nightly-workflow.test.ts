@@ -13,6 +13,12 @@ async function workflow(root = rootDir) {
   return YAML.parse(await readFile(path.join(root, '.github/workflows/release.yml'), 'utf8'))
 }
 
+function evaluateCondition(condition: string, context: object) {
+  // Actions permits hyphenated output names in property access; JavaScript needs brackets.
+  const expression = condition.slice(3, -2).trim().replace(/needs\.release\.outputs\.([\w-]+)/g, 'needs.release.outputs["$1"]')
+  return runInNewContext(expression, context, { timeout: 1000 })
+}
+
 describe('managed nightly workflow', () => {
   it('enforces the publication and artifact contracts', async () => {
     const source = await workflow()
@@ -30,11 +36,31 @@ describe('managed nightly workflow', () => {
   ] as const)('routes %s / %s to only the intended job', async (event, mode, schedule, expected) => {
     const source = await workflow()
     const selected = Object.entries(source.jobs).filter(([, job]) => {
-      const expression = (job as { if: string }).if.slice(3, -2).trim()
-      // The checked-in expressions use the JavaScript-compatible comparison subset of Actions.
-      return runInNewContext(expression, { github: { event_name: event, event: { schedule } }, inputs: { mode } }, { timeout: 1000 })
+      return evaluateCondition((job as { if: string }).if, {
+        cancelled: () => false,
+        github: { event_name: event, event: { schedule }, ref: 'refs/heads/main' },
+        inputs: { mode },
+        needs: { release: { outputs: { 'release-record': '', 'docs-sites': '' } } },
+      })
     }).map(([name]) => name)
     expect(selected).toEqual(expected)
+  })
+
+  it.each([
+    ['refs/heads/main', 'release-abc', '["docs"]', false, true],
+    ['refs/heads/next', 'release-abc', '["docs"]', false, false],
+    ['refs/heads/main', '', '["docs"]', false, false],
+    ['refs/heads/main', 'release-abc', '', false, false],
+    ['refs/heads/main', 'release-abc', '[]', false, false],
+    ['refs/heads/main', 'release-abc', '["docs"]', true, false],
+  ])('gates stable docs on main release outputs (%s, %s, %s, cancelled=%s)', async (ref, record, sites, cancelled, expected) => {
+    const source = await workflow()
+    expect(source.jobs.docs.needs).toBe('release')
+    expect(evaluateCondition(source.jobs.docs.if, {
+      cancelled: () => cancelled,
+      github: { ref },
+      needs: { release: { outputs: { 'release-record': record, 'docs-sites': sites } } },
+    })).toBe(expected)
   })
 
   it.skipIf(process.platform === 'win32').each([

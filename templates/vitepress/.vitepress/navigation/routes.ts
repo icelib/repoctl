@@ -43,6 +43,7 @@ export const routeSections = [
       item('reports', 'Reports and output', '报告与输出'),
       item('ci', 'Add checks to CI', '把校验加入 CI'),
       item('release', 'Release packages', '发布包'),
+      item('docs', 'Publish documentation', '发布文档'),
       item('troubleshooting', 'Troubleshoot', '排障'),
     ],
   },

@@ -44,6 +44,7 @@
     "test": "node -e \"require('node:fs').mkdirSync('coverage/.tmp', { recursive: true })\" && pnpm check:no-tracked-build-artifacts && vitest run && pnpm test:types && pnpm test:dev-scenarios",
     "test:packaged-doctor": "node scripts/smoke-packaged-doctor.mjs",
     "test:packaged-create": "node scripts/smoke-packaged-create.mjs",
+    "test:packaged-docs": "node scripts/docs/index.mjs",
     "test:worker-types": "node scripts/worker-types/index.mjs",
     "test:dev-scenarios": "vitest run --config scripts/dev/vitest.config.mjs",
     "test:dev": "node -e \"require('node:fs').mkdirSync('coverage/.tmp', { recursive: true })\" && pnpm check:no-tracked-build-artifacts && vitest",

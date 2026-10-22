@@ -23,6 +23,7 @@ it('accepts the fresh scaffold baseline as the exact root-upgrade upstream', asy
 
 it('defaults to manual npm nightly and renders an explicit provider and cron', async () => {
   const content = await source()
+  const original = YAML.parse(content)
   const defaults = YAML.parse(renderReleaseWorkflow(content))
   expect(defaults.on.schedule).toBeUndefined()
   expect(defaults.jobs.nightly.if).toBe(nightlyWorkflowCondition())
@@ -33,6 +34,10 @@ it('defaults to manual npm nightly and renders an explicit provider and cron', a
   expect(workflow.jobs.nightly.if).toBe(nightlyWorkflowCondition('5 4 * * 1'))
   expect(workflow.jobs.nightly.env).toEqual({ REPOCTL_NIGHTLY_PROVIDER: 'pkg-pr-new', REPOCTL_NIGHTLY_SCHEDULE: '5 4 * * 1' })
   expect(workflow.jobs.nightly.permissions).toEqual({ contents: 'read' })
+  for (const rendered of [defaults, workflow]) {
+    expect(rendered.jobs.docs).toEqual(original.jobs.docs)
+    expect(rendered.jobs.release.outputs).toEqual(original.jobs.release.outputs)
+  }
   expect(renderReleaseWorkflow(configured, { nightly: { provider: 'pkg-pr-new', schedule: '5 4 * * 1' } })).toBe(configured)
 })
 
@@ -54,6 +59,7 @@ it('upgrades an adopted workflow while preserving local edits and rejects stale 
   const h = await fixture()
   await applyUpgradePlan(h.cwd, await planUpgrade({ cwd: h.cwd, targets: [filename] }))
   const installed = await readFile(path.join(h.cwd, filename), 'utf8')
+  const original = YAML.parse(installed)
   await h.write(filename, installed.replace('name: Release', 'name: Team Release'))
   await h.write('repoctl.config.mjs', 'export default {commands:{release:{nightly:{provider:\'pkg-pr-new\',schedule:\'5 4 * * 1\'}}}}')
   const plan = await planUpgrade({ cwd: h.cwd, targets: [filename] })
@@ -62,6 +68,8 @@ it('upgrades an adopted workflow while preserving local edits and rejects stale 
   const content = YAML.parse(Buffer.from(file.content!, 'base64').toString())
   expect(content.name).toBe('Team Release')
   expect(content.jobs.nightly.permissions).toEqual({ contents: 'read' })
+  expect(content.jobs.docs).toEqual(original.jobs.docs)
+  expect(content.jobs.release.outputs).toEqual(original.jobs.release.outputs)
   await applyUpgradePlan(h.cwd, plan)
   const again = await planUpgrade({ cwd: h.cwd, targets: [filename] })
   expect(again.files.every(file => file.status === 'identical')).toBe(true)
@@ -72,6 +80,8 @@ it('upgrades an adopted workflow while preserving local edits and rejects stale 
   const final = YAML.parse(await readFile(path.join(h.cwd, filename), 'utf8'))
   expect(final.name).toBe('Team Release')
   expect(final.on.schedule).toBeUndefined()
+  expect(final.jobs.docs).toEqual(original.jobs.docs)
+  expect(final.jobs.release.outputs).toEqual(original.jobs.release.outputs)
 })
 
 it.each([false, true])('does not adopt an existing workflow without a baseline (managed=%s)', async (managed) => {

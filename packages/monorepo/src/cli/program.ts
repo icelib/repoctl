@@ -6,6 +6,7 @@ import { message, supportedLocales } from '../i18n'
 import { registerAiCommands } from './commands/ai'
 import { registerConfigCommands } from './commands/config'
 import { registerDepsCommands } from './commands/deps'
+import { registerDocsCommands } from './commands/docs'
 import { registerEnvCommands } from './commands/env'
 import { registerGenerateCommand } from './commands/generate'
 import { registerMaintenanceCommands } from './commands/maintenance'
@@ -93,6 +94,7 @@ registerEnvCommands(program, cwd)
 registerConfigCommands(program, cwd)
 registerPresetCommands(program, cwd)
 registerDepsCommands(program, cwd)
+registerDocsCommands(program, cwd)
 registerReleaseCommands(program, cwd)
 registerSkillsCommands(program, cwd)
 registerVerifyCommands(program, cwd)

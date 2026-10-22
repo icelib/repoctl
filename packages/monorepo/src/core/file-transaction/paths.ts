@@ -37,8 +37,7 @@ export function relativeFile(relative: string) {
   return relative
 }
 
-/** Reject linked components and non-files; missing parents are valid planned additions. */
-export async function checkedFile(root: string, relative: string, owned?: Identity) {
+async function checkedPath(root: string, relative: string, owned?: Identity, source = false) {
   relativeFile(relative)
   if (await canonicalDirectory(root) !== root) {
     throw new Error(`Upgrade root changed: ${root}`)
@@ -50,7 +49,7 @@ export async function checkedFile(root: string, relative: string, owned?: Identi
     try {
       const info = await lstat(current, { bigint: true })
       const ownLink = owned && info.ino === owned.ino && info.dev === owned.dev
-      if (info.isSymbolicLink() || (index < parts.length - 1 ? !info.isDirectory() : !info.isFile() || (info.nlink !== 1n && !ownLink))) {
+      if (info.isSymbolicLink() || (index < parts.length - 1 ? !info.isDirectory() : !info.isFile() || (!source && info.nlink !== 1n && !ownLink))) {
         throw new Error(`Linked or non-file upgrade target: ${relative}`)
       }
     }
@@ -63,8 +62,12 @@ export async function checkedFile(root: string, relative: string, owned?: Identi
   return path.join(root, relative)
 }
 
-export async function readOptional(root: string, relative: string, owned?: Identity) {
-  const filename = await checkedFile(root, relative, owned)
+/** Reject linked components and non-files; missing parents are valid planned additions. */
+export function checkedFile(root: string, relative: string, owned?: Identity) {
+  return checkedPath(root, relative, owned)
+}
+
+async function readOptionalPath(filename: string) {
   try {
     return await readFile(filename)
   }
@@ -74,4 +77,13 @@ export async function readOptional(root: string, relative: string, owned?: Ident
     }
     throw error
   }
+}
+
+export async function readOptional(root: string, relative: string, owned?: Identity) {
+  return readOptionalPath(await checkedFile(root, relative, owned))
+}
+
+/** Package stores may hard-link read-only sources; symlinks remain forbidden. */
+export async function readOptionalSource(root: string, relative: string) {
+  return readOptionalPath(await checkedPath(root, relative, undefined, true))
 }

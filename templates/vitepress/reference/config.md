@@ -8,6 +8,8 @@ repoctl.config.ts
 
 `monorepo.config.ts` is no longer loaded at runtime. Rename it to `repoctl.config.ts` before running repoctl.
 
+`commands.docs.sites` opts individual sites into release-aligned documentation. Each site specifies product packages, root build/deploy scripts, preview/stable targets and allowed correction paths. See [documentation publication](/tasks/docs) for the complete configuration and adapter contract. Omitting this map leaves documentation deployment disabled.
+
 ## Minimal Config
 
 ```ts

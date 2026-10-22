@@ -3,7 +3,6 @@ import type { UpgradeContext } from '../plan/context'
 import type { MigrationAttempt, MigrationLedger } from './record'
 import type { MigrationDefinition } from './registry'
 import { Buffer } from 'node:buffer'
-import path from 'pathe'
 import { compare, gt, valid } from 'semver'
 import { actionable } from '../apply/validate'
 import { hash } from '../plan/files'
@@ -21,7 +20,7 @@ function transition(ledger: MigrationLedger, steps: UpgradeMigrationStep[], from
 
 export async function planMigrations(context: UpgradeContext, registry: readonly MigrationDefinition[] = migrationRegistry) {
   const { plan, read, options } = context
-  const metadata = await read('config', path.resolve(plan.assetDir, '../package.json'))
+  const metadata = await read('package', 'package.json')
   const toVersion = metadata && (JSON.parse(metadata.toString()) as { version?: unknown }).version
   if (typeof toVersion !== 'string' || valid(toVersion) !== toVersion) {
     throw new Error('The installed template package has no exact migration version.')
