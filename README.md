@@ -121,7 +121,7 @@ keeps its own npm version and release intent.
 
 ## Documentation
 
-- Documentation: https://repoctl.icebreaker.top
+- Documentation: https://repo.icebreaker.top
 - GitHub: https://github.com/icelib/repoctl
 - Issues: https://github.com/icelib/repoctl/issues
 - Security: [SECURITY.md](SECURITY.md)

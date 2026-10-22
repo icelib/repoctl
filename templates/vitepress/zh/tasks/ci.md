@@ -232,36 +232,32 @@ jobs:
 
 repoctl 文档通过名为 `repoctl-docs` 的 Cloudflare Worker 部署。VitePress 只生成静态资产，Workers Static Assets 直接提供这些文件，因此不需要应用 handler，也不声明 `ASSETS` binding。
 
-### Workers Builds 配置
+### 预览与正式通道
 
-| 配置项     | 值                                                      |
-| ---------- | ------------------------------------------------------- |
-| 仓库根目录 | 仓库根目录                                              |
-| 生产分支   | `main`                                                  |
-| 构建命令   | `pnpm --filter @icebreakers/website build`              |
-| 生产部署   | `pnpm --filter @icebreakers/website run deploy`         |
-| 非生产部署 | `pnpm --filter @icebreakers/website run deploy:preview` |
+| 通道 | 域名                       | Worker              | 更新条件                 |
+| ---- | -------------------------- | ------------------- | ------------------------ |
+| 正式 | `repo.icebreaker.top`      | `repoctl-docs`      | 完整且通过门禁的稳定发布 |
+| 预览 | `next.repo.icebreaker.top` | `repoctl-docs-next` | 推送到 `main`            |
 
-构建命令会先校验双语页面，再由 VitePress 生成 `.vitepress/dist`。Worker 配置会为不存在的路由返回生成后的 `404.html`，并继续读取 `public/_redirects`，兼容旧的 `/en/*` 链接。
+源码仓库通过 `website` 站点接入[文档随稳定版本发布](/zh/tasks/docs)。GitHub Actions 执行 `repo docs plan` 和 `repo docs deploy`，正式任务使用准确的发布完成记录。Cloudflare Workers Builds Git 集成已停用，合并 main 不再直接更新正式站。原有的 `deploy` 和 `deploy:preview` 包脚本已移除。
 
-### 预览、发布与回滚
+构建先校验双语页面，再由 VitePress 生成 `.vitepress/dist`。`REPO_DOCS_CHANNEL=preview` 会生成未发布提示、禁止索引的 robots 文件与响应头，以及 `noindex` 元数据。普通本地构建默认采用 preview；受管正式构建显式选择 `stable`，并生成指向 `repo.icebreaker.top` 的 sitemap。不存在的路由使用 `404.html`，`public/_redirects` 继续兼容旧的 `/en/*` 链接。
 
-修改生产部署前，先完成本地验证：
+### 验证与重试
+
+本地验证不会发布网站：
 
 ```bash
 pnpm --filter @icebreakers/website build
 pnpm --filter @icebreakers/website run deploy:dry-run
-pnpm --filter @icebreakers/website exec wrangler dev
+pnpm --filter @icebreakers/website exec wrangler dev --env next
 ```
 
-非生产 Workers Builds 上传预览版本。验证通过后再执行生产部署。需要回滚时，先查看版本历史，再选择最近的稳定版本：
+通过 Documentation 工作流，使用相同的稳定发布记录重试失败部署，或明确选择纯文档修正。不要直接提升预览产物，也不要绕过受管状态执行生产回滚，否则线上内容会与记录的正式基线不一致。在首次完整、合格的稳定发布建立受管基线前，继续保留现有正式站。
 
-```bash
-pnpm --filter @icebreakers/website exec wrangler versions list
-pnpm --filter @icebreakers/website exec wrangler rollback <VERSION_ID>
-```
+`repo.icebreaker.top` 是唯一 canonical custom domain。Cloudflare Redirect Rules 将 `repoctl.icebreaker.top/*` 和 `monorepo.icebreaker.top/*` 永久跳转到此域名，保留路径与查询参数。Workers Static Assets 的 `_redirects` 不支持按域名匹配，因此域名跳转在 zone 层管理；预览域名不参与跳转。
 
-`repoctl.icebreaker.top` 是唯一 canonical custom domain。Cloudflare Redirect Rules 把 `repo.icebreaker.top/*` 和 `monorepo.icebreaker.top/*` 永久跳转到主域名，同时保留路径和查询参数。
+正式 Worker 保留 `repoctl.icebreaker.top` 的 custom-domain 绑定，确保后续部署继续维护旧域名的 DNS 与 TLS 入口。zone 跳转规则先于 Worker 执行，将访问者送往主域名。
 
 ## 下一步
 

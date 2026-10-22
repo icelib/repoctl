@@ -5,25 +5,7 @@ import { parse } from 'yaml'
 import { getWorkspacePackages } from '../../core/workspace'
 import { record } from '../deps/files'
 import { dependencyReferences } from '../package-check/dependencies'
-
-function resolveCatalog(alias: string, specifier: string, configuration: Record<string, unknown>) {
-  if (!specifier.startsWith('catalog:')) {
-    return specifier
-  }
-  const catalog = specifier.slice(8) || 'default'
-  const named = record(configuration['catalogs'])
-  const ambiguous = catalog === 'default' && configuration['catalog'] != null && named?.['default'] != null
-  const entries = ambiguous
-    ? undefined
-    : catalog === 'default'
-      ? record(configuration['catalog'] ?? named?.['default'])
-      : record(named?.[catalog])
-  const value = entries?.[alias]
-  if (typeof value !== 'string' || value.startsWith('catalog:')) {
-    throw new Error(`Cannot resolve documentation runtime catalog dependency: ${alias} (${specifier})`)
-  }
-  return value
-}
+import { resolveCatalog } from './catalog'
 
 /** Resolve product runtime relationships from the frozen checkout, including aliases. */
 export async function coveredPackages(source: string, site: DocsSiteConfig) {

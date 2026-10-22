@@ -7,7 +7,7 @@
   "description": "Source workspace for repoctl and Icebreaker's shared development packages",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
-  "homepage": "https://repoctl.icebreaker.top",
+  "homepage": "https://repo.icebreaker.top",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/icelib/repoctl.git"
@@ -41,14 +41,14 @@
     "dev:cli": "turbo watch build --filter=@icebreakers/cli",
     "dev:tsdown": "turbo watch build --filter=@icebreakers/tsdown-template",
     "dev:vue-lib": "turbo run build --filter=@icebreakers/vue-lib-template && pnpm --filter @icebreakers/vue-lib-template test:dev",
-    "test": "node -e \"require('node:fs').mkdirSync('coverage/.tmp', { recursive: true })\" && pnpm check:no-tracked-build-artifacts && vitest run && pnpm test:types && pnpm test:dev-scenarios",
+    "test": "node -e \"require('node:fs').mkdirSync('coverage/.tmp', { recursive: true })\" && pnpm check:no-tracked-build-artifacts && vitest run && pnpm test:types && pnpm test:dev-scenarios && pnpm docs:test",
     "test:packaged-doctor": "node scripts/smoke-packaged-doctor.mjs",
     "test:packaged-create": "node scripts/smoke-packaged-create.mjs",
     "test:packaged-docs": "node scripts/docs/index.mjs",
     "test:worker-types": "node scripts/worker-types/index.mjs",
     "test:dev-scenarios": "vitest run --config scripts/dev/vitest.config.mjs",
     "test:dev": "node -e \"require('node:fs').mkdirSync('coverage/.tmp', { recursive: true })\" && pnpm check:no-tracked-build-artifacts && vitest",
-    "lint": "pnpm run tooling:build && turbo run lint",
+    "lint": "pnpm run tooling:build && turbo run lint && pnpm docs:lint",
     "tsd": "turbo run tsd",
     "test:types": "turbo run test:types",
     "check:no-tracked-build-artifacts": "node ./scripts/check-no-tracked-build-artifacts.mjs",
@@ -99,7 +99,12 @@
     "test:packaged-presets": "node scripts/presets/index.mjs",
     "test:packaged-maintenance-presets": "vitest run --config scripts/maintenance-presets/vitest.config.mjs && node scripts/maintenance-presets/index.mjs",
     "test:packaged-generators": "node scripts/generate/index.mjs",
-    "test:packaged-template-parameters": "node scripts/template-parameters/index.mjs"
+    "test:packaged-template-parameters": "node scripts/template-parameters/index.mjs",
+    "docs:build": "node scripts/docs-deployment/build.mjs",
+    "docs:deploy:preview": "node scripts/docs-deployment/deploy.mjs preview",
+    "docs:deploy:stable": "node scripts/docs-deployment/deploy.mjs stable",
+    "docs:test": "node --test scripts/docs-deployment/deployment.test.mjs scripts/docs-deployment/release-inputs.test.mjs",
+    "docs:lint": "eslint scripts/docs-deployment repoctl.config.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

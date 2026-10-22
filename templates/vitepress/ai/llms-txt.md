@@ -9,8 +9,8 @@ The documentation build generates `/llms.txt` and `/llms-full.txt`. English is t
 ## Usage
 
 ```text
-https://repoctl.icebreaker.top/llms.txt
-https://repoctl.icebreaker.top/llms-full.txt
+https://repo.icebreaker.top/llms.txt
+https://repo.icebreaker.top/llms-full.txt
 ```
 
 Use the compact index for discovery and the full file only when the consumer has enough context budget.

@@ -236,7 +236,7 @@ describe('createNewProject unit scenarios', () => {
       name: 'template',
       version: '1.0.0',
       author: 'ice breaker <hi@sonofmagic.top>',
-      homepage: 'https://repoctl.icebreaker.top',
+      homepage: 'https://repo.icebreaker.top',
       bugs: {
         url: 'https://github.com/icelib/repoctl/issues',
       },

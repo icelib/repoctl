@@ -117,6 +117,6 @@ Each `<style>` block in a `.vue` file is linted separately. The bridge:
 
 ## Project links
 
-- Documentation: https://repoctl.icebreaker.top
+- Documentation: https://repo.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/eslint-plugin-better-stylelint
 - Issues: https://github.com/icelib/repoctl/issues

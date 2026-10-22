@@ -44,6 +44,6 @@ pnpm create repoctl@latest -- --lang zh-CN
 
 ## Project links
 
-- Documentation: https://repoctl.icebreaker.top
+- Documentation: https://repo.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/create-repoctl
 - Issues: https://github.com/icelib/repoctl/issues

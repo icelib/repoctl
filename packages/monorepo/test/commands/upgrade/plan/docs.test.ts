@@ -1,4 +1,6 @@
-import { planUpgrade } from '@icebreakers/monorepo'
+import { readFile } from 'node:fs/promises'
+import { applyUpgradePlan, planUpgrade } from '@icebreakers/monorepo'
+import path from 'pathe'
 import { expect, it } from 'vitest'
 import { fixture } from './fixture'
 
@@ -24,4 +26,28 @@ it('enables the managed workflow without overwriting an existing custom deployme
   for (const filename of [preview, reusable]) {
     expect(protectedPlan.files.find(file => file.path === filename)).toMatchObject({ status: 'skip', reason: 'custom-docs-protected' })
   }
+})
+
+it('does not copy an invocation workspace documentation opt-in into an unconfigured output', async () => {
+  const h = await fixture()
+  await h.write('repoctl.config.mjs', `export default ${JSON.stringify({ commands: { docs } })}\n`)
+  const outDir = path.join(h.cwd, 'consumer')
+  const plan = await planUpgrade({ cwd: h.cwd, outDir, targets: [preview, reusable] })
+  expect(plan.status).toBe('ready')
+  expect(plan.files.find(file => file.path === preview)).toMatchObject({ status: 'skip', reason: 'docs-not-configured' })
+  await applyUpgradePlan(h.cwd, plan)
+  await expect(readFile(path.join(outDir, preview))).rejects.toMatchObject({ code: 'ENOENT' })
+  expect(await readFile(path.join(outDir, reusable), 'utf8')).toContain('workflow_call:')
+})
+
+it('uses and freezes the output workspace documentation configuration', async () => {
+  const h = await fixture()
+  await h.write('consumer/repoctl.config.mjs', `export default ${JSON.stringify({ commands: { docs } })}\n`)
+  const outDir = path.join(h.cwd, 'consumer')
+  const plan = await planUpgrade({ cwd: h.cwd, outDir, targets: [preview] })
+  expect(plan.files.find(file => file.path === preview)).toMatchObject({ status: 'add' })
+  expect(plan.inputs).toContainEqual(expect.objectContaining({ area: 'config', path: path.join(outDir, 'repoctl.config.mjs') }))
+  await h.write('consumer/repoctl.config.mjs', 'export default {}\n')
+  await expect(applyUpgradePlan(h.cwd, plan)).rejects.toThrow('Upgrade conflicts')
+  await expect(readFile(path.join(outDir, preview))).rejects.toMatchObject({ code: 'ENOENT' })
 })

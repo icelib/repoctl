@@ -1,20 +1,37 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "repoctl-docs",
-  "compatibility_date": "2026-08-16",
+  "compatibility_date": "2026-10-23",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
-  "preview_urls": true,
+  "preview_urls": false,
   "assets": {
     "directory": ".vitepress/dist",
     "not_found_handling": "404-page"
   },
   "routes": [
     {
+      "pattern": "repo.icebreaker.top",
+      "custom_domain": true
+    },
+    {
       "pattern": "repoctl.icebreaker.top",
       "custom_domain": true
     }
   ],
+  "env": {
+    "next": {
+      "name": "repoctl-docs-next",
+      "workers_dev": false,
+      "preview_urls": false,
+      "routes": [
+        {
+          "pattern": "next.repo.icebreaker.top",
+          "custom_domain": true
+        }
+      ]
+    }
+  },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1

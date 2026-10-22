@@ -148,6 +148,8 @@ exports[`createNewProject > createNewProject demo website case 1`] = `
 [
   ".gitignore",
   ".vitepress/config.ts",
+  ".vitepress/deployment/index.ts",
+  ".vitepress/deployment/output.ts",
   ".vitepress/env.d.ts",
   ".vitepress/home/content.ts",
   ".vitepress/home/faq.ts",
@@ -281,6 +283,7 @@ exports[`createNewProject > createNewProject demo website case 1`] = `
   "tasks/release.md",
   "tasks/reports.md",
   "tasks/troubleshooting.md",
+  "test/deployment.test.ts",
   "test/mermaid.test.ts",
   "test/render.test.ts",
   "test/seo.test.ts",

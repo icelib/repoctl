@@ -31,7 +31,7 @@ This package retains the `repo` and `repoctl` bins for existing installations. N
 
 ## Project links
 
-- Documentation: https://repoctl.icebreaker.top
+- Documentation: https://repo.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/monorepo
 - Issues: https://github.com/icelib/repoctl/issues
 

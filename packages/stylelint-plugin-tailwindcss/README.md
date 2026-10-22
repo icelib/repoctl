@@ -303,6 +303,6 @@ The stricter preset is documented in
 
 ## Project links
 
-- Documentation: https://repoctl.icebreaker.top
+- Documentation: https://repo.icebreaker.top
 - Repository: https://github.com/icelib/repoctl/tree/main/packages/stylelint-plugin-tailwindcss
 - Issues: https://github.com/icelib/repoctl/issues

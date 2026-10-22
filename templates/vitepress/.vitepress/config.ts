@@ -1,11 +1,17 @@
+import type { DocsThemeConfig } from './deployment'
+import process from 'node:process'
 import Tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'vitepress'
 import llmstxt from 'vitepress-plugin-llms'
+import { getDocsDeployment } from './deployment'
+import { writeDeploymentFiles } from './deployment/output'
 import { mermaidMarkdown } from './mermaid/markdown'
 import { createNav, createSidebars } from './navigation/routes'
-import { createPageHead, siteOrigin } from './seo'
+import { createPageHead } from './seo'
 
-export default defineConfig({
+const deployment = getDocsDeployment(process.env.REPO_DOCS_CHANNEL)
+
+export default defineConfig<DocsThemeConfig>({
   outDir: '.vitepress/dist',
   srcExclude: ['CHANGELOG.md', 'learn/packages/examples/**', 'zh/learn/packages/examples/**'],
   title: 'repoctl',
@@ -13,8 +19,9 @@ export default defineConfig({
   description: 'A practical CLI guide for setting up, checking, and maintaining pnpm and Turborepo monorepos.',
   lastUpdated: true,
   cleanUrls: true,
-  sitemap: { hostname: siteOrigin },
-  transformHead: createPageHead,
+  sitemap: deployment.preview ? undefined : { hostname: deployment.origin },
+  transformHead: context => createPageHead(context, deployment),
+  buildEnd: config => writeDeploymentFiles(config.outDir, deployment),
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/brand/repoctl-mark.svg' }],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/brand/repoctl-mark-dark.svg', media: '(prefers-color-scheme: dark)' }],
@@ -22,6 +29,7 @@ export default defineConfig({
     ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/brand/apple-touch-icon.png' }],
   ],
   themeConfig: {
+    docsPreview: deployment.preview,
     logo: {
       light: '/brand/repoctl-mark.svg',
       dark: '/brand/repoctl-mark-dark.svg',
@@ -73,7 +81,7 @@ export default defineConfig({
       llmstxt({
         title: 'repoctl',
         description: 'Practical documentation for setting up, checking, and maintaining pnpm and Turborepo monorepos. Chinese documentation is available under /zh/.',
-        domain: siteOrigin,
+        domain: deployment.origin,
         ignoreFiles: [
           'zh/**',
           'en/**',
