@@ -1,5 +1,34 @@
 # repoctl
 
+## 6.1.0
+
+### Minor Changes
+
+- Respect dependency override boundaries during upgrades and retain fingerprinted field review decisions.
+
+- Add a managed Cloudflare Workers provider for documentation deployment with frozen target validation and recoverable uploads.
+
+- Add a lightweight docs-context API and consistent preview/stable origins, crawler policy, preserved search, and cache inputs for Nimbus and VitePress.
+
+  Parse TypeScript declaration files in ambient mode during environment-cache checks, so valid documentation examples do not produce false source warnings.
+
+  Remove empty Wrangler CI name overrides from native documentation deployments so the verified preview or stable Worker name remains effective.
+
+- Add recoverable documentation readiness checks and safe deployment stage reports.
+
+  Keep selected-site deployment variables out of dependency-install lifecycles so workspace-wide postinstall builds retain each site's own channel defaults.
+
+### Patch Changes
+
+- Isolate simulated registry progress from release verification artifacts and verify documentation lifecycle isolation through real frozen workspace installations.
+
+- Show doctor rule IDs and exact paths, group identical diagnostics without losing counts, and escape shareable reports.
+
+- Allow confirmed npm nightly snapshots through pnpm release cooldown and explain recovery after consumer verification fails.
+
+- Updated dependencies:
+  - @icebreakers/monorepo@6.1.0
+
 ## 6.0.1
 
 ### Patch Changes
