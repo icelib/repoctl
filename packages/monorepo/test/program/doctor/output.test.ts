@@ -153,7 +153,8 @@ describe('commander program doctor output', () => {
       const content = await readFile(reportPath, 'utf8')
       expect(content).toContain('# Repo doctor report')
       expect(content).toContain('| warn | 1 |')
-      expect(content).toContain('- warn: root scripts (fix: run repo upgrade)')
+      expect(content).toContain('**WARN** [root\\-scripts]: root scripts')
+      expect(content).toContain('  - Fix: run repo upgrade')
       expect(successMock).toHaveBeenCalledWith(expect.stringContaining('doctor.md'))
       expect(process.exitCode).toBe(1)
 
@@ -204,8 +205,8 @@ describe('commander program doctor output', () => {
 
       const content = await readFile(reportPath, 'utf8')
       expect(content).not.toContain(root)
-      expect(content).toContain('| workspace | <workspace> |')
-      expect(content).toContain('- warn: root scripts (fix: run repo upgrade from <workspace>)')
+      expect(content).toContain('| workspace | &lt;workspace&gt; |')
+      expect(content).toContain('  - Fix: run repo upgrade from &lt;workspace&gt;')
       expect(process.exitCode).toBeUndefined()
 
       process.exitCode = previousExitCode

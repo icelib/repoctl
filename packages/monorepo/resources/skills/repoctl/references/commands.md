@@ -106,6 +106,8 @@ Usage:
 - `--json` emits the structured report only and still exits non-zero when blocking failures exist
 - `--out <file>` persists the text or JSON report and still exits non-zero when blocking failures exist
 
+Text and Markdown show stable rule IDs, exact affected paths and manifest fields. Identical findings share an explanation and fix while retaining every path and original check count; different reasons, fixes and suppressions stay separate. Use the displayed ID with `--rules`, for example `repo doctor --rules template-instance-drift`. Grouped display never changes statuses, effective totals, suppression policy or full individual JSON records. Use `--redact` before sharing local paths.
+
 ```bash
 repo doctor --list-rules
 repo doctor --rules root-scripts,package-manager --strict
