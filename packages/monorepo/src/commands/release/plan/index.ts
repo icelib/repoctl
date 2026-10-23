@@ -2,6 +2,7 @@ import type { ReleasePlan, ReleasePlanOptions } from './types'
 import { assertReleaseLineVersions, readReleaseBranches } from '../lines'
 import { assertProjectedLine } from '../lines/preview'
 import { getReleaseEnv } from '../shared'
+import { assertWorkspaceDependencyProtocols } from '../workspace-protocol'
 import { PlanError } from './native'
 import { createNativeReleasePlan, emptyReleasePlan } from './native-report'
 
@@ -19,6 +20,7 @@ export async function createReleasePlan(options: ReleasePlanOptions): Promise<Re
     report = await createNativeReleasePlan(options)
     report.branchRule = selected
     if (report.status !== 'blocked') {
+      await assertWorkspaceDependencyProtocols(report.cwd)
       await assertProjectedLine(selected, report.packages, { ...options, cwd: report.cwd })
       assertReleaseLineVersions(selected, report.packages.filter(pkg => pkg.publishCandidate).map(pkg => ({ name: pkg.name, version: pkg.newVersion })))
     }

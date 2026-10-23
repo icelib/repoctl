@@ -24,6 +24,8 @@ After review, use the separate preparation entry `repo release ci --mode=prepare
 
 ## Expected result
 
+The plan also validates internal dependencies of public packages: `dependencies`, `devDependencies`, and `optionalDependencies` must use `workspace:*`; `peerDependencies` may use `workspace:*`, `workspace:^`, or `workspace:~`. For a target at `2.0.1`, pnpm pack produces peer ranges of `2.0.1`, `^2.0.1`, and `~2.0.1`, respectively. Choose the declaration that expresses your compatibility contract; replacing a caret or tilde peer with an exact version changes that contract. External ranges and private consumers are outside this publishing protocol policy. Invalid protocols produce a `blocked` plan without rewriting manifests or running release hooks.
+
 JSON and Markdown describe the same native version decisions. Notes use the existing release renderer and exclude already consumed intent entries. Private packages may change version but are marked as non-publish candidates. The public `createReleasePlan({ cwd })` API returns the same report without writing it to disk.
 
 Planning, automatic triggers, and version preparation recognize the same root and private-package intents. Native pnpm controls version propagation across the complete workspace. Release PR notes include only publishable child packages and require their version-specific changelogs; missing root/private changelogs do not block preparation. Root packages are not publication candidates, even when they are not marked private. Configure pnpm's `versioning.ignore` when a workspace package should not participate in versioning, rather than changing workspace discovery only for the apply step.
