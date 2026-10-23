@@ -10,7 +10,7 @@ repo tooling devcontainer --apply ../devcontainer-plan.json
 
 先审阅 JSON，再应用计划。预设在根 `.devcontainer` 下生成 `devcontainer.json`、`Dockerfile`、`setup.mjs` 和 `README.md`。已有自定义文件或根 `.devcontainer.json` 会阻止应用并保留原状。JSON 提供逐文件 hash 和 unified diff；完整应用过的计划再次执行不会写入。输入或目标变化后应重新预览。`--out` 只创建新计划文件，不覆盖已有文件。
 
-默认依次从 `24.21.0`、`22.23.3` 中选择满足根 `engines.node` 的固定版本。可用 `--node-version <精确版本>` 指定其他满足声明范围、至少为 `22.13.0` 的稳定 Node 版本。启动 Docker 时对应 `node:<版本>-bookworm` 镜像必须存在；预览不会访问 registry。根 `packageManager` 必须固定稳定 pnpm 版本，可以包含 Corepack integrity hash。
+默认依次从 `24.22.1`、`22.23.4`、`26.12.1` 中选择满足根 `engines.node` 的固定版本，推荐使用 Node.js 24.22.1 LTS。可用 `--node-version <精确版本>` 指定其他同时满足安全基线 `^22.23.4 || ^24.22.1 || >=26.12.1` 和根 `engines.node` 的稳定 Node 版本。启动 Docker 时对应 `node:<版本>-bookworm` 镜像必须存在；预览不会访问 registry。根 `packageManager` 必须固定稳定 pnpm 版本，可以包含 Corepack integrity hash。
 
 生成配置后，通过 Dev Containers 扩展打开工作区，或主动运行 [Dev Containers CLI](https://github.com/devcontainers/cli)。创建容器会安装 Corepack `0.36.0`、启用 pnpm、检查其精确版本，并强制校验 engines 后安装工作区。存在 `pnpm-lock.yaml` 时使用 frozen lockfile；首次没有 lockfile 时创建它。Corepack 或安装失败会终止初始化。
 

@@ -8,7 +8,7 @@
 
 ## Requirements
 
-- Node.js 22 or newer
+- Node.js `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended)
 - ESLint 9 with flat config support
 - React core plugins are bundled with this package. Next.js, Query, accessibility, Astro, Svelte, and other ecosystem presets remain optional and are skipped automatically when their plugins are missing.
 - Wevu compatibility checks are bundled and require no additional install. Install optional plugins when you turn on Tailwind (`eslint-plugin-tailwindcss` or `eslint-plugin-better-tailwindcss`), MDX (`eslint-plugin-mdx`), UnoCSS (`@unocss/eslint-plugin`), the Stylelint bridge (`eslint-plugin-better-stylelint`), React accessibility (`eslint-plugin-jsx-a11y`), Vue accessibility (`eslint-plugin-vuejs-accessibility` plus its `globals` peer), Astro (`eslint-plugin-astro` and `astro-eslint-parser`), or Svelte (`eslint-plugin-svelte`, `svelte-eslint-parser`, and `svelte`). XML/SVG formatting needs `@prettier/plugin-xml`; Astro formatting needs `prettier-plugin-astro`.

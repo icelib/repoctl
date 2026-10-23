@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [22, 24]
+        node-version: [22.23.4, 24.22.1, 26.12.1]
     runs-on: ${{ matrix.os }}
     # Remote Caching enabled - configure TURBO_TOKEN and TURBO_TEAM in repository settings
     env:
@@ -73,11 +73,11 @@ jobs:
         run: pnpm lint
 
       - name: Typecheck
-        if: ${{ matrix.os != 'windows-latest' || matrix.node-version != 22 }}
+        if: ${{ matrix.os != 'windows-latest' || matrix.node-version != '22.23.4' }}
         run: pnpm typecheck
 
       - name: Typecheck (Windows Node 22)
-        if: ${{ matrix.os == 'windows-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'windows-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm exec turbo run typecheck --concurrency=1
 
       - name: TSD
@@ -90,62 +90,62 @@ jobs:
         run: pnpm test:worker-types
 
       - name: Install browser for packaged documentation checks
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Check packaged monorepo creation
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-create
 
       - name: Check packaged doctor
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-doctor
 
       - name: Check packaged documentation publication
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-docs
 
       - name: Check packaged Nimbus documentation
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-nimbus
 
       - name: Check packaged React application
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-react
 
       - name: Check packaged Next.js application
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-next
 
       - name: Check packaged Playwright capability
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-capability
 
       - name: Check packaged Storybook capability
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-storybook
       - name: Check packaged React component library
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-react-lib
 
       - name: Check packaged template author validation
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-template-validation
 
       - name: Check packaged remote template sources
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-template-sources
 
       - name: Check packaged component and route generators
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-generators
 
       - name: Check packaged organization presets
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 22 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '22.23.4' }}
         run: pnpm test:packaged-presets
 
       - name: Check packaged preset maintenance
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == 24 }}
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.node-version == '24.22.1' }}
         run: pnpm test:packaged-maintenance-presets
 
       - name: Upload coverage reports to Codecov
@@ -154,5 +154,5 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Check packaged typed template parameters
-        if: matrix.os == 'ubuntu-latest' && matrix.node-version == 24
+        if: matrix.os == 'ubuntu-latest' && matrix.node-version == '24.22.1'
         run: pnpm test:packaged-template-parameters

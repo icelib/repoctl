@@ -38,11 +38,14 @@ it('lets pnpm resolve migrated default/named catalogs and aliases, update the lo
     })
   })
   const pnpm = process.env['npm_execpath'] ?? 'pnpm'
+  // Exercise the selected binary against a dependency-only registry. pnpm 12
+  // otherwise bootstraps packageManager dependencies from that registry too.
+  const managerGuards = ['--config.manage-package-manager-versions=false', '--config.pm-on-fail=ignore']
   const archive = packageArchive(dependency)
   let registry = ''
-  let requests = 0
+  const requests: string[] = []
   const server = createServer((request, response) => {
-    requests++
+    requests.push(request.url ?? '')
     if (request.url === '/package.tgz') {
       response.end(archive)
       return
@@ -64,9 +67,11 @@ it('lets pnpm resolve migrated default/named catalogs and aliases, update the lo
   try {
     await applyCatalogMigrationPlan(h.workspace, await planCatalogMigration(h.workspace, { dependency, section: 'dependencies' }))
     await applyCatalogMigrationPlan(h.workspace, await planCatalogMigration(h.workspace, { dependency: 'alias', section: 'devDependencies', catalog: 'aliases' }))
-    expect(requests).toBe(0)
+    expect(requests).toEqual([])
     await expect(readFile(path.join(h.workspace, 'pnpm-lock.yaml'))).rejects.toThrow()
-    const install = ['--ignore-scripts', '--registry', registry, '--store-dir', path.join(h.root, 'store'), '--config.minimumReleaseAge=0']
+    expect((await run(pnpm, [...managerGuards, '--version'])).trim()).toBe(packageManager.slice(5).split('+')[0])
+    // The daily update check also requests /pnpm, outside this catalog fixture.
+    const install = [...managerGuards, '--ignore-scripts', '--registry', registry, '--store-dir', path.join(h.root, 'store'), '--config.minimumReleaseAge=0', '--config.update-notifier=false']
     await run(pnpm, ['install', '--lockfile-only', ...install])
     await run(pnpm, ['install', '--frozen-lockfile', ...install])
     const lock = Object.assign({}, ...YAML.parseAllDocuments(await readFile(path.join(h.workspace, 'pnpm-lock.yaml'), 'utf8')).map(document => document.toJSON()))
@@ -76,6 +81,7 @@ it('lets pnpm resolve migrated default/named catalogs and aliases, update the lo
       expect(output).toBe('')
     }
     expect(JSON.parse(await readFile(path.join(h.workspace, 'packages/a/package.json'), 'utf8')).peerDependencies[dependency]).toBe('^1 || ^2')
+    expect(new Set(requests)).toEqual(new Set([`/${dependency}`, '/package.tgz']))
   }
   finally {
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))

@@ -6,7 +6,7 @@
 
 ## 环境要求
 
-- Node.js 22.13+
+- Node.js `^22.23.4 || ^24.22.1 || >=26.12.1`（推荐 24.22.1 LTS）
 - 通过 `GITHUB_TOKEN`、`GH_TOKEN` 或 `.env` 暴露 GitHub Token
 
 ## 安装

@@ -16,7 +16,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": ["LICENSE", "README.md", "dist"],
-  "engines": { "node": ">=22.13.0" },
+  "engines": { "node": "^22.23.4 || ^24.22.1 || >=26.12.1" },
   "scripts": {
     "build": "vite build",
     "lint": "eslint . && stylelint \"src/**/*.css\"",

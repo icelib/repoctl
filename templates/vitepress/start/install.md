@@ -4,7 +4,7 @@ This guide follows the order you would use when adding repoctl to a workspace.
 
 ## Prerequisites
 
-- Node.js 22.13 or newer.
+- Node.js matching `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended).
 - pnpm. Corepack is recommended: `corepack enable`.
 - Git. `repo doctor` reads repository metadata and checks the commit workflow.
 

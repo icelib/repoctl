@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { checkDevContainerWorkflow } from './devcontainer/workflow.mjs'
 import { checkCiWorkflow } from './workflows/ci.mjs'
+import { checkWorkflowNodeVersions } from './workflows/node.mjs'
 import { checkPrCiWorkflow } from './workflows/pr-ci.mjs'
 import { checkAutomaticReleaseIntentWorkflow, checkReleaseIntentWorkflow } from './workflows/release-intent.mjs'
 import { checkReleaseWorkflow } from './workflows/release.mjs'
@@ -11,6 +12,7 @@ const rootDir = path.dirname(
 )
 
 checkPrCiWorkflow(rootDir)
+checkWorkflowNodeVersions(rootDir)
 checkReleaseWorkflow(rootDir)
 checkCiWorkflow(rootDir)
 checkReleaseIntentWorkflow(rootDir)

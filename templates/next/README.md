@@ -1,6 +1,6 @@
 # Next.js App Router workspace
 
-This TypeScript template follows `create-next-app@16.3.8`'s App Router layout and uses the shared repoctl tooling. It includes a server page, a client counter and `GET /api/health`. It requires Node 22.13 or newer and shares the workspace's pnpm version and lockfile.
+This TypeScript template follows `create-next-app@16.3.8`'s App Router layout and uses the shared repoctl tooling. It includes a server page, a client counter and `GET /api/health`. It supports Node.js `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended) and shares the workspace's pnpm version and lockfile.
 
 Run these from the generated workspace root:
 

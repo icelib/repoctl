@@ -7,6 +7,7 @@ import fs from '@/utils/fs'
 import { loadMonorepoConfig } from '../../core/config'
 import { resolveCommandValues } from '../../core/config/resolution'
 import { createContext } from '../../core/context'
+import { supportedNodeRange } from '../../core/runtime/node'
 import setChangeset from './setChangeset'
 import setIssueTemplateConfig from './setIssueTemplateConfig'
 import setPkgJson from './setPkgJson'
@@ -59,7 +60,7 @@ async function ensureRootPackageJson(cwd: string) {
       private: true,
       packageManager: await getWorkspacePackageManager(),
       engines: {
-        node: '>=22.13.0',
+        node: supportedNodeRange,
       },
       scripts: {},
       devDependencies: {},

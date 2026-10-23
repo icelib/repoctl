@@ -52,7 +52,7 @@ pnpm exec repo check
 
 ## Requirements
 
-- Node.js 22.13 or newer
+- Node.js matching `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended)
 - pnpm (run `corepack enable` so the declared workspace version is used)
 - CLI output is English by default; `--lang zh-CN` or `REPOCTL_LANG=zh-CN` selects Simplified Chinese
 

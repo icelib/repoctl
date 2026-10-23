@@ -205,6 +205,27 @@ it('rejects stale metadata when upstream revalidation fails', async (t) => {
   assert.ok(!(await result.text()).includes('old-data'))
 })
 
+for (const status of [500, 502, 503, 504]) {
+  it(`rejects stale-if-error metadata when revalidation returns ${status}`, async (t) => {
+    const cachePath = await cacheDirectory(t)
+    let calls = 0
+    const upstream = await serve(t, (_request, response) => {
+      calls++
+      json(response, calls === 1 ? { version: 'old-data' } : { error: 'unavailable' }, {
+        'cache-control': 'public, max-age=0, stale-if-error=3600',
+        'etag': '"old"',
+      }, calls === 1 ? 200 : status)
+    })
+    const server = await relay(t, upstream, cachePath)
+    assert.deepEqual(await (await request(server)).json(), { version: 'old-data' })
+    const result = await request(server)
+    assert.equal(result.status, 502)
+    assert.equal(result.headers.get('cache-control'), 'no-store')
+    assert.ok(!(await result.text()).includes('old-data'))
+    assert.equal(calls, 2)
+  })
+}
+
 async function catalogRegistry(t, directory, registry, cachePath, label) {
   const catalog = []
   for (const [index, name] of ['repoctl', '@fixture/maintenance-preset'].entries()) {

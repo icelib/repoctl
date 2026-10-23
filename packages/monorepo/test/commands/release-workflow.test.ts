@@ -27,7 +27,7 @@ describe('release workflow', () => {
     expect(audit.permissions).toEqual({ 'contents': 'read', 'id-token': 'write' })
     const steps = audit.steps as Array<{ uses?: string, run?: string, with?: Record<string, unknown>, env?: Record<string, string> }>
     expect(steps.find(step => step.uses?.startsWith('actions/checkout@'))?.with?.['persist-credentials']).toBe(false)
-    expect(steps.find(step => step.uses?.startsWith('actions/setup-node@'))?.with?.['node-version']).toBe(24)
+    expect(steps.find(step => step.uses?.startsWith('actions/setup-node@'))?.with?.['node-version']).toBe('24.22.1')
     expect(steps.some(step => step.run === 'pnpm install --frozen-lockfile --ignore-scripts')).toBe(true)
     expect(steps.some(step => step.run === 'pnpm exec repo release ci --mode oidc-audit')).toBe(true)
     expect(steps.find(step => step.run === 'pnpm exec repo release ci --mode oidc-audit')?.env).toEqual({

@@ -2,6 +2,7 @@ import { readFile, symlink } from 'node:fs/promises'
 import { applyToolingCapability, listToolingCapabilities, planToolingCapability } from '@icebreakers/monorepo'
 import path from 'pathe'
 import { expect, it } from 'vitest'
+import YAML from 'yaml'
 import { fixture, options } from './fixture'
 
 it('previews exact changes without writes, applies once, and preserves the application', async () => {
@@ -11,6 +12,11 @@ it('previews exact changes without writes, applies once, and preserves the appli
   const plan = await planToolingCapability(h.root, options)
   expect(await h.snapshot()).toEqual(before)
   expect(plan.status).toBe('ready')
+  const workflow = YAML.parse(plan.files.find(file => file.path.startsWith('.github/workflows/'))!.after)
+  expect(workflow.jobs.e2e.steps).toContainEqual(expect.objectContaining({
+    uses: expect.stringMatching(/^actions\/setup-node@/u),
+    with: { 'node-version': '24.22.1' },
+  }))
   expect(plan.dependencies).toContainEqual({ package: '@repoctl-e2e/web', name: 'web', version: 'workspace:*', kind: 'devDependencies' })
   expect(plan.files.find(file => file.path === 'package.json')?.diff).toContain('test:e2e')
   const result = await applyToolingCapability(plan)

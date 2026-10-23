@@ -5,7 +5,7 @@ export function checkNightlyWorkflow(workflow, { schedule = '17 19 * * *', provi
   assert.deepEqual(workflow.on?.schedule, schedule ? [{ cron: schedule }] : undefined)
   const nightly = workflow.jobs?.nightly
   assert.ok(nightly, 'The managed release workflow must expose manual nightly publication')
-  const manual = "github.event_name == 'workflow_dispatch' && inputs.mode == 'nightly'"
+  const manual = 'github.event_name == \'workflow_dispatch\' && inputs.mode == \'nightly\''
   assert.equal(nightly.if, githubExpression(schedule ? `(github.event_name == 'schedule' && github.event.schedule == '${schedule}') || (${manual})` : manual))
   assert.deepEqual(nightly.env, { REPOCTL_NIGHTLY_PROVIDER: provider, REPOCTL_NIGHTLY_SCHEDULE: schedule ?? '' })
   assert.deepEqual(nightly.permissions, provider === 'npm' ? { 'contents': 'read', 'id-token': 'write' } : { contents: 'read' })
@@ -21,10 +21,11 @@ export function checkNightlyWorkflow(workflow, { schedule = '17 19 * * *', provi
   assert.equal(checkout.with?.ref, githubExpression('github.sha'))
   assert.equal(checkout.with?.['persist-credentials'], false)
   const node = steps.find(step => step.uses?.startsWith('actions/setup-node@'))
-  assert.equal(node.with?.['node-version'], 24)
+  assert.equal(node.with?.['node-version'], '24.22.1')
   assert.equal(node.with?.['registry-url'], undefined)
   assert.ok(steps.some(step => step.run === 'pnpm install --frozen-lockfile --ignore-scripts'))
   const publish = steps.find(step => step.id === 'nightly-publish')
+  // eslint-disable-next-line no-template-curly-in-string -- Match Bash array expansion literally.
   assert.ok(publish.run.includes('pnpm exec repo release nightly "${args[@]}"'))
   assert.equal(publish.env.REPOCTL_SNAPSHOT_PUBLISH, '1')
   for (const [name, input] of Object.entries({ REPO_RELEASE_PACKAGE: 'package', REPO_RELEASE_VERSION: 'version', REPO_RELEASE_DRY_RUN: 'dry-run', REPO_RELEASE_RECOVERY_SOURCE_SHA: 'source-sha' })) {

@@ -1,6 +1,6 @@
 # 源仓库开发场景
 
-使用 Node.js 22.13+ 和根 `package.json` 指定的 pnpm 版本。先执行 `pnpm install`；安装后的 `postinstall` 会构建工作区。
+使用满足 `^22.23.4 || ^24.22.1 || >=26.12.1` 的 Node.js（推荐 24.22.1 LTS）和根 `package.json` 指定的 pnpm 版本。先执行 `pnpm install`；安装后的 `postinstall` 会构建工作区。
 
 提交可发布包的改动前执行 `pnpm change`，将 changeset 一并提交；变更 `release:major` / `release:minor` 标签时也要同步发布意图。源码 PR CI 只读，审批后先检查 Release Intent，通过后才启动完整的适用 CI 和 Dev Container 矩阵，所有任务通过 GitHub 原生 checks 展示。
 
