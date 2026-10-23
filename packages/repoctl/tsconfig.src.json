@@ -13,6 +13,9 @@
       ],
       "@/*": [
         "./src/*"
+      ],
+      "repoctl/docs-context": [
+        "./src/docs-context-entry.ts"
       ]
     }
   },

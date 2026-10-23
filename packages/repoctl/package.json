@@ -46,7 +46,11 @@
     },
     "./tsconfig": "./tsconfig.json",
     "./tsconfig.json": "./tsconfig.json",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./docs-context": {
+      "types": "./dist/docs-context-entry.d.mts",
+      "default": "./dist/docs-context-entry.mjs"
+    }
   },
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",

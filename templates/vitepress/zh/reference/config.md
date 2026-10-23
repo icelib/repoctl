@@ -184,3 +184,7 @@ export default defineMonorepoConfig({
 保存的计划包含输入指纹和精确 diff。过期或被修改的计划在写入前失败；重复应用已完成的计划不产生变化。`.repoctl/typescript-references.lock` 进程锁覆盖重新校验、写入、验证、回滚和清理。多文件变更先准备备份，再统一替换并验证，失败会回滚。若并发编辑阻止安全回滚，错误会列出保留的恢复文件：保留这些文件，合并业务修改与原始备份，一致恢复归属登记后重新生成计划。进程被终止也可能留下 `.repoctl-references-*.bak`/`.tmp`；确认没有写入进程，恢复对应备份与归属登记后，再移除遗留锁；不会自动覆盖并发编辑。
 
 `commands.upgrade.keep` 记录对 `pnpm-workspace.yaml` 单个 override 的保留决定。每项必须包含 `file`、`path: ['overrides', selector]`、`reason`，以及升级 finding 中的 `upstreamHash`、`localHash`；可选 `expires` 使用 UTC 日期，到期当天仍有效。任一值变化或到期均需重新审查，见 [upgrade](./commands.md#repo-upgrade)。
+
+## 文档构建元数据
+
+纯入口 `repoctl/docs-context` 导出 `resolveDocsContext`、`DocsContextOptions`、`DocsContext`、`DocsChannel`、`docsPreviewRobots`、`docsRobots` 和 `mergeDocsHeaders`，独立于 provider 配置和凭据。origin 校验、本地正式构建、爬虫响应头归属和 Turbo hash 详见[构建渠道上下文](/zh/tasks/docs#构建渠道上下文)。

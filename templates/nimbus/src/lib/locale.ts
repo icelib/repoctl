@@ -24,6 +24,9 @@ export function localizeSidebar(items: SidebarItem[], chinese: boolean): Sidebar
 
 export const labels = {
   en: {
+    previewLabel: 'Documentation preview',
+    previewNotice: 'Development documentation includes unreleased changes.',
+    stableDocs: 'Read the stable documentation',
     navigation: 'On this site',
     contents: 'On this page',
     skip: 'Skip to content',
@@ -36,6 +39,9 @@ export const labels = {
     index: 'Documentation index',
   },
   zh: {
+    previewLabel: '文档预览',
+    previewNotice: '开发版文档，包含尚未发布的功能。',
+    stableDocs: '查看正式版文档',
     navigation: '站点导航',
     contents: '本页目录',
     skip: '跳转到正文',

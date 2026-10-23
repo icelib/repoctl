@@ -38,6 +38,9 @@ export function checkWebsiteArtifacts(website, channel = 'preview') {
     assert.ok(text.includes('repoctl'), `${file}: populated output`)
     assert.ok(text.includes('/reference/commands'), `${file}: documentation URLs`)
   }
+  const indexLinks = [...read('llms.txt').matchAll(/^- \[[^\]]+\]\((https?:\/\/[^)]+)\)/gm)].map(match => match[1])
+  assert.ok(indexLinks.length > 10, 'LLM index contains documentation links')
+  assert.ok(indexLinks.every(url => new URL(url).origin === origin), 'LLM index uses the selected channel origin')
   const diagrams = read('diagram-acceptance.html')
   assert.ok(diagrams.includes('Rendering diagram'), 'SSR renders an accessible placeholder')
   assert.ok(diagrams.includes('language-mermaid'), 'mmd remains a highlighted code block')

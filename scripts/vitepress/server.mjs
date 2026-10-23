@@ -12,12 +12,13 @@ const contentTypes = {
   '.ico': 'image/x-icon',
   '.woff2': 'font/woff2',
   '.txt': 'text/plain',
+  '.wasm': 'application/wasm',
 }
 
-export async function serveWebsite(directory) {
+export async function serveWebsite(directory, { directoryRoutes = false } = {}) {
   const server = createServer(async (request, response) => {
     const pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname)
-    const file = pathname.endsWith('/') ? `${pathname}index.html` : path.extname(pathname) ? pathname : `${pathname}.html`
+    const file = pathname.endsWith('/') ? `${pathname}index.html` : path.extname(pathname) ? pathname : directoryRoutes ? `${pathname}/index.html` : `${pathname}.html`
     const target = path.resolve(directory, `.${file}`)
     try {
       if (!target.startsWith(`${directory}${path.sep}`)) {
@@ -29,7 +30,7 @@ export async function serveWebsite(directory) {
     }
     catch {
       response.writeHead(404, { 'Content-Type': 'text/html' })
-      response.end(await readFile(path.join(directory, '404.html')))
+      response.end(await readFile(path.join(directory, '404.html')).catch(() => 'Not found'))
     }
   })
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve))

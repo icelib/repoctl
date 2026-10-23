@@ -288,6 +288,7 @@ exports[`createNewProject > createNewProject demo website case 1`] = `
   "test/render.test.ts",
   "test/seo.test.ts",
   "tsconfig.json",
+  "turbo.json",
   "vitest.config.ts",
   "wrangler.jsonc",
   "zh/ai/create.md",

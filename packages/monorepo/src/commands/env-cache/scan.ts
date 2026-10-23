@@ -54,7 +54,12 @@ export function scanSource(filename: string, source: string): ScanResult {
   for (const part of parts) {
     let ast: unknown
     try {
-      ast = parse(part.text, { sourceType: 'unambiguous', plugins: /\.[cm]?ts$/.test(filename) ? ['typescript'] : ['typescript', 'jsx'], allowAwaitOutsideFunction: true, allowReturnOutsideFunction: true })
+      ast = parse(part.text, {
+        sourceType: 'unambiguous',
+        plugins: /\.[cm]?ts$/i.test(filename) ? [['typescript', { dts: /\.d\.[cm]?ts$/i.test(filename) }]] : ['typescript', 'jsx'],
+        allowAwaitOutsideFunction: true,
+        allowReturnOutsideFunction: true,
+      })
     }
     catch {
       result.parseErrors.push(part.offset + 1)

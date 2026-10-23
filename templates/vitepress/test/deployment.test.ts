@@ -1,5 +1,5 @@
 import type { TransformContext } from 'vitepress'
-import { mkdtemp, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -24,6 +24,8 @@ describe('documentation channels', () => {
     expect(getDocsDeployment(undefined).preview).toBe(true)
     expect(getDocsDeployment('').preview).toBe(true)
     expect(() => getDocsDeployment('production')).toThrow('Unsupported documentation channel')
+    expect(() => getDocsDeployment('preview', stableOrigin)).toThrow('does not match')
+    expect(getDocsDeployment('stable', `${stableOrigin}/`).origin).toBe(stableOrigin)
   })
 
   it.each(['preview', 'stable'] as const)('keeps canonical, social and crawler policy consistent for %s', async (channel) => {
@@ -57,10 +59,12 @@ describe('documentation channels', () => {
 
   it('removes preview crawler headers when rebuilding the same output for stable', async () => {
     const output = await mkdtemp(path.join(os.tmpdir(), 'repoctl-docs-channel-'))
+    const ownerHeaders = '/*\n  X-Frame-Options: DENY\n/assets/*\n  Cache-Control: immutable\n'
     try {
+      await writeFile(path.join(output, '_headers'), ownerHeaders)
       await writeDeploymentFiles(output, getDocsDeployment('preview'))
       await writeDeploymentFiles(output, getDocsDeployment('stable'))
-      expect(await readFile(path.join(output, '_headers'), 'utf8')).toBe('')
+      expect(await readFile(path.join(output, '_headers'), 'utf8')).toBe(ownerHeaders)
       expect(await readFile(path.join(output, 'robots.txt'), 'utf8')).not.toContain('Disallow: /\n')
     }
     finally {
