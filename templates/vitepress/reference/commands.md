@@ -62,6 +62,8 @@ Use it to check root workspace files, Node compatibility, CLI dependency presenc
 
 `--strict` treats warnings as failures. `--redact` removes local absolute paths from shareable reports.
 
+Text and Markdown include the stable rule ID, affected paths and manifest field when available. Identical findings share one explanation and fix, with every path and the original check count retained. For example, `[template-instance-drift]` with `path: apps/docs/astro.config.ts` can be inspected with `repo doctor --rules template-instance-drift`. Different reasons, fixes and suppressions remain separate. Grouping does not change warning/failure totals or suppression policy; JSON always contains the complete individual checks.
+
 ```bash
 repo doctor --list-rules
 repo doctor --rules root-scripts,package-manager --strict

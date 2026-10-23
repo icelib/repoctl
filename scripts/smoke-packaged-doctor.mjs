@@ -147,6 +147,18 @@ try {
     throw new Error('the packaged tooling entry must load the bundled tsconfig')
   }
   run(['exec', 'repoctl', 'doctor', '--strict'], workspaceDir)
+  const demoManifest = path.join(workspaceDir, 'packages', 'demo', 'package.json')
+  const demo = JSON.parse(readFileSync(demoManifest, 'utf8'))
+  writeFileSync(demoManifest, `${JSON.stringify({ ...demo, private: false }, null, 2)}\n`)
+  const args = ['exec', 'repoctl', 'doctor', '--rules', 'manifest-license']
+  const text = run(args, workspaceDir, 'pipe')
+  const markdown = run([...args, '--markdown'], workspaceDir, 'pipe')
+  const json = JSON.parse(run([...args, '--json'], workspaceDir, 'pipe'))
+  if (!text.includes('[manifest-license]') || !text.includes('path: packages/demo/package.json')
+    || !markdown.includes('[manifest\\-license]') || !markdown.includes('Path: packages/demo/package\\.json')
+    || json.checks.length !== 1 || json.checks[0].path !== 'packages/demo/package.json' || json.summary.warn !== 1) {
+    throw new Error('the packaged doctor must preserve diagnostic IDs, exact paths and complete JSON findings')
+  }
 }
 finally {
   rmSync(tempRoot, { force: true, recursive: true })

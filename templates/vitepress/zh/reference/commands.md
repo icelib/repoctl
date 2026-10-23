@@ -75,6 +75,8 @@ repo doctor --markdown --redact --out reports/doctor.md
 - `--json` 和 `--markdown` 适合自动化、PR、issue 和外部协作。
 - `--redact` 会脱敏 workspace、cwd、home 等绝对路径。
 
+文本和 Markdown 会展示稳定的规则 ID、受影响路径，以及适用时的清单字段。相同诊断合并展示说明和修复建议，保留每个路径与原始检查数量。例如，看到 `[template-instance-drift]` 与 `path: apps/docs/astro.config.ts` 后，可运行 `repo doctor --rules template-instance-drift` 继续定位。原因、建议或抑制不同的诊断分别展示。分组不会改变警告、失败统计或抑制策略；JSON 始终保留完整的逐项检查数据。
+
 ```bash
 repo doctor --list-rules
 repo doctor --rules root-scripts,package-manager --strict

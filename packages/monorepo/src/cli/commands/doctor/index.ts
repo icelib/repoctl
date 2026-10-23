@@ -5,7 +5,7 @@ import path from 'pathe'
 import { logger } from '../../../core/logger'
 import { localize } from '../../../i18n'
 import fs from '../../../utils/fs'
-import { createDoctorReportOutput, createInteractiveDoctorReportOutput, hasDoctorBlockingIssues } from './output'
+import { createDoctorReportOutput, createInteractiveDoctorReportOutput, hasDoctorBlockingIssues } from './render'
 import { registerInstallSecurityCommand } from './security'
 
 interface DoctorCliOptions {
