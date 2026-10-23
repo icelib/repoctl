@@ -37,7 +37,12 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
         dependencies: Object.fromEntries(report.packages.map(pkg => [pkg.name, report.provider === 'npm' ? 'snapshot-nightly' : pkg.locator])),
         ...(!report.packages.some(pkg => pkg.name === '@types/node') ? { devDependencies: { '@types/node': nodeTypes.version } } : {}),
       }, null, 2)}\n`),
-      writeFile(path.join(directory, 'pnpm-workspace.yaml'), 'packages: []\n'),
+      writeFile(path.join(directory, 'pnpm-workspace.yaml'), `${JSON.stringify({
+        packages: [],
+        // The confirmed batch must be installable immediately, while unrelated
+        // packages and other versions retain pnpm's default release-age policy.
+        ...(report.provider === 'npm' ? { minimumReleaseAgeExclude: report.packages.map(pkg => `${pkg.name}@${pkg.version}`) } : {}),
+      }, null, 2)}\n`),
       writeFile(path.join(directory, 'user.npmrc'), ''),
       writeFile(path.join(directory, 'global.npmrc'), ''),
     ])
