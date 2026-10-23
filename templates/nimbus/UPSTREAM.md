@@ -32,3 +32,9 @@ The `0.16.0` → `0.17.0` review follows the installed package's `nimbus-docs mi
 The site remains static. Its existing Markdown/MDX and LLM endpoint factories stay valid. Optional copied-sidebar, browser WebMCP and server-rendering changes are not adopted. There is no project `skills/` directory to publish. Existing `robots.txt` policy is preserved; the new starter's optional AI training Content Signals are not adopted implicitly.
 
 For a subpath deployment, publish the generated `.well-known/` directory at the origin root and apply its header rules there. Hosts that do not consume `_headers` need equivalent native header configuration; see the [agent deployment guidance](https://nimbus-docs.com/ai/docs-for-agents/).
+
+## repoctl channel integration
+
+The project-owned `src/lib/deployment.ts` resolves `repoctl/docs-context` before `defineNimbusConfig`, so Nimbus 0.17.0 receives one origin for Astro metadata, baked Markdown/LLM endpoints and agent discovery. A final config assertion rejects hosting-environment origin drift. Preview disables sitemap generation but does not mark content entries noindex, preserving Nimbus discovery and Pagefind indexing. The local head adds crawler restrictions independently; explicit content `searchable: true` is honored even with authored noindex.
+
+The channel integration follows Nimbus's build hook and merges only marked repoctl X-Robots-Tag fields into `_headers`. Nimbus's discovery markers, Link headers and owner headers remain intact across channel switches. Preview/stable is a repoctl adaptation, not an upstream version migration; the reviewed Nimbus 0.17.0 baseline is unchanged. Existing origin-root `.well-known/` hosting instructions still apply with Astro `base`.

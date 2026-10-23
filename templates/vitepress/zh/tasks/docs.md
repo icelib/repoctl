@@ -197,3 +197,33 @@ repoctl 在隔离源码目录内运行 `pnpm install --frozen-lockfile` 和配�
 如果修复需要修改产品源码或构建脚本，应发布新的稳定基线；相同发布记录始终使用原来的源码。
 
 程序化 API 为 `planDocsDeployment(options)` 与 `deployDocs(options)`。`DocsOptions` 接受站点、通道、来源/发布/修正选择，以及可选配置、环境和 `DocsStateStore`。状态适配器需实现 `readAutomationState`、支持 revision 检查的 `writeAutomationState`、`readBranchHead`；可选 `fetch` 提供原生 provider 的 HTTP transport，`spawn` 提供进程 transport。查询失败必须抛出，不得假装没有历史状态。公开目标类型为 `DocsScriptDeploymentTarget`、`DocsCloudflareWorkersTarget` 及其联合类型 `DocsDeploymentTarget`。
+
+## 构建渠道上下文
+
+Nimbus 和 VitePress 使用轻量入口 `repoctl/docs-context`。在站点的 deployment 模块中配置不同的预览与正式 origin：Nimbus 使用 `src/lib/deployment.ts`，VitePress 使用 `.vitepress/deployment/index.ts`。仅在框架构建边界读取公开输入：
+
+```ts
+import { resolveDocsContext } from 'repoctl/docs-context'
+
+const context = resolveDocsContext({
+  channel: process.env.REPO_DOCS_CHANNEL,
+  url: process.env.REPO_DOCS_URL,
+  previewOrigin: 'https://next.example.com',
+  stableOrigin: 'https://docs.example.com',
+})
+```
+
+未设置或空渠道默认为 `preview`，未知渠道会失败。两个 origin 必须不同，且必须是没有凭据、路径、查询和片段的 HTTP(S) origin；根路径末尾斜杠会规范化。子路径部署单独设置框架 `base`。提供非空 `REPO_DOCS_URL` 时，它必须与渠道配置的 origin 一致。helper 不读取凭据、GitHub 状态或发布记录，下面两种本地构建均不需要部署授权：
+
+```sh
+REPO_DOCS_CHANNEL=preview pnpm build
+REPO_DOCS_CHANNEL=stable pnpm build
+```
+
+`resolveDocsContext(options)` 返回包含 `channel`、`preview`、`origin`、`stableOrigin` 的 `DocsContext`，同时导出 `DocsChannel` 和 `DocsContextOptions`。`docsPreviewRobots`、`docsRobots(context, sitemapUrl?)`、`mergeDocsHeaders(existing, context)` 提供公共爬虫策略。正式 sitemap 默认为 `<origin>/sitemap.xml`，Nimbus 传入自己的 `sitemap-index.xml` URL。核心包的 `@icebreakers/monorepo/docs-context` 提供相同纯 API，不加载 CLI、文件系统或部署 provider。
+
+预览 origin 统一用于 canonical、hreflang、社交/结构化 URL，以及 Nimbus 的 Markdown、LLM 和发现导出。预览站显示未发布提示并链接正式站，输出 `noindex, nofollow, noarchive`、robots.txt 全站禁止策略，以及带归属标记的等效 X-Robots-Tag。本地搜索继续建立索引。页面原本声明的 `noindex` 在正式站继续生效；Nimbus 独立遵守显式 `searchable: true`。爬虫指令不是访问控制。
+
+`mergeDocsHeaders` 保留用户与 Nimbus 的响应头，优先在已有通配规则内插入带标记的预览字段，正式构建只移除自身字段。归属标记损坏会让构建失败。Nimbus 在发现集成之后合并，VitePress 在 buildEnd 中执行。重复构建通过框架清理输出，避免遗留另一个渠道的产物。
+
+模板在 build、lint、typecheck 和 test 的任务级 Turbo `env` 中声明 `REPO_DOCS_CHANNEL`、`REPO_DOCS_URL`，Markdown、框架配置和验证脚本均参与缓存。保持这些值进入 hash，不要只声明 passthrough；用 `repo env check build lint typecheck test --json` 检查。文档工作区需要在 devDependencies 中声明 `repoctl`，以便冻结构建能使用 helper。已有自定义布局继续保留：手动接入这些部分，或审查 `repo templates upgrade` 计划；不要假定根目录的 `repo upgrade` 会重写布局。

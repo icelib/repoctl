@@ -9,6 +9,7 @@ import { shouldSkipTemplatePath } from '../utils/template-filter'
 import { sanitizePublishedConfigContent } from './config'
 import { preparePublishedGithubAssets } from './github'
 import { publishedToolingConfigs, removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedManifestContent, sanitizePublishedWorkspaceContent } from './published'
+import { sanitizeTemplateManifest } from './template-manifest'
 
 export { removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedWorkspaceContent } from './published'
 
@@ -205,6 +206,11 @@ async function copyTemplates(repoRoot: string, overwriteExisting: boolean) {
     const to = path.join(templatesDir, template.source)
     const filter = (src: string) => !shouldSkipTemplatePath(from, src)
     await copyEntry(from, to, overwriteExisting, filter)
+    // Refresh this managed metadata even when filling an existing prepared cache.
+    const manifest = path.join(from, 'package.json')
+    if (await pathExists(manifest)) {
+      await fs.writeFile(path.join(to, 'package.json'), sanitizeTemplateManifest(await fs.readFile(manifest, 'utf8')))
+    }
     await renameGitignoreFiles(to)
   }
 }

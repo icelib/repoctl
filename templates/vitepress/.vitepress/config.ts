@@ -9,7 +9,7 @@ import { mermaidMarkdown } from './mermaid/markdown'
 import { createNav, createSidebars } from './navigation/routes'
 import { createPageHead } from './seo'
 
-const deployment = getDocsDeployment(process.env.REPO_DOCS_CHANNEL)
+const deployment = getDocsDeployment(process.env.REPO_DOCS_CHANNEL, process.env.REPO_DOCS_URL)
 
 export default defineConfig<DocsThemeConfig>({
   outDir: '.vitepress/dist',

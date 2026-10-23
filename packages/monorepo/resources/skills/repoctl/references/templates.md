@@ -68,3 +68,9 @@ npm configuration supplies scoped registry/authentication. Never put credentials
 ## Existing-package generators
 
 Use `repo generate <vue-component|react-component|hono-route> <kebab-name> --package <exact-name-or-relative-dir> --json` to inspect source and behavior-test files before writing. Run without `--json` to apply; `--export` explicitly adds a named export to `src/index.ts` (or `--barrel`). `--directory` stays inside the selected package. Strict parameters, framework requirements, stale plans, symlinks and conflicting files fail before writes. Repeated identical generation is unchanged. Hono route registration remains an explicit printed next step. Validate generated output with build, ESLint/Stylelint, tsc/vue-tsc and tests. Keep `repo new` for whole new packages; it never overwrites existing directories.
+
+## Documentation channels
+
+Nimbus and VitePress use `repoctl/docs-context` with explicit `REPO_DOCS_CHANNEL` and `REPO_DOCS_URL` build inputs. Configure distinct preview/stable HTTP(S) origins in the local deployment module; paths belong to the framework base. Missing/empty channel defaults to preview; supplied URL must match the selected origin. Local stable builds require no token or release record.
+
+Keep preview banners, robots/meta/X-Robots-Tag restrictions and search independent: preview remains searchable with official AI exports. `mergeDocsHeaders` owns marked fields only and preserves user/Nimbus rules; malformed markers fail. Keep task-local Turbo env hashes and authored content/config/script inputs, and run `repo env check build lint typecheck test --json`. Both docs packages declare repoctl directly. Existing layouts remain project-owned; use reviewed template upgrades or manual integration.

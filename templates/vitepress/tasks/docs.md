@@ -197,3 +197,33 @@ If an upload succeeds but its response, verification or final checkpoint write f
 A fix that changes product source or build scripts needs a new stable baseline; the same release record continues to build its original source.
 
 The programmatic APIs are `planDocsDeployment(options)` and `deployDocs(options)`. `DocsOptions` accepts the site, channel, source/release/correction selection, optional config and environment, and a `DocsStateStore` implementing `readAutomationState`, `writeAutomationState` with revision checks, and `readBranchHead`. Optional `fetch` supplies the native provider's HTTP transport; `spawn` supplies the process transport. Query errors must fail closed. Public target types are `DocsScriptDeploymentTarget`, `DocsCloudflareWorkersTarget` and their union `DocsDeploymentTarget`.
+
+## Build channel context
+
+Nimbus and VitePress use the lightweight `repoctl/docs-context` entrypoint. Configure distinct preview and stable origins in the site's deployment module (`src/lib/deployment.ts` for Nimbus, `.vitepress/deployment/index.ts` for VitePress). Read only public build inputs at the framework boundary:
+
+```ts
+import { resolveDocsContext } from 'repoctl/docs-context'
+
+const context = resolveDocsContext({
+  channel: process.env.REPO_DOCS_CHANNEL,
+  url: process.env.REPO_DOCS_URL,
+  previewOrigin: 'https://next.example.com',
+  stableOrigin: 'https://docs.example.com',
+})
+```
+
+Undefined or empty channel selects `preview`; unknown channels fail. Origins must be distinct HTTP(S) origins without credentials, paths, queries or fragments; a trailing root slash is normalized. Set a framework `base` separately for subpath hosting. If `REPO_DOCS_URL` is nonempty, it must match the configured channel origin. The helper never reads credentials, GitHub state or release records. Both local builds work without deployment authorization:
+
+```sh
+REPO_DOCS_CHANNEL=preview pnpm build
+REPO_DOCS_CHANNEL=stable pnpm build
+```
+
+`resolveDocsContext(options)` returns `DocsContext` (`channel`, `preview`, `origin`, `stableOrigin`); `DocsChannel` and `DocsContextOptions` are also exported. `docsPreviewRobots`, `docsRobots(context, sitemapUrl?)` and `mergeDocsHeaders(existing, context)` provide shared crawler policy. The default stable sitemap is `<origin>/sitemap.xml`; Nimbus passes its own `sitemap-index.xml` URL. The core package provides the same pure API at `@icebreakers/monorepo/docs-context`, without loading the CLI, filesystem or deployment providers.
+
+The preview origin drives canonical, hreflang, social/structured URLs and Nimbus Markdown, LLM and discovery exports. Preview shows an unpublished notice linking to stable, emits `noindex, nofollow, noarchive`, disallows crawlers in robots.txt and adds an equivalent marked X-Robots-Tag rule. Local search stays indexed. A page's authored `noindex` remains effective on stable; Nimbus honors an explicit `searchable: true` independently. Crawler directives are not access control.
+
+`mergeDocsHeaders` preserves user and Nimbus rules, inserts marked preview fields into an existing wildcard rule where possible, and removes only its own fields on stable. Malformed ownership markers fail the build. Nimbus runs this merge after its discovery integration; VitePress uses its buildEnd hook. Framework output cleanup removes stale preview/stable artifacts on repeated builds.
+
+The templates declare `REPO_DOCS_CHANNEL` and `REPO_DOCS_URL` in task-local Turbo `env` for build, lint, typecheck and test. Their authored Markdown, framework configuration and validation scripts participate in cache inputs. Keep these values hashed, not passthrough-only; verify with `repo env check build lint typecheck test --json`. Declare `repoctl` in the docs workspace's devDependencies so the helper is available in a frozen build. Existing customized layouts are preserved: adopt these pieces manually or through a reviewed `repo templates upgrade` plan, rather than assuming a root `repo upgrade` rewrites them.

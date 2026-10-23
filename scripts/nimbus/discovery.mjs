@@ -22,9 +22,8 @@ function headerRules(content) {
   return rules
 }
 
-export function checkDiscovery(docs) {
+export function checkDiscovery(docs, origin) {
   const dist = path.join(docs, 'dist')
-  const origin = 'https://docs.example.com'
   const manifest = json(path.join(dist, '.well-known/ard.json'))
   assert.deepEqual(json(path.join(dist, '.well-known/ai-catalog.json')), manifest, 'legacy AI Catalog must describe the same resources as ARD')
   assert.equal(manifest.specVersion, '1.0')
@@ -35,8 +34,8 @@ export function checkDiscovery(docs) {
   })
   const resources = manifest.entries.map(entry => [entry.identifier, entry.type, entry.url])
   assert.deepEqual(resources, [
-    ['urn:air:docs.example.com:docs:index', 'text/plain', `${origin}/llms.txt`],
-    ['urn:air:docs.example.com:docs:home', 'text/markdown', `${origin}/index.md`],
+    [`urn:air:${new URL(origin).hostname}:docs:index`, 'text/plain', `${origin}/llms.txt`],
+    [`urn:air:${new URL(origin).hostname}:docs:home`, 'text/markdown', `${origin}/index.md`],
   ])
   for (const entry of manifest.entries) {
     assert.ok(entry.displayName.includes('Project docs'))
