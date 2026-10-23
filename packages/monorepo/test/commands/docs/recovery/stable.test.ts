@@ -32,9 +32,14 @@ it('freezes configuration and uses the same build, deploy script and URL after m
     eligible: true,
   })
   expect(store.writes).toHaveLength(writes)
-  const retry = runner((_args, source, env) => {
-    expect(env['REPO_DOCS_URL']).toBe('https://docs.example.invalid')
-    expect(env['REPO_DOCS_DEPLOYMENT_ID']).toBe(before.deploymentId)
+  const retry = runner((args, source, env) => {
+    if (args[0] === 'install') {
+      expect(Object.keys(env).filter(key => key.startsWith('REPO_DOCS_'))).toEqual([])
+    }
+    else {
+      expect(env['REPO_DOCS_URL']).toBe('https://docs.example.invalid')
+      expect(env['REPO_DOCS_DEPLOYMENT_ID']).toBe(before.deploymentId)
+    }
     expect(readFileSync(path.join(source, 'packages/core/src/index.ts'), 'utf8')).toContain('"released"')
   })
   expect((await deployDocs({ ...retryOptions, spawn: retry.spawn })).status).toBe('deployed')

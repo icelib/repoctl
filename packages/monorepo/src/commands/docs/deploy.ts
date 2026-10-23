@@ -2,7 +2,7 @@ import type { DocsDeploymentResult, DocsDeploymentState, DocsOptions, DocsProvid
 import { randomUUID } from 'node:crypto'
 import path from 'pathe'
 import { DocsDiagnosticError } from './diagnostics'
-import { docsEnvironment, runDocsProcess } from './execute'
+import { docsEnvironment, docsInstallEnvironment, runDocsProcess } from './execute'
 import { git, withSource } from './git'
 import { applyDocsPatches } from './patches'
 import { prepareDocsPlan } from './plan'
@@ -131,7 +131,7 @@ export async function deployDocs(options: DocsOptions): Promise<DocsDeploymentRe
         }
         return prepareDocsProvider(options, source, context.site, plan, env, resultFile, operation)
       })
-      await report.run('install', () => runDocsProcess(options, source, ['install', '--frozen-lockfile'], env))
+      await report.run('install', () => runDocsProcess(options, source, ['install', '--frozen-lockfile'], docsInstallEnvironment(context.env)))
       await report.run('build', () => runDocsProcess(options, source, ['run', context.site.buildScript], env))
       receipt = await report.run('provider', async () => {
         await assertClaim()
