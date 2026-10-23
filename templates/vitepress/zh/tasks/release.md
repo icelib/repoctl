@@ -24,6 +24,8 @@ repo release plan --markdown
 
 ## 预期结果
 
+计划同时检查公开包的内部依赖协议：`dependencies`、`devDependencies`、`optionalDependencies` 必须使用 `workspace:*`；`peerDependencies` 可以使用 `workspace:*`、`workspace:^` 或 `workspace:~`。例如目标包版本为 `2.0.1` 时，pnpm pack 分别生成 `2.0.1`、`^2.0.1` 和 `~2.0.1` 的 peer 范围。按兼容性承诺选择原始声明，不要为了通过检查把 caret 或 tilde peer 改为精确版本。外部依赖范围和私有消费包不受这项发布协议约束。无效协议会使计划返回 `blocked`，而不改写 manifest 或执行发布 hooks。
+
 JSON 与 Markdown 表达相同的原生版本决策。说明条目复用已有发布 renderer，并排除已消费的 intent 条目。私有包可以升级版本，但标记为非发布候选。公共 `createReleasePlan({ cwd })` API 返回同一报告，不自行写入文件。
 
 计划、自动触发和版本准备统一识别根包与私有包的 intent，由 pnpm 在完整工作区内计算版本传播。Release PR 只为可发布的子包生成说明，并要求这些包具有对应版本的 changelog；根包或私有包缺少 changelog 不会阻断准备。根包即使未标记为 private，也不属于发布候选。不希望某个工作区包参与版本计算时，应配置 pnpm 的 `versioning.ignore`，不要只在实际写版本时改变工作区发现范围。
