@@ -1,13 +1,17 @@
 import type { PackedManifest } from '../../package-check/types'
 import type { NightlyConsumerReport, NightlyOptions, NightlyReport } from './types'
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
+import { consumerOptionalPeers } from '../../package-check/consumer/optional-peers'
+import { resolveConsumerPeerAliases } from '../../package-check/consumer/peer-aliases'
+import { consumerRuntimeClosure } from '../../package-check/consumer/runtime-closure'
+import { consumerTypeToolchain, installedConsumerTypeToolchain } from '../../package-check/consumer/typescript'
 import { matchesSnapshotMetadata } from '../snapshot/identity'
 import { checkInstalledEntries } from './consumer/entries'
 import { consumerEnvironment, consumerPnpmOptions } from './consumer/environment'
 import { installNightlyConsumer } from './consumer/install'
+import { nightlyConsumerManifests } from './consumer/manifests'
 import { consumerRunner } from './consumer/run'
 
 /** Exercise the real published channel with no workspace links or dependency overrides. */
@@ -25,18 +29,23 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
     if (!pin) {
       throw new Error('Nightly consumer requires an exact pnpm packageManager pin.')
     }
+    const manifests = await nightlyConsumerManifests(report)
     await mkdir(report.outputDirectory, { recursive: true })
     directory = await realpath(await mkdtemp(path.join(report.outputDirectory, 'consumer-')))
-    const nodeTypes = JSON.parse(await readFile(createRequire(import.meta.url).resolve('@types/node/package.json'), 'utf8')) as { version: string }
+    const checkTypes = report.snapshot.checks?.some(check => check.files.some(file => /\.d\.[cm]?ts$/u.test(file)))
+    const closure = consumerRuntimeClosure(manifests, manifests)
+    const dependencies = { ...consumerOptionalPeers(closure, new Map(report.packages.map(pkg => [pkg.name, report.provider === 'npm' ? `npm:${pkg.name}@snapshot-nightly` : pkg.locator]))), ...Object.fromEntries(report.packages.map(pkg => [pkg.name, report.provider === 'npm' ? 'snapshot-nightly' : pkg.locator])) }
+    const tooling = checkTypes ? await consumerTypeToolchain(options.cwd, dependencies, closure) : undefined
+    const manifest = {
+      name: 'repoctl-nightly-consumer',
+      private: true,
+      type: 'module',
+      packageManager: source.packageManager,
+      dependencies,
+      ...(tooling ? { devDependencies: tooling.devDependencies } : {}),
+    }
     await Promise.all([
-      writeFile(path.join(directory, 'package.json'), `${JSON.stringify({
-        name: 'repoctl-nightly-consumer',
-        private: true,
-        type: 'module',
-        packageManager: source.packageManager,
-        dependencies: Object.fromEntries(report.packages.map(pkg => [pkg.name, report.provider === 'npm' ? 'snapshot-nightly' : pkg.locator])),
-        ...(!report.packages.some(pkg => pkg.name === '@types/node') ? { devDependencies: { '@types/node': nodeTypes.version } } : {}),
-      }, null, 2)}\n`),
+      writeFile(path.join(directory, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`),
       writeFile(path.join(directory, 'pnpm-workspace.yaml'), 'packages: []\n'),
       writeFile(path.join(directory, 'user.npmrc'), ''),
       writeFile(path.join(directory, 'global.npmrc'), ''),
@@ -45,7 +54,10 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
     if (await run('pnpm', [...consumerPnpmOptions, '--version']) !== pin[1]) {
       throw new Error(`Nightly consumer requires pnpm ${pin[1]}.`)
     }
+    manifest.dependencies = await resolveConsumerPeerAliases(dependencies, specifier => run('pnpm', [...consumerPnpmOptions, 'view', specifier, 'version', '--json']))
+    await writeFile(path.join(directory, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`)
     await installNightlyConsumer(report, options, directory, run)
+    const toolchain = tooling ? await installedConsumerTypeToolchain(directory, tooling) : undefined
     const validated = []
     for (const pkg of report.packages) {
       const installed = await realpath(path.join(directory, 'node_modules', pkg.name))
@@ -64,7 +76,7 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
       validated.push({ manifest, files, installed, pkg })
     }
     for (const [index, { manifest, files, installed, pkg }] of validated.entries()) {
-      await checkInstalledEntries(manifest, files, installed, directory, run, index)
+      await checkInstalledEntries(manifest, files, installed, directory, run, index, toolchain)
       result.packages.push({ name: pkg.name, version: pkg.version })
     }
     result.status = 'verified'
