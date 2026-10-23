@@ -6,7 +6,7 @@
   "description": "Bilingual Nimbus documentation starter",
   "license": "MIT",
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "scripts": {
     "dev": "astro dev",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@cloudflare/nimbus-docs": "0.17.0",
-    "astro": "7.3.8"
+    "astro": "7.4.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

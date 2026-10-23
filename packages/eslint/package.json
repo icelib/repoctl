@@ -53,7 +53,7 @@
     "index.d.ts"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "scripts": {
     "dev": "tsdown --watch --sourcemap",
@@ -81,10 +81,10 @@
   },
   "dependencies": {
     "@antfu/eslint-config": "9.5.1",
-    "@eslint-react/eslint-plugin": "^5.27.1",
+    "@eslint-react/eslint-plugin": "^5.27.2",
     "@icebreakers/stylelint-config": "workspace:*",
     "@stylistic/eslint-plugin": "^5.10.0",
-    "@typescript-eslint/parser": "^8.68.0",
+    "@typescript-eslint/parser": "^8.71.2",
     "@typescript-eslint/rule-tester": "^8.71.2",
     "@typescript-eslint/typescript-estree": "^8.71.2",
     "@typescript-eslint/utils": "^8.71.2",

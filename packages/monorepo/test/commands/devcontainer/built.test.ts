@@ -10,7 +10,7 @@ describe('Dev Container preset through the built API and CLI', () => {
     const h = await fixture()
     const before = await snapshot(h.parent)
     const plan = await planDevContainer(h.leaf)
-    expect(plan).toMatchObject({ workspaceDir: h.root, status: 'ready', nodeVersion: '24.21.0', image: 'node:24.21.0-bookworm', packageManager: 'pnpm@12.8.1' })
+    expect(plan).toMatchObject({ workspaceDir: h.root, status: 'ready', nodeVersion: '24.22.1', image: 'node:24.22.1-bookworm', packageManager: 'pnpm@12.8.1' })
     expect(plan.files).toHaveLength(4)
     expect(plan.files.every(file => file.path.startsWith('.devcontainer/') && file.action === 'create')).toBe(true)
     expect(await snapshot(h.parent)).toEqual(before)
@@ -59,7 +59,7 @@ describe('Dev Container preset through the built API and CLI', () => {
   it('detects manifest drift, output collisions and tampered plans before applying', async () => {
     const h = await fixture()
     const plan = await planDevContainer(h.root)
-    await expect(applyDevContainerPlan(h.root, { ...plan, nodeVersion: '22.23.3' })).rejects.toThrow('edited')
+    await expect(applyDevContainerPlan(h.root, { ...plan, nodeVersion: '22.23.4' })).rejects.toThrow('edited')
     await writeFile(path.join(h.root, 'package.json'), JSON.stringify({ ...h.manifest, name: 'changed' }))
     await expect(applyDevContainerPlan(h.root, plan)).rejects.toThrow('inputs changed')
     const fresh = await planDevContainer(h.root)
@@ -72,13 +72,34 @@ describe('Dev Container preset through the built API and CLI', () => {
 
   it('chooses a compatible pinned Node and diagnoses unsupported runtime declarations', async () => {
     const h = await fixture({ engines: { node: '^22.13.0' } })
-    expect((await planDevContainer(h.root)).nodeVersion).toBe('22.23.3')
-    await expect(planDevContainer(h.root, { nodeVersion: '24.21.0' })).rejects.toThrow('engines.node')
-    await expect(planDevContainer(h.root, { nodeVersion: '22.23.3+build' })).rejects.toThrow('exact stable')
+    expect((await planDevContainer(h.root)).nodeVersion).toBe('22.23.4')
+    await expect(planDevContainer(h.root, { nodeVersion: '24.22.1' })).rejects.toThrow('engines.node')
+    await expect(planDevContainer(h.root, { nodeVersion: '22.23.4+build' })).rejects.toThrow('exact stable')
     const unsupported = await fixture({ engines: { node: '<20' } })
     await expect(planDevContainer(unsupported.root)).rejects.toThrow('exact stable')
     const manager = await fixture({ packageManager: 'pnpm@latest' })
     await expect(planDevContainer(manager.root)).rejects.toThrow('exact stable pnpm')
+  })
+
+  it.each([
+    ['^22.13.0', '22.23.4'],
+    ['^24.0.0', '24.22.1'],
+    ['^26.0.0', '26.12.1'],
+  ])('selects the secure pinned version compatible with %s', async (range, version) => {
+    const h = await fixture({ engines: { node: range } })
+    expect((await planDevContainer(h.root)).nodeVersion).toBe(version)
+  })
+
+  it.each(['22.23.3', '23.11.0', '24.22.0', '25.0.0', '26.12.0'])('rejects unsafe Node %s even when consumer engines allow it', async (version) => {
+    const h = await fixture({ engines: { node: '>=22' } })
+    await expect(planDevContainer(h.root, { nodeVersion: version })).rejects.toThrow('supported by repoctl')
+  })
+
+  it('accepts a newer exact secure version in a custom consumer range without substituting a default', async () => {
+    const h = await fixture({ engines: { node: '~24.23.0' } })
+    await expect(planDevContainer(h.root)).rejects.toThrow('engines.node')
+    const plan = await planDevContainer(h.root, { nodeVersion: '24.23.1' })
+    expect(plan).toMatchObject({ nodeVersion: '24.23.1', nodeRange: '~24.23.0', image: 'node:24.23.1-bookworm' })
   })
 
   it('keeps JSON stable across languages and applies a saved CLI plan without overwriting the plan file', async () => {
@@ -95,7 +116,7 @@ describe('Dev Container preset through the built API and CLI', () => {
     const applied = cli(h.leaf, ['--apply', saved, '--json'])
     expect(applied.status, applied.stderr).toBe(0)
     expect(JSON.parse(applied.stdout).status).toBe('applied')
-    expect(cli(h.root, ['--apply', saved, '--node-version', '24.21.0']).status).not.toBe(0)
+    expect(cli(h.root, ['--apply', saved, '--node-version', '24.22.1']).status).not.toBe(0)
     expect(JSON.parse(cli(h.root, ['--apply', saved, '--json']).stdout).status).toBe('unchanged')
   })
 })

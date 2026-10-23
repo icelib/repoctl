@@ -79,7 +79,7 @@ Choose `oidc-audit` when manually dispatching the managed Release workflow, or r
 pnpm exec repo release ci --mode oidc-audit
 ```
 
-The job needs `id-token: write`, Node 24 and the same repository, workflow file and environment as actual publishing. A different diagnostic workflow has a different identity. The managed workflow uses a separate audit job with only `contents: read` and `id-token: write`, disables install lifecycle scripts and skips GitHub App credentials and release quality checks. Only the repoctl source workspace builds its tooling closure; consumer workflows use the installed CLI. Custom workflows should use the same isolation and install with `pnpm install --frozen-lockfile --ignore-scripts`.
+The job needs `id-token: write`, Node.js 24.22.1 and the same repository, workflow file and environment as actual publishing. A different diagnostic workflow has a different identity. The managed workflow uses a separate audit job with only `contents: read` and `id-token: write`, disables install lifecycle scripts and skips GitHub App credentials and release quality checks. Only the repoctl source workspace builds its tooling closure; consumer workflows use the installed CLI. Custom workflows should use the same isolation and install with `pnpm install --frozen-lockfile --ignore-scripts`.
 
 The command independently routes before release configuration and checks every versioned public child package against the official npm registry, including packages already published. It requests short-lived exchange credentials but never uploads packages, changes versions/intents, runs hooks, writes progress files, creates tags/Releases or saves tokens. `source-sha`, `dry-run`, `package` and `version` recovery inputs must be empty. JSON includes `schemaVersion: 1`, safe identity fields, each package's HTTP status/message and `ok`; failures complete the whole package report before exiting with code 1. `auditReleaseOidc({ cwd, env?, fetch? })` exposes the same report without printing it; callers must check `ok`.
 
@@ -199,7 +199,7 @@ Scheduled npm checks skip only when every current public package is already avai
 
 Nightly runs configured `qualityScripts` and `hooks.verify`, prepares real tarballs from committed source outside the checkout, and validates package exports, types and isolated installation. Versions include the base version, nightly marker, full commit SHA and build digest. After publication, a clean consumer installs the actual tags or URLs and checks identities, entrypoints and types. Formal versioning and post-publication hooks remain part of the normal release flow.
 
-The workflow uses Node 24, the workspace's pinned pnpm, checkout without persisted credentials and the existing publication concurrency group. Reports, tarballs and consumer diagnostics are retained for 14 days, including failed runs; the Actions summary contains the result and install commands.
+The workflow uses Node.js 24.22.1, the workspace's pinned pnpm, checkout without persisted credentials and the existing publication concurrency group. Reports, tarballs and consumer diagnostics are retained for 14 days, including failed runs; the Actions summary contains the result and install commands.
 
 The workflow command is:
 

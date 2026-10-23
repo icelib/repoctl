@@ -2,9 +2,9 @@ import type { TestContext } from 'vitest'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { linkToolchainPackage } from './toolchain'
 
-export const sourceRoot = fileURLToPath(new URL('../../../../..', import.meta.url))
+export { sourceRoot } from './toolchain'
 
 export async function write(root: string, file: string, content: string | object) {
   await fs.mkdir(path.dirname(path.join(root, file)), { recursive: true })
@@ -22,13 +22,14 @@ export async function project(root: string, name: string, config = 'tsconfig.jso
 }
 
 export async function fixture(t: TestContext, enabled = true) {
-  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'repoctl-references-')))
+  const root = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'repoctl references-')))
   t.onTestFinished(async () => fs.rm(root, { recursive: true, force: true }))
   await write(root, 'package.json', { name: 'references-fixture', private: true, type: 'module' })
   await write(root, 'pnpm-workspace.yaml', 'packages:\n  - packages/*\n')
-  await write(root, 'base.json', { compilerOptions: { composite: true, declaration: true, target: 'ESNext', module: 'NodeNext', types: [], skipLibCheck: true } })
+  await write(root, 'base.json', { compilerOptions: { composite: true, declaration: true, target: 'ESNext', lib: ['ESNext'], module: 'NodeNext', types: [], skipLibCheck: true } })
   await write(root, 'tsconfig.json', '{\n  // Keep this solution comment.\n  "files": [],\n  "references": []\n}\n')
-  await fs.symlink(path.join(sourceRoot, 'node_modules'), path.join(root, 'node_modules'), 'junction')
+  // These consumers need TypeScript, not the source workspace's full toolchain.
+  await linkToolchainPackage(root, 'typescript')
   await project(root, 'lib')
   await project(root, 'app')
   if (enabled) {

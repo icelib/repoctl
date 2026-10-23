@@ -22,7 +22,7 @@
     "monorepo"
   ],
   "engines": {
-    "node": ">=22.13.0"
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
   },
   "scripts": {
     "dev": "vitepress dev",
@@ -44,7 +44,7 @@
     "tailwindcss": "^4.3.3",
     "vitepress": "2.0.0-alpha.20",
     "vitepress-plugin-llms": "^1.14.0",
-    "vitest": "~5.0.4",
+    "vitest": "~5.0.5",
     "vue-tsc": "^3.3.13",
     "wrangler": "^4.135.0"
   }

@@ -16,10 +16,19 @@ export function createMetadataRelay({ registry, cachePath }) {
       .filter(name => typeof request.headers[name] === 'string')
       .map(name => [name, request.headers[name]]))
     try {
-      const upstream = await fetch(url, { cachePath, headers, retry: 0 })
-      // make-fetch-happen may serve stale data after a network error. A smoke
-      // check must expose that failure instead of silently validating old data.
-      if (upstream.headers.get('x-local-cache-status') === 'stale') {
+      let revalidationFailed = false
+      const upstream = await fetch(url, {
+        cachePath,
+        headers,
+        retry: 0,
+        onRetry() {
+          revalidationFailed = true
+        },
+      })
+      const cacheStatus = upstream.headers.get('x-local-cache-status')
+      // Network errors return "stale", while stale-if-error can disguise HTTP
+      // failures as "revalidated". Neither can validate a smoke check.
+      if (cacheStatus === 'stale' || (cacheStatus === 'revalidated' && revalidationFailed)) {
         upstream.body.destroy()
         throw new Error('Public registry metadata revalidation failed')
       }

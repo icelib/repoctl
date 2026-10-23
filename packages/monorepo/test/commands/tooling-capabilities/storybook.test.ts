@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { applyToolingCapability, planToolingCapability } from '@icebreakers/monorepo'
 import path from 'pathe'
 import { expect, it } from 'vitest'
+import YAML from 'yaml'
 import { fixture, options as playwrightOptions } from './fixture'
 
 const vue: StorybookCapabilityOptions = { capability: 'storybook', target: 'web', framework: 'vue', component: 'HelloWorld', example: { kind: 'prop-update', prop: 'msg', initial: 'Hello', updated: 'Updated' } }
@@ -15,6 +16,11 @@ it('adds optional Vue stories without changing library scripts, exports, files o
   const plan = await planToolingCapability(h.root, vue)
   expect(plan.capability.id).toBe('storybook')
   expect(plan.status).toBe('ready')
+  const workflow = YAML.parse(plan.files.find(file => file.path.startsWith('.github/workflows/'))!.after)
+  expect(workflow.jobs.storybook.steps).toContainEqual(expect.objectContaining({
+    uses: expect.stringMatching(/^actions\/setup-node@/u),
+    with: { 'node-version': '24.22.1' },
+  }))
   expect(plan.workspace.directory).toBe('stories/web')
   expect(await h.snapshot()).toEqual(before)
   expect(plan.files.every(file => !file.path.startsWith('apps/web/'))).toBe(true)

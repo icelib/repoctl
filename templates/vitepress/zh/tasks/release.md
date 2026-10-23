@@ -147,7 +147,7 @@ repo release ci --mode prepare
 pnpm exec repo release ci --mode oidc-audit
 ```
 
-job 需要 `id-token: write` 和 Node 24，并使用实际发布时的仓库、工作流文件及 environment。另建诊断工作流会改变身份。受管工作流使用独立的核验 job，只授予 `contents: read` 和 `id-token: write`，关闭安装 lifecycle scripts，跳过 GitHub App 令牌及发布质量检查。只有 repoctl 源码仓库构建工具依赖闭包；消费方直接使用已安装的 CLI。自定义工作流也应隔离这些步骤，使用 `pnpm install --frozen-lockfile --ignore-scripts` 安装。
+job 需要 `id-token: write` 和 Node.js 24.22.1，并使用实际发布时的仓库、工作流文件及 environment。另建诊断工作流会改变身份。受管工作流使用独立的核验 job，只授予 `contents: read` 和 `id-token: write`，关闭安装 lifecycle scripts，跳过 GitHub App 令牌及发布质量检查。只有 repoctl 源码仓库构建工具依赖闭包；消费方直接使用已安装的 CLI。自定义工作流也应隔离这些步骤，使用 `pnpm install --frozen-lockfile --ignore-scripts` 安装。
 
 命令在加载发布配置前独立路由，向官方 npm registry 逐个核验有版本号的公开子包，包含已发布的包。它只申请短时交换凭据，不上传包、不修改版本或 intent、不运行 hooks、不写进度文件、不创建 tag/Release，也不保存 token。`source-sha`、`dry-run`、`package` 和 `version` 恢复输入必须为空。JSON 包含 `schemaVersion: 1`、允许展示的身份字段、每包 HTTP 状态及 npm 错误信息、整体 `ok`；即使某包失败也会继续完成全部包报告，最后以退出码 1 失败。程序化 API `auditReleaseOidc({ cwd, env?, fetch? })` 返回同一报告而不打印；调用者须检查 `ok`。
 
@@ -205,7 +205,7 @@ npm 定时任务只有在全部公开包都对应当前提交和同一构建身�
 
 nightly 执行配置的 `qualityScripts` 和 `hooks.verify`，在检出目录以外从已提交源码构建真实 tarball，并验证包导出、类型和隔离安装。版本包含基础版本、nightly 标记、完整提交 SHA 和构建摘要。发布后，干净消费者通过实际标签或 URL 安装，再核验身份、运行入口和类型。正式版本准备与发布后 hooks 仍属于普通发布流程。
 
-工作流使用 Node 24、仓库锁定的 pnpm、不保留凭据的 checkout，并复用现有发布并发组。成功与失败均保留报告、tarball 和消费者诊断 14 天；Actions 摘要提供结果与安装命令。
+工作流使用 Node.js 24.22.1、仓库锁定的 pnpm、不保留凭据的 checkout，并复用现有发布并发组。成功与失败均保留报告、tarball 和消费者诊断 14 天；Actions 摘要提供结果与安装命令。
 
 工作流执行：
 

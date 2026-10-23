@@ -4,9 +4,11 @@
 
 ## 准备环境
 
-- Node.js 22.13 或更高版本。
+- 满足 `^22.23.4 || ^24.22.1 || >=26.12.1` 的 Node.js（推荐 24.22.1 LTS）。
 - pnpm。推荐通过 Corepack 启用：`corepack enable`。
 - Git。`repo doctor` 会读取仓库信息，用来补全 package metadata 和诊断提交链路。
+
+Node.js 25+ 不再内置 Corepack。使用这些版本，或找不到 `corepack` 命令时，先运行 `npm install --global corepack@0.36.0`，再运行 `corepack enable`。
 
 ```bash
 node -v

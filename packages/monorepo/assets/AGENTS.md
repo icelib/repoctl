@@ -26,7 +26,15 @@ Preview without writing files: `pnpm exec repo new <name> --template <key> --dry
 
 If the user asks you to create a new business project, do not add it inside an
 existing unrelated repository. Use a new or empty directory outside the repoctl
-source checkout. Start a new workspace with:
+source checkout.
+
+Node.js 25+ does not bundle Corepack. On those versions, or if `corepack` is
+unavailable, first run `npm install --global corepack@0.36.0`. Then run
+`corepack enable` before the first pnpm command. After entering the generated
+project, run `corepack enable` again as shown below so pnpm uses that workspace's
+`packageManager` field.
+
+Start a new workspace with:
 
 ```bash
 pnpm create repoctl@latest <dir> -- --yes --templates <keys>
@@ -52,7 +60,7 @@ pnpm exec repo check
 
 ## Requirements
 
-- Node.js 22.13 or newer
+- Node.js matching `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended)
 - pnpm (run `corepack enable` so the declared workspace version is used)
 - CLI output is English by default; `--lang zh-CN` or `REPOCTL_LANG=zh-CN` selects Simplified Chinese
 

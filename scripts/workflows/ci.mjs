@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { checkNimbusUpgradeWorkflow } from '../nimbus/workflow.mjs'
-import { assertPinnedActions, assertReusableValidation, getSteps, readWorkflow } from './shared.mjs'
+import { assertPinnedActions, assertReusableValidation, getSteps, githubExpression, readWorkflow } from './shared.mjs'
 
 export function checkCiWorkflow(rootDir) {
   const { workflow } = readWorkflow(rootDir, 'ci.yml')
@@ -12,8 +12,14 @@ export function checkCiWorkflow(rootDir) {
   assertReusableValidation(workflow)
   assert.deepEqual(workflow.jobs.build.strategy.matrix, {
     'os': ['ubuntu-latest', 'windows-latest', 'macos-latest'],
-    'node-version': [22, 24],
+    'node-version': ['22.23.4', '24.22.1', '26.12.1'],
   })
+  const packagedCondition = githubExpression('matrix.os == \'ubuntu-latest\' && matrix.node-version == \'22.23.4\'')
+  for (const step of steps.filter(step => step.run?.startsWith('pnpm test:packaged-') && !['pnpm test:packaged-maintenance-presets', 'pnpm test:packaged-template-parameters'].includes(step.run))) {
+    assert.equal(step.if, packagedCondition, `${step.run} must run against the oldest supported Node security floor`)
+  }
+  assert.equal(steps.find(step => step.run === 'pnpm exec playwright install --with-deps chromium')?.if, packagedCondition)
+  assert.equal(steps.find(step => step.run === 'pnpm exec turbo run typecheck --concurrency=1')?.if, githubExpression('matrix.os == \'windows-latest\' && matrix.node-version == \'22.23.4\''))
   assert.ok(commands.indexOf('pnpm build') < commands.indexOf('pnpm lint'), 'CI must build delivery artifacts before lint and tests')
   assert.ok(commands.includes('pnpm install --frozen-lockfile'))
   assert.ok(commands.includes('pnpm check:workflows'))

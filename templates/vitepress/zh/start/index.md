@@ -25,4 +25,6 @@ CLI 支持 pnpm workspace，并能理解 Turborepo 任务图，但不会替代�
 
 ## 开始前确认
 
-你需要 Node.js 22.13 或更新版本，并确保 pnpm 在 PATH 中。从仓库根目录执行命令，这样 repoctl 才能读取 workspace 配置。
+你需要满足 `^22.23.4 || ^24.22.1 || >=26.12.1` 的 Node.js（推荐 24.22.1 LTS），并确保 pnpm 在 PATH 中。从仓库根目录执行命令，这样 repoctl 才能读取 workspace 配置。
+
+使用 Node.js 25+ 或找不到 `corepack` 命令时，先运行 `npm install --global corepack@0.36.0`，再运行 `corepack enable`。详见[安装前提](./install.md)。

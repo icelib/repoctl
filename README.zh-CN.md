@@ -25,7 +25,9 @@ repoctl 是面向 pnpm 与 Turborepo monorepo 的任务型 CLI，用于初始化
 
 ## 安装
 
-repoctl 需要 Node.js 22.13 或更高版本。
+repoctl 支持 Node.js `^22.23.4 || ^24.22.1 || >=26.12.1`，推荐使用 Node.js 24.22.1 LTS。
+
+Node.js 25+ 不再内置 Corepack。使用这些版本，或找不到 `corepack` 命令时，先运行 `npm install --global corepack@0.36.0`，再运行 `corepack enable`，让 pnpm 使用工作区声明的版本。
 
 ```bash
 pnpm add -D repoctl

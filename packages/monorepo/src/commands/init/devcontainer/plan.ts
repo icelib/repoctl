@@ -3,11 +3,10 @@ import { realpath } from 'node:fs/promises'
 import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
 import path from 'pathe'
 import { satisfies, valid, validRange } from 'semver'
+import { devContainerNodeVersions, supportedNodeRange } from '../../../core/runtime/node'
 import { fileDiff } from '../../upgrade/plan/diff'
 import { hash, readOptional } from './files'
 import { devContainerFiles } from './templates'
-
-const supportedNodes = ['24.21.0', '22.23.3']
 
 export async function planDevContainer(cwd: string, options: DevContainerOptions = {}): Promise<DevContainerPlan> {
   const workspace = await findWorkspaceDir(cwd)
@@ -32,9 +31,9 @@ export async function planDevContainer(cwd: string, options: DevContainerOptions
   if (typeof nodeRange !== 'string' || !validRange(nodeRange)) {
     throw new Error('Declare a valid root engines.node range before planning a Dev Container.')
   }
-  const nodeVersion = options.nodeVersion ?? supportedNodes.find(version => satisfies(version, nodeRange))
-  if (!nodeVersion || !/^\d+\.\d+\.\d+$/u.test(nodeVersion) || valid(nodeVersion) !== nodeVersion || !satisfies(nodeVersion, '>=22.13.0') || !satisfies(nodeVersion, nodeRange)) {
-    throw new Error(`Choose an exact stable --node-version >=22.13.0 allowed by engines.node (${nodeRange}).`)
+  const nodeVersion = options.nodeVersion ?? devContainerNodeVersions.find(version => satisfies(version, nodeRange))
+  if (!nodeVersion || !/^\d+\.\d+\.\d+$/u.test(nodeVersion) || valid(nodeVersion) !== nodeVersion || !satisfies(nodeVersion, supportedNodeRange) || !satisfies(nodeVersion, nodeRange)) {
+    throw new Error(`Choose an exact stable --node-version supported by repoctl (${supportedNodeRange}) and allowed by engines.node (${nodeRange}).`)
   }
   const packageManager = manifest.packageManager
   if (typeof packageManager !== 'string' || !/^pnpm@\d+\.\d+\.\d+(?:\+sha(?:224|256|384|512)\.[a-f\d]+)?$/u.test(packageManager) || !valid(packageManager.slice(5).split('+')[0])) {

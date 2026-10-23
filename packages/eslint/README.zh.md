@@ -34,7 +34,7 @@ export default icebreaker({
 
 ## 环境要求
 
-- Node.js 22 或更高版本
+- Node.js `^22.23.4 || ^24.22.1 || >=26.12.1`（推荐 24.22.1 LTS）
 - 支持 Flat Config 的 ESLint 9
 - React 核心插件已随当前包一起分发。Next.js、Query、无障碍、Astro、Svelte 等生态预设仍保持可选，缺失时会自动跳过对应配置，而不是在解析时直接报错。
 - Wevu 兼容检查已内置，无需额外安装。如需启用 Tailwind、MDX、UnoCSS、Stylelint 桥、无障碍、Astro 或 Svelte，可安装对应的可选依赖：`eslint-plugin-tailwindcss` / `eslint-plugin-better-tailwindcss`、`eslint-plugin-mdx`、`@unocss/eslint-plugin`、`eslint-plugin-better-stylelint`、React 无障碍的 `eslint-plugin-jsx-a11y`、Vue 无障碍的 `eslint-plugin-vuejs-accessibility` 和它的 `globals` peer、Astro 的 `eslint-plugin-astro` 与 `astro-eslint-parser`，以及 Svelte 的 `eslint-plugin-svelte`、`svelte-eslint-parser` 和 `svelte`。XML / SVG 格式化需要 `@prettier/plugin-xml`；Astro 格式化需要 `prettier-plugin-astro`。

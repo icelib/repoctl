@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os'
 import process from 'node:process'
 import path from 'pathe'
 import { afterEach } from 'vitest'
+import { supportedNodeRange } from '@/core/runtime/node'
 
 const roots: string[] = []
 afterEach(async () => {
@@ -17,7 +18,7 @@ export async function fixture(overrides: Record<string, unknown> = {}) {
   const root = path.join(parent, 'workspace')
   const leaf = path.join(root, 'packages/library')
   await mkdir(leaf, { recursive: true })
-  const manifest = { name: 'container-fixture', private: true, packageManager: 'pnpm@12.8.1', engines: { node: '>=22.13.0' }, ...overrides }
+  const manifest = { name: 'container-fixture', private: true, packageManager: 'pnpm@12.8.1', engines: { node: supportedNodeRange }, ...overrides }
   await writeFile(path.join(root, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`)
   await writeFile(path.join(root, 'pnpm-workspace.yaml'), 'packages: [packages/*]\n')
   await writeFile(path.join(leaf, 'package.json'), '{"name":"library","version":"1.0.0"}\n')

@@ -4,6 +4,8 @@ English | [简体中文](README.zh-CN.md)
 
 The recommended create command for starting a repoctl-managed pnpm and Turborepo workspace.
 
+Node.js 25+ does not bundle Corepack. On those versions, or if `corepack` is unavailable, first run `npm install --global corepack@0.36.0`, then run `corepack enable` before using pnpm.
+
 ```bash
 npm create repoctl@latest
 pnpm create repoctl@latest

@@ -8,7 +8,7 @@ Use this task when a workspace already has scripts, hooks, or configuration that
 
 - Run commands from the workspace root.
 - Commit or stash unrelated local changes.
-- Confirm that Node.js 22.13 or newer and pnpm are available.
+- Confirm that Node.js matches `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended) and pnpm is available.
 
 ## Smallest Command
 

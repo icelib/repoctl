@@ -6,7 +6,7 @@ repoctl accepts bug fixes, documentation improvements, tests, and focused featur
 
 ## Development setup
 
-1. Use Node.js 22.13+ and enable Corepack.
+1. Use Node.js matching `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended). On Node.js 25+ or if `corepack` is unavailable, first run `npm install --global corepack@0.36.0`; then run `corepack enable`.
 2. Run `pnpm install`.
 3. Create a focused branch from `main`.
 4. Add or update tests with the implementation.

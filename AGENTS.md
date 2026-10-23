@@ -2,14 +2,19 @@
 
 This is the **repoctl source workspace**. If a user asked you to create a new
 business project, do not add apps here. Use a new or empty directory outside
-this source checkout:
+this source checkout.
+
+Node.js 25+ does not bundle Corepack. On those versions, or if `corepack` is
+unavailable, first run `npm install --global corepack@0.36.0`. Then run
+`corepack enable` before the first pnpm command:
 
 ```bash
 pnpm create repoctl@latest <dir> -- --yes --templates <keys>
 ```
 
-After entering the generated project, run `corepack enable` before installing
-dependencies so pnpm uses the version declared by the workspace.
+After entering the generated project, run `corepack enable` again before
+installing dependencies so pnpm uses the version declared by that workspace's
+`packageManager` field.
 
 ## Project Structure & Module Organization
 
@@ -36,7 +41,7 @@ This repository is the source workspace for repoctl, a task-first CLI for pnpm a
 
 ## Build, Test, and Development Commands
 
-- `pnpm install` — set up workspaces; ensure Node 22.13+ as defined in `package.json`.
+- `pnpm install` — set up workspaces; use Node.js `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended), as defined in `package.json`.
 - `pnpm dev` — build the repoctl dependency closure, sync template assets, then rebuild changes in dependency order with Turbo watch. Use `dev:create`, `dev:configs`, or `dev:packages` for other package scopes, and `dev:client`, `dev:server`, or `dev:docs` for individual services. See `docs/development.md`.
 - `pnpm build` — execute `turbo run build` to build every workspace with caching.
 - `pnpm test` / `pnpm test:dev` — run Vitest suites once or in watch mode across packages.

@@ -25,7 +25,9 @@ repoctl is a task-first CLI for initializing, maintaining, validating, and relea
 
 ## Install
 
-repoctl requires Node.js 22.13 or newer.
+repoctl supports Node.js `^22.23.4 || ^24.22.1 || >=26.12.1`; Node.js 24.22.1 LTS is recommended.
+
+Node.js 25+ does not bundle Corepack. On those versions, or if `corepack` is unavailable, first run `npm install --global corepack@0.36.0`. Then run `corepack enable` so pnpm uses the workspace's declared version.
 
 ```bash
 pnpm add -D repoctl

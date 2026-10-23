@@ -16,6 +16,14 @@ export function checkConsumerWorkflows(workspace) {
     assert.equal(workflow.on.workflow_call, undefined, `${filename} must remain a standalone workflow`)
     for (const job of Object.values(workflow.jobs)) {
       assert.equal(job.environment, undefined, `${filename} must not require source-repository approval`)
+      for (const step of job.steps ?? []) {
+        if (step.uses?.startsWith('actions/setup-node@')) {
+          assert.equal(step.with?.['node-version'], filename === 'ci.yml' ? '$' + '{{ matrix.node-version }}' : '24.22.1')
+        }
+      }
+    }
+    if (filename === 'ci.yml') {
+      assert.deepEqual(workflow.jobs.build.strategy.matrix['node-version'], ['22.23.4', '24.22.1', '26.12.1'])
     }
   }
   assert.equal(existsSync(path.join(github, 'workflows/pr-ci.yml')), false)
@@ -33,6 +41,13 @@ export function checkConsumerWorkflows(workspace) {
   assert.ok(!releaseContent.includes('.github/nightly/'))
   assert.equal(release.jobs.nightly.env.REPOCTL_NIGHTLY_PROVIDER, 'npm')
   assert.equal(release.jobs.nightly.env.REPOCTL_NIGHTLY_SCHEDULE, '')
+  for (const job of Object.values(release.jobs)) {
+    for (const step of job.steps ?? []) {
+      if (step.uses?.startsWith('actions/setup-node@')) {
+        assert.equal(step.with?.['node-version'], '24.22.1')
+      }
+    }
+  }
   const config = readFileSync(path.join(workspace, 'repoctl.config.ts'), 'utf8')
   assert.ok(!config.includes('17 19 * * *'))
   assert.ok(!config.includes('check:workflows'))
