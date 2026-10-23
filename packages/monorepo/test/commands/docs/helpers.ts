@@ -1,12 +1,20 @@
-import type { DocsCommandConfig, DocsOptions, DocsStateStore, ReleaseCompletionRecord } from '@icebreakers/monorepo'
+import type { DocsCommandConfig, DocsDeploymentStageKey, DocsOptions, DocsStateStore, ReleaseCompletionRecord } from '@icebreakers/monorepo'
 import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import { expect } from 'vitest'
 
 const roots: string[] = []
+
+export async function expectDocsFailure(operation: Promise<unknown>, stage: DocsDeploymentStageKey, reason: string) {
+  await expect(operation).rejects.toMatchObject({ report: {
+    failedStage: stage,
+    stages: expect.arrayContaining([expect.objectContaining({ stage, status: 'failed', reason })]),
+  } })
+}
 
 export function git(cwd: string, ...args: string[]) {
   return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }).trim()

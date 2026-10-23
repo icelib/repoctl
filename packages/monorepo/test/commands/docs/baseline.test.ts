@@ -49,7 +49,7 @@ describe('stable documentation baseline selection', () => {
     expect(plan).toMatchObject({ eligible: false, skipped: false, commits: [] })
     expect(plan.blockers.join('\n')).toContain('current stable baseline')
     const blocked = runner()
-    await expect(deployDocs({ ...request, spawn: blocked })).rejects.toThrow('current stable baseline')
+    await expect(deployDocs({ ...request, spawn: blocked })).rejects.toMatchObject({ report: { failedStage: 'plan' } })
     expect(blocked).not.toHaveBeenCalled()
     expect(store.writes).toEqual([])
     expect(store.records).toEqual(records)

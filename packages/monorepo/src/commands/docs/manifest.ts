@@ -1,7 +1,8 @@
 import type { DocsDeploymentPlan } from './types'
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import path from 'pathe'
-import { assertContainedPath } from './providers/cloudflare/paths'
+import { assertContainedPath } from './artifacts/paths'
+import { DocsDiagnosticError } from './diagnostics'
 
 export const docsManifestPath = '.well-known/repoctl-deployment.json'
 
@@ -20,7 +21,7 @@ export function docsManifest(plan: DocsDeploymentPlan) {
 export async function stampDocsManifest(source: string, output: string, plan: DocsDeploymentPlan) {
   await assertContainedPath(source, output)
   if (!(await stat(output)).isDirectory()) {
-    throw new Error('Documentation assets output must be an existing directory')
+    throw new DocsDiagnosticError('artifact-output-missing')
   }
   const filename = path.join(output, docsManifestPath)
   await assertContainedPath(source, filename)
@@ -29,13 +30,13 @@ export async function stampDocsManifest(source: string, output: string, plan: Do
     const value: unknown = JSON.parse(await readFile(filename, 'utf8'))
     if (!value || typeof value !== 'object' || Object.keys(value).length !== Object.keys(expected).length
       || Object.entries(expected).some(([key, item]) => Reflect.get(value, key) !== item)) {
-      throw new Error('Documentation deployment manifest belongs to another identity or user file')
+      throw new DocsDiagnosticError('manifest-conflict')
     }
     return
   }
   catch (error) {
     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      throw new Error('Documentation deployment manifest cannot be replaced; remove conflicting build output')
+      throw new DocsDiagnosticError('manifest-conflict')
     }
   }
   await mkdir(path.dirname(filename), { recursive: true })

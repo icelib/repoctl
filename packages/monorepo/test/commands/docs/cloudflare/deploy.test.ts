@@ -2,7 +2,7 @@ import { existsSync, rmSync, writeFileSync } from 'node:fs'
 import { deployDocs, planDocsDeployment } from '@icebreakers/monorepo'
 import path from 'pathe'
 import { afterEach, expect, it } from 'vitest'
-import { cleanup } from '../helpers'
+import { cleanup, expectDocsFailure } from '../helpers'
 import { api, nativeFixture, otherVersion, versionId } from './helpers'
 
 afterEach(cleanup)
@@ -27,7 +27,7 @@ it('does not fall through to a global Wrangler when no local dependency is insta
       rmSync(path.join(source, 'website/node_modules'), { recursive: true })
     }
   }
-  await expect(deployDocs(h.options)).rejects.toThrow('Declare Wrangler')
+  await expectDocsFailure(deployDocs(h.options), 'provider', 'wrangler-missing')
   expect(h.state.uploadCount).toBe(0)
   expect(h.store.records.get('docs/website/stable')!.value).not.toHaveProperty('pending')
 })
@@ -45,7 +45,7 @@ it.each([
       writeFileSync(env['WRANGLER_OUTPUT_FILE_PATH']!, JSON.stringify({ type: 'deploy', version: 1, worker_name: 'docs-stable', wrangler_environment: '', version_id: versionId, ...change }))
     }
   }
-  await expect(deployDocs(h.options)).rejects.toThrow('does not match')
+  await expectDocsFailure(deployDocs(h.options), 'provider', 'wrangler-result-invalid')
   expect(h.store.records.get('docs/website/stable')!.value).toHaveProperty('pending.phase', 'deploying')
   expect(existsSync(path.dirname(h.state.output))).toBe(false)
 })
@@ -61,7 +61,7 @@ it('requires post-upload API confirmation of the exact reported version', async 
       ? api({ deployments: [{ created_on: '2026-10-23T00:00:00Z', strategy: 'percentage', versions: [{ version_id: otherVersion, percentage: 100 }] }] })
       : api({ id: otherVersion, annotations: { 'workers/message': h.state.message } })
   })
-  await expect(deployDocs(h.options)).rejects.toThrow('not confirmed active')
+  await expectDocsFailure(deployDocs(h.options), 'provider', 'provider-version-inactive')
   expect(h.store.records.get('docs/website/stable')!.value).toHaveProperty('pending.phase', 'deploying')
 })
 
@@ -76,7 +76,7 @@ it('recovers repeated final-checkpoint failures after one upload without reuploa
     return write(key, value, revision)
   }
   for (let attempt = 0; attempt < 2; attempt++) {
-    await expect(deployDocs(h.options)).rejects.toThrow('checkpoint persistence failed')
+    await expectDocsFailure(deployDocs(h.options), 'finalize', 'checkpoint-write-failed')
     expect(h.store.records.get('docs/website/stable')!.value).toHaveProperty('pending.phase', 'deploying')
     expect(h.state.uploadCount).toBe(1)
   }
@@ -92,7 +92,7 @@ it('recovers a successful upload whose local result write failed', async () => {
       throw new Error('result write failed')
     }
   }
-  await expect(deployDocs(h.options)).rejects.toThrow('result write failed')
+  await expectDocsFailure(deployDocs(h.options), 'provider', 'provider-failed')
   h.callback.spawn = undefined
   expect((await deployDocs(h.options)).status).toBe('deployed')
   expect(h.state.uploadCount).toBe(1)
@@ -105,15 +105,15 @@ it('preserves an unknown upload outcome when retry preflight or local acceptance
       throw new Error('upload response lost')
     }
   }
-  await expect(deployDocs(h.options)).rejects.toThrow('upload response lost')
-  await expect(deployDocs({ ...h.options, env: { ...h.options.env, CLOUDFLARE_API_TOKEN: '' } })).rejects.toThrow('CLOUDFLARE_API_TOKEN')
+  await expectDocsFailure(deployDocs(h.options), 'provider', 'provider-failed')
+  await expectDocsFailure(deployDocs({ ...h.options, env: { ...h.options.env, CLOUDFLARE_API_TOKEN: '' } }), 'preflight', 'credentials-missing')
   expect(h.store.records.get('docs/website/stable')!.value).toHaveProperty('pending.phase', 'deploying')
   h.callback.spawn = (args, source) => {
     if (args[1] === 'docs:build') {
       rmSync(path.join(source, 'website/node_modules'), { recursive: true })
     }
   }
-  await expect(deployDocs(h.options)).rejects.toThrow('Declare Wrangler')
+  await expectDocsFailure(deployDocs(h.options), 'provider', 'wrangler-missing')
   expect(h.store.records.get('docs/website/stable')!.value).toHaveProperty('pending.phase', 'deploying')
   h.callback.spawn = undefined
   expect((await deployDocs(h.options)).status).toBe('deployed')
@@ -130,7 +130,7 @@ it('recovers a frozen script deployment after live configuration switches to the
       throw new Error('script result lost')
     }
   }
-  await expect(deployDocs(h.options)).rejects.toThrow('script result lost')
+  await expectDocsFailure(deployDocs(h.options), 'provider', 'provider-failed')
   h.site.stable = native
   h.request.mockImplementation(async () => {
     throw new Error('native fetch must not run')

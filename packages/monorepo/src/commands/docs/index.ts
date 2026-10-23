@@ -1,3 +1,4 @@
 export { deployDocs } from './deploy'
 export { planDocsDeployment } from './plan'
-export type { DocsDeploymentPlan, DocsDeploymentResult, DocsOptions, DocsStateStore } from './types'
+export { DocsDeploymentError } from './report'
+export type { DocsDeploymentPlan, DocsDeploymentReport, DocsDeploymentResult, DocsDeploymentStage, DocsDeploymentStageKey, DocsOptions, DocsProviderReceipt, DocsStateStore } from './types'

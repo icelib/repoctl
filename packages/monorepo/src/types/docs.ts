@@ -1,9 +1,18 @@
 export type DocsChannel = 'preview' | 'stable'
 
+/** Opt in to exact public deployment-identity verification before advancing current. */
+export interface DocsReadinessConfig {
+  /** Total polling budget per invocation, 1..600000 ms; defaults to 120000. */
+  timeoutMs?: number
+  /** Header and body budget per request, 1..30000 ms; defaults to 10000. */
+  requestTimeoutMs?: number
+}
+
 export interface DocsScriptDeploymentTarget {
   /** Root package.json script; the provider writes { versionId, url? } to REPO_DOCS_RESULT_FILE. */
   deployScript: string
   url?: string
+  readiness?: DocsReadinessConfig
   provider?: never
   config?: never
   workerName?: never
@@ -19,6 +28,7 @@ export interface DocsCloudflareWorkersTarget {
   accountId: string
   environment?: string
   url?: string
+  readiness?: DocsReadinessConfig
   deployScript?: never
 }
 

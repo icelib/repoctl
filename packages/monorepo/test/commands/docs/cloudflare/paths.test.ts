@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { deployDocs, planDocsDeployment } from '@icebreakers/monorepo'
 import { afterEach, expect, it } from 'vitest'
-import { cleanup, commit, makeRecord } from '../helpers'
+import { cleanup, commit, expectDocsFailure, makeRecord } from '../helpers'
 import { nativeFixture, wrangler } from './helpers'
 
 const external: string[] = []
@@ -21,7 +21,7 @@ async function outside() {
 
 it('rejects assets path traversal before installing or building', async () => {
   const h = await nativeFixture({ ...wrangler, assets: { directory: '../../outside' } })
-  await expect(deployDocs(h.options)).rejects.toThrow('escapes the frozen checkout')
+  await expectDocsFailure(deployDocs(h.options), 'preflight', 'artifact-path-invalid')
   expect(h.calls).toEqual([])
 })
 
@@ -64,7 +64,7 @@ it.each(['output', 'manifest-parent', 'manifest-file'])('rejects a build-created
       symlinkSync(path.join(directory, 'repoctl-deployment.json'), path.join(output, '.well-known/repoctl-deployment.json'))
     }
   }
-  await expect(deployDocs(h.options)).rejects.toThrow('symlink escapes')
+  await expectDocsFailure(deployDocs(h.options), 'provider', 'artifact-path-invalid')
   expect(h.state.uploadCount).toBe(0)
   expect(h.store.records.get('docs/website/stable')!.value).not.toHaveProperty('pending')
   expect(existsSync(path.join(directory, '.well-known'))).toBe(false)
@@ -87,7 +87,7 @@ it.each(['malformed', 'user', 'different', 'same'])('handles an existing %s mani
     expect(h.state.manifest).toEqual(expected)
   }
   else {
-    await expect(deployDocs(h.options)).rejects.toThrow('manifest cannot be replaced')
+    await expectDocsFailure(deployDocs(h.options), 'provider', 'manifest-conflict')
     expect(h.state.uploadCount).toBe(0)
     expect(h.store.records.get('docs/website/stable')!.value).not.toHaveProperty('pending')
   }
