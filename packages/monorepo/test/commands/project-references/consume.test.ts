@@ -6,6 +6,7 @@ import { expect, it } from 'vitest'
 import { planProjectReferences, syncProjectReferences } from '../../../dist/index.mjs'
 import { consumer } from './consumer'
 import { fixture, settings, sourceRoot, write } from './fixtures'
+import { vueToolchain } from './toolchain'
 
 it('builds a real TS consumer after synchronizing explicit compilation references', async (t) => {
   const root = await fixture(t)
@@ -27,7 +28,7 @@ it('retains the existing Vue typecheck entrypoint and validates an actual SFC th
   const root = await fixture(t)
   const { step, run } = consumer(t, path.join(root, 'packages/app'))
   await write(root, 'packages/app/package.json', { name: '@fixture/app', private: true, type: 'module', scripts: { typecheck: 'vue-tsc -b' } })
-  await fs.symlink(path.join(sourceRoot, 'templates/vue-lib/node_modules'), path.join(root, 'packages/app/node_modules'), 'junction')
+  await vueToolchain(path.join(root, 'packages/app'))
   await write(root, 'packages/app/tsconfig.json', { extends: '../../base.json', compilerOptions: { emitDeclarationOnly: true, outDir: 'dist', rootDir: 'src', lib: ['ESNext', 'DOM', 'DOM.Iterable'] }, include: ['src/**/*.ts', 'src/**/*.vue'] })
   await write(root, 'packages/app/src/Example.vue', '<script setup lang="ts">\ndefineProps<{ title: string }>()\n</script>\n<template><p>{{ title }}</p></template>\n')
   const manifest = await fs.readFile(path.join(root, 'packages/app/package.json'), 'utf8')
