@@ -13,7 +13,7 @@ import { ledgerPath, migrationGroup } from '../migrations/record'
 import { canonicalDirectory, hash, normalizeUpgradeInput, readUpgradeInput } from '../plan/files'
 import { writeUpgradeTransaction } from './transaction'
 import { cleanDirectories, ensureParent } from './transaction/state'
-import { actionable, validateUpgradePlan } from './validate'
+import { actionable, blockedUpgradeGroups, validateUpgradePlan } from './validate'
 
 /** Apply reviewed bytes only after all plan preconditions have been checked. */
 async function applyLocked(cwd: string, plan: UpgradePlan, options: UpgradeApplyOptions): Promise<UpgradeApplyResult> {
@@ -22,11 +22,15 @@ async function applyLocked(cwd: string, plan: UpgradePlan, options: UpgradeApply
     || await canonicalDirectory(assetsDir) !== plan.assetDir) {
     throw new Error('Upgrade plan belongs to another directory or asset installation.')
   }
-  const selected = new Set(options.files ?? plan.files.filter(actionable).map(file => file.path))
+  const blockedGroups = blockedUpgradeGroups(plan)
+  const selected = new Set(options.files ?? plan.files.filter(file => actionable(file) && !blockedGroups.has(file.group)).map(file => file.path))
   if ([...selected].some(filename => !plan.files.some(file => file.path === filename && actionable(file)))) {
     throw new Error('Selection contains an unplanned upgrade path.')
   }
   for (const file of plan.files.filter(actionable)) {
+    if (file.group && selected.has(file.path) && blockedGroups.has(file.group)) {
+      throw new Error(`Resolve every blocked file in migration group ${file.group} before applying it.`)
+    }
     if (file.group && selected.has(file.path) && plan.files.some(other => other.group === file.group && actionable(other) && !selected.has(other.path))) {
       throw new Error(`Apply every file in migration group ${file.group} together.`)
     }
