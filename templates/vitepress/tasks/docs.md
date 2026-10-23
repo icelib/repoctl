@@ -184,7 +184,7 @@ repoctl applies only those selected patches to the stable source. It does not co
 
 ## Deployment adapters and recovery
 
-repoctl invokes `pnpm install --frozen-lockfile` and the configured build script in an isolated source checkout, then calls the selected native provider or deployment script. Native targets perform the preflight described above first. The build and any deployment script receive:
+repoctl invokes `pnpm install --frozen-lockfile` and the configured build script in an isolated source checkout, then calls the selected native provider or deployment script. Native targets perform the preflight described above first. Installation retains lifecycle scripts and ordinary CI/package-manager environment variables, but removes all inherited `REPO_DOCS_*` variables and sets `LEFTHOOK=0`. A workspace-wide postinstall can therefore build unrelated sites with their own default channel and origin. Only the selected site build and provider/deployment phase receive the frozen deployment context; the caller's environment is not mutated. The build and any deployment script receive:
 
 | Variable                               | Meaning                                                              |
 | -------------------------------------- | -------------------------------------------------------------------- |

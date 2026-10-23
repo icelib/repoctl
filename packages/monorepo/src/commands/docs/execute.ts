@@ -11,6 +11,14 @@ export function runDocsProcess(options: DocsOptions, source: string, args: strin
   }
 }
 
+/** Installation lifecycles may build unrelated sites with their own default origins. */
+export function docsInstallEnvironment(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return {
+    ...Object.fromEntries(Object.entries(env).filter(([key]) => !key.toUpperCase().startsWith('REPO_DOCS_'))),
+    LEFTHOOK: '0',
+  }
+}
+
 export function docsEnvironment(context: DocsContext, plan: DocsDeploymentPlan, resultFile: string) {
   const target = context.site[plan.channel]
   return {

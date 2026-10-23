@@ -28,9 +28,14 @@ describe('built documentation deployer', () => {
     const process = runner((args, source, env) => {
       expect(source).not.toBe(cwd)
       expect(readFileSync(path.join(source, 'packages/core/src/index.ts'), 'utf8')).toContain('"released"')
-      expect(env['REPO_DOCS_CHANNEL']).toBe('stable')
-      expect(env['REPO_DOCS_RELEASE_ID']).toBe(options.release)
-      expect(env['REPO_DOCS_TREE_SHA']).toMatch(/^[a-f0-9]{40}$/)
+      if (args[0] === 'install') {
+        expect(Object.keys(env).filter(key => key.startsWith('REPO_DOCS_'))).toEqual([])
+      }
+      else {
+        expect(env['REPO_DOCS_CHANNEL']).toBe('stable')
+        expect(env['REPO_DOCS_RELEASE_ID']).toBe(options.release)
+        expect(env['REPO_DOCS_TREE_SHA']).toMatch(/^[a-f0-9]{40}$/)
+      }
       if (args[1] === 'docs:stable') {
         const state = store.records.get('docs/website/stable')!.value as { pending: { phase: string } }
         expect(state.pending.phase).toBe('deploying')
