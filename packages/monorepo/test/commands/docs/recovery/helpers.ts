@@ -21,5 +21,5 @@ export async function loseUpload(options: DocsOptions) {
     if (args[1] === 'docs:stable') {
       throw new Error('upload response lost')
     }
-  }).spawn })).rejects.toThrow('upload response lost')
+  }).spawn })).rejects.toMatchObject({ report: { failedStage: 'provider' } })
 }

@@ -83,6 +83,7 @@ export default {
           buildScript: 'docs:build',
           preview: {
             provider: 'cloudflare-workers',
+            readiness: {},
             config: 'templates/vitepress/wrangler.jsonc',
             accountId: '2db8e8dc78d5ffdd9fe579a7188b7826',
             workerName: 'repoctl-docs-next',
@@ -91,6 +92,7 @@ export default {
           },
           stable: {
             provider: 'cloudflare-workers',
+            readiness: {},
             config: 'templates/vitepress/wrangler.jsonc',
             accountId: '2db8e8dc78d5ffdd9fe579a7188b7826',
             workerName: 'repoctl-docs',

@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { deployDocs } from '@icebreakers/monorepo'
 import { afterEach, expect, it } from 'vitest'
-import { cleanup, commit, makeRecord, put } from '../helpers'
+import { cleanup, commit, expectDocsFailure, makeRecord, put } from '../helpers'
 import { nativeFixture, target, wrangler } from './helpers'
 
 afterEach(cleanup)
@@ -18,7 +18,7 @@ it.each([
   ['Worker override', { WRANGLER_CI_OVERRIDE_NAME: 'other' }],
 ])('rejects %s before installation and build', async (_label, env) => {
   const h = await nativeFixture()
-  await expect(deployDocs({ ...h.options, env: { ...h.options.env, ...env } })).rejects.toThrow(/Cloudflare|CLOUDFLARE/)
+  await expectDocsFailure(deployDocs({ ...h.options, env: { ...h.options.env, ...env } }), 'preflight', _label === 'missing credentials' ? 'credentials-missing' : 'provider-environment-conflict')
   expect(h.calls).toEqual([])
   expect(h.request).not.toHaveBeenCalled()
 })
@@ -33,7 +33,8 @@ it.each([
 ])('rejects a target inconsistent with the frozen configuration: %o', async (change) => {
   const h = await nativeFixture()
   h.site.stable = { ...target, ...change }
-  await expect(deployDocs(h.options)).rejects.toThrow()
+  const reason = 'config' in change ? change.config.endsWith('.toml') ? 'unsupported-config' : 'artifact-path-invalid' : 'url' in change ? 'provider-domain-mismatch' : 'environment' in change ? 'unsupported-config' : 'provider-identity-mismatch'
+  await expectDocsFailure(deployDocs(h.options), 'preflight', reason)
   expect(h.calls).toEqual([])
 })
 
@@ -50,7 +51,8 @@ it.each([
   { ...wrangler, env: { next: { ...wrangler.env.next, assets: { not_found_handling: '404-page' } } } },
 ])('rejects unsupported or ambiguous static configuration before effects: %o', async (configuration) => {
   const h = await nativeFixture(configuration)
-  await expect(deployDocs(h.options)).rejects.toThrow(/Unsupported|Cloudflare/)
+  const missingRoutes = 'env' in configuration && 'next' in configuration.env && Object.keys(configuration.env.next).length === 1
+  await expectDocsFailure(deployDocs(h.options), 'preflight', missingRoutes ? 'environment-routes-missing' : 'unsupported-config')
   expect(h.calls).toEqual([])
 })
 
@@ -71,14 +73,14 @@ it('applies the official inherited environment name and whole assets object', as
 it('rejects two environment selectors addressing one physical Worker even with separate routes', async () => {
   const h = await nativeFixture({ ...wrangler, env: { next: { ...wrangler.env.next, name: wrangler.name } } })
   h.site.preview = { ...target, environment: 'next', url: 'https://next.example.invalid' }
-  await expect(deployDocs(h.options)).rejects.toThrow('same Cloudflare Worker')
+  await expectDocsFailure(deployDocs(h.options), 'preflight', 'provider-target-shared')
   expect(h.calls).toEqual([])
 })
 
 it('rejects separate Workers declaring ownership of the same custom domain', async () => {
   const h = await nativeFixture({ ...wrangler, env: { next: { ...wrangler.env.next, routes: wrangler.routes } } })
   h.site.preview.url = target.url!
-  await expect(deployDocs(h.options)).rejects.toThrow('same custom domain')
+  await expectDocsFailure(deployDocs(h.options), 'preflight', 'provider-domain-shared')
   expect(h.calls).toEqual([])
 })
 
@@ -96,7 +98,7 @@ it.each(['config', 'generated'])('revalidates %s after the build before upload',
       }
     }
   }
-  await expect(deployDocs(h.options)).rejects.toThrow(/changed during|Unsupported/)
+  await expectDocsFailure(deployDocs(h.options), 'provider', kind === 'config' ? 'provider-config-changed' : 'generated-config')
   expect(h.state.uploadCount).toBe(0)
   expect(h.store.records.get('docs/website/stable')!.value).not.toHaveProperty('pending')
 })
@@ -109,6 +111,6 @@ it('rejects generated deployment redirection in an ancestor of a nested static c
   await h.store.github.writeAutomationState(`releases/${record.id}`, record)
   h.site.stable = { ...target, config: 'website/nested/wrangler.jsonc' }
   h.site.preview = { deployScript: 'docs:preview' }
-  await expect(deployDocs({ ...h.options, release: record.id })).rejects.toThrow('generated Wrangler configuration')
+  await expectDocsFailure(deployDocs({ ...h.options, release: record.id }), 'preflight', 'generated-config')
   expect(h.calls).toEqual([])
 })

@@ -6,6 +6,8 @@ import { loseUpload, runner } from './helpers'
 afterEach(cleanup)
 
 it.each([
+  ['array deploying phase', (pending: Record<string, unknown>) => { pending['phase'] = ['deploying'] }],
+  ['array verifying phase without receipt', (pending: Record<string, unknown>) => { pending['phase'] = ['verifying'] }],
   ['missing snapshot', (pending: Record<string, unknown>) => { delete pending['snapshot'] }],
   ['malformed snapshot', (pending: Record<string, unknown>) => { pending['snapshot'] = null }],
   ['wrong identity', (pending: Record<string, unknown>) => { pending['deploymentId'] = 'b'.repeat(64) }],
@@ -45,6 +47,6 @@ it('rechecks requested corrections against the frozen tree instead of trusting a
   }
   checkpoint.pending.snapshot.requestedCommits = [second]
   const retry = runner()
-  await expect(deployDocs({ ...options, commits: [second], spawn: retry.spawn })).rejects.toThrow('Frozen stable documentation snapshot')
+  await expect(deployDocs({ ...options, commits: [second], spawn: retry.spawn })).rejects.toMatchObject({ report: { failedStage: 'plan' } })
   expect(retry.calls).toEqual([])
 })

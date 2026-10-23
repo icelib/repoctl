@@ -4,6 +4,7 @@ import process from 'node:process'
 import { resolveCommandConfig } from '../../core/config'
 import { resolveCommandValues } from '../../core/config/resolution'
 import { GitHubClient } from '../release/github'
+import { readinessUrl } from './readiness'
 
 export function assertPatterns(patterns: string[], label: string) {
   if (!patterns.length || !patterns.some(value => !value.startsWith('!'))) {
@@ -30,6 +31,9 @@ export function validateSite(site: DocsSiteConfig) {
   for (const target of [site.preview, site.stable]) {
     if (target.url && !/^https?:\/\//.test(target.url)) {
       throw new Error('Documentation URLs must use http or https')
+    }
+    if (target.readiness) {
+      readinessUrl(target)
     }
   }
 }

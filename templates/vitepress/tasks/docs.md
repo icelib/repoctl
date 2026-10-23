@@ -108,7 +108,26 @@ During `deploy`, native preflight runs against the frozen configuration before t
 
 Only an explicit Worker-missing response, HTTP 404 with Cloudflare error code `10007`, permits a first upload. Authentication errors, generic 404s, rate limits, malformed responses and empty deployment lists stop deployment. `repo docs plan` remains a source/publication inspection; it does not perform this credential preflight or certify provider access.
 
-After the build, repoctl rechecks configuration and output containment, then writes `/.well-known/repoctl-deployment.json` into the assets output with the site, channel, deployment ID, source/tree SHAs and optional release ID. Existing content at that path must be a valid manifest for the same full identity; conflicting manifests or unrelated user files are preserved by failing the deployment. Cloudflare confirmation requires the latest active deployment to serve exactly one version at 100% and carry `repoctl-docs:<deploymentId>`. It verifies provider state; it does not poll the public site or prove that DNS and HTTP delivery are ready.
+After the build, repoctl rechecks configuration and output containment, then writes `/.well-known/repoctl-deployment.json` into the assets output with the site, channel, deployment ID, source/tree SHAs and optional release ID. Existing content at that path must be a valid manifest for the same full identity; conflicting manifests or unrelated user files are preserved by failing the deployment. Cloudflare confirmation requires the latest active deployment to serve exactly one version at 100% and carry `repoctl-docs:<deploymentId>`. This confirms provider state. Enable the optional readiness gate below to verify public HTTP delivery.
+
+## Verify public delivery before advancing current
+
+Add `readiness: {}` to either target to require public verification after provider confirmation. Omitting `readiness` preserves the existing behavior and makes no public HTTP request. An opted-in target requires an explicit HTTPS `url` without credentials, query or fragment. A path is allowed, but the manifest is always requested at the origin root: `/.well-known/repoctl-deployment.json`. When using the shared Nimbus or VitePress channel helper, configure the target `url` as an origin without a path and set any site prefix through the framework's `base`; repoctl passes this URL unchanged as `REPO_DOCS_URL`.
+
+```ts
+const readiness = {
+  timeoutMs: 120000,
+  requestTimeoutMs: 10000,
+}
+```
+
+Both options are positive integers. `timeoutMs` defaults to 120000 and accepts 1–600000 ms; `requestTimeoutMs` defaults to 10000 and accepts 1–30000 ms. Each attempt gets a new finite budget. Requests and body reads are bounded, redirects are rejected, caching is bypassed, and provider credentials are never sent to the public URL. A successful HTTP response must contain the exact schema, site, channel, deployment ID, source/tree SHAs and stable release ID; an old page or HTTP 200 alone is insufficient.
+
+The native provider stamps the identity manifest after building. Script targets opting in must produce the same JSON manifest in their final static output, using `schemaVersion: 1`, `REPO_DOCS_SITE`, `REPO_DOCS_CHANNEL`, `REPO_DOCS_DEPLOYMENT_ID`, `REPO_DOCS_SOURCE_SHA` and `REPO_DOCS_TREE_SHA` as `site`, `channel`, `deploymentId`, `sourceSha` and `treeSha`. Add `releaseId` from `REPO_DOCS_RELEASE_ID` only for stable. Use the supplied tree SHA, which includes selected corrections, and preserve unrelated generated files such as Nimbus `_headers`. The manifest must be publicly accessible without authentication.
+
+Once the provider result is saved, state moves from `deploying` to `verifying` before the first public request. A timeout or finalization failure keeps that receipt and the previous fully verified `current` pointer. Public traffic may already serve the new version even though `current` has not advanced.
+
+Retry the same deployment to resume verification without installing, building or uploading the frozen source again. Native targets recheck that the saved version is still active before polling and again before finalization; script targets reuse the receipt without rerunning `deployScript`. A different active version, mixed traffic or changed identity fails instead of silently uploading. The reusable workflow still installs its root dependencies to bootstrap repoctl. A stable retry retains its saved readiness policy and URL even when main changes or removes them; another stable deployment cannot replace an unresolved `verifying` operation.
 
 ## Install the managed workflows
 
@@ -136,7 +155,7 @@ The Release run's `repoctl-ci-progress.json` includes `releaseRecord` for manual
 
 The first production deployment waits for the next complete stable release after enabling this configuration. It cannot import arbitrary current `main` content as an initial baseline. Keep the existing production deployment serving until that release passes the documentation gate.
 
-Each deployment installs the frozen lockfile and builds the complete original source checkout. Later `main` commits do not enter the stable build. Preview uses an exact `main` SHA and rechecks the remote branch before deploying. An older source cannot replace a newer deployed source.
+A fresh deployment installs the frozen lockfile and builds the complete original source checkout; a saved verification retry reuses its provider receipt. Later `main` commits do not enter the stable build. Preview uses an exact `main` SHA and rechecks the remote branch before deploying. An older source cannot replace a newer deployed source.
 
 Inspect either channel without installing dependencies, building or deploying:
 
@@ -171,6 +190,7 @@ repoctl invokes `pnpm install --frozen-lockfile` and the configured build script
 | -------------------------------------- | -------------------------------------------------------------------- |
 | `REPO_DOCS_SITE` / `REPO_DOCS_CHANNEL` | Selected site and `preview` or `stable`                              |
 | `REPO_DOCS_SOURCE_SHA`                 | Exact source commit                                                  |
+| `REPO_DOCS_TREE_SHA`                   | Verified tree including selected documentation corrections           |
 | `REPO_DOCS_RELEASE_ID`                 | Stable completion record ID; empty for preview                       |
 | `REPO_DOCS_DEPLOYMENT_ID`              | Deterministic deployment identity, including corrections             |
 | `REPO_DOCS_URL`                        | Optional configured target URL                                       |
@@ -182,21 +202,31 @@ A script adapter must write a nonempty provider version ID and may return an HTT
 { "versionId": "provider-deployment-version", "url": "https://docs.example.com" }
 ```
 
-Use `REPO_DOCS_DEPLOYMENT_ID` to reconcile an interrupted deployment before uploading again. Write the result file only after the provider confirms the outcome. A zero process exit without a valid result file is not a completed deployment.
+Use `REPO_DOCS_DEPLOYMENT_ID` to reconcile an interrupted deployment before uploading again. Write the result file only after the provider confirms the outcome. A zero process exit without a valid result file is not a completed deployment. With readiness enabled, a saved receipt accepts only `versionId` and optional `url`; its version must be nonempty, at most 512 characters and free of control characters, and its HTTP(S) URL must not contain credentials, query or fragment.
 
 The native Cloudflare provider performs this reconciliation itself. An active version with the same annotation and 100% of traffic is reused without another upload; a historical matching version is insufficient, and mixed traffic fails. A valid active version belonging to another deployment permits the new authorized upload. Wrangler's reported Worker, environment and version must match the target, and the reported version must be confirmed active before the current pointer advances.
 
 The workflow runs `repo docs plan` followed by `repo docs deploy` with the same inputs. Stable deployment requires GitHub Actions, a run ID and `REPO_DOCS_CONCURRENCY_GROUP` matching the real serialized workflow group; use `plan` for local review. Revision-checked state is claimed before building or deploying, and the deployed pointer advances only after a verified provider result.
 
-If a build fails, fix the cause and rerun the documentation workflow against the same release record. npm is not republished. If a stable runner disappears during deployment, rerun the same deployment so the adapter can reconcile its result; a different stable deployment cannot replace an unresolved `deploying` operation. For preview, the serialized managed workflow may replace an interrupted older deployment with the latest main source. Already completed deployments and unrelated release batches skip. Retain `repoctl-release-state`; short-lived Actions artifacts are diagnostic copies, not the deployment baseline.
+If a build fails, fix the cause and rerun the documentation workflow against the same release record. npm is not republished. If a stable runner disappears during deployment, rerun the same deployment so the adapter can reconcile its result; a different stable deployment cannot replace an unresolved `deploying` or `verifying` operation. For preview, the serialized managed workflow may replace an interrupted older deployment with the latest main source. Already completed deployments and unrelated release batches skip. Retain `repoctl-release-state`; short-lived Actions artifacts are diagnostic copies, not the deployment baseline.
 
 An unfinished stable deployment saves its site configuration, release record, requested corrections and verified source tree. Retry with the same release and correction inputs. The planner rechecks those saved inputs and deployment identity, and the build uses the saved configuration even if `main` has changed or removed that site. Omitting `release` selects the current stable baseline; when the first deployment has no current baseline, it selects the pending release. If a newer release is pending while an older baseline is current, specify the newer release explicitly. Invalid or inconsistent saved state stops recovery before building or uploading.
 
-If an upload succeeds but its response, verification or final checkpoint write fails, the `deploying` claim remains. A retry still installs and rebuilds the same frozen source, then checks the active remote version before deciding to upload. A failed preflight or rebuild during that retry must not erase the unknown upload outcome. Old pending script deployments continue to use their saved script target and original source after the live configuration switches to the native provider; migrate future deployments without rewriting historical snapshots.
+If an upload succeeds but its result has not been durably saved as a verification receipt, or readiness is disabled and finalization fails, the `deploying` claim remains. A retry still installs and rebuilds the same frozen source, then checks the active remote version before deciding to upload. A failed preflight or rebuild during that retry must not erase the unknown upload outcome. Old pending script deployments continue to use their saved script target and original source after the live configuration switches to the native provider; migrate future deployments without rewriting historical snapshots.
 
 A fix that changes product source or build scripts needs a new stable baseline; the same release record continues to build its original source.
 
-The programmatic APIs are `planDocsDeployment(options)` and `deployDocs(options)`. `DocsOptions` accepts the site, channel, source/release/correction selection, optional config and environment, and a `DocsStateStore` implementing `readAutomationState`, `writeAutomationState` with revision checks, and `readBranchHead`. Optional `fetch` supplies the native provider's HTTP transport; `spawn` supplies the process transport. Query errors must fail closed. Public target types are `DocsScriptDeploymentTarget`, `DocsCloudflareWorkersTarget` and their union `DocsDeploymentTarget`.
+Known repoctl failures retain fixed reason codes and guidance, including missing credentials, conflicting provider identity, unsupported configuration, an inactive saved version, a changed claim and an advanced main branch. Unknown exceptions retain only their stage classification; their messages and causes are not copied.
+
+The programmatic APIs are `planDocsDeployment(options)` and `deployDocs(options)`. `DocsOptions` accepts the site, channel, source/release/correction selection, optional config and environment, and a `DocsStateStore` implementing `readAutomationState`, `writeAutomationState` with revision checks, and `readBranchHead`. Optional `fetch` supplies the native provider and public readiness HTTP transport; `spawn` supplies the process transport. Query errors must fail closed. Public target types are `DocsScriptDeploymentTarget`, `DocsCloudflareWorkersTarget` and their union `DocsDeploymentTarget`.
+
+## Deployment reports
+
+`deployDocs()` includes an optional `report` on deployed and skipped results. Failures reject with exported `DocsDeploymentError`; its `report` is the safe structured failure result. `DocsDeploymentReport` contains attempt timestamps and monotonic elapsed milliseconds, ordered `plan`, `preflight`, `install`, `build`, `provider`, `readiness` and `finalize` stages, explicit completed/skipped/failed statuses, safe reason codes, provider `upload`/`reconcile`, and available deployment/version IDs. Failures identify `failedStage` and an optional `resumablePhase` of `deploying` or `verifying`. Resumed installation/build stages are marked skipped, not completed in zero time.
+
+`repo docs deploy ... --json` writes only the result or safe failure report to stdout and exits nonzero on failure. Child install/build/script output still streams live, redirected to stderr in JSON mode; programmatic callers select the same transport with `DocsOptions.json`. Normal CLI mode adds safe failure guidance on stderr. repoctl-generated reports and errors omit raw exceptions, HTTP response bodies and credentials. Deployment scripts remain responsible for their own terminal output; repoctl does not promise to redact arbitrary script logs.
+
+`GITHUB_STEP_SUMMARY` receives the same stage report on success, skip and failure, with escaped text and retry guidance. A summary-write failure adds `warnings: ['summary-write-failed']` without changing the deployment outcome, reverting current or hiding the primary failure. Reports describe this invocation only, not an invented total across previous attempts.
 
 ## Build channel context
 

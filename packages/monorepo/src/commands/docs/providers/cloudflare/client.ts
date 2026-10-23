@@ -1,6 +1,7 @@
 import type { DocsCloudflareWorkersTarget } from '../../../../types/docs'
 import { Buffer } from 'node:buffer'
 import { isRecord } from '../../../../core/config/validation/schema'
+import { DocsDiagnosticError } from '../../diagnostics'
 
 export const cloudflareApiOrigin = 'https://api.cloudflare.com/client/v4'
 export const versionPattern = /^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i
@@ -18,7 +19,7 @@ function validTimestamp(value: unknown): value is string {
 async function readPayload(response: Response): Promise<unknown> {
   const reader = response.body?.getReader()
   if (!reader) {
-    throw new Error('Cloudflare returned an empty response')
+    throw new DocsDiagnosticError('provider-response-invalid')
   }
   const chunks: Uint8Array[] = []
   let size = 0
@@ -31,7 +32,7 @@ async function readPayload(response: Response): Promise<unknown> {
       size += chunk.value.length
       if (size > 1_048_576) {
         await reader.cancel()
-        throw new Error('Cloudflare response exceeds the verification limit')
+        throw new DocsDiagnosticError('provider-response-invalid')
       }
       chunks.push(chunk.value)
     }
@@ -45,7 +46,7 @@ async function readPayload(response: Response): Promise<unknown> {
 export function cloudflareClient(target: DocsCloudflareWorkersTarget, env: NodeJS.ProcessEnv, request: typeof fetch = fetch) {
   const token = env['CLOUDFLARE_API_TOKEN']
   if (!token?.trim()) {
-    throw new Error('CLOUDFLARE_API_TOKEN is required to verify documentation deployments')
+    throw new DocsDiagnosticError('credentials-missing')
   }
   if ((env['CLOUDFLARE_ACCOUNT_ID'] && env['CLOUDFLARE_ACCOUNT_ID'] !== target.accountId)
     || (env['CF_ACCOUNT_ID'] && env['CF_ACCOUNT_ID'] !== target.accountId)
@@ -53,7 +54,7 @@ export function cloudflareClient(target: DocsCloudflareWorkersTarget, env: NodeJ
     || (env['CF_API_BASE_URL'] && env['CF_API_BASE_URL'] !== cloudflareApiOrigin)
     || env['CLOUDFLARE_API_KEY'] || env['CF_API_KEY']
     || env['WRANGLER_CI_OVERRIDE_NAME']) {
-    throw new Error('Cloudflare environment overrides conflict with the frozen deployment identity')
+    throw new DocsDiagnosticError('provider-environment-conflict')
   }
   return async (endpoint: string, allowMissing = false): Promise<unknown> => {
     let response: Response
@@ -66,11 +67,14 @@ export function cloudflareClient(target: DocsCloudflareWorkersTarget, env: NodeJ
       })
       payload = await readPayload(response)
     }
-    catch {
-      throw new Error('Cloudflare read-only verification failed: network, timeout or invalid response')
+    catch (error) {
+      if (error instanceof DocsDiagnosticError) {
+        throw error
+      }
+      throw new DocsDiagnosticError('provider-network-failed')
     }
     if (!isRecord(payload)) {
-      throw new Error('Cloudflare returned an invalid response envelope')
+      throw new DocsDiagnosticError('provider-response-invalid')
     }
     const codes = Array.isArray(payload['errors'])
       ? payload['errors'].flatMap(error => isRecord(error) && Number.isSafeInteger(error['code']) ? [error['code'] as number] : [])
@@ -80,10 +84,10 @@ export function cloudflareClient(target: DocsCloudflareWorkersTarget, env: NodeJ
       return undefined
     }
     if (!response.ok || payload['success'] !== true) {
-      throw new Error(`Cloudflare verification failed (HTTP ${response.status}, codes: ${codes.join(', ') || 'none'})`)
+      throw new DocsDiagnosticError(response.status === 401 || response.status === 403 ? 'provider-access-denied' : response.status === 429 ? 'provider-rate-limited' : 'provider-request-rejected')
     }
     if (!isRecord(payload['result']) || (payload['errors'] !== undefined && (!Array.isArray(payload['errors']) || payload['errors'].length > 0))) {
-      throw new Error('Cloudflare returned an invalid successful response envelope')
+      throw new DocsDiagnosticError('provider-response-invalid')
     }
     return payload['result']
   }
@@ -95,26 +99,26 @@ export async function activeMatchingVersion(client: ReturnType<typeof cloudflare
     return undefined
   }
   if (!isRecord(result) || !Array.isArray(result['deployments']) || result['deployments'].length === 0) {
-    throw new Error('Cloudflare returned an invalid or empty deployments response')
+    throw new DocsDiagnosticError('provider-response-invalid')
   }
   // The API contract defines the first entry as the deployment currently serving traffic.
   const active: unknown = result['deployments'][0]
   if (!isRecord(active) || !validTimestamp(active['created_on']) || active['strategy'] !== 'percentage'
     || !Array.isArray(active['versions']) || active['versions'].length !== 1) {
-    throw new Error('Cloudflare active deployment must be valid and serve one version at 100% traffic')
+    throw new DocsDiagnosticError('provider-traffic-ambiguous')
   }
   const version: unknown = active['versions'][0]
   if (!isRecord(version) || version['percentage'] !== 100 || typeof version['version_id'] !== 'string' || !versionPattern.test(version['version_id'])) {
-    throw new Error('Cloudflare active deployment requires a valid version ID at 100% traffic')
+    throw new DocsDiagnosticError('provider-traffic-ambiguous')
   }
   const versionId = version['version_id']
   const detail = await client(`versions/${versionId}`)
   if (!isRecord(detail) || detail['id'] !== versionId || (detail['annotations'] !== undefined && !isRecord(detail['annotations']))) {
-    throw new Error('Cloudflare version response does not match the requested version')
+    throw new DocsDiagnosticError('provider-version-mismatch')
   }
   const message = isRecord(detail['annotations']) ? detail['annotations']['workers/message'] : undefined
   if (message !== undefined && typeof message !== 'string') {
-    throw new Error('Cloudflare version annotation is invalid')
+    throw new DocsDiagnosticError('provider-response-invalid')
   }
   return message === deploymentMessage(deploymentId) ? versionId : undefined
 }

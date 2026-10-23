@@ -1,6 +1,7 @@
 import type { DocsContext } from './config'
 import type { DocsDeploymentPlan, DocsOptions, StableDocsSnapshot } from './types'
 import { docsIdentity, resolveDocsSite } from './config'
+import { DocsDiagnosticError } from './diagnostics'
 import { readDocsState } from './state'
 
 export async function prepareDocsContext(options: DocsOptions) {
@@ -15,8 +16,8 @@ export async function prepareDocsContext(options: DocsOptions) {
   const sameRequest = snapshot?.releaseId === releaseId
     && JSON.stringify(snapshot?.requestedCommits) === JSON.stringify(requestedCommits)
   const recovery = sameRequest ? snapshot : undefined
-  if (options.channel === 'stable' && pending?.phase === 'deploying' && !recovery) {
-    throw new Error(`Documentation deployment ${pending.deploymentId} has an unfinished deploying operation; rerun that deployment in the managed workflow before advancing`)
+  if (options.channel === 'stable' && pending && ['deploying', 'verifying'].includes(pending.phase) && !recovery) {
+    throw new DocsDiagnosticError('deployment-unresolved')
   }
   // Resolve live configuration only after checking for an immutable recovery snapshot.
   const context: DocsContext = { ...identity, site: recovery?.config ?? await resolveDocsSite(options) }
@@ -27,6 +28,6 @@ export function assertRecoveredPlan(plan: DocsDeploymentPlan, snapshot: StableDo
   if (plan.sourceSha !== snapshot.sourceSha || plan.releaseId !== snapshot.releaseId
     || plan.treeSha !== snapshot.treeSha || plan.deploymentId !== deploymentId
     || JSON.stringify(plan.commits) !== JSON.stringify(snapshot.commits)) {
-    throw new Error('Frozen stable documentation snapshot no longer matches the verified deployment')
+    throw new DocsDiagnosticError('snapshot-mismatch')
   }
 }

@@ -1,7 +1,7 @@
 import type { Command } from 'commander'
 import type { DocsChannel } from '../../types/docs'
 import process from 'node:process'
-import { deployDocs, planDocsDeployment } from '../../commands/docs'
+import { deployDocs, DocsDeploymentError, planDocsDeployment } from '../../commands/docs'
 import { localize } from '../../i18n'
 
 interface DocsCliOptions {
@@ -31,10 +31,23 @@ export function registerDocsCommands(program: Command, cwd: string) {
           ...(input.sourceSha ? { sourceSha: input.sourceSha } : {}),
           ...(input.release ? { release: input.release } : {}),
           ...(input.commits ? { commits: input.commits } : {}),
+          ...(input.json ? { json: true } : {}),
         }
-        const result = action === 'plan' ? await planDocsDeployment(options) : await deployDocs(options)
-        process.stdout.write(`${JSON.stringify(result, null, input.json ? undefined : 2)}\n`)
-        if ('eligible' in result && !result.eligible) {
+        try {
+          const result = action === 'plan' ? await planDocsDeployment(options) : await deployDocs(options)
+          process.stdout.write(`${JSON.stringify(result, null, input.json ? undefined : 2)}\n`)
+          if ('eligible' in result && !result.eligible) {
+            process.exitCode = 1
+          }
+        }
+        catch (error) {
+          if (!(error instanceof DocsDeploymentError)) {
+            throw error
+          }
+          process.stdout.write(`${JSON.stringify(error.report, null, input.json ? undefined : 2)}\n`)
+          if (!input.json) {
+            process.stderr.write(`${error.message}\n`)
+          }
           process.exitCode = 1
         }
       })

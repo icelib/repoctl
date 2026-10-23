@@ -29,7 +29,7 @@ async function interruptedPreview() {
     if (args[1] === 'docs:preview') {
       throw new Error('upload response lost')
     }
-  }) })).rejects.toThrow('upload response lost')
+  }) })).rejects.toMatchObject({ report: { failedStage: 'provider' } })
   expect(store.records.get('docs/website/preview')!.value).toHaveProperty('pending.phase', 'deploying')
   return { cwd, sha, store, preview }
 }
@@ -40,7 +40,7 @@ it('supersedes an interrupted older preview only with the serialized latest main
   const sourceSha = commit(cwd)
   expect(await planDocsDeployment(preview)).toMatchObject({ eligible: false })
   const latest = { ...preview, sourceSha }
-  await expect(deployDocs({ ...latest, env: { GITHUB_REPOSITORY: 'example/project' }, spawn: runner() })).rejects.toThrow('unfinished deploying')
+  await expect(deployDocs({ ...latest, env: { GITHUB_REPOSITORY: 'example/project' }, spawn: runner() })).rejects.toMatchObject({ report: { failedStage: 'preflight' } })
   const result = await deployDocs({ ...latest, spawn: runner((args) => {
     if (args[1] === 'docs:build') {
       expect(store.records.get('docs/website/preview')!.value).toHaveProperty('pending.phase', 'building')
@@ -58,12 +58,12 @@ it('clears a failed replacement build while retaining an unknown outcome for an 
       throw new Error('preview build failed')
     }
   })
-  await expect(deployDocs({ ...preview, spawn: failedBuild })).rejects.toThrow('preview build failed')
+  await expect(deployDocs({ ...preview, spawn: failedBuild })).rejects.toMatchObject({ report: { failedStage: 'build' } })
   expect(store.records.get('docs/website/preview')!.value).toHaveProperty('pending.phase', 'deploying')
   await put(cwd, 'website/new.md', '# Latest preview\n')
   const sourceSha = commit(cwd)
   const latest = { ...preview, sourceSha }
-  await expect(deployDocs({ ...latest, spawn: failedBuild })).rejects.toThrow('preview build failed')
+  await expect(deployDocs({ ...latest, spawn: failedBuild })).rejects.toMatchObject({ report: { failedStage: 'build' } })
   expect(store.records.get('docs/website/preview')!.value).not.toHaveProperty('pending')
   expect((await deployDocs({ ...latest, spawn: runner() })).status).toBe('deployed')
   expect(store.records.get('docs/website/preview')!.value).toHaveProperty('current.sourceSha', sourceSha)
@@ -75,14 +75,14 @@ it('keeps a different stable release blocked until its pending provider outcome 
     if (args[1] === 'docs:stable') {
       throw new Error('stable upload response lost')
     }
-  }) })).rejects.toThrow('stable upload response lost')
+  }) })).rejects.toMatchObject({ report: { failedStage: 'provider' } })
   await put(cwd, 'website/new.md', '# New stable source\n')
   const record = makeRecord(commit(cwd))
   await store.github.writeAutomationState(`releases/${record.id}`, record)
   let executed = false
   await expect(deployDocs({ ...options, release: record.id, spawn: runner(() => {
     executed = true
-  }) })).rejects.toThrow('unfinished deploying')
+  }) })).rejects.toMatchObject({ report: { failedStage: 'plan' } })
   expect(executed).toBe(false)
   expect(store.records.get('docs/website/stable')!.value).toHaveProperty('pending.phase', 'deploying')
 })

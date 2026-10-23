@@ -12,6 +12,8 @@ repoctl.config.ts
 
 repoctl 支持 `ts`、`mts`、`cts`、`js`、`mjs`、`cjs` 等配置文件后缀。新项目优先使用 `repoctl.config.ts`，这样能保留类型提示和更清晰的迁移路径。
 
+两种目标均支持可选 `readiness: { timeoutMs?, requestTimeoutMs? }`。省略时不发起公网请求；`{}` 启用配置 HTTPS origin 下 `/.well-known/repoctl-deployment.json` 的准确身份验证。URL 不得包含凭据、query 或 fragment。正整数默认值/范围分别为总预算 120000/1–600000 ms、每请求 10000/1–30000 ms。默认值仅在运行时计算，不改变冻结配置身份。脚本 manifest 责任与已保存 `verifying` 的恢复方式见[文档发布](/zh/tasks/docs)。
+
 ## 最小配置
 
 ```ts

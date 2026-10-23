@@ -1,6 +1,6 @@
 import { deployDocs, planDocsDeployment } from '@icebreakers/monorepo'
 import { afterEach, expect, it } from 'vitest'
-import { cleanup } from '../helpers'
+import { cleanup, expectDocsFailure } from '../helpers'
 import { api, nativeFixture, otherVersion, versionId } from './helpers'
 
 afterEach(cleanup)
@@ -8,7 +8,7 @@ afterEach(cleanup)
 it.each([403, 404, 429, 500])('fails closed on HTTP %s and excludes provider messages from diagnostics', async (status) => {
   const h = await nativeFixture()
   h.request.mockImplementation(async () => Response.json({ success: false, errors: [{ code: 10000, message: 'secret-token' }] }, { status }))
-  await expect(deployDocs(h.options)).rejects.toThrow(`HTTP ${status}`)
+  await expectDocsFailure(deployDocs(h.options), 'preflight', status === 403 ? 'provider-access-denied' : status === 429 ? 'provider-rate-limited' : 'provider-request-rejected')
   await expect(deployDocs(h.options)).rejects.not.toThrow('secret-token')
   expect(h.calls).toEqual([])
 })
@@ -34,7 +34,7 @@ it.each([
 ])('rejects ambiguous active deployment data before effects: %o', async (result) => {
   const h = await nativeFixture()
   h.request.mockImplementation(async () => api(result))
-  await expect(deployDocs(h.options)).rejects.toThrow(/Cloudflare/)
+  await expectDocsFailure(deployDocs(h.options), 'preflight', !('deployments' in result) || result.deployments.length === 0 ? 'provider-response-invalid' : 'provider-traffic-ambiguous')
   expect(h.calls).toEqual([])
 })
 
@@ -55,7 +55,7 @@ it.each(['network', 'json', 'oversized', 'envelope', 'version'])('does not conve
       return new Response(kind === 'json' ? '{broken' : 'x'.repeat(1_048_577))
     })
   }
-  await expect(deployDocs(h.options)).rejects.toThrow(/Cloudflare/)
+  await expectDocsFailure(deployDocs(h.options), 'preflight', kind === 'network' || kind === 'json' ? 'provider-network-failed' : kind === 'version' ? 'provider-version-mismatch' : 'provider-response-invalid')
   expect(h.calls).toEqual([])
 })
 

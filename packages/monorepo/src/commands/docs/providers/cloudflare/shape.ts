@@ -1,9 +1,10 @@
 import { isRecord } from '../../../../core/config/validation/schema'
+import { DocsDiagnosticError } from '../../diagnostics'
 
 const common = new Set(['name', 'account_id', 'compatibility_date', 'compatibility_flags', 'workers_dev', 'preview_urls', 'assets', 'route', 'routes', 'observability'])
 
 export function unsupported(field: string): never {
-  throw new Error(`Unsupported static Cloudflare configuration (${field}); use the documentation script adapter`)
+  throw new DocsDiagnosticError(field === 'generated Wrangler configuration' ? 'generated-config' : field === 'named environment must declare its own routes' ? 'environment-routes-missing' : 'unsupported-config')
 }
 
 export function staticFields(value: unknown, root = false): Record<string, unknown> {

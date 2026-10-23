@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { deployDocs, planDocsDeployment } from '@icebreakers/monorepo'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { cleanup, commit, fixture, makeRecord, put } from './helpers'
+import { cleanup, commit, expectDocsFailure, fixture, makeRecord, put } from './helpers'
 
 afterEach(cleanup)
 
@@ -30,6 +30,7 @@ describe('built documentation deployer', () => {
       expect(readFileSync(path.join(source, 'packages/core/src/index.ts'), 'utf8')).toContain('"released"')
       expect(env['REPO_DOCS_CHANNEL']).toBe('stable')
       expect(env['REPO_DOCS_RELEASE_ID']).toBe(options.release)
+      expect(env['REPO_DOCS_TREE_SHA']).toMatch(/^[a-f0-9]{40}$/)
       if (args[1] === 'docs:stable') {
         const state = store.records.get('docs/website/stable')!.value as { pending: { phase: string } }
         expect(state.pending.phase).toBe('deploying')
@@ -49,7 +50,7 @@ describe('built documentation deployer', () => {
   it('rejects local production deployment before running any scripts', async () => {
     const { options } = await fixture()
     const process = runner()
-    await expect(deployDocs({ ...options, env: { GITHUB_REPOSITORY: 'example/project' }, spawn: process.spawn })).rejects.toThrow('managed workflow')
+    await expectDocsFailure(deployDocs({ ...options, env: { GITHUB_REPOSITORY: 'example/project' }, spawn: process.spawn }), 'preflight', 'workflow-required')
     expect(process.calls).toEqual([])
   })
 
@@ -60,7 +61,7 @@ describe('built documentation deployer', () => {
         throw new Error('site build failed')
       }
     })
-    await expect(deployDocs({ ...options, spawn: process.spawn })).rejects.toThrow('site build failed')
+    await expect(deployDocs({ ...options, spawn: process.spawn })).rejects.toMatchObject({ report: { failedStage: 'build' } })
     expect(store.records.get('docs/website/stable')!.value).not.toHaveProperty('pending')
     expect(store.records.get('docs/website/stable')!.value).not.toHaveProperty('current')
     expect((await deployDocs({ ...options, spawn: runner().spawn })).status).toBe('deployed')
@@ -73,14 +74,14 @@ describe('built documentation deployer', () => {
         throw new Error('provider connection lost')
       }
     })
-    await expect(deployDocs({ ...options, spawn: failed.spawn })).rejects.toThrow('provider connection lost')
+    await expect(deployDocs({ ...options, spawn: failed.spawn })).rejects.toMatchObject({ report: { failedStage: 'provider' } })
     expect(store.records.get('docs/website/stable')!.value).toHaveProperty('pending.phase', 'deploying')
     const failedRebuild = runner((args) => {
       if (args[1] === 'docs:build') {
         throw new Error('rebuild failed')
       }
     })
-    await expect(deployDocs({ ...options, spawn: failedRebuild.spawn })).rejects.toThrow('rebuild failed')
+    await expect(deployDocs({ ...options, spawn: failedRebuild.spawn })).rejects.toMatchObject({ report: { failedStage: 'build' } })
     expect(store.records.get('docs/website/stable')!.value).toHaveProperty('pending.phase', 'deploying')
     const retry = runner()
     expect((await deployDocs({ ...options, spawn: retry.spawn, env: { ...options.env, GITHUB_RUN_ID: '124' } })).status).toBe('deployed')
@@ -96,7 +97,7 @@ describe('built documentation deployer', () => {
     await store.github.writeAutomationState(`releases/${record.id}`, record)
     await deployDocs({ ...options, release: record.id, spawn: runner().spawn })
     const older = runner()
-    await expect(deployDocs({ ...options, spawn: older.spawn })).rejects.toThrow('newer documentation source')
+    await expectDocsFailure(deployDocs({ ...options, spawn: older.spawn }), 'plan', 'plan-blocked')
     expect(older.calls).toEqual([])
   })
 
@@ -105,7 +106,7 @@ describe('built documentation deployer', () => {
     const { release: _release, ...preview } = options
     store.github.readBranchHead = async () => 'f'.repeat(40)
     const process = runner()
-    await expect(deployDocs({ ...preview, channel: 'preview', sourceSha: sha, spawn: process.spawn })).rejects.toThrow('Main advanced')
+    await expectDocsFailure(deployDocs({ ...preview, channel: 'preview', sourceSha: sha, spawn: process.spawn }), 'provider', 'main-advanced')
     expect(process.calls.some(call => call.includes('docs:preview'))).toBe(false)
     expect(store.records.has('docs/website/stable')).toBe(false)
   })
@@ -118,7 +119,7 @@ describe('built documentation deployer', () => {
         store.records.set('docs/website/stable', { ...current, revision: 'concurrent' })
       }
     })
-    await expect(deployDocs({ ...options, spawn: process.spawn })).rejects.toThrow('checkpoint update')
+    await expectDocsFailure(deployDocs({ ...options, spawn: process.spawn }), 'provider', 'claim-changed')
     expect(process.calls.some(call => call.includes('docs:stable'))).toBe(false)
     const plan = await planDocsDeployment(options)
     expect(plan.baseRevision).toBe('concurrent')

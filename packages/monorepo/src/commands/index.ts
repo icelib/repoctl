@@ -140,8 +140,8 @@ export type { AdmissionDeclaration, DependencyAdmissionConfig, DependencyAdmissi
 export { applyCatalogMigrationPlan, checkCatalogs, planCatalogMigration } from './deps/catalog'
 export { checkPeerDependencies } from './deps/peers'
 export type { PeerCheckStatus, PeerCompatibilityCheck, PeerCompatibilityReport } from './deps/peers'
-export { deployDocs, planDocsDeployment } from './docs'
-export type { DocsDeploymentPlan, DocsDeploymentResult, DocsOptions, DocsStateStore } from './docs'
+export { deployDocs, DocsDeploymentError, planDocsDeployment } from './docs'
+export type { DocsDeploymentPlan, DocsDeploymentReport, DocsDeploymentResult, DocsDeploymentStage, DocsDeploymentStageKey, DocsOptions, DocsProviderReceipt, DocsStateStore } from './docs'
 export { applyDoctorFixPlan, getDoctorRuleIds, planDoctorFix } from './doctor'
 export type { DoctorFixPlan, DoctorFixResult, DoctorSuppressionReport } from './doctor'
 

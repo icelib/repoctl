@@ -10,6 +10,8 @@ repoctl.config.ts
 
 `commands.docs.sites` opts individual sites into release-aligned documentation. Each site specifies product packages, a root build script, preview/stable targets and allowed correction paths. Each target is either `{ deployScript, url? }` or `{ provider: 'cloudflare-workers', config, workerName, accountId, environment?, url? }`; do not mix the alternatives. Native targets use static assets-only JSON/JSONC Wrangler configuration, while existing script targets remain valid without a provider field. See [documentation publication](/tasks/docs) for identity checks, credentials, supported configuration and recovery. Omitting this map leaves documentation deployment disabled.
 
+Both target variants accept optional `readiness: { timeoutMs?, requestTimeoutMs? }`. Omission makes no public request; `{}` enables exact public identity verification at the configured HTTPS origin's `/.well-known/repoctl-deployment.json`. The URL cannot include credentials, query or fragment. Positive integer defaults/ranges are 120000/1–600000 ms total and 10000/1–30000 ms per request. Defaults are computed at runtime without changing frozen configuration identity. See [documentation publication](/tasks/docs#verify-public-delivery-before-advancing-current) for script manifest responsibilities and saved `verifying` recovery.
+
 ## Minimal Config
 
 ```ts

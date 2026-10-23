@@ -72,6 +72,8 @@ Key areas:
 - mirror: add or override env mirrors
 - docs: explicit sites with covered `packages`, a root `buildScript`, `preview`/`stable` targets, allowed `patchPaths` and optional per-package `releaseInputs`. Targets choose `{ deployScript, url? }` or `{ provider: 'cloudflare-workers', config, workerName, accountId, environment?, url? }`, never both. Native Cloudflare supports static assets-only JSON/JSONC configurations; freeze the nonsecret account identity, keep credentials in runtime environment secrets, and preserve old script snapshots for retry. See the docs section in `commands.md` for preflight and recovery boundaries.
 
+Both docs target variants accept optional `readiness: { timeoutMs?, requestTimeoutMs? }`. Omission means no public HTTP. `{}` requires an explicit HTTPS target URL without userinfo/query/fragment; probe the fixed origin-root `/.well-known/repoctl-deployment.json`. Positive integer defaults/limits: total 120000 ms / 1–600000, request 10000 ms / 1–30000. Runtime defaults do not alter stored config identity. Saved stable verification retains its original target and policy even if main removes them.
+
 ## `commands.doctor`
 
 Validate the schema of the whole configuration before executing selected doctor rules. Omitted `rules` selects every rule; explicit `rules: []` selects none. Valid but unsatisfied unselected policies do not contribute findings. `config inspect --command doctor` and doctor both consume workspace-root policy from package directories, with explicit CLI selection taking precedence.

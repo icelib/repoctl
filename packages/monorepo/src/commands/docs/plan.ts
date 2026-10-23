@@ -2,30 +2,31 @@ import type { DocsDeploymentPlan, DocsOptions, StableDocsSnapshot } from './type
 import { createHash } from 'node:crypto'
 import { readReleaseCompletion } from '../release/completion'
 import { checkReleaseCoverage, coveredPackages } from './coverage'
+import { DocsDiagnosticError } from './diagnostics'
 import { assertMainSource, git, isAncestor, withSource } from './git'
 import { applyDocsPatches } from './patches'
 import { assertRecoveredPlan, prepareDocsContext } from './recovery'
 
 export async function prepareDocsPlan(options: DocsOptions) {
   if (options.channel === 'preview' && (options.release || options.commits?.length)) {
-    throw new Error('Preview only accepts a source SHA, not stable release records or corrections')
+    throw new DocsDiagnosticError('preview-selection-invalid')
   }
   if (options.channel === 'stable' && options.sourceSha) {
-    throw new Error('Stable documentation requires a completed release record, never an arbitrary source SHA')
+    throw new DocsDiagnosticError('stable-selection-invalid')
   }
   const { context, previous, releaseId, requestedCommits, recovery } = await prepareDocsContext(options)
   const current = previous.state.current
   const blockers: string[] = []
   const record = releaseId ? await readReleaseCompletion(context.github, releaseId) : undefined
   if (options.channel === 'stable' && !record) {
-    throw new Error('No stable documentation baseline exists; wait for a complete stable release and provide its record ID')
+    throw new DocsDiagnosticError('stable-baseline-missing')
   }
   if (record && (record.repository !== context.repository || record.branch !== 'main' || record.distTag !== 'latest')) {
-    throw new Error('Stable documentation requires this repository’s main/latest release completion')
+    throw new DocsDiagnosticError('release-identity-mismatch')
   }
   const sourceSha = record?.sourceSha ?? options.sourceSha
   if (!sourceSha) {
-    throw new Error('Preview requires an explicit source SHA')
+    throw new DocsDiagnosticError('preview-source-missing')
   }
   assertMainSource(options.cwd, sourceSha)
   if (options.channel === 'preview' && git(options.cwd, ['rev-parse', 'refs/remotes/origin/main']) !== sourceSha) {

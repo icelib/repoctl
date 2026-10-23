@@ -86,7 +86,7 @@ it('blocks different correction requests and preserves the interrupted deploymen
   await loseUpload({ ...options, commits: [correction] })
   const saved = structuredClone(store.records.get('docs/website/stable'))
   const retry = runner()
-  await expect(deployDocs({ ...options, config: { sites: {} }, spawn: retry.spawn })).rejects.toThrow('unfinished deploying')
+  await expect(deployDocs({ ...options, config: { sites: {} }, spawn: retry.spawn })).rejects.toMatchObject({ report: { failedStage: 'plan' } })
   expect(retry.calls).toEqual([])
   expect(store.records.get('docs/website/stable')).toEqual(saved)
 })
@@ -99,6 +99,6 @@ it('does not interpret an omitted release as a pending newer release when a curr
   await store.github.writeAutomationState(`releases/${record.id}`, record)
   await loseUpload({ ...options, release: record.id })
   const { release: _release, ...omitted } = options
-  await expect(planDocsDeployment(omitted)).rejects.toThrow('unfinished deploying')
+  await expect(planDocsDeployment(omitted)).rejects.toMatchObject({ reason: 'deployment-unresolved' })
   expect((await deployDocs({ ...options, release: record.id, config: { sites: {} }, spawn: runner().spawn })).status).toBe('deployed')
 })

@@ -20,8 +20,10 @@ export interface DocsOptions {
   github?: DocsStateStore
   /** Script process transport. Git operations always use the actual repository. */
   spawn?: typeof spawnSync
-  /** Read-only Cloudflare API transport; credentials are never persisted. */
+  /** Read-only provider and optional public readiness HTTP transport; credentials are never persisted. */
   fetch?: typeof fetch
+  /** Stream child stdout to stderr so CLI JSON stdout contains only the result/report. */
+  json?: boolean
 }
 
 export interface DocsDeploymentPlan {
@@ -46,6 +48,40 @@ export interface DocsDeploymentResult {
   status: 'deployed' | 'skipped'
   versionId?: string
   url?: string
+  report?: DocsDeploymentReport
+}
+
+export interface DocsProviderReceipt {
+  versionId: string
+  url?: string
+}
+
+export type DocsDeploymentStageKey = 'plan' | 'preflight' | 'install' | 'build' | 'provider' | 'readiness' | 'finalize'
+
+export interface DocsDeploymentStage {
+  stage: DocsDeploymentStageKey
+  status: 'completed' | 'skipped' | 'failed'
+  elapsedMs: number
+  reason?: string
+  /** Fixed repoctl-owned guidance; never a caught exception or provider response body. */
+  message?: string
+  operation?: 'upload' | 'reconcile'
+}
+
+export interface DocsDeploymentReport {
+  schemaVersion: 1
+  site: string
+  channel: DocsChannel
+  startedAt: string
+  elapsedMs: number
+  status: 'deployed' | 'skipped' | 'failed'
+  stages: DocsDeploymentStage[]
+  failedStage?: DocsDeploymentStageKey
+  resumablePhase?: 'deploying' | 'verifying'
+  deploymentId?: string
+  versionId?: string
+  /** Reporting failures do not change the deployment outcome or hide its primary error. */
+  warnings?: Array<'summary-write-failed'>
 }
 
 export interface DocsDeploymentPointer {
@@ -68,7 +104,9 @@ export interface DocsDeploymentState {
   pending?: {
     deploymentId: string
     runId: string
-    phase: 'building' | 'deploying'
+    phase: 'building' | 'deploying' | 'verifying'
+    /** Required while verifying; reused without rebuilding or uploading on retry. */
+    receipt?: DocsProviderReceipt
     /** Stable retries use these immutable inputs even when main changes or removes the site. */
     snapshot?: StableDocsSnapshot
   }
