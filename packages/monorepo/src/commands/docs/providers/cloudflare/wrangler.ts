@@ -4,7 +4,22 @@ import path from 'pathe'
 import { isRecord } from '../../../../core/config/validation/schema'
 import { assertContainedPath, contained } from '../../artifacts/paths'
 import { DocsDiagnosticError } from '../../diagnostics'
-import { versionPattern } from './client'
+import { cloudflareApiOrigin, versionPattern } from './client'
+
+/** Unset alternate credentials and CI identity overrides; empty values can still override Wrangler config. */
+export function wranglerEnvironment(env: NodeJS.ProcessEnv, accountId: string, environment: string, output: string) {
+  const result: NodeJS.ProcessEnv = {
+    ...env,
+    CLOUDFLARE_ACCOUNT_ID: accountId,
+    CLOUDFLARE_API_BASE_URL: cloudflareApiOrigin,
+    CLOUDFLARE_ENV: environment,
+    WRANGLER_OUTPUT_FILE_PATH: output,
+  }
+  delete result['CLOUDFLARE_API_KEY']
+  delete result['CF_API_KEY']
+  delete result['WRANGLER_CI_OVERRIDE_NAME']
+  return result
+}
 
 /** Resolve the installed package directly; pnpm exec alone may fall through to a global PATH binary. */
 export async function localWrangler(source: string, configFile: string) {
