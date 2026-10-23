@@ -74,6 +74,8 @@ export interface PackedManifest {
   devDependencies?: Record<string, string>
   optionalDependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>
+  repoctl?: { packageCheck?: { runtimeAssets?: unknown } }
 }
 
 export interface ConsumerEntry {
@@ -81,4 +83,7 @@ export interface ConsumerEntry {
   target: string
   format: 'esm' | 'cjs'
   runtime: boolean
+  asset?: boolean
+  /** Resources without their own declaration contract are resolved as files, not imported as types. */
+  typecheck?: boolean
 }

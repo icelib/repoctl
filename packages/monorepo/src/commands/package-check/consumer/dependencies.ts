@@ -11,7 +11,7 @@ export interface ExpectedWorkspaceLocator {
 /** Package name -> dependency-field.alias -> exact publication locator. */
 export type ExpectedWorkspaceLocators = ReadonlyMap<string, ReadonlyMap<string, ExpectedWorkspaceLocator>>
 
-export function consumerDependency(pkg: PackedPackage, reference: DependencyReference, expected?: ExpectedWorkspaceLocators) {
+export function consumerDependency(pkg: Pick<PackedPackage, 'manifest'>, reference: DependencyReference, expected?: ExpectedWorkspaceLocators) {
   return expected?.get(String(pkg.manifest.name))?.get(`${reference.field}.${reference.alias}`)
 }
 
