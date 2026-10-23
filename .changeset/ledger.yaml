@@ -38,6 +38,10 @@
     - clean-tools-occur
     - early-socks-trade
     - gentle-waves-bet
+"@icebreakers/changelog-github@2.1.7":
+  dir: packages/changelog-github
+  intents:
+    - great-mice-wonder
 "@icebreakers/commitlint-config@4.0.6":
   dir: packages/commitlint
   intents:
@@ -62,6 +66,10 @@
     - clean-tools-occur
     - early-socks-trade
     - lefthook-migration
+"@icebreakers/commitlint-config@4.1.4":
+  dir: packages/commitlint
+  intents:
+    - great-mice-wonder
 "@icebreakers/eslint-config@7.1.1":
   dir: packages/eslint
   intents:
@@ -101,6 +109,10 @@
     - gentle-waves-bet
     - lefthook-migration
     - serialize-eslint-build-assets
+"@icebreakers/eslint-config@8.0.11":
+  dir: packages/eslint
+  intents:
+    - great-mice-wonder
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -318,6 +330,10 @@
     - loud-mice-smoke
     - old-monkeys-attack
     - quiet-clouds-wait
+"@icebreakers/monorepo-templates@3.0.1":
+  dir: packages/monorepo-templates
+  intents:
+    - great-mice-wonder
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -555,6 +571,10 @@
     - old-monkeys-attack
     - quiet-pr-resource-admission
     - weak-moles-flash
+"@icebreakers/monorepo@6.0.1":
+  dir: packages/monorepo
+  intents:
+    - great-mice-wonder
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -574,6 +594,10 @@
   intents:
     - clean-tools-occur
     - fresh-dependencies-sync
+"@icebreakers/stylelint-config@5.1.5":
+  dir: packages/stylelint
+  intents:
+    - great-mice-wonder
 create-icebreaker@1.1.0:
   dir: packages/create-icebreaker
   intents:
@@ -617,6 +641,10 @@ create-icebreaker@2.1.6:
   dir: packages/create-icebreaker
   intents:
     - clean-tools-occur
+create-icebreaker@2.1.7:
+  dir: packages/create-icebreaker
+  intents:
+    - great-mice-wonder
 create-repoctl@0.1.0:
   dir: packages/create-repoctl
   intents:
@@ -661,6 +689,10 @@ create-repoctl@1.2.6:
   dir: packages/create-repoctl
   intents:
     - clean-tools-occur
+create-repoctl@1.2.7:
+  dir: packages/create-repoctl
+  intents:
+    - great-mice-wonder
 eslint-plugin-better-stylelint@2.0.4:
   dir: packages/eslint-plugin-better-stylelint
   intents:
@@ -684,6 +716,10 @@ eslint-plugin-better-stylelint@2.1.2:
   dir: packages/eslint-plugin-better-stylelint
   intents:
     - clean-tools-occur
+eslint-plugin-better-stylelint@2.1.3:
+  dir: packages/eslint-plugin-better-stylelint
+  intents:
+    - great-mice-wonder
 lightningcss-tailwindcss@2.0.4:
   dir: packages/lightningcss-tailwindcss
   intents:
@@ -701,6 +737,10 @@ lightningcss-tailwindcss@2.1.2:
   dir: packages/lightningcss-tailwindcss
   intents:
     - clean-tools-occur
+lightningcss-tailwindcss@2.1.3:
+  dir: packages/lightningcss-tailwindcss
+  intents:
+    - great-mice-wonder
 postcss-tailwindcss@3.0.7:
   dir: packages/postcss-tailwindcss
   intents:
@@ -733,6 +773,10 @@ postcss-tailwindcss@3.1.4:
   intents:
     - clean-tools-occur
     - fresh-dependencies-sync
+postcss-tailwindcss@3.1.5:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - great-mice-wonder
 repoctl@5.10.0:
   dir: packages/repoctl
   intents:
@@ -895,6 +939,10 @@ repoctl@6.0.0:
     - lefthook-migration
     - modern-nightly-releases
     - old-monkeys-attack
+repoctl@6.0.1:
+  dir: packages/repoctl
+  intents:
+    - great-mice-wonder
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
@@ -930,3 +978,7 @@ stylelint-plugin-tailwindcss@3.1.4:
   intents:
     - clean-tools-occur
     - fresh-dependencies-sync
+stylelint-plugin-tailwindcss@3.1.5:
+  dir: packages/stylelint-plugin-tailwindcss
+  intents:
+    - great-mice-wonder

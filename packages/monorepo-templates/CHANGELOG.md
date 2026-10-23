@@ -1,5 +1,13 @@
 # @icebreakers/monorepo-templates
 
+## 3.0.1
+
+### Patch Changes
+
+- Require patched Node.js releases (^22.23.4 || ^24.22.1 || >=26.12.1) following the October 2026 security release. Use Node 24.22.1 LTS by default in generated workflows and containers, and validate all supported runtime lines.
+
+  Refresh non-major tooling and template dependencies, including Astro 7.4.0, and align generated project requirements with its Node.js minimum.
+
 ## 3.0.0
 
 ### Major Changes
