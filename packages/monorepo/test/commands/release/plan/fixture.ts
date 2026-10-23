@@ -25,7 +25,7 @@ export async function fixture(options: { registryPackages?: string[] } = {}) {
       name,
       version: '1.0.0',
       ...(name === 'private-lib' ? { private: true } : {}),
-      ...(name === 'consumer' ? { dependencies: { a: 'workspace:^' } } : {}),
+      ...(name === 'consumer' ? { dependencies: { a: 'workspace:*' } } : {}),
       scripts: { preversion: 'node ../../hook.cjs', version: 'node ../../hook.cjs', postversion: 'node ../../hook.cjs' },
     }))
   }
