@@ -334,6 +334,16 @@
   dir: packages/monorepo-templates
   intents:
     - great-mice-wonder
+"@icebreakers/monorepo-templates@3.1.0":
+  dir: packages/monorepo-templates
+  intents:
+    - clever-cups-hope
+    - friendly-mangos-cover
+    - gentle-stars-retire
+    - kind-snails-fix
+    - shaggy-beans-jump
+    - short-plums-eat
+    - tiny-cups-flash
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -575,6 +585,18 @@
   dir: packages/monorepo
   intents:
     - great-mice-wonder
+"@icebreakers/monorepo@6.1.0":
+  dir: packages/monorepo
+  intents:
+    - angry-maps-flow
+    - brave-hats-explain
+    - curly-cherries-attack
+    - gentle-stars-retire
+    - heavy-goats-bathe
+    - lucky-mangos-leave
+    - neat-stars-retire
+    - short-plums-eat
+    - tidy-toys-taste
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -943,6 +965,16 @@ repoctl@6.0.1:
   dir: packages/repoctl
   intents:
     - great-mice-wonder
+repoctl@6.1.0:
+  dir: packages/repoctl
+  intents:
+    - angry-maps-flow
+    - brave-hats-explain
+    - curly-cherries-attack
+    - gentle-stars-retire
+    - heavy-goats-bathe
+    - lucky-mangos-leave
+    - tidy-toys-taste
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
