@@ -59,6 +59,24 @@ export function formatNightlySummary(report: NightlyReport) {
   else if (report.status === 'prepared') {
     lines.push('Artifacts are prepared and validated. Publication was not requested.', '')
   }
+  else if (report.status === 'failed' && report.confirmed && report.consumer?.status === 'failed') {
+    lines.push(
+      'Publication was confirmed, but consumer verification failed. This run remains failed.',
+      '',
+      `Confirmed build: \`${escape(report.buildId)}\``,
+      '',
+      'Review nightly-report.json, consumer-report.json and the retained package artifacts before retrying.',
+      '',
+    )
+    if (report.provider === 'npm') {
+      lines.push(
+        'A scheduled run for the same commit may skip this batch without repeating consumer verification.',
+        '',
+        'After fixing the failure, if a new nightly publication is intended, run the managed Release workflow manually with mode=nightly and dry-run=false. This repeats the pipeline and publishes snapshots with a new build identity.',
+        '',
+      )
+    }
+  }
   return `${lines.join('\n')}\n`
 }
 

@@ -1,7 +1,8 @@
-import { existsSync } from 'node:fs'
-import { readFile } from 'node:fs/promises'
+import { existsSync, readFileSync } from 'node:fs'
+import { readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { expect, it } from 'vitest'
+import { parse } from 'yaml'
 import { verifyNightlyConsumer } from '../../../../../src/commands/release/nightly/consumer'
 import { consumerFixture } from './fixture'
 
@@ -22,6 +23,42 @@ it.each(['npm', 'pkg-pr-new'] as const)('installs the real %s channel with no ov
   }
   expect(existsSync(h.installed())).toBe(false)
   expect(JSON.parse(await readFile(path.join(h.report.outputDirectory!, 'consumer-report.json'), 'utf8'))).toEqual(h.report.consumer)
+})
+
+it.each(['npm', 'pkg-pr-new'] as const)('limits %s consumer cooldown exceptions to the confirmed npm batch', async (provider) => {
+  const h = await consumerFixture({ provider })
+  // Source policy must not authorize unrelated fresh versions in the consumer.
+  await writeFile(path.join(h.root, 'pnpm-workspace.yaml'), 'packages: []\nminimumReleaseAge: 0\nminimumReleaseAgeExclude:\n  - "*"\noverrides:\n  b: 0.0.0\n')
+  h.install.mockImplementation((_args, settings) => {
+    const policy = parse(readFileSync(path.join(String(settings.cwd), 'pnpm-workspace.yaml'), 'utf8'))
+    expect(policy.packages).toEqual([])
+    expect(policy).not.toHaveProperty('minimumReleaseAge')
+    expect(policy).not.toHaveProperty('overrides')
+    if (provider === 'npm') {
+      expect(policy.minimumReleaseAgeExclude).toEqual(h.report.packages.map(pkg => `${pkg.name}@${pkg.version}`))
+      expect(policy.minimumReleaseAgeExclude).not.toContain('@scope/a@*')
+      expect(policy.minimumReleaseAgeExclude).not.toContain('b@0.0.0')
+      expect(policy.minimumReleaseAgeExclude).not.toContain('@types/node')
+    }
+    else {
+      expect(policy).not.toHaveProperty('minimumReleaseAgeExclude')
+    }
+    return undefined
+  })
+  await verifyNightlyConsumer(h.report, h.options)
+  expect(h.install).toHaveBeenCalledOnce()
+  expect(h.report.consumer?.status).toBe('verified')
+})
+
+it('still rejects the correct exempt version when its installed snapshot identity differs', async () => {
+  const h = await consumerFixture({ mutate: (manifest) => {
+    manifest['repoctlSnapshot'] = { ...manifest['repoctlSnapshot'] as object, buildId: 'another-build' }
+  } })
+  await expect(verifyNightlyConsumer(h.report, h.options)).rejects.toThrow('unexpected version or identity')
+  expect(h.spawn).toHaveBeenCalledTimes(2)
+  expect(h.report.confirmed).toBe(true)
+  expect(h.report.consumer?.status).toBe('failed')
+  expect(existsSync(h.installed())).toBe(false)
 })
 
 it('verifies every installed identity before executing any package entry', async () => {
