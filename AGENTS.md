@@ -2,14 +2,19 @@
 
 This is the **repoctl source workspace**. If a user asked you to create a new
 business project, do not add apps here. Use a new or empty directory outside
-this source checkout:
+this source checkout.
+
+Node.js 25+ does not bundle Corepack. On those versions, or if `corepack` is
+unavailable, first run `npm install --global corepack@0.36.0`. Then run
+`corepack enable` before the first pnpm command:
 
 ```bash
 pnpm create repoctl@latest <dir> -- --yes --templates <keys>
 ```
 
-After entering the generated project, run `corepack enable` before installing
-dependencies so pnpm uses the version declared by the workspace.
+After entering the generated project, run `corepack enable` again before
+installing dependencies so pnpm uses the version declared by that workspace's
+`packageManager` field.
 
 ## Project Structure & Module Organization
 

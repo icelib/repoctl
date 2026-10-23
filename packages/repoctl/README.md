@@ -6,6 +6,8 @@ English | [简体中文](README.zh-CN.md)
 
 ## Install
 
+On Node.js 25+ or if `corepack` is unavailable, first run `npm install --global corepack@0.36.0`, then run `corepack enable` so pnpm uses the workspace's declared version.
+
 ```bash
 pnpm add -D repoctl
 ```

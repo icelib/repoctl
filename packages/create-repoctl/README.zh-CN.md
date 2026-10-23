@@ -4,6 +4,8 @@
 
 用于创建 repoctl 管理的 pnpm 与 Turborepo 工作区的推荐 create 命令。
 
+Node.js 25+ 不再内置 Corepack。使用这些版本，或找不到 `corepack` 命令时，先运行 `npm install --global corepack@0.36.0`，再运行 `corepack enable`，然后使用 pnpm。
+
 ```bash
 npm create repoctl@latest
 pnpm create repoctl@latest

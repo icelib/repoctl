@@ -8,6 +8,8 @@ This guide follows the order you would use when adding repoctl to a workspace.
 - pnpm. Corepack is recommended: `corepack enable`.
 - Git. `repo doctor` reads repository metadata and checks the commit workflow.
 
+Node.js 25+ does not bundle Corepack. On those versions, or if `corepack` is unavailable, first run `npm install --global corepack@0.36.0`, then run `corepack enable`.
+
 ```bash
 node -v
 pnpm -v

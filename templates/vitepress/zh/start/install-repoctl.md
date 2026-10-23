@@ -7,6 +7,8 @@ description: 在 pnpm monorepo 中安装 repoctl，初始化受管默认值并�
 
 把 repoctl 安装为开发依赖，让成员和 CI 使用同一个版本。
 
+先按[安装前提](./install.md)准备 pnpm；使用 Node.js 25+ 或找不到 `corepack` 命令时，需要单独安装 Corepack。
+
 ```bash
 pnpm add -D repoctl
 pnpm exec repo init

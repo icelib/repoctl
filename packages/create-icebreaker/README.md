@@ -4,6 +4,8 @@ English | [简体中文](README.zh-CN.md)
 
 Compatibility create command for repoctl-managed workspaces.
 
+On Node.js 25+ or if `corepack` is unavailable, first run `npm install --global corepack@0.36.0`, then run `corepack enable` before using pnpm.
+
 Existing automation may continue to use:
 
 ```bash

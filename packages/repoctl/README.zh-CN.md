@@ -6,6 +6,8 @@
 
 ## 安装
 
+使用 Node.js 25+ 或找不到 `corepack` 命令时，先运行 `npm install --global corepack@0.36.0`，再运行 `corepack enable`，让 pnpm 使用工作区声明的版本。
+
 ```bash
 pnpm add -D repoctl
 ```

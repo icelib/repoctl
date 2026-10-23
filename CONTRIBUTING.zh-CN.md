@@ -6,7 +6,7 @@ repoctl 接受缺陷修复、文档改进、测试补充和边界清晰的功能
 
 ## 开发准备
 
-1. 使用满足 `^22.23.4 || ^24.22.1 || >=26.12.1` 的 Node.js（推荐 24.22.1 LTS），并启用 Corepack。
+1. 使用满足 `^22.23.4 || ^24.22.1 || >=26.12.1` 的 Node.js（推荐 24.22.1 LTS）。使用 Node.js 25+ 或找不到 `corepack` 命令时，先运行 `npm install --global corepack@0.36.0`，再运行 `corepack enable`。
 2. 运行 `pnpm install`。
 3. 从 `main` 创建职责单一的分支。
 4. 在实现功能的同时新增或更新测试。

@@ -4,6 +4,8 @@
 
 repoctl 管理工作区的兼容 create 命令。
 
+使用 Node.js 25+ 或找不到 `corepack` 命令时，先运行 `npm install --global corepack@0.36.0`，再运行 `corepack enable`，然后使用 pnpm。
+
 已有自动化可以继续使用：
 
 ```bash

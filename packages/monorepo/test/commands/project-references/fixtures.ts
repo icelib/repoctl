@@ -26,9 +26,11 @@ export async function fixture(t: TestContext, enabled = true) {
   t.onTestFinished(async () => fs.rm(root, { recursive: true, force: true }))
   await write(root, 'package.json', { name: 'references-fixture', private: true, type: 'module' })
   await write(root, 'pnpm-workspace.yaml', 'packages:\n  - packages/*\n')
-  await write(root, 'base.json', { compilerOptions: { composite: true, declaration: true, target: 'ESNext', module: 'NodeNext', types: [], skipLibCheck: true } })
+  await write(root, 'base.json', { compilerOptions: { composite: true, declaration: true, target: 'ESNext', lib: ['ESNext'], module: 'NodeNext', types: [], skipLibCheck: true } })
   await write(root, 'tsconfig.json', '{\n  // Keep this solution comment.\n  "files": [],\n  "references": []\n}\n')
-  await fs.symlink(path.join(sourceRoot, 'node_modules'), path.join(root, 'node_modules'), 'junction')
+  // These consumers need TypeScript, not the source workspace's full toolchain.
+  await fs.mkdir(path.join(root, 'node_modules'))
+  await fs.symlink(await fs.realpath(path.join(sourceRoot, 'node_modules/typescript')), path.join(root, 'node_modules/typescript'), 'junction')
   await project(root, 'lib')
   await project(root, 'app')
   if (enabled) {

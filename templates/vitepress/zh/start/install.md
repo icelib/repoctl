@@ -8,6 +8,8 @@
 - pnpm。推荐通过 Corepack 启用：`corepack enable`。
 - Git。`repo doctor` 会读取仓库信息，用来补全 package metadata 和诊断提交链路。
 
+Node.js 25+ 不再内置 Corepack。使用这些版本，或找不到 `corepack` 命令时，先运行 `npm install --global corepack@0.36.0`，再运行 `corepack enable`。
+
 ```bash
 node -v
 pnpm -v
