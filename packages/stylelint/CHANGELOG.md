@@ -1,5 +1,20 @@
 # @icebreakers/stylelint-config
 
+## 5.1.4
+
+### Patch Changes
+
+- Move canonical documentation links and package homepages to repo.icebreaker.top; separate stable documentation from the unreleased preview site.
+
+  Check catalog dependency values against each package's published source before stable documentation deployment, including build dependencies, while allowing changes to unrelated catalog entries.
+
+  Resolve documentation sites from the upgrade target when using `upgrade --out-dir`, so the destination does not inherit documentation deployment workflows from the calling directory's configuration.
+
+- 更新依赖、共享 lint 配置及项目模板的工具链版本，并同步 GitHub App token action。
+
+- Updated dependencies:
+  - stylelint-plugin-tailwindcss@3.1.4
+
 ## 5.1.3
 
 ### Patch Changes

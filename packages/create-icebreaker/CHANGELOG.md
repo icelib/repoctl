@@ -1,5 +1,18 @@
 # create-icebreaker
 
+## 2.1.6
+
+### Patch Changes
+
+- Move canonical documentation links and package homepages to repo.icebreaker.top; separate stable documentation from the unreleased preview site.
+
+  Check catalog dependency values against each package's published source before stable documentation deployment, including build dependencies, while allowing changes to unrelated catalog entries.
+
+  Resolve documentation sites from the upgrade target when using `upgrade --out-dir`, so the destination does not inherit documentation deployment workflows from the calling directory's configuration.
+
+- Updated dependencies:
+  - create-repoctl@1.2.6
+
 ## 2.1.5
 
 ### Patch Changes

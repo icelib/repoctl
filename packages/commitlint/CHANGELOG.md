@@ -1,5 +1,19 @@
 # @icebreakers/commitlint-config
 
+## 4.1.3
+
+### Patch Changes
+
+- Move canonical documentation links and package homepages to repo.icebreaker.top; separate stable documentation from the unreleased preview site.
+
+  Check catalog dependency values against each package's published source before stable documentation deployment, including build dependencies, while allowing changes to unrelated catalog entries.
+
+  Resolve documentation sites from the upgrade target when using `upgrade --out-dir`, so the destination does not inherit documentation deployment workflows from the calling directory's configuration.
+
+- Fix published declaration boundaries and validate Node package consumers with an isolated type toolchain so all public packages can pass strict nightly artifact checks.
+
+- Replace Husky and lint-staged with native Lefthook jobs in source and generated workspaces. Remove the Husky/lint-staged tooling fields, exported types and configuration factories, and replace the lint-staged init target with lefthook. Default hook upgrades migrate configuration, dependencies and installation scripts together; custom hooks require manual migration. Failed checks block commits while retaining completed fixes and protecting unstaged changes.
+
 ## 4.1.2
 
 ### Patch Changes
