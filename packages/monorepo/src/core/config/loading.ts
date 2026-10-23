@@ -1,14 +1,16 @@
 import type { LoadConfigOptions } from 'c12'
 import type { MonorepoConfig } from '../../types'
+import { mergeProjectConfig } from './docs-targets'
 import { freshConfigLoading } from './refresh'
 import { assertMonorepoConfig } from './validation'
 
 /** Check original exports before C12 merging can discard nulls or unknown empty values. */
-export function validatedConfigLoading(files: Set<string>, refresh: boolean): Pick<LoadConfigOptions<MonorepoConfig>, 'jitiOptions' | 'resolve'> {
+export function validatedConfigLoading(files: Set<string>, refresh: boolean): Pick<LoadConfigOptions<MonorepoConfig>, 'jitiOptions' | 'resolve' | 'merger'> {
   const fresh = refresh ? freshConfigLoading(files) : undefined
   const wrapped = new WeakSet<object>()
   return {
     ...fresh,
+    merger: mergeProjectConfig,
     // Loading configuration must not create cache directories during read-only commands.
     jitiOptions: { ...fresh?.jitiOptions, fsCache: false },
     async resolve(source, options) {

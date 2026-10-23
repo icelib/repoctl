@@ -8,7 +8,7 @@ repoctl.config.ts
 
 `monorepo.config.ts` is no longer loaded at runtime. Rename it to `repoctl.config.ts` before running repoctl.
 
-`commands.docs.sites` opts individual sites into release-aligned documentation. Each site specifies product packages, root build/deploy scripts, preview/stable targets and allowed correction paths. See [documentation publication](/tasks/docs) for the complete configuration and adapter contract. Omitting this map leaves documentation deployment disabled.
+`commands.docs.sites` opts individual sites into release-aligned documentation. Each site specifies product packages, a root build script, preview/stable targets and allowed correction paths. Each target is either `{ deployScript, url? }` or `{ provider: 'cloudflare-workers', config, workerName, accountId, environment?, url? }`; do not mix the alternatives. Native targets use static assets-only JSON/JSONC Wrangler configuration, while existing script targets remain valid without a provider field. See [documentation publication](/tasks/docs) for identity checks, credentials, supported configuration and recovery. Omitting this map leaves documentation deployment disabled.
 
 ## Minimal Config
 

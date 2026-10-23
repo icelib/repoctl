@@ -50,6 +50,66 @@ const releaseInputs = {
 
 显式列表会替换该包的默认规则。覆盖包必须具有发布证据、匹配的版本与来源历史，不得存在未消费的发布 intent 或变化的发布输入。缺少证据会阻止对应站点部署；无关包无需为更新该站点额外发版。
 
+## 使用内置 Cloudflare Workers provider
+
+纯静态资源 Worker 可以将站点的 `preview` 和 `stable` 脚本目标替换为原生目标：
+
+```ts
+const cloudflare = {
+  provider: 'cloudflare-workers' as const,
+  config: 'website/wrangler.jsonc',
+  accountId: '0123456789abcdef0123456789abcdef',
+}
+
+const targets = {
+  preview: {
+    ...cloudflare,
+    workerName: 'docs-site-preview',
+    environment: 'preview',
+    url: 'https://next.example.com',
+  },
+  stable: {
+    ...cloudflare,
+    workerName: 'docs-site',
+    url: 'https://docs.example.com',
+  },
+}
+```
+
+站点仍保留原有 `buildScript`、`packages`、`releaseInputs` 和 `patchPaths`。每个目标选择 `deployScript` 或 `provider: 'cloudflare-workers'`，两者不能混用。已有脚本目标无需补充 discriminator 或默认值，其他平台和自定义 Cloudflare 部署仍可使用脚本适配器。
+
+使用已提交、仓库相对路径的 JSON 或 JSONC Wrangler 配置，例如 `website/wrangler.jsonc`：
+
+```jsonc
+{
+  "name": "docs-site",
+  "account_id": "0123456789abcdef0123456789abcdef",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": { "directory": "dist" },
+  "routes": [{ "pattern": "docs.example.com", "custom_domain": true }],
+  "env": {
+    "preview": {
+      "name": "docs-site-preview",
+      "routes": [{ "pattern": "next.example.com", "custom_domain": true }]
+    }
+  }
+}
+```
+
+`workerName` 和 `accountId` 用于校验解析后的部署身份，不会静默改写 Wrangler 配置。省略 `environment` 表示顶层环境。具名环境必须存在；显式 `name` 优先，否则 Wrangler 在顶层 Worker 名后追加环境名。环境内的 `assets` 对象会整体替换顶层对象，所以局部覆盖也必须包含 `directory`。输出路径相对于 Wrangler 文件解析，且解析符号链接后仍须位于冻结源码目录内。
+
+顶层已有路由时，具名环境必须显式配置自己的路由。预览与正式目标不能使用同一账户中的同名 Worker，即使环境名不同；也不能接管对方的自定义域名。配置的 `url` 必须与所选目标一致。示例使用自定义域名路由，无法明确判断归属的路由会被拒绝。
+
+原生 provider 只接受有限的静态配置：JSON/JSONC、纯静态资源 Worker，以及支持的自定义域名路由。TOML、自动生成或插件选择的配置、Worker 代码（`main`）、自定义 build、bindings、service environments、资源自动创建和其他未支持选项，应使用 `deployScript` 适配器。在对应工作区声明 Wrangler 开发依赖并提交锁文件；repoctl 使用已安装的 CLI，不在部署时临时下载。
+
+`deploy` 会先对冻结配置执行原生预检，再安装该源码目录的依赖和运行构建。预检核对凭据、账户/Worker/配置身份、路径，以及 Cloudflare 部署和版本接口的只读响应。运行时提供 `CLOUDFLARE_API_TOKEN`；非秘密的 `accountId` 固定在站点目标中，环境变量 `CLOUDFLARE_ACCOUNT_ID` 或有效的 Wrangler `account_id` 如有配置，必须与其一致。读取成功只能证明能够访问已查询的资源，不能证明后续上传或域名更新的权限；token 仍需具备所选 Worker 和域名操作需要的写权限。部署身份不会保存 token。
+
+只有明确的 Worker 不存在响应，即 HTTP 404 且 Cloudflare 错误码为 `10007`，才允许首次上传。认证错误、普通 404、限流、异常响应和空部署列表都会停止部署。`repo docs plan` 仍只检查源码与发布证据，不执行该凭据预检，也不证明平台访问权限。
+
+构建后，repoctl 再次核对配置与输出路径，并在静态资源中写入 `/.well-known/repoctl-deployment.json`，记录站点、通道、部署 ID、源码/tree SHA 和可选发布记录 ID。该路径已有文件时，必须是完整身份相同的有效 manifest；冲突 manifest 或无关用户文件会使部署失败，不会被覆盖。Cloudflare 确认要求最新生效部署只有一个版本承接 100% 流量，并带有 `repoctl-docs:<deploymentId>` 注解。这里确认的是平台状态，不轮询公网网站，也不证明 DNS 和 HTTP 访问已经就绪。
+
 ## 安装受管工作流
 
 先升级到包含此能力的 repoctl，再审查并应用受管资产更新：
@@ -64,7 +124,7 @@ pnpm exec repo upgrade --yes
 
 停用旧的“main 直接部署正式站”入口，以及托管平台中重复发布正式站的 Git 集成。每个通道只保留一个部署入口。共用工作流使用 `docs-<site>-<channel>` environment 和同名并发组，并关闭自动取消。Environment 是否需要批准由仓库现有设置决定，repoctl 不额外添加审批策略。
 
-Cloudflare 部署沿用仓库或 environment 的 `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`，account ID 也可使用 variable。核心命令不依赖特定托管平台。其他平台可以通过自定义工作流传入凭据，同时保留来源选择、部署命令和并发约定。
+Cloudflare 部署通过仓库或 environment 的 secret 提供 `CLOUDFLARE_API_TOKEN`。受管工作流也会从 secret 或 variable 传入 `CLOUDFLARE_ACCOUNT_ID`；原生目标要求它与配置的 `accountId` 一致。其他平台使用部署脚本，可通过自定义工作流传入凭据，同时保留来源选择、部署命令和并发约定。
 
 ## 正式发布与首个基线
 
@@ -103,9 +163,9 @@ repo docs plan guide --channel stable --commits <第一个-SHA> <第二个-SHA> 
 
 repoctl 只把明确选中的补丁应用到稳定源码，不会从 main 复制整个目录。发生冲突时停止部署。已应用修正在重试时保留；后续稳定源码已经包含的修正，不会重复应用。
 
-## 部署脚本约定与恢复
+## 部署适配器与恢复
 
-repoctl 在隔离源码目录内依次运行 `pnpm install --frozen-lockfile`、配置的构建脚本、所选部署脚本。构建与部署脚本均收到：
+repoctl 在隔离源码目录内运行 `pnpm install --frozen-lockfile` 和配置的构建脚本，再调用所选原生 provider 或部署脚本。原生目标会先执行前述预检。构建脚本和部署脚本均收到：
 
 | 环境变量                               | 含义                                   |
 | -------------------------------------- | -------------------------------------- |
@@ -114,9 +174,9 @@ repoctl 在隔离源码目录内依次运行 `pnpm install --frozen-lockfile`、
 | `REPO_DOCS_RELEASE_ID`                 | 稳定发布完成记录 ID；预览为空          |
 | `REPO_DOCS_DEPLOYMENT_ID`              | 包含修正信息的确定性部署身份           |
 | `REPO_DOCS_URL`                        | 可选的配置目标 URL                     |
-| `REPO_DOCS_RESULT_FILE`                | 部署适配器核实平台结果后必须写入的文件 |
+| `REPO_DOCS_RESULT_FILE`                | 脚本适配器核实平台结果后必须写入的文件 |
 
-适配器须返回非空的平台版本 ID，并可附带 HTTP(S) URL：
+脚本适配器须写入非空的平台版本 ID，并可附带 HTTP(S) URL。原生 provider 直接返回该结果，无需部署脚本或自行写入结果文件：
 
 ```json
 { "versionId": "provider-deployment-version", "url": "https://docs.example.com" }
@@ -124,12 +184,16 @@ repoctl 在隔离源码目录内依次运行 `pnpm install --frozen-lockfile`、
 
 用 `REPO_DOCS_DEPLOYMENT_ID` 核对中断部署是否已完成，再决定是否重新上传。平台确认结果后才写入结果文件。进程退出码为零但没有有效结果文件，仍不算部署完成。
 
+原生 Cloudflare provider 自行执行上述核对。当前生效版本的注解相同且承接 100% 流量时，复用该版本，不再上传；历史版本匹配不足以恢复，混合流量也会失败。有效的当前版本属于其他部署时，允许本次已授权的新部署上传。Wrangler 返回的 Worker、环境和版本必须匹配目标，且该版本确认已生效后才推进 current 指针。
+
 受管工作流先运行 `repo docs plan`，再以相同输入运行 `repo docs deploy`。正式部署要求 GitHub Actions、run ID，以及与实际串行并发组一致的 `REPO_DOCS_CONCURRENCY_GROUP`；本地审查使用 `plan`。构建或部署前先用 revision 比较并交换取得状态，平台结果确认后才推进已部署指针。
 
 构建失败后，修复原因并针对相同发布记录重跑文档工作流，不会重新发布 npm。若正式站 runner 在部署期间消失，先重跑同一部署，让适配器核实平台结果；未解决的 `deploying` 操作不能被另一正式部署覆盖。预览站则允许串行的受管工作流用最新 main 来源替换中断的旧部署。已完成部署和无关联发布批次会跳过。保留 `repoctl-release-state` 分支；短期 Actions artifact 仅用于诊断，不能代替部署基线。
 
 未完成的正式部署会保存站点配置、发布记录、请求的修正提交和已核验的源码树。重试时使用相同的发布记录和修正输入，计划器会重新核验保存的输入与部署标识，构建也使用保存的配置，即使 main 已修改配置或删除该站点。省略 `release` 时使用当前正式基线；首次部署还没有正式基线时，使用未完成部署的发布记录。若已有旧基线，而新版本部署尚未完成，必须明确指定新版本的发布记录。保存的状态损坏或不一致时，会在构建和上传前停止恢复。
 
+上传成功但响应、验证或最终 checkpoint 写入失败时，保留 `deploying` 状态。重试仍会安装和构建同一份冻结源码，再查询远端生效版本以决定是否上传。重试中的预检或构建失败，不会清除这个结果未知的上传状态。即使当前配置已切换到原生 provider，旧的未完成脚本部署仍使用保存的脚本目标和原始源码恢复；迁移后续部署时不要改写历史快照。
+
 如果修复需要修改产品源码或构建脚本，应发布新的稳定基线；相同发布记录始终使用原来的源码。
 
-程序化 API 为 `planDocsDeployment(options)` 与 `deployDocs(options)`。`DocsOptions` 接受站点、通道、来源/发布/修正选择，以及可选配置、环境和 `DocsStateStore`。状态适配器需实现 `readAutomationState`、支持 revision 检查的 `writeAutomationState`、`readBranchHead`；查询失败必须抛出，不得假装没有历史状态。
+程序化 API 为 `planDocsDeployment(options)` 与 `deployDocs(options)`。`DocsOptions` 接受站点、通道、来源/发布/修正选择，以及可选配置、环境和 `DocsStateStore`。状态适配器需实现 `readAutomationState`、支持 revision 检查的 `writeAutomationState`、`readBranchHead`；可选 `fetch` 提供原生 provider 的 HTTP transport，`spawn` 提供进程 transport。查询失败必须抛出，不得假装没有历史状态。公开目标类型为 `DocsScriptDeploymentTarget`、`DocsCloudflareWorkersTarget` 及其联合类型 `DocsDeploymentTarget`。

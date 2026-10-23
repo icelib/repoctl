@@ -1,6 +1,7 @@
 import type { MonorepoConfig } from '../../types'
 import type { ConfigSourceLayer, ConfigValueSource } from '../../types/presets'
 import { chinaMirrorsEnvs } from '../../commands/mirror/sources'
+import { replaceDocsTarget } from './docs-targets'
 import { mergeConfigValues } from './merge'
 import { assertMonorepoConfig, ConfigValidationError } from './validation'
 import { commandSchemas } from './validation/commands'
@@ -50,7 +51,7 @@ export function resolveCommandValues<Name extends ConfigCommand>(name: Name, pro
     ...(name === 'init' && options.entry === 'cli' ? [{ source: { kind: 'default' as const }, values: { preset: 'standard' } }] : []),
     ...(options.layers ? options.layers.map(layer => ({ source: layer.source, values: layer.config.commands?.[name] ?? {} })) : [{ source: { kind: 'project' as const }, values: project }]),
     { source: { kind: 'cli' }, values: overrides },
-  ])
+  ], name === 'docs' ? replaceDocsTarget : undefined)
   const origins = Object.fromEntries(Object.entries(sources).map(([field, source]) => [field, source.kind === 'preset' ? 'project' : source.kind])) as Record<string, ConfigOrigin>
   if (name === 'create' && values['type'] === undefined) {
     values['type'] = values['defaultTemplate']

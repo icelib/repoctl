@@ -3,7 +3,7 @@ import { appendConfigPath } from './paths'
 import { isRecord } from './validation/schema'
 
 /** Preset boundaries merge objects and replace arrays, without changing C12's project merge. */
-export function mergeConfigValues(layers: Array<{ source: ConfigValueSource, values: object }>) {
+export function mergeConfigValues(layers: Array<{ source: ConfigValueSource, values: object }>, replaceObject?: (field: string, current: Record<string, unknown>, next: Record<string, unknown>) => boolean) {
   const values: Record<string, unknown> = {}
   const sources: Record<string, ConfigValueSource> = {}
   function clear(field: string) {
@@ -21,7 +21,7 @@ export function mergeConfigValues(layers: Array<{ source: ConfigValueSource, val
       }
       const field = appendConfigPath(prefix, key)
       if (isRecord(value) && !next.has(value)) {
-        const existing = Object.hasOwn(target, key) && isRecord(target[key])
+        const existing = Object.hasOwn(target, key) && isRecord(target[key]) && !replaceObject?.(field, target[key], value)
         if (!existing) {
           clear(field)
         }
