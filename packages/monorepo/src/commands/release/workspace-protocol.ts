@@ -5,6 +5,7 @@ import { getWorkspaceData } from '../../core/workspace'
 import { ReleaseCommandError } from './errors'
 
 const EXPECTED_WORKSPACE_SPEC = 'workspace:*'
+const PEER_WORKSPACE_SPECS = new Set([EXPECTED_WORKSPACE_SPEC, 'workspace:^', 'workspace:~'])
 const DEPENDENCY_SECTIONS = ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies'] as const
 
 interface PackageManifest {
@@ -39,7 +40,8 @@ export function collectWorkspaceProtocolViolations(options: {
       }
 
       for (const [dependencyName, spec] of Object.entries(dependencies)) {
-        if (options.workspacePackageNames.has(dependencyName) && spec !== EXPECTED_WORKSPACE_SPEC) {
+        const validSpec = section === 'peerDependencies' ? PEER_WORKSPACE_SPECS.has(spec) : spec === EXPECTED_WORKSPACE_SPEC
+        if (options.workspacePackageNames.has(dependencyName) && !validSpec) {
           violations.push(`${displayPath(options.workspaceDir, entry.file)} -> ${section}.${dependencyName}=${spec}`)
         }
       }
@@ -73,6 +75,7 @@ export async function assertWorkspaceDependencyProtocols(cwd: string) {
   if (violations.length > 0) {
     throw new ReleaseCommandError([
       `Expected publishable workspace dependencies to use ${EXPECTED_WORKSPACE_SPEC}:`,
+      'Internal peerDependencies may also use workspace:^ or workspace:~ to preserve their compatibility ranges.',
       ...violations.map(violation => `- ${violation}`),
     ].join('\n'))
   }
