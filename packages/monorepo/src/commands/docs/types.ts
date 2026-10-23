@@ -20,6 +20,8 @@ export interface DocsOptions {
   github?: DocsStateStore
   /** Script process transport. Git operations always use the actual repository. */
   spawn?: typeof spawnSync
+  /** Read-only Cloudflare API transport; credentials are never persisted. */
+  fetch?: typeof fetch
 }
 
 export interface DocsDeploymentPlan {

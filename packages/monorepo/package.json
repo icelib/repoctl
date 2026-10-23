@@ -111,6 +111,7 @@
     "comment-json": "catalog:",
     "consola": "^3.4.2",
     "cross-spawn": "^7.0.6",
+    "defu": "^6.1.7",
     "esbuild": "catalog:",
     "git-url-parse": "^16.1.0",
     "json5": "^2.2.3",

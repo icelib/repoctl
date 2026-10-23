@@ -16,7 +16,7 @@ repo docs plan guide --channel stable --release <发布完成记录-ID> --json
 repo docs plan guide --channel stable --commits <修正提交-SHA> --json
 ```
 
-`plan` 读取发布证据并检查冻结源码。`deploy` 接受相同选择，运行配置的构建与部署脚本；正式执行必须进入串行的受管 GitHub 工作流。需显式配置 `commands.docs.sites`。工作流接入、独立修正、适配器输出和恢复方式见[文档发布](/zh/tasks/docs)。
+`plan` 读取发布证据并检查冻结源码。`deploy` 接受相同选择，运行配置的构建，再使用内置 `cloudflare-workers` provider 或 `deployScript` 适配器。原生 Cloudflare 预检在冻结源码安装/构建前核对纯静态资源配置、身份及读取权限，不证明后续写权限或公网 HTTP 已就绪。正式执行必须进入串行的受管 GitHub 工作流。需显式配置 `commands.docs.sites`。目标字段、工作流接入、独立修正、适配器输出和相同部署 ID 的恢复方式见[文档发布](/zh/tasks/docs)。
 
 ## 最推荐入口
 

@@ -1,10 +1,11 @@
 import type { DocsDeploymentResult, DocsDeploymentState, DocsOptions } from './types'
 import { randomUUID } from 'node:crypto'
 import path from 'pathe'
-import { docsEnvironment, readDeploymentResult, runDocsProcess } from './execute'
+import { docsEnvironment, runDocsProcess } from './execute'
 import { git, withSource } from './git'
 import { applyDocsPatches } from './patches'
 import { prepareDocsPlan } from './plan'
+import { prepareDocsProvider } from './providers'
 import { readDocsState } from './state'
 
 /** Build and deploy an independently retryable, immutable documentation snapshot. */
@@ -42,6 +43,7 @@ export async function deployDocs(options: DocsOptions): Promise<DocsDeploymentRe
       }
       const resultFile = path.join(path.dirname(source), 'deployment-result.json')
       const env = docsEnvironment(context, plan, resultFile)
+      const prepareProvider = await prepareDocsProvider(options, source, context.site, plan, env, resultFile)
       runDocsProcess(options, source, ['install', '--frozen-lockfile'], env)
       runDocsProcess(options, source, ['run', context.site.buildScript], env)
       const latest = await readDocsState(context, options.site, options.channel)
@@ -51,11 +53,11 @@ export async function deployDocs(options: DocsOptions): Promise<DocsDeploymentRe
       if (options.channel === 'preview' && await context.github.readBranchHead('main') !== plan.sourceSha) {
         throw new Error('Main advanced during the preview build; refusing to deploy an outdated preview')
       }
+      const deploy = await prepareProvider()
       state = { ...state, pending: { ...state.pending!, phase: 'deploying' } }
       revision = await context.github.writeAutomationState(context.key, state, revision)
       providerStarted = true
-      runDocsProcess(options, source, ['run', context.site[options.channel].deployScript], env)
-      const result = await readDeploymentResult(resultFile)
+      const result = await deploy()
       const complete: DocsDeploymentState = {
         schemaVersion: 1,
         repository: context.repository,

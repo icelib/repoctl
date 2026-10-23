@@ -7,7 +7,7 @@ Rule:
 - Load `repoctl.config.*`; rename legacy `monorepo.config.*`, which is no longer loaded.
 - Validate repoctl-owned fields before command side effects with `repo config validate --json`.
 - Native tooling passthrough and callbacks keep their extension boundary. Config modules are trusted executable project code.
-- Use `repo config inspect --command ai --set 'format="json"' --json` for shared defaults/project/CLI provenance. Contexts: ai, clean, create, deps, doctor, init, mirror, release, upgrade. Runtime selection is explained by each command's plan.
+- Use `repo config inspect --command ai --set 'format="json"' --json` for shared defaults/project/CLI provenance. Contexts: ai, clean, create, deps, doctor, docs, init, mirror, release, upgrade. Runtime selection is explained by each command's plan.
 - Reports redact env values and native tool payloads by default; `--redact` additionally hides local paths. For programmatic safe reports use `explainMonorepoConfig` or `validateConfigFile`; runtime config APIs retain callbacks and should not be serialized for sharing.
 - Git hooks use native `lefthook.yml`. Migrate old `tooling.lintStaged` and `tooling.husky` settings into that file.
 - Organization presets use `presets: [{ packageName, version }]` with an exact installed dependency and JSON-only `repoctl.preset.json`. Loading never imports package code, installs or fetches. Parents precede declaring presets, then the project and CLI; arrays replace at preset boundaries. `config inspect` exposes ordered layers and precise package/version sources.
@@ -70,6 +70,7 @@ Key areas:
 - upgrade: overwrite behavior and extra targets
 - init: skip steps for README/package.json/pnpm change intent setup
 - mirror: add or override env mirrors
+- docs: explicit sites with covered `packages`, a root `buildScript`, `preview`/`stable` targets, allowed `patchPaths` and optional per-package `releaseInputs`. Targets choose `{ deployScript, url? }` or `{ provider: 'cloudflare-workers', config, workerName, accountId, environment?, url? }`, never both. Native Cloudflare supports static assets-only JSON/JSONC configurations; freeze the nonsecret account identity, keep credentials in runtime environment secrets, and preserve old script snapshots for retry. See the docs section in `commands.md` for preflight and recovery boundaries.
 
 ## `commands.doctor`
 
