@@ -1,4 +1,5 @@
 import type { PackageJson } from '../../../types'
+import type { UpgradeWorkspacePolicy } from '../../../types/upgrade'
 import type { UpgradeContext } from './context'
 import { Buffer } from 'node:buffer'
 import { readdir } from 'node:fs/promises'
@@ -15,7 +16,7 @@ import { removeDefaultHookTooling } from '../hooks/inspect'
 import { setPkgJson } from '../pkg-json'
 import { isLegacyReleaseWorkflow, releaseWorkflowMarker } from '../release-migration/classify'
 import { isTextEquivalent, mergeGitignore } from '../text'
-import { mergeWorkspaceManifest, normalizeWorkspaceManifest } from '../workspace'
+import { normalizeWorkspaceManifest, planWorkspaceManifest } from '../workspace'
 
 export async function planAssets(context: UpgradeContext) {
   const { plan, read, put, options, config } = context
@@ -47,6 +48,7 @@ export async function planAssets(context: UpgradeContext) {
         let upstream = source
         let reason = 'managed-asset'
         let skip = false
+        let workspacePolicy: UpgradeWorkspacePolicy | undefined
         if ((config.skipChangesetMarkdown ?? true) && filename.startsWith('.changeset/') && filename.endsWith('.md')) {
           reason = 'change-intent-protected'
           skip = true
@@ -88,7 +90,11 @@ export async function planAssets(context: UpgradeContext) {
         }
         else if (filename === 'pnpm-workspace.yaml') {
           const original = normalizeWorkspaceManifest(YAML.parse(source.toString()))
-          after = Buffer.from(YAML.stringify(before ? mergeWorkspaceManifest(original, normalizeWorkspaceManifest(YAML.parse(before.toString()))) : original, { singleQuote: true }))
+          const result = before && !options.noOverwrite && !options.skipOverwrite
+            ? await planWorkspaceManifest(context, original, normalizeWorkspaceManifest(YAML.parse(before.toString())), hooks.migrate)
+            : { manifest: original }
+          after = Buffer.from(YAML.stringify(result.manifest, { singleQuote: true }))
+          workspacePolicy = result.policy
           reason = 'workspace-semantic-merge'
         }
         else if (filename === '.gitignore' && before !== null) {
@@ -134,8 +140,19 @@ export async function planAssets(context: UpgradeContext) {
         }
         const file = await put(filename, after, reason, reason.replaceAll('-', ' '), { skip, force: filename === '.github/workflows/release.yml' && options.overwriteRelease === true })
         baseline.annotate(file, result)
-        if (hooks.migrate && hookTargets.includes(filename)) {
-          file.group = hookGroup
+        if (workspacePolicy) {
+          file.workspacePolicy = workspacePolicy
+          if (workspacePolicy.findings.some(finding => finding.status === 'unverified')) {
+            file.automatic = false
+          }
+          if (workspacePolicy.findings.some(finding => ['conflict', 'stale-decision', 'expired-decision'].includes(finding.status))) {
+            file.status = 'conflict'
+            file.reason = 'workspace-override-policy'
+            file.detail = 'Review override scope and stale keep decisions in workspacePolicy. No workspace changes or baseline will be applied.'
+            file.afterHash = file.beforeHash
+            file.content = null
+            file.automatic = false
+          }
         }
       }
       catch (error) {
@@ -151,5 +168,12 @@ export async function planAssets(context: UpgradeContext) {
     }
   }
   await baseline.removals()
+  // Early baseline outcomes (ownership conflicts and preserved deletions) are
+  // still required members of the hook migration, so they must block the group.
+  if (hooks.migrate) {
+    for (const file of plan.files.filter(file => hookTargets.includes(file.path))) {
+      file.group = hookGroup
+    }
+  }
   return baseline
 }

@@ -23,6 +23,13 @@ export function formatUpgradePlan(plan: UpgradePlan, format: 'text' | 'markdown'
     if (file.baseline) {
       lines.push(`baseline: ${file.baseline.path} (${file.baseline.beforeHash ?? 'absent'} -> ${file.baseline.afterHash ?? 'removed'})`)
     }
+    for (const finding of file.workspacePolicy?.findings ?? []) {
+      lines.push(`${JSON.stringify(finding.path)}: ${finding.status}. ${finding.detail}`)
+      lines.push(`upstreamHash: ${finding.upstreamHash}; localHash: ${finding.localHash}`)
+      for (const affected of finding.affected) {
+        lines.push(`  ${affected.path} ${affected.section ?? ''}: ${affected.specifier}${affected.group ? ` [${affected.group}]` : ''}${affected.reason ? ` (${affected.reason})` : ''}`)
+      }
+    }
     for (const conflict of file.merge?.conflicts ?? []) {
       lines.push(`Conflict at base lines ${conflict.baseStart}-${conflict.baseEnd}:`, '<<<<<<< local', conflict.local, '||||||| base', conflict.base, '=======', conflict.upstream, '>>>>>>> upstream')
     }

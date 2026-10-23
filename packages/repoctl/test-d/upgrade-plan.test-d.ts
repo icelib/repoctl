@@ -1,6 +1,6 @@
-import type { UpgradeApplyResult, UpgradeBaselineChange, UpgradeMergeDetails, UpgradeMigrationsPlan, UpgradePlan } from 'repoctl'
+import type { MonorepoConfig, UpgradeApplyResult, UpgradeBaselineChange, UpgradeKeepDecision, UpgradeMergeDetails, UpgradeMigrationsPlan, UpgradePlan, UpgradeWorkspacePolicy } from 'repoctl'
 import { applyUpgradePlan, formatUpgradePlan, planUpgrade, upgradeMonorepo } from 'repoctl'
-import { expectType } from 'tsd'
+import { expectAssignable, expectType } from 'tsd'
 
 expectType<Promise<UpgradePlan>>(planUpgrade({ cwd: '/workspace' }))
 expectType<Promise<UpgradePlan>>(upgradeMonorepo({ cwd: '/workspace', dryRun: true }))
@@ -13,3 +13,6 @@ declare const result: UpgradeApplyResult
 expectType<string[] | undefined>(result.conflicts)
 expectType<Promise<UpgradePlan>>(planUpgrade({ cwd: '/workspace', fromVersion: '1.0.15' }))
 expectType<UpgradeMigrationsPlan | undefined>(plan.migrations)
+declare const keep: UpgradeKeepDecision
+expectAssignable<MonorepoConfig>({ commands: { upgrade: { keep: [keep] } } })
+expectType<UpgradeWorkspacePolicy | undefined>(plan.files[0]!.workspacePolicy)

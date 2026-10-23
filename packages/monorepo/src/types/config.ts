@@ -15,6 +15,7 @@ import type { DoctorCommandConfig } from './doctor'
 import type { EnvCacheConfig } from './env-cache'
 import type { OrganizationPresetReference } from './presets'
 import type { ReleaseCommandConfig } from './release'
+import type { UpgradeKeepDecision } from './upgrade'
 
 export interface AiCommandConfig {
   /**
@@ -106,6 +107,8 @@ export interface CreateChoiceOption {
  * `repo workspace upgrade` 命令配置，覆盖脚本、目标文件等能力。
  */
 export interface UpgradeCommandConfig extends Partial<CliOpts> {
+  /** Fingerprint-bound decisions retaining individual local pnpm overrides. */
+  keep?: UpgradeKeepDecision[]
   /**
    * 额外需要写入的目标文件列表。
    * @default []
