@@ -34,8 +34,9 @@ it.each(['preview', 'stable'] as const)('isolates %s deployment context from rea
     const origins = stage === 'install' ? ${JSON.stringify(unrelatedOrigins)} : ${JSON.stringify(websiteOrigins)}
     const context = resolveDocsContext({ ...origins, channel: process.env.REPO_DOCS_CHANNEL, url: process.env.REPO_DOCS_URL })
     const docs = Object.fromEntries(Object.entries(process.env).filter(([key]) => key.toUpperCase().startsWith('REPO_DOCS_')))
+    const lifecycleMetadata = Object.fromEntries(Object.entries(process.env).filter(([key]) => key.toLowerCase().startsWith('npm_lifecycle_')))
     appendFileSync(process.env.DOCS_TEST_OBSERVATIONS, JSON.stringify({
-      stage, context, docs, lifecycle: process.env.npm_lifecycle_event,
+      stage, context, docs, lifecycle: process.env.npm_lifecycle_event, lifecycleMetadata,
       ci: process.env.CI, registry: process.env.npm_config_registry, lefthook: process.env.LEFTHOOK,
     }) + '\\n')
     if (stage === 'provider') {
@@ -52,6 +53,10 @@ it.each(['preview', 'stable'] as const)('isolates %s deployment context from rea
     LEFTHOOK: '1',
     COREPACK_ENABLE_NETWORK: '0',
     COREPACK_ENABLE_AUTO_PIN: '0',
+    npm_lifecycle_event: 'ambient-parent-event',
+    NPM_LIFECYCLE_EVENT: 'ambient-parent-event',
+    npm_lifecycle_script: 'ambient-parent-script',
+    NPM_LIFECYCLE_SCRIPT: 'ambient-parent-script',
     npm_config_registry: 'https://registry.example.invalid',
     DOCS_TEST_OBSERVATIONS: observations,
     REPO_DOCS_CONCURRENCY_GROUP: `docs-website-${channel}`,
@@ -73,9 +78,11 @@ it.each(['preview', 'stable'] as const)('isolates %s deployment context from rea
     calls.push([command, ...args])
     // Exercise an actual pnpm lifecycle without installing dependencies or accessing a registry.
     const lifecycleArgs = args[0] === 'install' ? ['run', 'postinstall'] : args
+    // Let pnpm set this invocation's metadata without inherited Windows case collisions.
+    const childEnv = Object.fromEntries(Object.entries(input.env).filter(([key]) => !key.toLowerCase().startsWith('npm_lifecycle_')))
     const result = crossSpawn.sync(process.env['npm_execpath'] ?? command, ['--config.manage-package-manager-versions=false', ...lifecycleArgs], {
       cwd: input.cwd,
-      env: input.env,
+      env: childEnv,
       encoding: 'utf8',
       timeout: 30_000,
       windowsHide: true,
@@ -107,12 +114,24 @@ it.each(['preview', 'stable'] as const)('isolates %s deployment context from rea
   expect(install).toEqual({
     stage: 'install',
     lifecycle: 'postinstall',
+    lifecycleMetadata: expect.any(Object),
     context: resolveDocsContext(unrelatedOrigins),
     docs: {},
     ci: 'true',
     registry: env.npm_config_registry,
     lefthook: '0',
   })
+  for (const result of [install, build, provider]) {
+    const metadata = Object.fromEntries(Object.entries(result.lifecycleMetadata).map(([key, value]) => [key.toLowerCase(), value]))
+    expect(metadata).toMatchObject({
+      npm_lifecycle_event: result.lifecycle,
+      npm_lifecycle_script: `node lifecycle.mjs ${result.stage}`,
+    })
+    expect(Object.values(result.lifecycleMetadata)).not.toContain('ambient-parent-event')
+    expect(Object.values(result.lifecycleMetadata)).not.toContain('ambient-parent-script')
+  }
+  expect(build.lifecycle).toBe('docs:build')
+  expect(provider.lifecycle).toBe(`docs:${channel}`)
   for (const result of [build, provider]) {
     expect(result.context).toEqual(resolveDocsContext({ ...websiteOrigins, channel }))
     expect(result.docs).toMatchObject({
