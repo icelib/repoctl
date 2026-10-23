@@ -6,45 +6,7 @@ import { performance } from 'node:perf_hooks'
 import { sleep } from '../../registry'
 import { registrySettings } from '../../registry/settings'
 import { consumerPnpmOptions } from './environment'
-import { ConsumerCommandError } from './run'
-
-/** A confirmed upload can precede visibility in pnpm's installation packument. */
-function missingBatchVersion(error: unknown, report: NightlyReport): boolean {
-  if (!(error instanceof ConsumerCommandError) || error.command.exitCode === null) {
-    return false
-  }
-  const expected = new Set(report.packages.flatMap(pkg => [`${pkg.name}@snapshot-nightly`, `${pkg.name}@${pkg.version}`]))
-  let missing = false
-  for (const line of `${error.command.stdout}\n${error.command.stderr}`.split('\n').filter(line => line.trim())) {
-    let record: { level?: string, code?: string, message?: string, cause?: unknown, err?: { code?: string, message?: string, cause?: unknown } }
-    try {
-      record = JSON.parse(line)
-    }
-    catch {
-      return false
-    }
-    if (!record || typeof record !== 'object') {
-      return false
-    }
-    if (record.level !== 'error') {
-      continue
-    }
-    const code = record.code ?? record.err?.code
-    const message = record.message ?? record.err?.message
-    if (code !== 'ERR_PNPM_NO_MATCHING_VERSION' || (record.err?.code !== undefined && record.err.code !== code) || typeof message !== 'string'
-      || record.cause !== undefined || record.err?.cause !== undefined || (record.err?.message !== undefined && record.err.message !== message)) {
-      return false
-    }
-    const reference = /^No matching version found for (\S+) while fetching it from https:\/\/registry\.npmjs\.org\/(?:\n\nFailed to resolve \1)?\s*$/u.exec(message)?.[1]
-    // pnpm includes the dependency alias before its actual registry target.
-    const target = reference?.replace(/^(?:@[^/@\s]+\/)?[^/@\s]+@npm:/u, '')
-    if (!target || !expected.has(target)) {
-      return false
-    }
-    missing = true
-  }
-  return missing
-}
+import { missingBatchVersion } from './missing-version'
 
 /** Retry installation only; accepted uploads and subsequent identity checks are never repeated. */
 export async function installNightlyConsumer(report: NightlyReport, options: NightlyOptions, directory: string, run: ReturnType<typeof consumerRunner>) {
