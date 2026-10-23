@@ -1,8 +1,13 @@
-import type { DocsCommandConfig, DocsDeploymentTarget, DocsSiteConfig } from '../../../types/docs'
+import type { DocsCommandConfig, DocsSiteConfig } from '../../../types/docs'
 import type { Schema } from './schema'
-import { names, nonempty, object, record } from './schema'
+import { choices, isRecord, names, nonempty, object, record, union } from './schema'
 
-const target = object({ deployScript: nonempty, url: nonempty } satisfies Record<keyof DocsDeploymentTarget, Schema>, ['deployScript'])
+const script = { ...object({ deployScript: nonempty, url: nonempty }, ['deployScript']), accepts: (value: unknown) => isRecord(value) && value['provider'] === undefined }
+const cloudflare = {
+  ...object({ provider: choices('cloudflare-workers'), config: nonempty, workerName: nonempty, accountId: nonempty, environment: nonempty, url: nonempty }, ['provider', 'config', 'workerName', 'accountId']),
+  accepts: (value: unknown) => isRecord(value) && value['provider'] === 'cloudflare-workers',
+}
+const target = union(script, cloudflare)
 const site = object({
   packages: names,
   releaseInputs: record(names),

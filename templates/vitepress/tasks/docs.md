@@ -50,6 +50,66 @@ const releaseInputs = {
 
 An explicit input list replaces that package's defaults. Covered packages must have publication evidence, matching versions and source ancestry, no unconsumed release intent, and no changed release inputs. Missing evidence blocks that site's deployment. Unrelated packages do not have to publish merely to update this site.
 
+## Use the built-in Cloudflare Workers provider
+
+For an assets-only Worker, replace the site's `preview` and `stable` script targets with native targets:
+
+```ts
+const cloudflare = {
+  provider: 'cloudflare-workers' as const,
+  config: 'website/wrangler.jsonc',
+  accountId: '0123456789abcdef0123456789abcdef',
+}
+
+const targets = {
+  preview: {
+    ...cloudflare,
+    workerName: 'docs-site-preview',
+    environment: 'preview',
+    url: 'https://next.example.com',
+  },
+  stable: {
+    ...cloudflare,
+    workerName: 'docs-site',
+    url: 'https://docs.example.com',
+  },
+}
+```
+
+Keep `buildScript`, `packages`, `releaseInputs` and `patchPaths` on the site as before. A target chooses either `deployScript` or `provider: 'cloudflare-workers'`; combining them is invalid. Existing script targets require no new discriminator or defaults, and remain supported for other providers and custom Cloudflare deployments.
+
+Use a committed, repository-relative JSON or JSONC Wrangler configuration, for example `website/wrangler.jsonc`:
+
+```jsonc
+{
+  "name": "docs-site",
+  "account_id": "0123456789abcdef0123456789abcdef",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": false,
+  "preview_urls": false,
+  "assets": { "directory": "dist" },
+  "routes": [{ "pattern": "docs.example.com", "custom_domain": true }],
+  "env": {
+    "preview": {
+      "name": "docs-site-preview",
+      "routes": [{ "pattern": "next.example.com", "custom_domain": true }]
+    }
+  }
+}
+```
+
+`workerName` and `accountId` assert the resolved deployment identity; they do not silently rewrite Wrangler configuration. Omit `environment` for the top-level configuration. A named environment must exist; its explicit `name` wins, otherwise Wrangler appends the environment name to the top-level Worker name. An environment's `assets` object replaces the whole top-level object, so a partial override must still include `directory`. Output paths are relative to the Wrangler file and must remain within the frozen checkout, including through symlinks.
+
+Named environments must explicitly configure their own routes when the top level has routes. Preview and stable cannot share a physical Worker in the same account, even with different environment names, or claim each other's custom domains. A configured `url` must agree with the selected target. The example uses custom-domain routes; ambiguous routing is rejected.
+
+The native provider accepts a deliberately limited static configuration: JSON/JSONC, assets-only Workers and supported custom-domain routing. TOML, generated or plugin-selected configuration, Worker code (`main`), custom build commands, bindings, service environments, provisioning and unsupported options require a `deployScript` adapter. Install Wrangler as a development dependency in the relevant workspace and commit its lockfile; repoctl uses the installed CLI without downloading one at deployment time.
+
+During `deploy`, native preflight runs against the frozen configuration before that checkout's dependency installation and build. It checks credentials, account/Worker/configuration identity, paths and read-only Cloudflare deployment/version responses. Supply `CLOUDFLARE_API_TOKEN` at runtime. The nonsecret `accountId` is frozen in the site target; any `CLOUDFLARE_ACCOUNT_ID` environment value or effective Wrangler `account_id` must match it. A successful read proves access to the queried resource, not permission for a future upload or domain update: the token still needs the write permissions required by the chosen Worker and domains. Tokens are never part of the saved deployment identity.
+
+Only an explicit Worker-missing response, HTTP 404 with Cloudflare error code `10007`, permits a first upload. Authentication errors, generic 404s, rate limits, malformed responses and empty deployment lists stop deployment. `repo docs plan` remains a source/publication inspection; it does not perform this credential preflight or certify provider access.
+
+After the build, repoctl rechecks configuration and output containment, then writes `/.well-known/repoctl-deployment.json` into the assets output with the site, channel, deployment ID, source/tree SHAs and optional release ID. Existing content at that path must be a valid manifest for the same full identity; conflicting manifests or unrelated user files are preserved by failing the deployment. Cloudflare confirmation requires the latest active deployment to serve exactly one version at 100% and carry `repoctl-docs:<deploymentId>`. It verifies provider state; it does not poll the public site or prove that DNS and HTTP delivery are ready.
+
 ## Install the managed workflows
 
 Upgrade repoctl to a version containing this capability, then review and apply the managed asset update:
@@ -64,7 +124,7 @@ pnpm exec repo upgrade --yes
 
 Disable the old `main` → production deployment and any hosting-provider Git integration that also publishes production. Keep one deployment owner per channel. The reusable workflow uses `docs-<site>-<channel>` environments and a matching concurrency group with cancellation disabled. Environment approvals follow the repository's existing settings; repoctl does not add an approval policy.
 
-For Cloudflare deployments, provide `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` through the existing repository or environment secrets; the account ID may also be a variable. The core command is provider-independent. Other providers can supply credentials through a customized workflow while retaining its source selection, deployment commands and concurrency contract.
+For Cloudflare deployments, provide `CLOUDFLARE_API_TOKEN` through existing repository or environment secrets. The managed workflow also passes `CLOUDFLARE_ACCOUNT_ID` from a secret or variable; for native targets it must match the configured `accountId`. Other providers use deployment scripts and can supply credentials through a customized workflow while retaining its source selection, deployment commands and concurrency contract.
 
 ## Stable publication and the first baseline
 
@@ -103,20 +163,20 @@ Every correction must be a single-parent commit already in `origin/main` history
 
 repoctl applies only those selected patches to the stable source. It does not copy a current directory from `main`. A conflict stops deployment. Existing corrections remain applied across retries; when a later stable source already contains a correction, it is no longer reapplied.
 
-## Deployment script contract and recovery
+## Deployment adapters and recovery
 
-repoctl invokes `pnpm install --frozen-lockfile`, the configured build script, then the selected deployment script in an isolated source checkout. Both scripts receive:
+repoctl invokes `pnpm install --frozen-lockfile` and the configured build script in an isolated source checkout, then calls the selected native provider or deployment script. Native targets perform the preflight described above first. The build and any deployment script receive:
 
-| Variable                               | Meaning                                                                    |
-| -------------------------------------- | -------------------------------------------------------------------------- |
-| `REPO_DOCS_SITE` / `REPO_DOCS_CHANNEL` | Selected site and `preview` or `stable`                                    |
-| `REPO_DOCS_SOURCE_SHA`                 | Exact source commit                                                        |
-| `REPO_DOCS_RELEASE_ID`                 | Stable completion record ID; empty for preview                             |
-| `REPO_DOCS_DEPLOYMENT_ID`              | Deterministic deployment identity, including corrections                   |
-| `REPO_DOCS_URL`                        | Optional configured target URL                                             |
-| `REPO_DOCS_RESULT_FILE`                | File the deployment adapter must write after verifying the provider result |
+| Variable                               | Meaning                                                              |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| `REPO_DOCS_SITE` / `REPO_DOCS_CHANNEL` | Selected site and `preview` or `stable`                              |
+| `REPO_DOCS_SOURCE_SHA`                 | Exact source commit                                                  |
+| `REPO_DOCS_RELEASE_ID`                 | Stable completion record ID; empty for preview                       |
+| `REPO_DOCS_DEPLOYMENT_ID`              | Deterministic deployment identity, including corrections             |
+| `REPO_DOCS_URL`                        | Optional configured target URL                                       |
+| `REPO_DOCS_RESULT_FILE`                | File a script adapter must write after verifying the provider result |
 
-The adapter must return a nonempty provider version ID and may return an HTTP(S) URL:
+A script adapter must write a nonempty provider version ID and may return an HTTP(S) URL. The native provider returns this result directly; no deployment script or result-file writer is needed:
 
 ```json
 { "versionId": "provider-deployment-version", "url": "https://docs.example.com" }
@@ -124,12 +184,16 @@ The adapter must return a nonempty provider version ID and may return an HTTP(S)
 
 Use `REPO_DOCS_DEPLOYMENT_ID` to reconcile an interrupted deployment before uploading again. Write the result file only after the provider confirms the outcome. A zero process exit without a valid result file is not a completed deployment.
 
+The native Cloudflare provider performs this reconciliation itself. An active version with the same annotation and 100% of traffic is reused without another upload; a historical matching version is insufficient, and mixed traffic fails. A valid active version belonging to another deployment permits the new authorized upload. Wrangler's reported Worker, environment and version must match the target, and the reported version must be confirmed active before the current pointer advances.
+
 The workflow runs `repo docs plan` followed by `repo docs deploy` with the same inputs. Stable deployment requires GitHub Actions, a run ID and `REPO_DOCS_CONCURRENCY_GROUP` matching the real serialized workflow group; use `plan` for local review. Revision-checked state is claimed before building or deploying, and the deployed pointer advances only after a verified provider result.
 
 If a build fails, fix the cause and rerun the documentation workflow against the same release record. npm is not republished. If a stable runner disappears during deployment, rerun the same deployment so the adapter can reconcile its result; a different stable deployment cannot replace an unresolved `deploying` operation. For preview, the serialized managed workflow may replace an interrupted older deployment with the latest main source. Already completed deployments and unrelated release batches skip. Retain `repoctl-release-state`; short-lived Actions artifacts are diagnostic copies, not the deployment baseline.
 
 An unfinished stable deployment saves its site configuration, release record, requested corrections and verified source tree. Retry with the same release and correction inputs. The planner rechecks those saved inputs and deployment identity, and the build uses the saved configuration even if `main` has changed or removed that site. Omitting `release` selects the current stable baseline; when the first deployment has no current baseline, it selects the pending release. If a newer release is pending while an older baseline is current, specify the newer release explicitly. Invalid or inconsistent saved state stops recovery before building or uploading.
 
+If an upload succeeds but its response, verification or final checkpoint write fails, the `deploying` claim remains. A retry still installs and rebuilds the same frozen source, then checks the active remote version before deciding to upload. A failed preflight or rebuild during that retry must not erase the unknown upload outcome. Old pending script deployments continue to use their saved script target and original source after the live configuration switches to the native provider; migrate future deployments without rewriting historical snapshots.
+
 A fix that changes product source or build scripts needs a new stable baseline; the same release record continues to build its original source.
 
-The programmatic APIs are `planDocsDeployment(options)` and `deployDocs(options)`. `DocsOptions` accepts the site, channel, source/release/correction selection, optional config and environment, and a `DocsStateStore` implementing `readAutomationState`, `writeAutomationState` with revision checks, and `readBranchHead`. Query errors must fail closed.
+The programmatic APIs are `planDocsDeployment(options)` and `deployDocs(options)`. `DocsOptions` accepts the site, channel, source/release/correction selection, optional config and environment, and a `DocsStateStore` implementing `readAutomationState`, `writeAutomationState` with revision checks, and `readBranchHead`. Optional `fetch` supplies the native provider's HTTP transport; `spawn` supplies the process transport. Query errors must fail closed. Public target types are `DocsScriptDeploymentTarget`, `DocsCloudflareWorkersTarget` and their union `DocsDeploymentTarget`.

@@ -5,6 +5,7 @@ import { realpath } from 'node:fs/promises'
 import { loadConfig } from 'c12'
 import path from 'pathe'
 import { commandConfigDirectory } from './config/context'
+import { replaceDocsTarget } from './config/docs-targets'
 import { legacyHookConfigEnabled } from './config/legacy-hooks'
 import { validatedConfigLoading } from './config/loading'
 import { mergeConfigValues } from './config/merge'
@@ -81,7 +82,7 @@ async function loadConfigInternal(cwd: string, refresh = false): Promise<LoadedM
     ...presets.layers.map(layer => ({ source: { kind: 'preset' as const, file: layer.source.manifestFile, packageName: layer.source.packageName, version: layer.source.version }, config: layer.manifest.config ?? {} })),
     { source: { kind: 'project', file }, config: config ?? {} },
   ]
-  const merged = mergeConfigValues(sourceLayers.map(layer => ({ source: layer.source, values: layer.config })))
+  const merged = mergeConfigValues(sourceLayers.map(layer => ({ source: layer.source, values: layer.config })), replaceDocsTarget)
   assertMonorepoConfig(merged.values)
   return {
     file,

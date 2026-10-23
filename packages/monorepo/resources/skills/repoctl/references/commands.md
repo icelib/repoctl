@@ -1,5 +1,25 @@
 # Commands
 
+## docs plan / docs deploy
+
+```bash
+repo docs plan guide --channel preview --source-sha <full-main-sha> --json
+repo docs plan guide --channel stable --release <completion-record-id> --json
+repo docs plan guide --channel stable --commits <correction-sha> --json
+```
+
+Enable `commands.docs.sites` explicitly. Preview uses the exact latest main source; stable uses a completed main/latest release and the covered packages' publication evidence. `plan` is read-only and does not perform provider credential preflight. Run stable `deploy` with the same inputs through managed `repoctl-docs.yml` / `repoctl-docs-deploy.yml`, with the actual `docs-<site>-<channel>` concurrency group. Keep one deployment owner per channel.
+
+Targets retain `{ deployScript, url? }` or use `{ provider: 'cloudflare-workers', config, workerName, accountId, environment?, url? }`. Do not mix them or insert a new `provider: 'script'` discriminator into old configuration. A native target checks an explicit repository-relative static JSON/JSONC Wrangler config for an assets-only Worker. Named environments must exist, replace the whole assets object when overriding it, and explicitly configure routes when the top level owns routes. Preview/stable cannot share the same account+Worker, even with different environment names, or claim the same domains. Worker/account/url values are assertions, not silent config overrides. TOML, generated/plugin configs, Worker code, build hooks, bindings, service environments and unsupported deployment features use a script adapter.
+
+Native `deploy` preflights the frozen target, paths, runtime `CLOUDFLARE_API_TOKEN` and read-only Cloudflare deployment/version access before frozen-source install/build. Optional `CLOUDFLARE_ACCOUNT_ID` and effective Wrangler `account_id` must equal configured `accountId`. Read success does not prove future upload or domain-write permissions. Only Worker HTTP 404 plus code `10007` permits first deployment; ambiguous/empty responses, auth errors and rate limits fail. Install and lock Wrangler in the workspace; do not download or substitute an unrelated CLI during deployment. Recheck configuration and symlink containment after build.
+
+The native provider writes `/.well-known/repoctl-deployment.json` in assets with the full deployment identity; an existing file must already match that identity. Confirmation requires the latest active version at 100% with exact `repoctl-docs:<deploymentId>` annotation, never a historical match. Matching active identity reuses the remote version without another upload. New uploads must match Wrangler's Worker/environment/version and the active API result. This confirms provider state, not public HTTP readiness.
+
+Script adapters receive `REPO_DOCS_SITE`, `REPO_DOCS_CHANNEL`, `REPO_DOCS_SOURCE_SHA`, `REPO_DOCS_RELEASE_ID`, `REPO_DOCS_DEPLOYMENT_ID`, `REPO_DOCS_URL` and `REPO_DOCS_RESULT_FILE`; write `{ versionId, url? }` to the result file only after provider verification. Native targets return that result directly. Credentials never enter the frozen identity.
+
+Both providers keep revision-checked claims and stable snapshots. Retry unknown uploads or failed final checkpoint writes with the same release/correction inputs: installation and rebuild still run, then reconciliation decides whether upload is needed. Failed retry preflight/build must retain an existing `deploying` claim. A different stable deployment cannot replace it; serialized latest-main preview can supersede an older preview. Already completed deployments skip. Older pending script snapshots keep their exact configuration and original source after live configuration moves to native targets. Never rewrite snapshots, republish npm to retry docs, or fake a stable completion record.
+
 ## init
 
 Purpose: bootstrap workspace metadata plus recommended tooling defaults.

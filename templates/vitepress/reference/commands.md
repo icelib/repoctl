@@ -14,7 +14,7 @@ repo docs plan guide --channel stable --release <completion-record-id> --json
 repo docs plan guide --channel stable --commits <correction-sha> --json
 ```
 
-`plan` reads publication evidence and checks the frozen source. `deploy` accepts the same selection and runs the configured build/deployment scripts; stable execution belongs in the serialized managed GitHub workflow. Configure `commands.docs.sites` explicitly. See [documentation publication](/tasks/docs) for workflow setup, independent corrections, adapter outputs and recovery.
+`plan` reads publication evidence and checks the frozen source. `deploy` accepts the same selection, runs the configured build, and uses either the built-in `cloudflare-workers` provider or a `deployScript` adapter. Native Cloudflare preflight checks static assets-only configuration, identity and read access before the frozen checkout's install/build; it does not certify future write permission or public HTTP readiness. Stable execution belongs in the serialized managed GitHub workflow. Configure `commands.docs.sites` explicitly. See [documentation publication](/tasks/docs) for target fields, workflow setup, independent corrections, adapter outputs and recovery with the same deployment ID.
 
 ## Main Entry
 

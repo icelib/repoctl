@@ -101,8 +101,6 @@
     "test:packaged-generators": "node scripts/generate/index.mjs",
     "test:packaged-template-parameters": "node scripts/template-parameters/index.mjs",
     "docs:build": "node scripts/docs-deployment/build.mjs",
-    "docs:deploy:preview": "node scripts/docs-deployment/deploy.mjs preview",
-    "docs:deploy:stable": "node scripts/docs-deployment/deploy.mjs stable",
     "docs:test": "node --test scripts/docs-deployment/deployment.test.mjs scripts/docs-deployment/release-inputs.test.mjs",
     "docs:lint": "eslint scripts/docs-deployment repoctl.config.ts"
   },

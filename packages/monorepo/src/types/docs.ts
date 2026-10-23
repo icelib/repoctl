@@ -1,10 +1,28 @@
 export type DocsChannel = 'preview' | 'stable'
 
-export interface DocsDeploymentTarget {
+export interface DocsScriptDeploymentTarget {
   /** Root package.json script; the provider writes { versionId, url? } to REPO_DOCS_RESULT_FILE. */
   deployScript: string
   url?: string
+  provider?: never
+  config?: never
+  workerName?: never
+  accountId?: never
+  environment?: never
 }
+
+/** Static, assets-only Worker; identities are checked against the frozen Wrangler configuration. */
+export interface DocsCloudflareWorkersTarget {
+  provider: 'cloudflare-workers'
+  config: string
+  workerName: string
+  accountId: string
+  environment?: string
+  url?: string
+  deployScript?: never
+}
+
+export type DocsDeploymentTarget = DocsScriptDeploymentTarget | DocsCloudflareWorkersTarget
 
 export interface DocsSiteConfig {
   /** Product packages documented by this site; workspace runtime dependencies are included. */
