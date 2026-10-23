@@ -11,7 +11,7 @@ import { hash, readInput, record } from './files'
 import { dependencySections, validatePolicy } from './policy'
 import { parseSpecifier } from './specifiers'
 
-export async function scanDependencies(cwd: string, options: { policy?: boolean } = {}) {
+export async function scanDependencies(cwd: string, options: { policy?: boolean, patterns?: string[] } = {}) {
   const found = await findWorkspaceDir(cwd)
   if (!found) {
     throw new Error(localize('Dependency checks require a pnpm workspace.', '依赖检查需要 pnpm 工作区。'))
@@ -21,7 +21,7 @@ export async function scanDependencies(cwd: string, options: { policy?: boolean 
   const workspaceContent = await readInput(workspaceDir, 'pnpm-workspace.yaml')
   contents.set('pnpm-workspace.yaml', workspaceContent)
   const workspace = record(YAML.parse(workspaceContent)) ?? {}
-  const patterns = workspace['packages']
+  const patterns = options.patterns ?? workspace['packages']
   if (patterns !== undefined && (!Array.isArray(patterns) || patterns.some(value => typeof value !== 'string'))) {
     throw new Error(localize('Invalid workspace package patterns.', '工作区包匹配规则无效。'))
   }
@@ -70,7 +70,7 @@ export async function scanDependencies(cwd: string, options: { policy?: boolean 
     }
   }
   const inputs = [...contents].sort(([a], [b]) => a.localeCompare(b)).map(([file, content]) => ({ path: file, hash: hash(content) }))
-  return { workspaceDir, workspace, occurrences, policy, inputs, contents }
+  return { workspaceDir, workspace, manifests, occurrences, policy, inputs, contents }
 }
 
 export type DependencyScan = Awaited<ReturnType<typeof scanDependencies>>

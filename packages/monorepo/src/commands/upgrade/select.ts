@@ -3,12 +3,13 @@ import process from 'node:process'
 import { checkbox } from '@icebreakers/monorepo-templates'
 import path from 'pathe'
 import { localize } from '../../i18n'
-import { actionable } from './apply/validate'
+import { actionable, blockedUpgradeGroups } from './apply/validate'
 
 /** Collect every approval before apply, including atomic migration groups. */
 export async function selectUpgradeFiles(plan: UpgradePlan) {
+  const blocked = blockedUpgradeGroups(plan)
   const groups = new Map<string, UpgradePlan['files']>()
-  for (const file of plan.files.filter(actionable)) {
+  for (const file of plan.files.filter(file => actionable(file) && !blocked.has(file.group))) {
     const key = file.group ? `group:${file.group}` : path.join(plan.rootDir, file.path)
     groups.set(key, [...groups.get(key) ?? [], file])
   }

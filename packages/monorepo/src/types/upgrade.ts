@@ -1,5 +1,31 @@
 import type { CliOpts } from './cli'
 
+/** Keep one reviewed local override (including its absence), not an entire file. */
+export interface UpgradeKeepDecision {
+  file: 'pnpm-workspace.yaml'
+  path: ['overrides', string]
+  reason: string
+  upstreamHash: string
+  localHash: string
+  /** Inclusive UTC calendar date; changed values always require renewed review. */
+  expires?: string
+}
+
+export interface UpgradeOverrideFinding {
+  path: ['overrides', string]
+  status: 'compatible' | 'unverified' | 'deferred' | 'conflict' | 'kept' | 'stale-decision' | 'expired-decision'
+  detail: string
+  upstreamHash: string
+  localHash: string
+  affected: { path: string, specifier: string, section?: string, group?: string, reason?: string }[]
+}
+
+export interface UpgradeWorkspacePolicy {
+  findings: UpgradeOverrideFinding[]
+  /** Earliest inclusive expiry of a decision used by this plan. */
+  expires?: string
+}
+
 export interface UpgradeOptions extends CliOpts {
   /** Return a complete plan without preparing assets, prompting or writing files. */
   dryRun?: boolean
@@ -47,6 +73,7 @@ export interface UpgradeFilePlan {
   /** Present only when this reviewed selection also changes its baseline. */
   baseline?: UpgradeBaselineChange
   merge?: UpgradeMergeDetails
+  workspacePolicy?: UpgradeWorkspacePolicy
 }
 
 export interface UpgradeInput {
