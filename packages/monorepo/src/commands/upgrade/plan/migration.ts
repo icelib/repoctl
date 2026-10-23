@@ -34,7 +34,7 @@ export async function planVersioningMigration(context: UpgradeContext) {
     catch { /* Unrecognized state remains available for manual migration. */ }
     const workspace = plan.files.find(file => file.path === 'pnpm-workspace.yaml')
     const current = await read('target', 'pnpm-workspace.yaml')
-    if (!tag || (workspace?.status === 'skip') || (current === null && !workspace?.content)) {
+    if (!tag || (workspace && ['skip', 'conflict'].includes(workspace.status)) || (current === null && !workspace?.content)) {
       await put('.changeset/pre.json', pre, 'prerelease-state-retained', 'Unrecognized prerelease state or protected workspace configuration requires manual migration.', { skip: true })
       if (config !== null) {
         await put('.changeset/config.json', config, 'prerelease-state-retained', 'Retain the legacy configuration until prerelease migration is possible.', { skip: true })
@@ -58,7 +58,13 @@ export async function planVersioningMigration(context: UpgradeContext) {
     }
     versioning['lanes'] = lanes
     manifest['versioning'] = versioning
-    await put('pnpm-workspace.yaml', Buffer.from(YAML.stringify(manifest, { singleQuote: true })), 'legacy-lane-migration', 'Merge workspace settings and migrate the Changesets prerelease tag to pnpm lanes.', { group })
+    const migrated = await put('pnpm-workspace.yaml', Buffer.from(YAML.stringify(manifest, { singleQuote: true })), 'legacy-lane-migration', 'Merge workspace settings and migrate the Changesets prerelease tag to pnpm lanes.', { group })
+    if (workspace?.workspacePolicy) {
+      migrated.workspacePolicy = workspace.workspacePolicy
+      if (workspace.workspacePolicy.findings.some(finding => finding.status === 'unverified')) {
+        migrated.automatic = false
+      }
+    }
     await put('.changeset/pre.json', null, 'legacy-pre-migrated', 'Remove prerelease metadata only with the planned lane migration.', { group })
   }
   if (config !== null) {

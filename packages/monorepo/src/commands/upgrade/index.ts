@@ -36,8 +36,14 @@ export async function upgradeMonorepo(options: UpgradeOptions): Promise<UpgradeP
   if (plan.status === 'blocked') {
     throw new Error(plan.blockers.map(item => `${item.id}: ${item.path ?? ''} ${item.detail}`).join('\n'))
   }
-  for (const file of plan.files.filter(file => file.status === 'conflict' || file.reason === 'custom-hooks-protected')) {
+  for (const file of plan.files.filter(file => file.status === 'conflict' || (file.status === 'skip' && file.group) || file.reason === 'custom-hooks-protected')) {
     logger.warn(`${file.path}: ${file.reason}. ${file.detail}`)
+  }
+  for (const file of plan.files.filter(file => file.workspacePolicy?.findings.some(finding => finding.status === 'unverified'))) {
+    logger.warn(`${file.path}: unverified override scope. Review repo upgrade --json and explicitly select the file or apply the reviewed saved plan.`)
+  }
+  for (const file of plan.files.filter(file => file.workspacePolicy?.findings.some(finding => finding.status === 'deferred'))) {
+    logger.warn(`${file.path}: unverified overrides were deferred and remain unchanged. Preview again after the hook migration to review them.`)
   }
   const files = await selectUpgradeFiles(plan)
   const result = await applyUpgradePlan(plan.cwd, plan, { files })

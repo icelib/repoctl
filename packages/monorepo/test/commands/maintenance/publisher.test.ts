@@ -1,4 +1,4 @@
-import { lstat, readFile, writeFile } from 'node:fs/promises'
+import { lstat, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { getMaintenanceWorkflow, prepareMaintenanceUpgrade } from '@icebreakers/monorepo'
 import { expect, it } from 'vitest'
@@ -71,6 +71,48 @@ it('does not acquire credentials or inspect repository permissions for a no-diff
     throw new Error('must not run')
   } })
   expect(result.ready).toBe(false)
+})
+
+it.each([
+  { findings: [{ status: 'unverified' }] },
+  { findings: [{ status: 'deferred' }] },
+  { findings: [{ status: 'kept' }], expires: '2000-01-01' },
+  { findings: [{ status: 'kept' }], expires: '2030-02-30' },
+])('rejects unreviewed or expired override evidence before any API request', async (workspacePolicy) => {
+  const h = await publisherFixture()
+  const report = structuredClone(h.report)
+  Object.assign(report.plan!.files[0]!, { workspacePolicy })
+  await writeFile(path.join(h.options.outputDirectory, 'report.json'), JSON.stringify(report))
+  let requested = false
+  await expect(validateMaintenanceArtifact({ ...h.input, request: async () => {
+    requested = true
+    throw new Error('must not request credentials')
+  } })).rejects.toThrow('workspace override policy')
+  expect(requested).toBe(false)
+  expect(h.git(['status', '--porcelain'], h.input.cwd)).toBe('')
+})
+
+it.each([false, true])('blocks automatic preparation when override review is deferred=%s', async (deferred) => {
+  const h = await fixture()
+  await h.write('repoctl.config.mjs', 'export default {commands:{upgrade:{targets:["pnpm-workspace.yaml"],mergeTargets:false}}}')
+  if (deferred) {
+    await rm(path.join(h.cwd, 'repoctl.config.mjs'))
+    await h.write('repoctl.config.ts', 'export default {commands:{upgrade:{targets:["lefthook.yml","package.json","pnpm-workspace.yaml","repoctl.config.ts"],mergeTargets:false}}}')
+    const pkg = JSON.parse(await readFile(path.join(h.cwd, 'package.json'), 'utf8'))
+    pkg.devDependencies.husky = '^9.1.7'
+    pkg.devDependencies['lint-staged'] = '^17.5.1'
+    pkg.scripts.prepare = 'husky'
+    await h.write('package.json', JSON.stringify(pkg))
+    await h.write('.husky/pre-commit', 'pnpm exec repo verify pre-commit\n')
+    await h.write('lint-staged.config.js', 'import { defineLintStagedConfig } from "repoctl/tooling"; export default await defineLintStagedConfig()\n')
+  }
+  h.git(['add', '.'])
+  h.git(['-c', 'commit.gpgsign=false', 'commit', '-qm', 'include workspace settings'])
+  const report = await prepareMaintenanceUpgrade({ ...h.options, head: h.git(['rev-parse', 'HEAD']) })
+  expect(report.status).toBe('blocked')
+  expect(report.errors.join()).toContain('unverified selectors or replacements')
+  expect(report.plan!.files.find(file => file.path === 'pnpm-workspace.yaml')!.workspacePolicy!.findings.some(finding => finding.status === (deferred ? 'deferred' : 'unverified'))).toBe(true)
+  expect(h.calls).toEqual([])
 })
 
 it('exports two jobs, immutable artifact selection, a fixed PR branch and no publisher project execution', async () => {

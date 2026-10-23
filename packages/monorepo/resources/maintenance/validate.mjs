@@ -66,6 +66,20 @@ export async function validateMaintenanceArtifact({ cwd, directory, expected, re
     || !report.checks.some(check => ['lint', 'typecheck', 'test'].includes(check.name) && check.status === 'passed')) {
     fail('the plan or validation did not complete successfully')
   }
+  for (const file of report.plan?.files ?? []) {
+    const policy = file.workspacePolicy
+    if (policy === undefined) {
+      continue
+    }
+    const expires = policy?.expires
+    if (!policy || !Array.isArray(policy.findings)
+      || policy.findings.some(finding => !['compatible', 'kept'].includes(finding?.status))
+      || (expires !== undefined && (typeof expires !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(expires)
+        || Number.isNaN(Date.parse(expires)) || new Date(expires).toISOString().slice(0, 10) !== expires
+        || expires < new Date().toISOString().slice(0, 10)))) {
+      fail('workspace override policy is unverified, conflicting or expired; review a new upgrade plan')
+    }
+  }
   if (!expected.appConfigured) {
     fail('configure REPOCTL_APP_CLIENT_ID and REPOCTL_APP_PRIVATE_KEY with contents, pull requests and workflows write access')
   }

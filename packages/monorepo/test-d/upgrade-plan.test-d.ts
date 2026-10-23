@@ -1,4 +1,4 @@
-import type { UpgradeApplyResult, UpgradeBaselineChange, UpgradeMergeDetails, UpgradeMigrationsPlan, UpgradeMigrationStep, UpgradeOptions, UpgradePlan } from '@icebreakers/monorepo'
+import type { MonorepoConfig, UpgradeApplyResult, UpgradeBaselineChange, UpgradeKeepDecision, UpgradeMergeDetails, UpgradeMigrationsPlan, UpgradeMigrationStep, UpgradeOptions, UpgradeOverrideFinding, UpgradePlan, UpgradeWorkspacePolicy } from '@icebreakers/monorepo'
 import { applyUpgradePlan, formatUpgradePlan, planUpgrade, upgradeMonorepo } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
 
@@ -24,3 +24,11 @@ expectType<UpgradeMigrationsPlan | undefined>(plan.migrations)
 expectType<UpgradeMigrationStep[]>(plan.migrations!.steps)
 expectAssignable<UpgradeMigrationStep>({ id: 'migration', version: '1.1.0', status: 'pending', reason: 'version-boundary-crossed', files: ['package.json'] })
 expectNotAssignable<UpgradeMigrationStep>({ id: 'migration', version: '1.1.0', status: 'successful', reason: '', files: [] })
+
+declare const keep: UpgradeKeepDecision
+expectAssignable<MonorepoConfig>({ commands: { upgrade: { keep: [keep] } } })
+expectAssignable<UpgradeKeepDecision>({ file: 'pnpm-workspace.yaml', path: ['overrides', '@scope/package.name'], reason: 'Host boundary', upstreamHash: 'hash', localHash: 'hash', expires: '2030-01-01' })
+expectNotAssignable<UpgradeKeepDecision>({ file: 'package.json', path: ['overrides', 'vite'], reason: 'Host boundary', upstreamHash: 'hash', localHash: 'hash' })
+expectNotAssignable<UpgradeKeepDecision>({ file: 'pnpm-workspace.yaml', path: 'overrides.vite', reason: 'Host boundary', upstreamHash: 'hash', localHash: 'hash' })
+expectType<UpgradeWorkspacePolicy | undefined>(plan.files[0]!.workspacePolicy)
+expectType<UpgradeOverrideFinding[]>(plan.files[0]!.workspacePolicy!.findings)

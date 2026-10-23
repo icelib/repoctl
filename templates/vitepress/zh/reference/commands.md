@@ -229,6 +229,25 @@ repo upgrade --apply upgrade-plan.json
 
 基线保存在 `.repoctl/baselines/root/<路径 SHA-256>.json`；应将此目录提交到仓库，让不同克隆共享升级历史。每条记录包含资产路径、模板包和版本、源文件 SHA-256，以及上游原文和哈希，不把定制后的合并结果当作上游。哈希用于内容完整性和本地来源追溯，并非发布者签名。保存的计划本身就是待审核的写入内容；修改内容并重算哈希后，需要重新审核，哈希不能证明其作者身份。没有历史基线且内容不同的旧文件标为 `baseline-missing` 冲突；审核后可使用 `--overwrite` 显式采用新模板，`--yes` 本身不能消除冲突。与上游完全相同的文件可以只登记基线，不重写资产。删除基线目录会丢失历史信息，下一次升级重新采用保守的首次处理规则。
 
+新增 `pnpm-workspace.yaml` override 会依据**合并后**的工作区范围检查依赖声明，复用 `commands.deps.groups`，并解析 npm alias 与 catalog。全局 override 扩大现有限定选择器、或越过匹配依赖的声明范围时，该文件成为 `workspace-override-policy` 冲突，`--yes` 和 `--overwrite` 也不能绕过。JSON 的 `workspacePolicy.findings` 定位受影响的清单、声明和分组；完全不相交的版本选择器互不影响。这是离线声明检查，不能证明全部传递依赖的实际解析。新增父级限定选择器或非 semver 替换标为 `unverified`：普通升级必须显式选择文件，自动维护会拒绝；审核后的保存 JSON 计划可以显式应用。已有相同键不会反复提示。
+
+识别到默认 Husky 到 Lefthook 的迁移时，无关且无法自动判定的新增 override 标为 `deferred`，应用后仍不写入工作区，自动 hook 迁移可以继续完成。迁移后再次预览，这些 override 会重新标为 `unverified`，可显式选择文件或应用审核后的保存计划来接受。必需文件的明确冲突或受保护跳过会阻止整个迁移组，显式选择部分文件也无法绕过，包括由 preset 管理的目标和本地已删除的受管文件。自动维护准备阶段及其独立发布器同时拒绝 `unverified` 和 `deferred`；先完成 hook 迁移并审查 override，再重试维护。
+
+需要保留单个本地 override 或保持该键不存在时，在 `commands.upgrade.keep` 中记录决定，再**重新生成**计划：
+
+```ts
+keep: [{
+  file: 'pnpm-workspace.yaml',
+  path: ['overrides', 'vite'],
+  reason: '保留 Taro Vite 4 与 uni-app Vite 5 的框架隔离。',
+  upstreamHash: '<从 finding 复制 upstreamHash>',
+  localHash: '<从 finding 复制 localHash>',
+  expires: '2030-12-31', // 可选，到期当天仍有效，使用 UTC 日期。
+}]
+```
+
+仅支持 `pnpm-workspace.yaml` 中精确的 `['overrides', selector]` 路径；含点号、斜线的包名仍放在一个数组元素中。决定随配置提交。SHA-256 指纹同时绑定上游值和本地值，并区分键缺失与 YAML `null`。值变化、日期无效、重复决定或到期均要求重新审查，新上游不能静默沿用旧决定；其他无冲突设置仍正常合并。应用保存计划时会复核配置、全部已检查的清单、合并后的包集合以及决定有效期。本能力补充现有文件选择、根资产基线与模板实例 `excludedPaths`，不将整个文件脱离管理，也不抑制依赖诊断。
+
 版本化迁移显示在计划的 `migrations` 中，包含稳定 ID、版本边界、选择原因和受影响文件。首个内置迁移 `changesets-to-pnpm-versioning` 的边界为模板 `1.1.0`，对应引入 pnpm 原生版本管理的发行版。目标版本取已安装模板包的精确版本；没有历史记录时，可用 `--from-version 1.0.15` 明确提供旧模板版本，不会从 `^1.0.0` 等依赖范围推断。未知来源只收养可识别的旧格式，原因标为 `adopt-detected-legacy-format`；格式不明和降级会阻止执行。没有旧元数据的新项目不触发历史迁移，也不初始化账本。
 
 账本创建后，应提交 `.repoctl/migrations/ledger.json`。其中 `evaluatedVersion` 仅表示迁移评估到的版本，不代表每个受管资产都已使用该模板版本。预览不写文件；完成状态以普通文件 diff 审阅，JSON 同时包含 pending/failed 中间状态的精确内容。迁移文件组成不可拆分的选择组，未选择或失败的步骤不会推进游标。执行先保存 pending，迁移文件事务最后才写 completed；完成状态写入失败会回滚并记录 failed，如果失败状态也写不进去，则保留 pending 日志供恢复。其他选中资产在迁移组之后执行，其失败不会撤销已成功完成的迁移。

@@ -50,6 +50,9 @@ async function generate(options: MaintenanceUpgradeOptions, report: MaintenanceU
     }
     const plan = await planUpgrade({ cwd: options.cwd, outDir: '.', overwriteRelease: false })
     report.plan = plan
+    if (plan.files.some(file => file.workspacePolicy?.findings.some(finding => ['unverified', 'deferred'].includes(finding.status)))) {
+      throw new Error('Root override scope requires a reviewed manual upgrade; automatic maintenance cannot accept unverified selectors or replacements, including deferred hook migration decisions. Complete the hook migration with repo upgrade first, then review a new plan.')
+    }
     if (plan.status !== 'ready' || plan.files.some(file => file.status === 'conflict')) {
       throw new Error(`Root asset upgrade has conflicts: ${plan.blockers.map(blocker => blocker.detail).join('; ')}`)
     }

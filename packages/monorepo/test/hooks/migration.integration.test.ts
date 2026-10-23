@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -42,6 +43,11 @@ afterEach(() => {
 describe('built repoctl hook upgrades', () => {
   it('migrates the default setup together and remains idempotent', async () => {
     const cwd = legacyRepository()
+    const preview = await planUpgrade({ cwd, yes: true })
+    const workspacePlan = preview.files.find(file => file.path === 'pnpm-workspace.yaml')!
+    const deferred = workspacePlan.workspacePolicy!.findings.filter(finding => finding.status === 'deferred')
+    expect(workspacePlan.automatic).toBe(true)
+    expect(deferred.map(finding => finding.path[1])).toContain('@arethetypeswrong/core>typescript')
     await upgradeMonorepo({ cwd, yes: true })
     const pkg = JSON.parse(fs.readFileSync(path.join(cwd, 'package.json'), 'utf8'))
     expect(pkg.devDependencies.lefthook).toBe('2.2.2')
@@ -59,9 +65,76 @@ describe('built repoctl hook upgrades', () => {
     expect(config).not.toContain('lintStaged')
     const workspace = YAML.parse(fs.readFileSync(path.join(cwd, 'pnpm-workspace.yaml'), 'utf8'))
     expect(workspace.allowBuilds).toMatchObject({ esbuild: true, lefthook: true })
+    for (const finding of deferred) {
+      expect(Object.hasOwn(workspace.overrides, finding.path[1])).toBe(false)
+    }
+    const nextPreview = await planUpgrade({ cwd, yes: true })
+    expect(nextPreview.files.find(file => file.path === 'pnpm-workspace.yaml')).toMatchObject({ automatic: false })
+    expect(nextPreview.files.find(file => file.path === 'pnpm-workspace.yaml')!.workspacePolicy!.findings.map(finding => finding.status)).toEqual(deferred.map(() => 'unverified'))
+    await applyUpgradePlan(cwd, nextPreview)
+    const reviewedWorkspace = YAML.parse(fs.readFileSync(path.join(cwd, 'pnpm-workspace.yaml'), 'utf8'))
+    for (const finding of deferred) {
+      expect(Object.hasOwn(reviewedWorkspace.overrides, finding.path[1])).toBe(true)
+    }
     await upgradeMonorepo({ cwd, yes: true, noOverwrite: true })
     const doctor = await runDoctor(cwd)
     expect(doctor.checks.find(check => check.id === 'commit-hooks')?.status).toBe('pass')
+  })
+
+  it('preserves the whole hook setup when a workspace conflict blocks its migration group', async () => {
+    const cwd = legacyRepository()
+    write(cwd, 'packages/taro/package.json', '{"name":"taro","devDependencies":{"vite":"^4.5.0"}}')
+    const plan = await planUpgrade({ cwd, yes: true })
+    const workspace = plan.files.find(file => file.path === 'pnpm-workspace.yaml')!
+    expect(workspace).toMatchObject({ status: 'conflict', group: 'lefthook-migration', reason: 'workspace-override-policy' })
+    const group = plan.files.filter(file => file.group === workspace.group)
+    const before = group.map(file => ({ path: file.path, content: fs.existsSync(path.join(cwd, file.path)) ? fs.readFileSync(path.join(cwd, file.path), 'utf8') : null }))
+    expect(await applyUpgradePlan(cwd, plan)).toMatchObject({ status: 'unchanged', conflicts: ['pnpm-workspace.yaml'] })
+    await expect(applyUpgradePlan(cwd, plan, { files: group.filter(file => file.status !== 'conflict').map(file => file.path) })).rejects.toThrow('Resolve every blocked file in migration group')
+    await expect(applyUpgradePlan(cwd, plan, { files: ['lefthook.yml'] })).rejects.toThrow('Resolve every blocked file in migration group')
+    await expect(upgradeMonorepo({ cwd, yes: true })).rejects.toThrow('Unresolved upgrade conflicts')
+    for (const file of before) {
+      expect(fs.existsSync(path.join(cwd, file.path)) ? fs.readFileSync(path.join(cwd, file.path), 'utf8') : null).toBe(file.content)
+    }
+    expect(fs.existsSync(path.join(cwd, '.repoctl/baselines'))).toBe(false)
+    expect(git(cwd, 'config', '--local', '--get', 'core.hooksPath')).toBe('.husky/_')
+  })
+
+  it.each(['preset-owned', 'deleted'])('preserves the complete setup when a required hook target is %s', async (kind) => {
+    const cwd = legacyRepository()
+    const initial = await planUpgrade({ cwd, yes: true })
+    const baseline = initial.files.find(file => file.path === 'lefthook.yml')!.baseline!
+    const record = JSON.parse(Buffer.from(baseline.content!, 'base64').toString())
+    const filename = kind === 'deleted' ? baseline.path : baseline.path.replace('/root/', '/presets/')
+    if (kind === 'preset-owned') {
+      write(cwd, 'lefthook.yml', defaultConfig)
+      record.source = { packageName: '@company/preset', version: '1.0.0', path: 'assets/lefthook.yml' }
+    }
+    const originalRecord = JSON.stringify(record)
+    write(cwd, filename, originalRecord)
+    const plan = await planUpgrade({ cwd, yes: true })
+    expect(plan.status, JSON.stringify(plan.blockers)).toBe('ready')
+    expect(plan.files.find(file => file.path === 'lefthook.yml')).toMatchObject({
+      status: kind === 'deleted' ? 'skip' : 'conflict',
+      reason: kind === 'deleted' ? 'user-deletion-preserved' : 'preset-owned-asset',
+      group: 'lefthook-migration',
+    })
+    const group = plan.files.filter(file => file.group === 'lefthook-migration')
+    const before = group.map(file => ({ path: file.path, content: fs.existsSync(path.join(cwd, file.path)) ? fs.readFileSync(path.join(cwd, file.path), 'utf8') : null }))
+    expect(await applyUpgradePlan(cwd, plan)).toMatchObject({ status: 'unchanged', changed: [] })
+    await expect(applyUpgradePlan(cwd, plan, { files: group.filter(file => ['add', 'modify', 'delete'].includes(file.status) || file.baseline).map(file => file.path) })).rejects.toThrow('Resolve every blocked file in migration group')
+    await expect(applyUpgradePlan(cwd, plan, { files: ['package.json'] })).rejects.toThrow('Resolve every blocked file in migration group')
+    if (kind === 'preset-owned') {
+      await expect(upgradeMonorepo({ cwd, yes: true })).rejects.toThrow('Unresolved upgrade conflicts')
+    }
+    else {
+      await upgradeMonorepo({ cwd, yes: true })
+    }
+    for (const file of before) {
+      expect(fs.existsSync(path.join(cwd, file.path)) ? fs.readFileSync(path.join(cwd, file.path), 'utf8') : null).toBe(file.content)
+    }
+    expect(fs.readFileSync(path.join(cwd, filename), 'utf8')).toBe(originalRecord)
+    expect(git(cwd, 'config', '--local', '--get', 'core.hooksPath')).toBe('.husky/_')
   })
 
   it.each([{ noOverwrite: true }, { skipOverwrite: true }])('keeps the old setup whole when overwrites are disabled: %j', async (options) => {

@@ -59,7 +59,7 @@ export async function createContext(opts: UpgradeOptions) {
     }
     return file
   }
-  return { plan, options, config, releaseConfig: loaded.config.commands?.release, docsConfig: targetConfig.config.commands?.docs, read, put, conflict }
+  return { plan, options, config, releaseConfig: loaded.config.commands?.release, docsConfig: targetConfig.config.commands?.docs, workspaceDecisions: targetConfig.config.commands?.upgrade?.keep ?? [], read, put, conflict }
 }
 
 export type UpgradeContext = Awaited<ReturnType<typeof createContext>>
