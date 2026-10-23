@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@12.13.0",
+  "packageManager": "pnpm@12.14.0",
   "description": "Source workspace for repoctl and Icebreaker's shared development packages",
   "author": "ice breaker <hi@sonofmagic.top>",
   "license": "MIT",
@@ -114,7 +114,7 @@
     "@icebreakers/monorepo": "workspace:*",
     "@icebreakers/stylelint-config": "workspace:*",
     "@types/node": "^26.6.5",
-    "@vitest/coverage-v8": "~5.0.4",
+    "@vitest/coverage-v8": "~5.0.5",
     "eslint": "^10.12.0",
     "execa": "^10.1.1",
     "lefthook": "2.2.2",
@@ -128,7 +128,7 @@
     "tsdown": "0.23.1",
     "turbo": "^2.11.8",
     "typescript": "^6.0.3",
-    "vitest": "~5.0.4",
+    "vitest": "~5.0.5",
     "yaml": "^2.9.1"
   },
   "publishConfig": {
