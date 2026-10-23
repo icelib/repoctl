@@ -1,5 +1,6 @@
 import type { PackedManifest } from '../../../src/commands/package-check/types'
 import { spawnSync } from 'node:child_process'
+import { realpathSync } from 'node:fs'
 import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
@@ -94,7 +95,8 @@ it.each(['explicit', 'adjacent'] as const)('still rejects invalid %s declaration
 it.each(['esm', 'cjs'] as const)('requires %s resource resolution to match its checked file inside the package', async (format) => {
   const cwd = await fixture()
   directories.push(cwd)
-  const installed = path.join(cwd, 'node_modules', 'fixture-worker')
+  // Keep cwd's possible Windows short path while using the installed package's long path.
+  const installed = path.join(realpathSync.native(cwd), 'node_modules', 'fixture-worker')
   await mkdir(path.join(installed, 'dist'), { recursive: true })
   await writeFile(path.join(installed, 'package.json'), JSON.stringify(manifest))
   await writeFile(path.join(installed, 'dist/index.mjs'), '')

@@ -23,9 +23,10 @@ export function consumerAssetSource(entry: ConsumerEntry, specifier: string, ins
   return [
     'const fs = process.getBuiltinModule("node:fs");',
     'const path = process.getBuiltinModule("node:path");',
-    `const root = fs.realpathSync(${JSON.stringify(installed)});`,
-    `const filename = fs.realpathSync(${resolve});`,
-    `const expected = fs.realpathSync(path.resolve(root, ${JSON.stringify(entry.target)}));`,
+    // Canonicalize Windows DOS 8.3 and long paths before checking package boundaries.
+    `const root = fs.realpathSync.native(${JSON.stringify(installed)});`,
+    `const filename = fs.realpathSync.native(${resolve});`,
+    `const expected = fs.realpathSync.native(path.resolve(root, ${JSON.stringify(entry.target)}));`,
     'const relative = path.relative(root, filename);',
     'if (!relative || relative === ".." || relative.startsWith(".." + path.sep) || path.isAbsolute(relative) || filename !== expected || !fs.statSync(filename).isFile()) throw new Error("Exported runtime asset does not resolve to its checked package file.");',
     'fs.readFileSync(filename);',
