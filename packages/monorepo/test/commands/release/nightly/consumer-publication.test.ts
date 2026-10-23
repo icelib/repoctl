@@ -52,6 +52,8 @@ it('retries a transitive consumer miss after confirmed publication without uploa
     if (command === 'pnpm' && args?.includes('install') && String(settings?.cwd).includes(`${path.sep}consumer-`)) {
       consumerAttempts++
       expect(h.uploads).toHaveLength(2)
+      const consumerManifest = JSON.parse(readFileSync(path.join(String(settings?.cwd), 'package.json'), 'utf8'))
+      expect(consumerManifest.devDependencies).toBeUndefined()
       const target = Object.values(manifests('snapshot-a'))[0]!
       const parent = Object.values(manifests('snapshot-b'))[0]!
       if (consumerAttempts === 1) {
@@ -85,6 +87,7 @@ it('retries a transitive consumer miss after confirmed publication without uploa
   expect(report.consumer?.packages.map(pkg => pkg.name)).toEqual(['snapshot-a', 'snapshot-b'])
   expect(report.consumer?.commands.filter(command => command.args.includes('install')).map(command => command.exitCode)).toEqual([1, 0])
   expect(report.consumer?.commands.filter(command => command.args.includes('--eval'))).toHaveLength(2)
+  expect(report.consumer?.commands.some(command => command.args.includes('--noEmit'))).toBe(false)
   expect(consumerAttempts).toBe(2)
   expect(sleep.mock.calls).toEqual([[2_000]])
   expect(h.uploads).toHaveLength(2)

@@ -1,4 +1,5 @@
 import type { ConsumerEntry, PackedManifest } from './types'
+import { consumerRuntimeAssets } from './consumer/runtime-assets'
 
 function resolveTarget(value: unknown, conditions: Set<string>): string | undefined {
   if (typeof value === 'string') {
@@ -36,6 +37,7 @@ function expand(subpath: string, target: string, files: string[]) {
 
 /** Only exercise declared Node entrypoints; browser/assets/type-only paths are not Node modules. */
 export function consumerEntries(manifest: PackedManifest, files: string[]): ConsumerEntry[] {
+  const assets = consumerRuntimeAssets(manifest)
   const exports = manifest.exports
   const mappings: Record<string, unknown> = exports && typeof exports === 'object' && !Array.isArray(exports) && Object.keys(exports).some(key => key.startsWith('.'))
     ? exports as Record<string, unknown>
@@ -55,15 +57,24 @@ export function consumerEntries(manifest: PackedManifest, files: string[]): Cons
         continue
       }
       for (const expanded of expand(subpath, target, files)) {
-        entries.push({ ...expanded, format, runtime })
+        const asset = assets.has(expanded.subpath)
+        const declaration = expanded.target.replace(/\.([cm]?)js$/u, '.d.$1ts').replace(/^\.\//u, '')
+        const typecheck = declaresCondition(value, 'types') || (expanded.subpath === '.' && typeof manifest.types === 'string') || files.includes(declaration)
+        entries.push({ ...expanded, format, runtime, ...(asset ? { asset: true, typecheck } : {}) })
       }
+    }
+  }
+  for (const asset of assets) {
+    const matches = entries.filter(entry => entry.subpath === asset && entry.runtime)
+    if (!matches.length || matches.some(entry => !entry.target.startsWith('./') || entry.target.split(/[\\/]/u).includes('..') || !files.includes(entry.target.slice(2)))) {
+      throw new Error(`Runtime asset ${manifest.name}${asset.slice(1)} must name a packed JavaScript export.`)
     }
   }
   return entries
 }
 
 export function supportsResolution(entries: ConsumerEntry[], subpath: string, kind: string, legacy: boolean) {
-  entries = entries.filter(entry => entry.runtime)
+  entries = entries.filter(entry => entry.runtime && entry.typecheck !== false)
   if (kind === 'node10') {
     return legacy && entries.some(entry => entry.subpath === subpath)
   }
