@@ -111,6 +111,12 @@ export async function checkWebsiteBrowser(website, channel = 'preview') {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false, 'mobile layout fits the viewport')
     // Expected HTTP 404 is checked separately from the no-console-errors assertion.
     assert.deepEqual(errors, [], 'site must not emit browser errors')
+    const noJs = await browser.newContext({ javaScriptEnabled: false })
+    const staticPage = await noJs.newPage()
+    await staticPage.goto(`${server.url}/zh/reference/commands`)
+    assert.ok(await staticPage.locator('h1').textContent())
+    assert.equal(await staticPage.locator('.repoctl-preview-banner').count(), channel === 'preview' ? 1 : 0)
+    await noJs.close()
     await page.goto(`${server.url}/missing-page`)
     await page.getByRole('heading', { name: 'Page not found' }).waitFor()
   }

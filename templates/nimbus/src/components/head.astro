@@ -1,6 +1,8 @@
 ---
 import { withBase } from '@cloudflare/nimbus-docs/runtime'
+import { docsPreviewRobots } from 'repoctl/docs-context'
 import { config } from 'virtual:nimbus/config'
+import { deployment } from '../lib/deployment'
 
 interface Props {
   title: string
@@ -28,11 +30,11 @@ const structuredData = JSON.stringify({
 <title>{fullTitle}</title>
 <meta name="generator" content={Astro.generator} />
 <meta name="description" content={description} />
-{noindex && <meta name="robots" content="noindex" />}
+{(deployment.preview || noindex) && <meta name="robots" content={deployment.preview ? docsPreviewRobots : 'noindex'} />}
 <link rel="icon" type="image/svg+xml" href={withBase('/favicon.svg', base)} />
 <link rel="stylesheet" href={withBase('/_nimbus/shiki.css', base)} />
 <link rel="canonical" href={canonical} />
-<link rel="sitemap" href={withBase('/sitemap-index.xml', base)} />
+{!deployment.preview && <link rel="sitemap" href={withBase('/sitemap-index.xml', base)} />}
 {markdownUrl && <link rel="alternate" type="text/markdown" href={new URL(withBase(markdownUrl, base), Astro.site)} />}
 <meta property="og:title" content={fullTitle} />
 <meta property="og:type" content="article" />

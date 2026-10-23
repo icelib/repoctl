@@ -5,6 +5,7 @@ import { config } from 'virtual:nimbus/config'
 import Head from '../components/head.astro'
 import Search from '../components/search/index.astro'
 import Sidebar from '../components/sidebar.astro'
+import { deployment } from '../lib/deployment'
 import { labels } from '../lib/locale'
 import '../styles/site.css'
 
@@ -13,6 +14,9 @@ const { title, description, sidebar, headings, markdownUrl, chinese, alternate, 
 const text = labels[chinese ? 'zh' : 'en']
 const base = import.meta.env.BASE_URL
 const indexUrl = withBase(chinese ? '/zh/llms.txt' : '/llms.txt', base)
+const searchableContent = !draft && (searchable === true || (searchable !== false && !noindex))
+const englishPath = chinese ? withBase(alternate, base) : Astro.url.pathname
+const chinesePath = chinese ? Astro.url.pathname : withBase(alternate, base)
 ---
 
 <!doctype html>
@@ -21,11 +25,20 @@ const indexUrl = withBase(chinese ? '/zh/llms.txt' : '/llms.txt', base)
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <Head title={title} description={description} markdownUrl={markdownUrl} noindex={noindex || draft} chinese={chinese} />
-    <link rel="alternate" hreflang={chinese ? 'en' : 'zh-CN'} href={new URL(withBase(alternate, base), Astro.site)} />
+    <link rel="alternate" hreflang="en" href={new URL(englishPath, Astro.site)} />
+    <link rel="alternate" hreflang="zh-CN" href={new URL(chinesePath, Astro.site)} />
+    <link rel="alternate" hreflang="x-default" href={new URL(englishPath, Astro.site)} />
     <link rel="alternate" type="text/plain" href={indexUrl} title={text.index} />
   </head>
   <body>
     <a class="skip-link" href="#main-content">{text.skip}</a>
+    {deployment.preview && (
+      <aside class="docs-preview-notice" data-pagefind-ignore aria-label={text.previewLabel}>
+        {text.previewNotice}
+        {' '}
+        <a href={new URL(withBase(chinese ? '/zh/' : '/', base), deployment.stableOrigin)}>{text.stableDocs}</a>
+      </aside>
+    )}
     <header class="site-header">
       <a class="brand" href={withBase(chinese ? '/zh/' : '/', base)}>{config.title}</a>
       <a class="language-link" href={withBase(alternate, base)} lang={chinese ? 'en' : 'zh-CN'}>{chinese ? 'English' : '简体中文'}</a>
@@ -40,7 +53,7 @@ const indexUrl = withBase(chinese ? '/zh/llms.txt' : '/llms.txt', base)
         <a class="index-link" href={indexUrl}>llms.txt ↗</a>
       </aside>
       <main id="main-content" tabindex="-1">
-        <div data-pagefind-body={searchable !== false && !noindex && !draft ? '' : undefined} data-pagefind-ignore={searchable === false || noindex || draft ? '' : undefined}>
+        <div data-pagefind-body={searchableContent ? '' : undefined} data-pagefind-ignore={searchableContent ? undefined : ''}>
           <h1>{title}</h1>
           {description && <p class="description">{description}</p>}
           <article><slot /></article>

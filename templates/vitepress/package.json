@@ -41,6 +41,7 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "mermaid": "^12.2.0",
+    "repoctl": "workspace:*",
     "tailwindcss": "^4.3.3",
     "vitepress": "2.0.0-alpha.20",
     "vitepress-plugin-llms": "^1.14.0",

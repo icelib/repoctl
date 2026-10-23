@@ -1,0 +1,48 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "extends": [
+    "//"
+  ],
+  "tasks": {
+    "build": {
+      "env": [
+        "$TURBO_EXTENDS$",
+        "REPO_DOCS_CHANNEL",
+        "REPO_DOCS_URL"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$"
+      ]
+    },
+    "lint": {
+      "env": [
+        "$TURBO_EXTENDS$",
+        "REPO_DOCS_CHANNEL",
+        "REPO_DOCS_URL"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$"
+      ]
+    },
+    "typecheck": {
+      "env": [
+        "$TURBO_EXTENDS$",
+        "REPO_DOCS_CHANNEL",
+        "REPO_DOCS_URL"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$"
+      ]
+    },
+    "test": {
+      "env": [
+        "$TURBO_EXTENDS$",
+        "REPO_DOCS_CHANNEL",
+        "REPO_DOCS_URL"
+      ],
+      "inputs": [
+        "$TURBO_DEFAULT$"
+      ]
+    }
+  }
+}

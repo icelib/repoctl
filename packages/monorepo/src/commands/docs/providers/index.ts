@@ -5,9 +5,9 @@ import { tmpdir } from 'node:os'
 import path from 'pathe'
 import { readDeploymentResult, runDocsProcess } from '../execute'
 import { stampDocsManifest } from '../manifest'
-import { activeMatchingVersion, cloudflareApiOrigin, cloudflareClient, deploymentMessage } from './cloudflare/client'
+import { activeMatchingVersion, cloudflareClient, deploymentMessage } from './cloudflare/client'
 import { preflightConfiguration } from './cloudflare/config'
-import { localWrangler, readWranglerVersion } from './cloudflare/wrangler'
+import { localWrangler, readWranglerVersion, wranglerEnvironment } from './cloudflare/wrangler'
 
 /** Select a closed provider contract without changing script targets or frozen plan identities. */
 export async function prepareDocsProvider(options: DocsOptions, source: string, site: DocsSiteConfig, plan: DocsDeploymentPlan, env: NodeJS.ProcessEnv, resultFile: string) {
@@ -36,16 +36,7 @@ export async function prepareDocsProvider(options: DocsOptions, source: string, 
         const temporary = await mkdtemp(path.join(tmpdir(), 'repoctl-docs-cloudflare-'))
         const output = path.join(temporary, 'wrangler.jsonl')
         try {
-          runDocsProcess(options, path.dirname(config.filename), ['exec', 'node', cli, 'deploy', '--config', config.filename, '--env', config.environment, '--message', deploymentMessage(plan.deploymentId)], {
-            ...env,
-            CLOUDFLARE_ACCOUNT_ID: target.accountId,
-            CLOUDFLARE_API_BASE_URL: cloudflareApiOrigin,
-            CLOUDFLARE_API_KEY: '',
-            CF_API_KEY: '',
-            WRANGLER_CI_OVERRIDE_NAME: '',
-            CLOUDFLARE_ENV: config.environment,
-            WRANGLER_OUTPUT_FILE_PATH: output,
-          })
+          runDocsProcess(options, path.dirname(config.filename), ['exec', 'node', cli, 'deploy', '--config', config.filename, '--env', config.environment, '--message', deploymentMessage(plan.deploymentId)], wranglerEnvironment(env, target.accountId, config.environment, output))
           versionId = await readWranglerVersion(output, target.workerName, config.environment)
           if (await activeMatchingVersion(client, plan.deploymentId) !== versionId) {
             throw new Error('Uploaded documentation version is not confirmed active; retry the same deployment')

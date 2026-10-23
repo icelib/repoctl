@@ -27,8 +27,10 @@ export function checkUpgrade(docs) {
   assert.deepEqual(check.findings, [])
 }
 
-export function checkOutput(docs) {
+export function checkOutput(docs, channel) {
   const read = file => readFileSync(path.join(docs, 'dist', file), 'utf8')
+  const preview = channel === 'preview'
+  const origin = preview ? 'https://preview.docs.example.com' : 'https://docs.example.com'
   const full = read('llms-full.txt')
   assert.ok(full.includes('Quick start') && full.includes('快速开始'))
   assert.ok(read('llms.txt').includes('/zh/llms.txt'))
@@ -38,11 +40,21 @@ export function checkOutput(docs) {
     const html = read(`${page}index.html`)
     assert.ok(html.includes(`lang="${chinese ? 'zh-CN' : 'en'}"`))
     assert.ok(html.includes('data-pagefind-body'))
+    assert.ok(html.includes(`rel="canonical" href="${origin}/${page}"`), `${page}: canonical uses channel origin`)
+    assert.ok(html.includes(`property="og:url" content="${origin}/${page}"`), `${page}: OG uses channel origin`)
+    assert.ok(html.includes(`"url":"${origin}/${page}"`), `${page}: JSON-LD uses channel origin`)
+    for (const language of ['en', 'zh-CN', 'x-default']) {
+      assert.ok(html.includes(`hreflang="${language}" href="${origin}/`), `${page}: ${language} origin`)
+    }
+    assert.equal(html.includes('name="robots" content="noindex, nofollow, noarchive"'), preview)
+    assert.equal(html.includes('class="docs-preview-notice"'), preview)
     assert.ok(html.includes('application/ld+json'))
     assert.ok(html.includes(`"inLanguage":"${chinese ? 'zh-CN' : 'en'}"`))
     assert.ok(!html.includes('__VITE_PRELOAD__'), 'bundler placeholders must not reach production')
     assert.ok(html.includes(`${page}index.md`))
     assert.ok(read(`${page}index.md`).includes('title:'))
+    assert.ok(read(`${page}index.md`).includes(`${origin}/llms.txt`), `${page}: Markdown documentation index`)
+    assert.ok(read(`${page}index.md`).includes(`${origin}/${page}`), `${page}: Markdown source`)
     assert.ok(read(`${page}index.mdx`).includes('title:'))
     const nav = html.match(/<nav aria-label="(?:On this site|站点导航)">([\s\S]*?)<\/nav>/)?.[1]
     assert.ok(nav)
@@ -59,7 +71,22 @@ export function checkOutput(docs) {
   assert.notEqual(home, read('llms.txt'), 'authored homepage Markdown must not be replaced with the discovery index')
   assert.ok(read('get-started/index.md').includes('```sh\ncorepack enable'))
   assert.ok(existsSync(path.join(docs, 'dist/pagefind/pagefind.js')))
-  assert.ok(existsSync(path.join(docs, 'dist/sitemap-index.xml')))
+  assert.equal(existsSync(path.join(docs, 'dist/sitemap-index.xml')), !preview)
+  assert.equal(existsSync(path.join(docs, 'dist/sitemap-0.xml')), !preview)
+  assert.equal(read('robots.txt').includes('Disallow: /\n'), preview)
+  const headers = read('_headers')
+  assert.equal(headers.includes('X-Robots-Tag: noindex, nofollow, noarchive'), preview)
+  assert.ok(headers.includes('X-Frame-Options: DENY'), 'owner headers survive both channels')
+  assert.ok(headers.includes('Cache-Control: public, max-age=42'), 'owner wildcard fields survive both channels')
+  assert.ok(headers.includes('# Nimbus agent discovery'), 'Nimbus owns its discovery headers')
+  if (!preview) {
+    assert.ok(read('robots.txt').includes(`Sitemap: ${origin}/sitemap-index.xml`))
+    assert.ok(read('sitemap-0.xml').includes(`${origin}/zh/`))
+  }
+  for (const file of ['llms.txt', 'llms-full.txt', 'zh/llms.txt']) {
+    assert.ok(read(file).includes(origin), `${file}: channel origin`)
+    assert.ok(!read(file).includes(preview ? 'https://docs.example.com' : 'https://preview.docs.example.com'), `${file}: no stale channel URL`)
+  }
 }
 
 export function checkDrafts(docs) {
@@ -92,14 +119,16 @@ export function checkValidation(docs) {
 }
 
 export function checkCache(workspace, docs) {
-  const hashes = () => {
-    const output = JSON.parse(run('pnpm', ['exec', 'turbo', 'run', 'build', 'lint', 'typecheck', '--filter=@icebreakers/nimbus-template', '--dry=json'], workspace))
+  const hashes = (env = {}) => {
+    const output = JSON.parse(run('pnpm', ['exec', 'turbo', 'run', 'build', 'lint', 'typecheck', '--filter=@icebreakers/nimbus-template', '--dry=json'], workspace, env))
     return Object.fromEntries(output.tasks.filter(task => task.package === '@icebreakers/nimbus-template').map(task => [task.task, task.hash]))
   }
   for (const [file, change] of [
     ['src/content/docs/index.mdx', content => `${content}\nContent invalidates the build.\n`],
     ['src/styles/site.css', content => `${content}\n/* cache regression */\n`],
     ['astro.config.ts', content => `${content}\n// cache regression\n`],
+    ['src/lib/deployment.ts', content => `${content}\n// cache regression\n`],
+    ['scripts/check-locales.mjs', content => `${content}\n// cache regression\n`],
     ['nimbus.json', (content) => {
       const record = JSON.parse(content)
       return `${JSON.stringify({ ...record, reconstructed: !record.reconstructed }, null, 2)}\n`
@@ -117,6 +146,13 @@ export function checkCache(workspace, docs) {
     }
     finally {
       writeFileSync(target, original)
+    }
+  }
+  for (const name of ['REPO_DOCS_CHANNEL', 'REPO_DOCS_URL']) {
+    const baseline = hashes({ REPO_DOCS_CHANNEL: 'preview', REPO_DOCS_URL: 'https://preview.docs.example.com' })
+    const changed = hashes({ REPO_DOCS_CHANNEL: 'preview', REPO_DOCS_URL: 'https://preview.docs.example.com', [name]: name === 'REPO_DOCS_CHANNEL' ? 'stable' : 'https://docs.example.com' })
+    for (const task of ['build', 'lint', 'typecheck']) {
+      assert.notEqual(changed[task], baseline[task], `${name} must invalidate ${task}`)
     }
   }
 }

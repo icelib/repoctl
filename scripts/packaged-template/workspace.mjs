@@ -8,13 +8,13 @@ import YAML from 'yaml'
 export const repoRoot = path.resolve(import.meta.dirname, '../..')
 export const registry = process.env.REPOCTL_SMOKE_REGISTRY ?? process.env.NIMBUS_SMOKE_REGISTRY ?? 'https://registry.npmjs.org'
 
-export function run(command, args, cwd) {
+export function run(command, args, cwd, env = {}) {
   try {
     return execFileSync(command, args, {
       cwd,
       encoding: 'utf8',
       timeout: 240_000,
-      env: { ...process.env, CI: 'true', LEFTHOOK: '0', TURBO_TELEMETRY_DISABLED: '1' },
+      env: { ...process.env, CI: 'true', LEFTHOOK: '0', TURBO_TELEMETRY_DISABLED: '1', ...env },
       stdio: ['ignore', 'pipe', 'pipe'],
     })
   }

@@ -915,6 +915,9 @@ importers:
       pagefind:
         specifier: ^1.5.2
         version: 1.5.2
+      repoctl:
+        specifier: workspace:*
+        version: link:../../packages/repoctl
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -1033,6 +1036,9 @@ importers:
       mermaid:
         specifier: ^12.2.0
         version: 12.2.0
+      repoctl:
+        specifier: workspace:*
+        version: link:../../packages/repoctl
       tailwindcss:
         specifier: ^4.3.3
         version: 4.3.3

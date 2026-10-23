@@ -15,11 +15,11 @@ const bootstrapDir = path.join(tempRoot, 'bootstrap')
 const sourceManifest = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'))
 const sourceNpmrc = readFileSync(path.join(repoRoot, '.npmrc'), 'utf8')
 
-function run(command, args, cwd) {
+function run(command, args, cwd, env = {}) {
   return execFileSync(command, args, {
     cwd,
     encoding: 'utf8',
-    env: { ...process.env, LEFTHOOK: '0', CI: 'true' },
+    env: { ...process.env, LEFTHOOK: '0', CI: 'true', ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
     timeout: 600_000,
     maxBuffer: 10 * 1024 * 1024,

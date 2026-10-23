@@ -19,6 +19,8 @@ repoctl templates are maintained by `@icebreakers/monorepo-templates`. The CLI, 
 
 Nimbus is the default for the interactive **Docs Site** goal. It includes English at `/`, Chinese at `/zh/`, search and AI documentation endpoints. VitePress remains an explicit alternative. Their default targets are `apps/docs` and `apps/website`, so both can coexist. General creation still defaults to `tsdown`; naming a project `docs` does not infer its template. In noninteractive workflows, pass `--template nimbus` explicitly.
 
+Both documentation templates include [preview/stable build context](/tasks/docs#build-channel-context), local search, bilingual unpublished notices and ownership-aware crawler headers. Configure the origins before deployment; a local stable build needs no deployment credentials. Keep the template-local Turbo env/input declarations and repoctl dependency.
+
 ## Discover Templates
 
 ```bash

@@ -512,3 +512,5 @@ repo package create api --template team --data ./answers.json
 公开 API 为 `resolveCreateNewProjectPlan({ parameters, parameterPrompt? })` 和 `applyCreateNewProjectPlan(plan)`。执行接受同一进程中未修改的原始计划，JSON 报告不能直接执行，须用原数据重新规划。来源变化、已存在目标或计划修改会拒绝写入。参数化创建统一提交暂存输出、workspace 清单和实例记录；失败恢复本次文件，遇到并发编辑或文件替换则保留并报告恢复位置。重复创建不会覆盖项目。
 
 移动参数化模板实例会保留原 ID、参数与敏感文件排除。在腾出的原路径再次创建同一模板时，新实例获得独立 ID，两份实例可以分别检查漂移和升级；登记失败只回滚本次新建输出。
+
+两种文档模板均包含[预览/正式构建上下文](/zh/tasks/docs#构建渠道上下文)、本地搜索、双语未发布提示与带归属的爬虫响应头。部署前配置 origin，本地正式构建不需要部署凭据。保留模板自身的 Turbo env/input 声明和 repoctl 依赖。
