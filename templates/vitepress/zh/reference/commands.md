@@ -156,7 +156,21 @@ repo package check --filter my-library --keep-temp --json
 
 按依赖顺序构建选中的 workspace 包及其依赖，再使用 publint 0.3.25 和 ATTW 0.18.5 校验实际 `pnpm pack` tarball。构建失败后不再打包。本地开发依赖也纳入构建，private 构建依赖可以只构建、不打包或校验。private 包默认明确标记为跳过，传入 `--include-private` 可包含它们。可重复 `--filter` 合并 pnpm 选择器；`--build-script` 可替换默认 `build` 脚本，没有该脚本的包按已经准备好的发布文件处理。
 
-临时消费者独立安装 tarball 和本地运行时依赖的 tarball，执行包声明支持的 Node ESM/CJS 入口及 TypeScript NodeNext 消费检查。类型消费使用 ATTW 固定的 TypeScript 5.6.1-rc。未声明支持的模块格式不强制通过；仅供浏览器使用的入口及非 JavaScript 资源接受清单/类型分析，不执行 Node import；JavaScript bin 做语法检查，不调用应用命令。安装可能访问 registry，依赖安装脚本默认禁用；workspace 构建与 pack 生命周期脚本正常执行。
+临时消费者独立安装 tarball 和本地运行时依赖的 tarball，执行包声明支持的 Node ESM/CJS 入口及 TypeScript NodeNext 消费检查。有类型声明时，消费者安装源 workspace 已安装的准确 TypeScript 版本，并在隔离目录执行编译器，保持 `skipLibCheck: false`；源项目没有安装 TypeScript 时，默认使用 ATTW 固定的编译器版本。编译器与 repoctl 受控的 Node 类型使用专用 npm alias，自动避开运行依赖闭包内的全部依赖名，包括 required peer；验证通过独立 type root 加载受控 Node 声明，保留包运行时自身的 TypeScript 和 Node peer 要求。纯 JavaScript 包不安装这套类型工具。被测运行依赖闭包中声明的 optional peer 集成会安装到消费者，保留 peer 范围交集、required peer 约束和 npm alias。若原范围能表达完整交集则保留其写法；pnpm 12 不支持的复杂 npm alias 交集通过消费者的 `pnpm view` 查询所配置 registry，选取满足交集的最高已发布版本并写成精确 alias。查询沿用消费者包管理器配置并记录到命令日志，没有匹配的已发布版本则检查失败。不复制开发依赖或无关 workspace 的集成依赖。
+
+未声明支持的模块格式不强制通过；仅供浏览器使用的入口及非 JavaScript 资源接受清单/类型分析，不执行 Node import；JavaScript bin 做语法检查，不调用应用命令。Service Worker 等 JavaScript 资源可在发布的 `package.json` 中显式声明精确导出子路径：
+
+```json
+{
+  "repoctl": {
+    "packageCheck": {
+      "runtimeAssets": ["./worker.js"]
+    }
+  }
+}
+```
+
+每个资源必须对应实际打包的 JavaScript 导出。消费者验证导出解析、文件存在、包目录边界和 JavaScript 语法，不执行浏览器全局变量；缺失路径、通配符、越界链接和错误语法仍失败。包的其他入口有类型，不会强制复制资源也提供类型；资源显式声明的类型或相邻声明文件仍会校验，其他运行入口和类型声明也继续检查。Snapshot 与发布后的 nightly 消费者共用该契约；nightly 复核 tarball 完整性及 snapshot 身份后，从已校验产物读取可选集成依赖。安装可能访问 registry，依赖安装脚本默认禁用；workspace 构建与 pack 生命周期脚本正常执行。
 
 JSON 包含每个包的文件清单、稳定的诊断来源/代码、上游原始细节及子进程参数数组。`--strict` 将 warning 视为失败。`--keep-temp` 保留 tarball、消费者清单和命令工作目录，方便复现；未启用时，失败后也会清理临时文件。命令不会发布包、修改版本或写入发布状态。
 

@@ -11,7 +11,25 @@ const cli = path.resolve(import.meta.dirname, '../../../bin/repoctl.js')
 export { snapshot, writeJson }
 
 export async function git(cwd: string, args: string[]) {
-  return (await exec('git', ['-C', cwd, '-c', 'core.hooksPath=', '-c', 'commit.gpgsign=false', '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', ...args], { encoding: 'utf8', timeout: 30_000 })).stdout
+  // Commits must finish all fixture writes before snapshots and cleanup begin,
+  // including repositories initialized manually or above the workspace root.
+  return (await exec('git', [
+    '-C',
+    cwd,
+    '-c',
+    'maintenance.auto=false',
+    '-c',
+    'gc.auto=0',
+    '-c',
+    'core.hooksPath=',
+    '-c',
+    'commit.gpgsign=false',
+    '-c',
+    'user.name=Fixture',
+    '-c',
+    'user.email=fixture@example.invalid',
+    ...args,
+  ], { encoding: 'utf8', timeout: 30_000 })).stdout
 }
 
 export async function commit(cwd: string) {

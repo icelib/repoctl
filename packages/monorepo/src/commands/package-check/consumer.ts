@@ -1,11 +1,15 @@
 import type { ExpectedWorkspaceLocators } from './consumer/dependencies'
 import type { ConsumerEntry, PackageCheckResult, PackedPackage } from './types'
-import { mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
-import { createRequire } from 'node:module'
+import { mkdir, realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { stringify } from 'yaml'
 import { checkDependencyRanges, consumerDependency } from './consumer/dependencies'
+import { consumerOptionalPeers } from './consumer/optional-peers'
+import { resolveConsumerPeerAliases } from './consumer/peer-aliases'
+import { consumerAssetSource } from './consumer/runtime-assets'
+import { consumerRuntimeClosure } from './consumer/runtime-closure'
+import { consumerTypeToolchain, installedConsumerTypeToolchain } from './consumer/typescript'
 import { dependencyReferences } from './dependencies'
 import { execute, failureMessage } from './process'
 
@@ -17,19 +21,18 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
     return
   }
   const checkTypes = entries.length > 0 && result.files.some(file => /\.d\.[cm]?ts$/u.test(file))
-  // The consumer exercises Node entrypoints. Install its ambient types as test
-  // tooling, using the engine's exact dependency version rather than source types.
-  const nodeTypes = checkTypes
-    ? JSON.parse(await readFile(createRequire(import.meta.url).resolve('@types/node/package.json'), 'utf8')) as { version: string }
-    : undefined
-  await mkdir(directory, { recursive: true })
-  await writeFile(path.join(directory, 'package.json'), JSON.stringify({
+  const closure = consumerRuntimeClosure([pkg.manifest], packages.map(item => item.manifest), options.expectedWorkspaceLocators)
+  const dependencies = { ...consumerOptionalPeers(closure, new Map(packages.map(item => [String(item.manifest.name), `file:${item.result.tarball}`]))), [String(pkg.manifest.name)]: `file:${result.tarball}` }
+  const tooling = checkTypes ? await consumerTypeToolchain(result.directory, dependencies, closure) : undefined
+  const manifest = {
     name: 'repoctl-package-consumer',
     private: true,
     ...(packageManager ? { packageManager } : {}),
-    dependencies: { [String(pkg.manifest.name)]: `file:${result.tarball}` },
-    ...(nodeTypes ? { devDependencies: { '@types/node': nodeTypes.version } } : {}),
-  }, null, 2))
+    dependencies,
+    ...(tooling ? { devDependencies: tooling.devDependencies } : {}),
+  }
+  await mkdir(directory, { recursive: true })
+  await writeFile(path.join(directory, 'package.json'), JSON.stringify(manifest, null, 2))
   // Overrides use packed files, never workspace source directories. Keep this consumer
   // outside the source workspace so pnpm cannot discover its packages or configuration.
   await writeFile(path.join(directory, 'pnpm-workspace.yaml'), stringify({
@@ -43,6 +46,15 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
       })),
     ]),
   }))
+  manifest.dependencies = await resolveConsumerPeerAliases(dependencies, async (specifier) => {
+    const query = await execute(packageManager ? 'corepack' : 'pnpm', [...(packageManager ? ['pnpm'] : []), 'view', specifier, 'version', '--json', '--config.manage-package-manager-versions=false'], directory, timeout, options)
+    result.commands.push(query)
+    if (query.exitCode !== 0) {
+      throw new Error(failureMessage(query))
+    }
+    return query.stdout
+  })
+  await writeFile(path.join(directory, 'package.json'), JSON.stringify(manifest, null, 2))
   const install = await execute(packageManager ? 'corepack' : 'pnpm', [...(packageManager ? ['pnpm'] : []), 'install', '--ignore-scripts', '--no-frozen-lockfile', '--config.manage-package-manager-versions=false'], directory, timeout, options)
   result.commands.push(install)
   if (install.exitCode !== 0) {
@@ -54,23 +66,29 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
   if (relative.startsWith('..') || path.isAbsolute(relative)) {
     throw new Error('Consumer resolved a package outside its isolated directory.')
   }
-  const require = createRequire(import.meta.resolve('@arethetypeswrong/core/package.json'))
-  const tsc = require.resolve('typescript/bin/tsc')
+  const toolchain = tooling ? await installedConsumerTypeToolchain(directory, tooling) : undefined
   for (const [index, entry] of entries.entries()) {
     const specifier = `${pkg.manifest.name}${entry.subpath === '.' ? '' : entry.subpath.slice(1)}`
     if (entry.runtime) {
-      const source = entry.format === 'esm' ? `await import(${JSON.stringify(specifier)})` : `require(${JSON.stringify(specifier)})`
+      const source = entry.asset ? consumerAssetSource(entry, specifier, installed) : entry.format === 'esm' ? `await import(${JSON.stringify(specifier)})` : `require(${JSON.stringify(specifier)})`
       const command = await execute(process.execPath, ['--input-type', entry.format === 'esm' ? 'module' : 'commonjs', '--eval', source], directory, timeout, options)
       result.commands.push(command)
       if (command.exitCode !== 0) {
-        result.diagnostics.push({ source: 'node', code: 'RUNTIME_IMPORT', severity: 'error', entry: entry.subpath, file: entry.target, message: failureMessage(command) })
+        result.diagnostics.push({ source: 'node', code: entry.asset ? 'RUNTIME_ASSET' : 'RUNTIME_IMPORT', severity: 'error', entry: entry.subpath, file: entry.target, message: failureMessage(command) })
+      }
+      if (entry.asset && command.exitCode === 0) {
+        const syntax = await execute(process.execPath, ['--check', path.resolve(installed, entry.target)], directory, timeout, options)
+        result.commands.push(syntax)
+        if (syntax.exitCode !== 0) {
+          result.diagnostics.push({ source: 'node', code: 'RUNTIME_ASSET_SYNTAX', severity: 'error', entry: entry.subpath, file: entry.target, message: failureMessage(syntax) })
+        }
       }
     }
-    if (checkTypes) {
+    if (toolchain && entry.typecheck !== false) {
       const file = `consume-${index}.${entry.format === 'esm' ? 'mts' : 'cts'}`
       const importText = !entry.runtime ? `import type * as subject from ${JSON.stringify(specifier)}` : entry.format === 'esm' ? `import * as subject from ${JSON.stringify(specifier)}` : `import subject = require(${JSON.stringify(specifier)})`
       await writeFile(path.join(directory, file), `${importText};\ntype Consumer = typeof subject;\n`)
-      const types = await execute(process.execPath, [tsc, '--noEmit', '--strict', '--skipLibCheck', 'false', '--module', 'nodenext', '--target', 'es2022', '--types', 'node', file], directory, timeout, options)
+      const types = await execute(process.execPath, [toolchain.tsc, '--noEmit', '--strict', '--skipLibCheck', 'false', '--module', 'nodenext', '--target', 'es2022', '--typeRoots', toolchain.typeRoots, '--types', toolchain.nodeTypes, file], directory, timeout, options)
       result.commands.push(types)
       if (types.exitCode !== 0) {
         result.diagnostics.push({ source: 'repoctl', code: 'TYPESCRIPT_CONSUMER', severity: 'error', entry: entry.subpath, file: entry.target, message: failureMessage(types) })

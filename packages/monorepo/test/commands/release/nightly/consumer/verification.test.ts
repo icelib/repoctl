@@ -26,7 +26,7 @@ it.each(['npm', 'pkg-pr-new'] as const)('installs the real %s channel with no ov
 })
 
 it.each(['npm', 'pkg-pr-new'] as const)('limits %s consumer cooldown exceptions to the confirmed npm batch', async (provider) => {
-  const h = await consumerFixture({ provider })
+  const h = await consumerFixture({ provider, manifest: { peerDependencies: { provider: 'npm:semver@7.8.5' }, peerDependenciesMeta: { provider: { optional: true } } } })
   // Source policy must not authorize unrelated fresh versions in the consumer.
   await writeFile(path.join(h.root, 'pnpm-workspace.yaml'), 'packages: []\nminimumReleaseAge: 0\nminimumReleaseAgeExclude:\n  - "*"\noverrides:\n  b: 0.0.0\n')
   h.install.mockImplementation((_args, settings) => {
@@ -39,6 +39,7 @@ it.each(['npm', 'pkg-pr-new'] as const)('limits %s consumer cooldown exceptions 
       expect(policy.minimumReleaseAgeExclude).not.toContain('@scope/a@*')
       expect(policy.minimumReleaseAgeExclude).not.toContain('b@0.0.0')
       expect(policy.minimumReleaseAgeExclude).not.toContain('@types/node')
+      expect(policy.minimumReleaseAgeExclude).not.toContain('semver@7.8.5')
     }
     else {
       expect(policy).not.toHaveProperty('minimumReleaseAgeExclude')
@@ -46,6 +47,7 @@ it.each(['npm', 'pkg-pr-new'] as const)('limits %s consumer cooldown exceptions 
     return undefined
   })
   await verifyNightlyConsumer(h.report, h.options)
+  expect(h.manifest()).toMatchObject({ dependencies: { provider: 'npm:semver@7.8.5' } })
   expect(h.install).toHaveBeenCalledOnce()
   expect(h.report.consumer?.status).toBe('verified')
 })
