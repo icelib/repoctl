@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { publishWithRetry } from '@/commands/release/publish'
 import { refreshRegistry } from '@/commands/release/publish/registry'
@@ -108,8 +110,16 @@ describe('publish retry', () => {
 })
 
 it('classifies packages beyond the query deadline as unknown', async () => {
+  const cwd = await createTempWorkspace('main')
   const packages = [{ name: 'repoctl', version: '1.0.0' }]
   const spawn = vi.fn()
-  await expect(refreshRegistry(new PublishState(packages), { cwd: '.', spawn: spawn as never }, packages, 0)).resolves.toEqual(packages)
+  await expect(refreshRegistry(new PublishState(packages), { cwd, spawn: spawn as never }, packages, 0)).resolves.toEqual(packages)
   expect(spawn).not.toHaveBeenCalled()
+  expect(JSON.parse(await readFile(path.join(cwd, 'repoctl-publish-progress.json'), 'utf8'))).toMatchObject({
+    status: 'confirming',
+    candidates: packages,
+    acceptedPackages: [],
+    confirmedPackages: [],
+  })
+  expect(JSON.parse(await readFile(path.join(cwd, 'pnpm-publish-summary.json'), 'utf8'))).toEqual({ publishedPackages: [] })
 })
