@@ -1,7 +1,7 @@
 {
   "name": "@icebreakers/mock",
   "type": "module",
-  "version": "0.0.53",
+  "version": "0.0.54",
   "private": true,
   "description": "Mock application demonstrating repoctl development presets",
   "author": "ice breaker <hi@sonofmagic.top>",

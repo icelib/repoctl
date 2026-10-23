@@ -32,6 +32,12 @@
   dir: packages/changelog-github
   intents:
     - auto-pr-1051
+"@icebreakers/changelog-github@2.1.6":
+  dir: packages/changelog-github
+  intents:
+    - clean-tools-occur
+    - early-socks-trade
+    - gentle-waves-bet
 "@icebreakers/commitlint-config@4.0.6":
   dir: packages/commitlint
   intents:
@@ -50,6 +56,12 @@
   dir: packages/commitlint
   intents:
     - auto-pr-935
+"@icebreakers/commitlint-config@4.1.3":
+  dir: packages/commitlint
+  intents:
+    - clean-tools-occur
+    - early-socks-trade
+    - lefthook-migration
 "@icebreakers/eslint-config@7.1.1":
   dir: packages/eslint
   intents:
@@ -80,6 +92,15 @@
     - auto-pr-880
     - auto-pr-881
     - auto-pr-898
+"@icebreakers/eslint-config@8.0.10":
+  dir: packages/eslint
+  intents:
+    - clean-tools-occur
+    - early-socks-trade
+    - fresh-dependencies-sync
+    - gentle-waves-bet
+    - lefthook-migration
+    - serialize-eslint-build-assets
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -286,6 +307,17 @@
   dir: packages/monorepo-templates
   intents:
     - clever-peaches-attack
+"@icebreakers/monorepo-templates@3.0.0":
+  dir: packages/monorepo-templates
+  intents:
+    - big-monkeys-share
+    - clean-tools-occur
+    - fresh-dependencies-sync
+    - gentle-waves-bet
+    - lefthook-migration
+    - loud-mice-smoke
+    - old-monkeys-attack
+    - quiet-clouds-wait
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -508,6 +540,21 @@
   dir: packages/monorepo
   intents:
     - heavy-worms-ring
+"@icebreakers/monorepo@6.0.0":
+  dir: packages/monorepo
+  intents:
+    - clean-tools-occur
+    - early-socks-trade
+    - fresh-dependencies-sync
+    - giant-geese-film
+    - honest-turtles-study
+    - independent-release-checkpoints
+    - lefthook-migration
+    - light-cows-cheat
+    - modern-nightly-releases
+    - old-monkeys-attack
+    - quiet-pr-resource-admission
+    - weak-moles-flash
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -522,6 +569,11 @@
   dir: packages/stylelint
   intents:
     - icelib-repository-migration
+"@icebreakers/stylelint-config@5.1.4":
+  dir: packages/stylelint
+  intents:
+    - clean-tools-occur
+    - fresh-dependencies-sync
 create-icebreaker@1.1.0:
   dir: packages/create-icebreaker
   intents:
@@ -561,6 +613,10 @@ create-icebreaker@2.1.1:
   dir: packages/create-icebreaker
   intents:
     - quiet-rats-trade
+create-icebreaker@2.1.6:
+  dir: packages/create-icebreaker
+  intents:
+    - clean-tools-occur
 create-repoctl@0.1.0:
   dir: packages/create-repoctl
   intents:
@@ -601,6 +657,10 @@ create-repoctl@1.2.1:
   dir: packages/create-repoctl
   intents:
     - quiet-rats-trade
+create-repoctl@1.2.6:
+  dir: packages/create-repoctl
+  intents:
+    - clean-tools-occur
 eslint-plugin-better-stylelint@2.0.4:
   dir: packages/eslint-plugin-better-stylelint
   intents:
@@ -620,6 +680,10 @@ eslint-plugin-better-stylelint@2.1.1:
   dir: packages/eslint-plugin-better-stylelint
   intents:
     - icelib-repository-migration
+eslint-plugin-better-stylelint@2.1.2:
+  dir: packages/eslint-plugin-better-stylelint
+  intents:
+    - clean-tools-occur
 lightningcss-tailwindcss@2.0.4:
   dir: packages/lightningcss-tailwindcss
   intents:
@@ -633,6 +697,10 @@ lightningcss-tailwindcss@2.1.1:
   dir: packages/lightningcss-tailwindcss
   intents:
     - icelib-repository-migration
+lightningcss-tailwindcss@2.1.2:
+  dir: packages/lightningcss-tailwindcss
+  intents:
+    - clean-tools-occur
 postcss-tailwindcss@3.0.7:
   dir: packages/postcss-tailwindcss
   intents:
@@ -660,6 +728,11 @@ postcss-tailwindcss@3.1.3:
   dir: packages/postcss-tailwindcss
   intents:
     - auto-pr-917
+postcss-tailwindcss@3.1.4:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - clean-tools-occur
+    - fresh-dependencies-sync
 repoctl@5.10.0:
   dir: packages/repoctl
   intents:
@@ -813,6 +886,15 @@ repoctl@5.9.0:
   dir: packages/repoctl
   intents:
     - heavy-worms-ring
+repoctl@6.0.0:
+  dir: packages/repoctl
+  intents:
+    - clean-tools-occur
+    - early-socks-trade
+    - independent-release-checkpoints
+    - lefthook-migration
+    - modern-nightly-releases
+    - old-monkeys-attack
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
@@ -843,3 +925,8 @@ stylelint-plugin-tailwindcss@3.1.2:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
     - icelib-repository-migration
+stylelint-plugin-tailwindcss@3.1.4:
+  dir: packages/stylelint-plugin-tailwindcss
+  intents:
+    - clean-tools-occur
+    - fresh-dependencies-sync

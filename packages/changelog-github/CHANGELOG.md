@@ -1,5 +1,19 @@
 # @icebreakers/changelog-github
 
+## 2.1.6
+
+### Patch Changes
+
+- Move canonical documentation links and package homepages to repo.icebreaker.top; separate stable documentation from the unreleased preview site.
+
+  Check catalog dependency values against each package's published source before stable documentation deployment, including build dependencies, while allowing changes to unrelated catalog entries.
+
+  Resolve documentation sites from the upgrade target when using `upgrade --out-dir`, so the destination does not inherit documentation deployment workflows from the calling directory's configuration.
+
+- Fix published declaration boundaries and validate Node package consumers with an isolated type toolchain so all public packages can pass strict nightly artifact checks.
+
+- 更新共享 lint、changelog 与项目模板依赖，升级 pnpm 和 Next.js 安全补丁，并保留 React 组件库对 19.3.0 的兼容范围。
+
 ## 2.1.5
 
 ### Patch Changes

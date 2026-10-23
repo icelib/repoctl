@@ -1,5 +1,28 @@
 # @icebreakers/eslint-config
 
+## 8.0.10
+
+### Patch Changes
+
+- Move canonical documentation links and package homepages to repo.icebreaker.top; separate stable documentation from the unreleased preview site.
+
+  Check catalog dependency values against each package's published source before stable documentation deployment, including build dependencies, while allowing changes to unrelated catalog entries.
+
+  Resolve documentation sites from the upgrade target when using `upgrade --out-dir`, so the destination does not inherit documentation deployment workflows from the calling directory's configuration.
+
+- Fix published declaration boundaries and validate Node package consumers with an isolated type toolchain so all public packages can pass strict nightly artifact checks.
+
+- 更新依赖、共享 lint 配置及项目模板的工具链版本，并同步 GitHub App token action。
+
+- 更新共享 lint、changelog 与项目模板依赖，升级 pnpm 和 Next.js 安全补丁，并保留 React 组件库对 19.3.0 的兼容范围。
+
+- Replace Husky and lint-staged with native Lefthook jobs in source and generated workspaces. Remove the Husky/lint-staged tooling fields, exported types and configuration factories, and replace the lint-staged init target with lefthook. Default hook upgrades migrate configuration, dependencies and installation scripts together; custom hooks require manual migration. Failed checks block commits while retaining completed fixes and protecting unstaged changes.
+
+- 修复多格式构建并发写入共享许可证时，在 Windows 上可能触发的文件占用错误。由构建器统一复制许可证，保留单格式构建、重复刷新和复制失败报告。
+
+- Updated dependencies:
+  - @icebreakers/stylelint-config@5.1.4
+
 ## 8.0.9
 
 ### Patch Changes

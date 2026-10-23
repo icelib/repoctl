@@ -1,5 +1,49 @@
 # @icebreakers/monorepo
 
+## 6.0.0
+
+### Major Changes
+
+- Replace Husky and lint-staged with native Lefthook jobs in source and generated workspaces. Remove the Husky/lint-staged tooling fields, exported types and configuration factories, and replace the lint-staged init target with lefthook. Default hook upgrades migrate configuration, dependencies and installation scripts together; custom hooks require manual migration. Failed checks block commits while retaining completed fixes and protecting unstaged changes.
+
+### Minor Changes
+
+- Add reusable nightly planning and publishing APIs and CLI, with npm as the default provider and optional pkg.pr.new previews. Preserve workspace build topology, verify published artifacts and clean consumers, and diagnose managed nightly configuration and workflow drift.
+
+- 新增与稳定发布快照绑定的文档部署：main 仅更新预览站，正式站等待完整稳定发布，并支持独立文档修正、发布来源检查和可恢复部署。
+
+  升级时允许读取 pnpm 以硬链接安装的模板资产和包元数据，兼容旧升级计划与迁移账本，保留来源内容校验以及对项目配置和写入目标的链接安全检查。
+
+### Patch Changes
+
+- Move canonical documentation links and package homepages to repo.icebreaker.top; separate stable documentation from the unreleased preview site.
+
+  Check catalog dependency values against each package's published source before stable documentation deployment, including build dependencies, while allowing changes to unrelated catalog entries.
+
+  Resolve documentation sites from the upgrade target when using `upgrade --out-dir`, so the destination does not inherit documentation deployment workflows from the calling directory's configuration.
+
+- Fix published declaration boundaries and validate Node package consumers with an isolated type toolchain so all public packages can pass strict nightly artifact checks.
+
+- 更新依赖、共享 lint 配置及项目模板的工具链版本，并同步 GitHub App token action。
+
+- Wait for immutable snapshot metadata after npm accepts an upload, using a consistent registry transport and bounded confirmation without re-uploading accepted packages.
+
+- Retry confirmed npm nightly consumer installs when freshly published versions are not yet visible, using isolated package metadata caches without repeating uploads.
+
+- fix(release): Initialize release checkpoint storage with an independent root commit containing only checkpoint documentation, avoiding source workflows and an unnecessary workflow permission requirement. Preserve the original branch creation error when reconciliation fails while retaining concurrent initialization and checkpoint recovery.
+
+- Recognize pnpm dependency-chain context when retrying confirmed nightly consumer installs, while preserving strict batch-version and error checks without repeating accepted uploads.
+
+- 完善源码仓库 PR CI 资源准入与取消行为，防止普通标签打断已批准的验证，并校验筛选期间的提交变化和目标分支身份。
+
+- Isolate nightly quality checks from release routing and publication authorization, and preserve the configured Corepack network policy so validation can bootstrap its pinned package manager.
+
+- Updated dependencies:
+  - @icebreakers/commitlint-config@4.1.3
+  - @icebreakers/eslint-config@8.0.10
+  - @icebreakers/monorepo-templates@3.0.0
+  - @icebreakers/stylelint-config@5.1.4
+
 ## 5.10.3
 
 ### Patch Changes
