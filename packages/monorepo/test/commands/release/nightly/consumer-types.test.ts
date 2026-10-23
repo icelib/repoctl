@@ -5,6 +5,7 @@ import { createRequire } from 'node:module'
 import path from 'node:path'
 import { releaseNightly } from '@icebreakers/monorepo'
 import { expect, it, vi } from 'vitest'
+import { parse } from 'yaml'
 import { exchangeToken, idToken, env as oidcEnv } from '../oidc/fixtures'
 import { completed } from './consumer/fixture'
 import { fixture, json } from './fixture'
@@ -79,6 +80,8 @@ it.each([false, true])('uses the isolated workspace compiler for published night
       const manifest = JSON.parse(readFileSync(path.join(consumerDirectory, 'package.json'), 'utf8'))
       expect(manifest.devDependencies['repoctl-consumer-typescript']).toBe(`npm:typescript@${compiler.version}`)
       expect(manifest.devDependencies['repoctl-consumer-node-types']).toBe(`npm:@types/node@${nodeTypes.version}`)
+      const policy = parse(readFileSync(path.join(consumerDirectory, 'pnpm-workspace.yaml'), 'utf8'))
+      expect(policy.minimumReleaseAgeExclude).toEqual(['snapshot-a', 'snapshot-b'].map(name => `${name}@${Object.values(manifests(name))[0]!.version}`))
       for (const name of ['snapshot-a', 'snapshot-b']) {
         const published = Object.values(manifests(name))[0]!
         const installed = path.join(consumerDirectory, 'node_modules', name)

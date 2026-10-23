@@ -46,7 +46,12 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
     }
     await Promise.all([
       writeFile(path.join(directory, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`),
-      writeFile(path.join(directory, 'pnpm-workspace.yaml'), 'packages: []\n'),
+      writeFile(path.join(directory, 'pnpm-workspace.yaml'), `${JSON.stringify({
+        packages: [],
+        // The confirmed batch must be installable immediately, while unrelated
+        // packages and other versions retain pnpm's default release-age policy.
+        ...(report.provider === 'npm' ? { minimumReleaseAgeExclude: report.packages.map(pkg => `${pkg.name}@${pkg.version}`) } : {}),
+      }, null, 2)}\n`),
       writeFile(path.join(directory, 'user.npmrc'), ''),
       writeFile(path.join(directory, 'global.npmrc'), ''),
     ])
