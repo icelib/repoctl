@@ -37,17 +37,17 @@
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
-    "@tanstack/vue-query": "^5.104.3",
-    "@tanstack/vue-query-devtools": "^6.3.3",
+    "@tanstack/vue-query": "^5.104.4",
+    "@tanstack/vue-query-devtools": "^6.3.4",
     "@tanstack/vue-table": "^9.3.1",
-    "@tanstack/vue-virtual": "^3.13.46",
+    "@tanstack/vue-virtual": "^3.13.47",
     "@trpc/client": "^11.19.0",
     "clsx": "^2.1.1",
     "pinia": "^4.1.0",
     "tailwind-merge": "^3.7.0",
     "tailwind-variants": "^3.3.1",
     "vue": "^3.5.44",
-    "vue-i18n": "^11.4.14",
+    "vue-i18n": "^11.4.16",
     "vue-router": "^5.4.0"
   },
   "devDependencies": {
