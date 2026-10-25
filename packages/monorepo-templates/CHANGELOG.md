@@ -1,5 +1,31 @@
 # @icebreakers/monorepo-templates
 
+## 3.1.0
+
+### Minor Changes
+
+- Add a lightweight docs-context API and consistent preview/stable origins, crawler policy, preserved search, and cache inputs for Nimbus and VitePress.
+
+  Parse TypeScript declaration files in ambient mode during environment-cache checks, so valid documentation examples do not produce false source warnings.
+
+  Remove empty Wrangler CI name overrides from native documentation deployments so the verified preview or stable Worker name remains effective.
+
+### Patch Changes
+
+- Document doctor diagnostic IDs, grouped file paths and unchanged report semantics.
+
+- Document readiness verification, saved deployment recovery, and actionable deployment reports.
+
+  Clarify that frozen deployment context is supplied to the selected site build and provider, while dependency installation preserves ordinary lifecycle behavior without inherited documentation selection variables.
+
+- Document isolated consumer compiler selection, optional peer integrations and the runtimeAssets package contract.
+
+- Document the managed Cloudflare Workers docs provider and provider-specific deployment targets.
+
+- 保留内部 workspace peer 的兼容范围，并在只读发布计划阶段校验依赖协议。
+
+- Document dependency-aware upgrades and fingerprinted override keep decisions in both documentation languages.
+
 ## 3.0.1
 
 ### Patch Changes
