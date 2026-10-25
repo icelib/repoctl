@@ -5,7 +5,7 @@ packages:
   - '!**/test/**'
 
 catalog:
-  '@commitlint/cli': ^21.2.3
+  '@commitlint/cli': ^21.2.4
   '@types/semver': ^7.8.0
   commander: ^15.0.0
   comment-json: ^5.0.0
