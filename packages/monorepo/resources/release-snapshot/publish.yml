@@ -11,7 +11,6 @@ permissions:
 defaults:
   run:
     shell: bash
-    working-directory: ${{ runner.temp }}
 
 env:
   SNAPSHOT_BUILDER_SHA256: __BUILDER_SHA256__
@@ -34,6 +33,7 @@ jobs:
         with:
           node-version: 24.22.1
       - name: Install the pinned verifier without candidate code
+        working-directory: ${{ runner.temp }}
         run: npm install --prefix "$RUNNER_TEMP/repoctl-tools" --ignore-scripts --no-audit --no-fund --package-lock=false repoctl@__VERSION__ pnpm@__PNPM_VERSION__
       - name: Verify GitHub approval, frozen plan, current revision and artifact bytes
         id: verify
@@ -41,6 +41,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
           SOURCE_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+        working-directory: ${{ runner.temp }}
         run: |
           "$RUNNER_TEMP/repoctl-tools/node_modules/.bin/repo" release snapshot verify --run-id "$SOURCE_RUN_ID" --run-attempt "$SOURCE_RUN_ATTEMPT" --builder-sha256 "$SNAPSHOT_BUILDER_SHA256" --out "$RUNNER_TEMP/snapshot-verified.json" --json
           node --input-type=module <<'NODE'
@@ -69,6 +70,7 @@ jobs:
         with:
           node-version: 24.22.1
       - name: Install only the pinned trusted publisher
+        working-directory: ${{ runner.temp }}
         run: |
           npm install --prefix "$RUNNER_TEMP/repoctl-tools" --ignore-scripts --no-audit --no-fund --package-lock=false repoctl@__VERSION__ pnpm@__PNPM_VERSION__
           echo "$RUNNER_TEMP/repoctl-tools/node_modules/.bin" >> "$GITHUB_PATH"
@@ -78,6 +80,7 @@ jobs:
           SOURCE_RUN_ID: ${{ github.event.workflow_run.id }}
           SOURCE_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
           SOURCE_ARTIFACT_ID: ${{ needs.verify.outputs.artifact_id }}
+        working-directory: ${{ runner.temp }}
         run: |
           "$RUNNER_TEMP/repoctl-tools/node_modules/.bin/repo" release snapshot publish-prepared --run-id "$SOURCE_RUN_ID" --run-attempt "$SOURCE_RUN_ATTEMPT" --artifact-id "$SOURCE_ARTIFACT_ID" --builder-sha256 "$SNAPSHOT_BUILDER_SHA256" --output "$RUNNER_TEMP/snapshot-publication" --out "$RUNNER_TEMP/snapshot-publication.json" --json
       - name: Retain the trusted publication report
@@ -104,6 +107,7 @@ jobs:
         with:
           node-version: 24.22.1
       - name: Install the pinned consumer verifier
+        working-directory: ${{ runner.temp }}
         run: |
           npm install --prefix "$RUNNER_TEMP/repoctl-tools" --ignore-scripts --no-audit --no-fund --package-lock=false repoctl@__VERSION__ pnpm@__PNPM_VERSION__
           echo "$RUNNER_TEMP/repoctl-tools/node_modules/.bin" >> "$GITHUB_PATH"
@@ -113,6 +117,7 @@ jobs:
           path: ${{ runner.temp }}/publication
           merge-multiple: true
       - name: Install exact versions and exercise their consumer entrypoints without publishing permissions
+        working-directory: ${{ runner.temp }}
         run: |
           "$RUNNER_TEMP/repoctl-tools/node_modules/.bin/repo" release snapshot verify-consumer --report "$RUNNER_TEMP/publication/snapshot-publication.json" --output "$RUNNER_TEMP/snapshot-consumer" --out "$RUNNER_TEMP/snapshot-consumer.json" --json
       - name: Retain consumer evidence

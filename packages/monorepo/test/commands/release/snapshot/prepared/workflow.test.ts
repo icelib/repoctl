@@ -36,6 +36,28 @@ it('pins an explicitly selected workspace pnpm version and rejects executable or
   }
 })
 
+it('uses runner contexts only on explicit run steps, never in workflow defaults', async () => {
+  const workflows = await getSnapshotWorkflows()
+  const expressionPrefix = '$' + '{{'
+  const runnerDirectory = `${expressionPrefix} runner.temp }}`
+  const candidateDirectory = `${expressionPrefix} github.workspace }}/candidate`
+  for (const content of Object.values(workflows)) {
+    const workflow = parse(content)
+    // GitHub rejects expressions in workflow-level defaults.run before jobs start.
+    expect(JSON.stringify(workflow.defaults.run)).not.toContain('${{')
+    for (const job of Object.values(workflow.jobs) as Array<{ steps: Array<{ 'run'?: string, 'working-directory'?: string }> }>) {
+      for (const step of job.steps.filter(step => step.run)) {
+        expect([runnerDirectory, candidateDirectory]).toContain(step['working-directory'])
+      }
+    }
+  }
+  const build = parse(workflows.build)
+  for (const name of ['freeze', 'build']) {
+    const candidate = build.jobs[name].steps.find((step: { run?: string }) => step.run?.includes(`release snapshot ${name === 'freeze' ? 'freeze' : 'prepare'}`))
+    expect(candidate['working-directory']).toBe(candidateDirectory)
+  }
+})
+
 it('separates protected planning, candidate execution, OIDC publication and consumer execution', async () => {
   const workflows = await getSnapshotWorkflows()
   const build = parse(workflows.build)

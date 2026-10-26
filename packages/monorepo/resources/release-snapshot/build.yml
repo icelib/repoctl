@@ -14,7 +14,6 @@ permissions:
 defaults:
   run:
     shell: bash
-    working-directory: ${{ runner.temp }}
 
 jobs:
   freeze:
@@ -35,6 +34,7 @@ jobs:
         with:
           node-version: 24.22.1
       - name: Install the pinned trusted tool outside candidate code
+        working-directory: ${{ runner.temp }}
         run: |
           npm install --prefix "$RUNNER_TEMP/repoctl-tools" --ignore-scripts --no-audit --no-fund --package-lock=false repoctl@__VERSION__ pnpm@__PNPM_VERSION__
           echo "$RUNNER_TEMP/repoctl-tools/node_modules/.bin" >> "$GITHUB_PATH"
@@ -43,6 +43,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ inputs.pr_number }}
+        working-directory: ${{ runner.temp }}
         run: |
           "$RUNNER_TEMP/repoctl-tools/node_modules/.bin/repo" release snapshot source --pr "$PR_NUMBER" --out "$RUNNER_TEMP/snapshot-source.json" --json
           node --input-type=module <<'NODE'
@@ -73,6 +74,7 @@ jobs:
         env:
           ARTIFACT_ID: ${{ steps.artifact.outputs.artifact-id }}
           ARTIFACT_DIGEST: ${{ steps.artifact.outputs.artifact-digest }}
+        working-directory: ${{ runner.temp }}
         run: |
           "$RUNNER_TEMP/repoctl-tools/node_modules/.bin/repo" release snapshot seal --plan "$RUNNER_TEMP/snapshot-plan.json" --artifact-id "$ARTIFACT_ID" --artifact-digest "$ARTIFACT_DIGEST"
 
@@ -88,6 +90,7 @@ jobs:
         with:
           node-version: 24.22.1
       - name: Install the pinned preparation tool
+        working-directory: ${{ runner.temp }}
         run: |
           npm install --prefix "$RUNNER_TEMP/repoctl-tools" --ignore-scripts --no-audit --no-fund --package-lock=false repoctl@__VERSION__ pnpm@__PNPM_VERSION__
           echo "$RUNNER_TEMP/repoctl-tools/node_modules/.bin" >> "$GITHUB_PATH"
