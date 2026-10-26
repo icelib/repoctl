@@ -57,27 +57,42 @@ jobs:
 
       - name: Validate release intent presence
         if: ${{ !startsWith(github.head_ref, 'pnpm-release/') && !startsWith(github.head_ref, 'release/pnpm-version') }}
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         shell: bash
         run: |
           set -euo pipefail
 
-          base_sha="${{ github.event.pull_request.base.sha }}"
-          head_sha="${{ github.event.pull_request.head.sha }}"
-          changed_files="$(git diff --name-only "$base_sha" "$head_sha")"
+          changed_files="$(mktemp)"
+          trap 'rm -f "$changed_files"' EXIT
+          if ! git diff --name-status --no-renames -z "$BASE_SHA" "$HEAD_SHA" -- > "$changed_files"; then
+            echo "Unable to inspect the frozen PR changes; release intent validation failed." >&2
+            exit 1
+          fi
 
-          publishable_changes="$(printf '%s\n' "$changed_files" | \
-            rg '^packages/[^/]+/' \
-            | rg -v '/dist/' \
-            || true)"
+          publishable_changes=()
+          has_release_intent=false
+          while IFS= read -r -d '' status && IFS= read -r -d '' file; do
+            case "$file" in
+              packages/*/*)
+                case "$file" in
+                  */dist/*) ;;
+                  *) publishable_changes+=("$file") ;;
+                esac
+                ;;
+            esac
+            case "$status:$file" in
+              [AM]:.changeset/?*.md) has_release_intent=true ;;
+            esac
+          done < "$changed_files"
 
-          if [ -z "$publishable_changes" ]; then
+          if [ "${#publishable_changes[@]}" -eq 0 ]; then
             echo "No publishable package changes detected"
             exit 0
           fi
 
-          release_intents="$(printf '%s\n' "$changed_files" | rg '^\.changeset/.+\.md$' || true)"
-
-          if [ -n "$release_intents" ]; then
+          if [ "$has_release_intent" = true ]; then
             echo "pnpm release intent detected"
             exit 0
           fi
@@ -86,5 +101,5 @@ jobs:
           echo "Create one with: pnpm change"
           echo
           echo "Changed files:"
-          printf '%s\n' "$publishable_changes"
+          printf '%s\n' "${publishable_changes[@]}"
           exit 1

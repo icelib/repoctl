@@ -34,6 +34,11 @@ export function checkConsumerWorkflows(workspace) {
       const trusted = steps.find(step => step.with?.path === 'release-validation-tools')
       assert.equal(trusted?.with?.ref, '$' + '{{ github.event.pull_request.base.sha }}')
       assert.equal(trusted?.with?.['persist-credentials'], false)
+      const presence = steps.find(step => step.name === 'Validate release intent presence')
+      assert.equal(presence?.env?.BASE_SHA, '$' + '{{ github.event.pull_request.base.sha }}')
+      assert.equal(presence?.env?.HEAD_SHA, '$' + '{{ github.event.pull_request.head.sha }}')
+      assert.match(presence?.run ?? '', /if ! git diff --name-status --no-renames -z/u)
+      assert.doesNotMatch(presence?.run ?? '', /\brg\b|\|\| true/u, 'Consumer admission must fail closed without optional search tools')
     }
   }
   assert.equal(existsSync(path.join(github, 'workflows/pr-ci.yml')), false)
