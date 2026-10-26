@@ -8,6 +8,7 @@ import process from 'node:process'
 import { createReleasePullRequest, releaseCi, repairReleaseNotes } from '@icebreakers/monorepo'
 import crossSpawn from 'cross-spawn'
 import { vi } from 'vitest'
+import { startRegistry } from '../plan/registry'
 
 export type NoteCategory = 'breaking' | 'features' | 'fixes' | 'performance' | 'maintenance' | 'docs' | 'other'
 
@@ -71,6 +72,8 @@ export async function createClassificationFixture(options: ClassificationOptions
   const summaries = typeof options.summary === 'string' ? [options.summary] : options.summary
   const manifestPath = path.join(cwd, 'packages/library/package.json')
   const changelogPath = path.join(cwd, 'packages/library/CHANGELOG.md')
+  // A local 404 preserves first-publication semantics without querying the public registry.
+  const registry = options.realVersion ? await startRegistry() : undefined
   await mkdir(path.dirname(manifestPath), { recursive: true })
   await mkdir(path.join(cwd, '.changeset'))
   await writeFile(path.join(cwd, 'package.json'), JSON.stringify({ private: true, packageManager: rootManifest.packageManager }))
@@ -88,12 +91,27 @@ export async function createClassificationFixture(options: ClassificationOptions
     if (command === 'pnpm' && args[0] === 'version') {
       versionCalls.push(args)
       if (options.realVersion) {
-        return crossSpawn.sync('pnpm', ['--config.manage-package-manager-versions=false', ...args], {
+        const result = crossSpawn.sync('pnpm', [
+          '--config.pm-on-fail=ignore',
+          '--config.runtime-on-fail=ignore',
+          '--config.manage-package-manager-versions=false',
+          ...args,
+        ], {
           cwd,
-          env: { ...process.env, COREPACK_ENABLE_NETWORK: '0', COREPACK_ENABLE_AUTO_PIN: '0' },
+          // Native pnpm 12 reads PNPM_CONFIG_REGISTRY, not npm_config_registry.
+          env: { ...process.env, PNPM_CONFIG_REGISTRY: registry!, COREPACK_ENABLE_NETWORK: '0', COREPACK_ENABLE_AUTO_PIN: '0' },
           encoding: 'utf8',
           timeout: 20_000,
         })
+        if (result.error || result.status !== 0) {
+          throw new Error([
+            `Classification fixture pnpm ${args.join(' ')} failed (status ${result.status}, signal ${result.signal}).`,
+            result.error?.message,
+            result.stdout,
+            result.stderr,
+          ].filter(Boolean).join('\n'))
+        }
+        return result
       }
       writeFileSync(manifestPath, JSON.stringify({ name: classificationPackage, version: newVersion }))
       const heading = options.heading ?? `${bump.charAt(0).toUpperCase()}${bump.slice(1)} Changes`
