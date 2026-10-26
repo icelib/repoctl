@@ -46,12 +46,11 @@ function findRepositoryRoot(startDir: string) {
   }
 }
 
-function resolveTypecheckWorkspaceDir(filePath: string, cwd: string) {
-  const workspaceRoot = findRepositoryRoot(cwd)
-  let current = path.dirname(path.resolve(cwd, filePath))
+function resolveTypecheckWorkspaceDir(filePath: string, workspaceRoot: string) {
+  let current = path.dirname(path.resolve(workspaceRoot, filePath))
 
   while (current === workspaceRoot || current.startsWith(`${workspaceRoot}${path.sep}`)) {
-    if (current !== cwd && hasTypecheckScript(current)) {
+    if (hasTypecheckScript(current)) {
       return current
     }
 
@@ -70,27 +69,27 @@ function resolveTypecheckWorkspaceDir(filePath: string, cwd: string) {
  *
  * 当前识别的扩展名：`.ts`、`.tsx`、`.mts`、`.cts`、`.vue`。
  *
- * @param stagedFiles 暂存区文件路径列表
+ * @param stagedFiles 相对于 cwd 的暂存区文件路径列表；省略时从 Git 根目录读取暂存区
  * @param options 运行参数
  */
 export function verifyStagedTypecheck(stagedFiles: string[] | undefined, options: StagedTypecheckOptions = {}) {
-  const cwd = options.cwd ?? process.cwd()
+  const cwd = path.resolve(options.cwd ?? process.cwd())
+  const workspaceRoot = findRepositoryRoot(cwd)
   const spawn = options.spawn ?? spawnSync
-  let workspaceDirs = [...new Set(
-    (stagedFiles ?? readStagedFiles(cwd))
+  const files = stagedFiles === undefined
+    ? readStagedFiles(workspaceRoot).map(file => path.resolve(workspaceRoot, file))
+    : stagedFiles.map(file => path.resolve(cwd, file))
+  const workspaceDirs = [...new Set(
+    files
       .filter((file) => {
         const basename = path.basename(file)
         return typecheckExtensions.has(path.extname(file)) || typecheckBasenames.has(basename)
       })
-      .map(file => resolveTypecheckWorkspaceDir(file, cwd)),
+      .map(file => resolveTypecheckWorkspaceDir(file, workspaceRoot)),
   )]
 
   if (workspaceDirs.length === 0) {
     return
-  }
-
-  if (workspaceDirs.includes(cwd)) {
-    workspaceDirs = [cwd]
   }
 
   for (const workspaceDir of workspaceDirs) {

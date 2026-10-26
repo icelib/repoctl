@@ -65,7 +65,7 @@ describe('verify commands', () => {
     )
   })
 
-  it('uses the root typecheck when root and child workspaces are both staged', () => {
+  it('runs root and child workspace typechecks once when both are staged', () => {
     const spawnMock = vi.fn(() => createSpawnResult())
 
     verifyStagedTypecheck([
@@ -80,6 +80,8 @@ describe('verify commands', () => {
     })
 
     expect(spawnMock.mock.calls).toEqual([
+      ['pnpm', ['--dir', path.join(repoRoot, 'packages/monorepo'), 'typecheck'], expect.objectContaining({ cwd: repoRoot, stdio: 'inherit' })],
+      ['pnpm', ['--dir', path.join(repoRoot, 'templates/client'), 'typecheck'], expect.objectContaining({ cwd: repoRoot, stdio: 'inherit' })],
       ['pnpm', ['--dir', repoRoot, 'typecheck'], expect.objectContaining({ cwd: repoRoot, stdio: 'inherit' })],
     ])
   })

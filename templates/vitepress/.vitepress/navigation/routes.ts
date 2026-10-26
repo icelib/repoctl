@@ -38,6 +38,7 @@ export const routeSections = [
     items: [
       item('', 'Task index', '任务索引'),
       item('adopt-existing', 'Adopt an existing workspace', '接入已有 workspace'),
+      item('adoption', 'Reuse release and hook automation', '复用发布与 hooks 自动化'),
       item('create-project', 'Create a package or app', '创建包或应用'),
       item('checks', 'Run checks', '运行校验'),
       item('reports', 'Reports and output', '报告与输出'),

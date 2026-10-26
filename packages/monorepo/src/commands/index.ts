@@ -158,6 +158,9 @@ export { formatEnvironmentCache } from './env-cache/format'
 
 export * from './generate'
 
+export { installGitHooks } from './hooks'
+export type { GitHookCheck, GitHooksConfig, GitHooksInstallOptions, GitHooksInstallResult } from './hooks'
+
 export { applyDevContainerPlan, planDevContainer } from './init/devcontainer'
 
 export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintenanceUpgrade } from './maintenance'
@@ -168,6 +171,7 @@ export { checkPackages } from './package-check'
 export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseCiStage, ReleaseCiStageResult, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
+export * from './release/auto-changeset'
 export type { ReleaseCompletionRecord } from './release/completion'
 export { resolveReleaseBranches } from './release/lines'
 export type { ReleaseBranchesConfig, ReleaseBranchRule } from './release/lines'
@@ -195,6 +199,9 @@ export type { PreparedSnapshot, PreparedSnapshotManifest, PrepareSnapshotOptions
 
 export { getSnapshotWorkflows } from './release/snapshot/prepared/workflow'
 export type { SnapshotWorkflowOptions, SnapshotWorkflows } from './release/snapshot/prepared/workflow'
+
+export { readReleasePreparationPolicy, validateReleasePreparation } from './release/validation'
+export type * from './release/validation/types'
 
 export * from './template-drift'
 

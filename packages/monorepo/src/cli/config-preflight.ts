@@ -14,10 +14,20 @@ export function registerConfigPreflight(program: Command, cwd: string) {
     if (action.name() === 'templates' && action.parent === program) {
       return
     }
-    // Snapshots derive their plan from committed pnpm metadata without loading
-    // executable release configuration, including through the CLI entrypoint.
+    // Metadata-only release commands load an explicitly trusted policy themselves.
+    // Never evaluate executable configuration from the current candidate checkout.
     const snapshot = action.name() === 'snapshot' ? action : action.parent
     if (snapshot?.name() === 'snapshot' && snapshot.parent?.name() === 'release' && snapshot.parent.parent === program) {
+      return
+    }
+    if (['auto-changeset', 'validate-preparation'].includes(action.name())
+      && action.parent?.name() === 'release' && action.parent.parent === program) {
+      return
+    }
+    // Hook installation must decide CI/disabled/custom Git configuration before
+    // evaluating tooling configuration, including legacy migration configuration.
+    if (action.name() === 'install' && action.parent?.name() === 'hooks'
+      && action.parent.parent?.name() === 'tooling' && action.parent.parent.parent === program) {
       return
     }
     // 核验与真实发布共享身份，但只读取 pnpm 元数据，不执行发布配置。

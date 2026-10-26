@@ -4,6 +4,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { verifySnapshotRun } from '../../../../commands/release/snapshot/prepared/github'
 import { publishPreparedSnapshot } from '../../../../commands/release/snapshot/prepared/publish'
+import { snapshotWorkflowDefaults } from '../../../../commands/release/snapshot/prepared/workflow/options'
 import { localize } from '../../../../i18n'
 import { snapshotNumber, snapshotRepository, writeSnapshotOutput } from './output'
 import { snapshotBuilderPath } from './source'
@@ -54,8 +55,9 @@ export function registerSnapshotPublication(snapshot: Command, cwd: string) {
   registerVerificationOptions(snapshot.command('publish-prepared')
     .description(localize('Publish verified immutable tarballs from the trusted default-branch publisher', '从默认分支可信 publisher 发布核验过的不可变 tarball')))
     .requiredOption('--output <directory>', localize('External publication report directory', '外部发布报告目录'))
-    .action(async (options: VerificationOptions & { output: string }) => {
-      const report = await publishPreparedSnapshot({ ...verificationOptions(options), outputDirectory: path.resolve(cwd, options.output) })
+    .option('--publisher-workflow <path>', localize('Trusted publisher workflow path configured in npm', 'npm 中配置的可信发布工作流路径'), snapshotWorkflowDefaults.publisherWorkflowPath)
+    .action(async (options: VerificationOptions & { output: string, publisherWorkflow: string }) => {
+      const report = await publishPreparedSnapshot({ ...verificationOptions(options), outputDirectory: path.resolve(cwd, options.output), publisherWorkflowPath: options.publisherWorkflow })
       await writeSnapshotOutput(report, options, `Snapshot publication: ${report.status}\n${report.installCommand}`)
       if (report.status === 'failed') {
         process.exitCode = 1

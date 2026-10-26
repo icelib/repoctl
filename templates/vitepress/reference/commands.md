@@ -316,3 +316,12 @@ Public APIs: `listToolingCapabilities()`, `planToolingCapability(cwd, options)` 
 A Vue prop-update example is `{"kind":"prop-update","prop":"msg","initial":"Hello Storybook","updated":"Updated component"}`. For a React counter use `{"kind":"click","args":{"initialCount":0},"alternateArgs":{"initialCount":4},"click":{"role":"button","name":"Increase"},"expectText":"1"}`. Component props must be JSON primitives; interaction assertions exercise the selected component. `Default`, `Alternate` and `Interaction` stories provide two states and a play test.
 
 Run `pnpm build:storybook` for the static site, then `pnpm --filter @repoctl-stories/<slug> test:storybook:install` and `pnpm test:storybook` for headless Chromium tests. Turbo builds library dependencies first and records `storybook-static/**`; play tests run without caching and write a JUnit report. Use the generated workspace's `storybook` script for local development. Its independent Vitest and Vite configurations leave the library's existing tests, package exports, runtime dependencies and tarball contents unchanged. Existing stories and configuration are preserved; differing generated files block application and require a new review. No hosted visual testing service is enabled.
+
+## Reuse release and hook automation
+
+- `repo release auto-changeset --repository owner/repo --pr 123 --json` freezes GitHub revision data and previews an automatic intent; `--apply --expected plan.json` commits only in a trusted approved same-repository context. `--workflow --out <file>` exports the pinned opt-in recipe.
+- `repo release validate-preparation --base <full SHA> --head <full SHA> --policy .github/release-validation.json --json` replays native pnpm versioning in inert metadata. Policy comes from the frozen base; only a valid result grants an ordinary intent-check exemption.
+- `repo tooling hooks install --json` supplies a reusable `prepare` installer with user hooksPath protection, worktree support, CI skipping and native domain checks. Mixed root tooling and package staging runs each selected typecheck.
+- `repo release snapshot publish-prepared --publisher-workflow .github/workflows/release.yml` selects the trusted publisher identity. `snapshot workflow` accepts `--environment`, `--builder-workflow`, `--publisher-workflow`, `--builder-name` and `--publisher-name`, generating the matching builder digest.
+
+See [Reuse release and hook automation](/tasks/adoption) for APIs, policy, approval boundaries and migration instructions.

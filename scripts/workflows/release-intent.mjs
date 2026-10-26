@@ -5,7 +5,7 @@ export function checkReleaseIntentWorkflow(rootDir) {
   const { source, workflow } = readWorkflow(rootDir, 'release-intent-check.yml')
   const job = workflow.jobs?.['release-intent']
 
-  assertReusableValidation(workflow, ['ref', 'base_sha', 'head_sha', 'head_ref'])
+  assertReusableValidation(workflow, ['ref', 'base_sha', 'base_ref', 'head_sha', 'head_ref'])
   assert.ok(job, 'release intent workflow must define release-intent job')
   assert.equal(job.if, undefined, 'Draft filtering belongs to the approval entrypoint')
   assert.ok(source.includes('inputs.base_sha'))
@@ -16,6 +16,20 @@ export function checkReleaseIntentWorkflow(rootDir) {
   assert.match(source, /rg -v '\/dist\/'/)
   assert.doesNotMatch(source, /apps\/mock/)
   assert.match(source, /\.changeset\/\.\+\\\.md/)
+  assert.doesNotMatch(source, /skipping validation/u, 'A release branch name must never grant an exemption by itself')
+  const steps = getSteps(workflow, 'release-intent')
+  const validator = steps.find(step => step.run?.includes('release validate-preparation'))
+  assert.ok(validator, 'Release-like PRs require native version-preparation validation')
+  assert.equal(validator.env?.BASE_SHA, githubExpression('inputs.base_sha'))
+  assert.equal(validator.env?.HEAD_SHA, githubExpression('inputs.head_sha'))
+  assert.equal(validator.env?.BASE_REF, githubExpression('inputs.base_ref'))
+  assert.equal(validator['continue-on-error'], undefined, 'Invalid preparation must fail admission')
+  const trusted = steps.find(step => step.with?.path === 'release-validation-tools')
+  assert.equal(trusted?.with?.ref, githubExpression('inputs.base_sha'))
+  assert.equal(trusted?.with?.['persist-credentials'], false)
+  const build = steps.find(step => step.run?.includes('pnpm --filter repoctl... build'))
+  assert.equal(build?.['working-directory'], 'release-validation-tools')
+  assert.match(build?.run ?? '', /pnpm install --frozen-lockfile --ignore-scripts/u)
 }
 
 export function checkAutomaticReleaseIntentWorkflow(rootDir) {

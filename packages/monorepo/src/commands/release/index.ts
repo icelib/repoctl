@@ -1,3 +1,4 @@
+export * from './auto-changeset'
 export { buildGitHubReleaseBody, buildGitHubReleaseBodyFromChangelog, buildReleaseNoteDocument, buildReleasePullRequestBody, readPendingIntentCommits, readWorkspaceVersions, renderGitHubRelease, renderReleasePullRequest } from './body'
 export type { ReleaseBodyMetadata, ReleaseCategory, ReleaseCommit, ReleaseNoteDocument, ReleaseNoteEntry } from './body'
 export { createReleasePullRequest, recoverUnpublished, releaseCi } from './ci'
@@ -20,3 +21,5 @@ export { hasPendingChangeset, hasReleaseArtifactPair, isReleaseCommitMessage, re
 export type { ReleaseTriggerContext } from './trigger'
 
 export type { PublishedPackage, ReleaseCiOptions, ReleaseCiStage, ReleaseMode, ReleaseOptions } from './types'
+export { readReleasePreparationPolicy, validateReleasePreparation } from './validation'
+export type * from './validation/types'

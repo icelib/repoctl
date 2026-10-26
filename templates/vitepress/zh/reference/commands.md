@@ -363,3 +363,12 @@ pnpm test:e2e
 Vue 属性切换示例：`{"kind":"prop-update","prop":"msg","initial":"Hello Storybook","updated":"Updated component"}`。React 计数器示例：`{"kind":"click","args":{"initialCount":0},"alternateArgs":{"initialCount":4},"click":{"role":"button","name":"Increase"},"expectText":"1"}`。属性值采用 JSON 基础类型；交互断言验证所选组件的实际输出。生成 `Default`、`Alternate` 两种状态和 `Interaction` play 测试。
 
 运行 `pnpm build:storybook` 构建静态站点，再运行 `pnpm --filter @repoctl-stories/<slug> test:storybook:install` 显式安装 Chromium，最后用 `pnpm test:storybook` 执行无头交互测试。Turbo 先构建组件库依赖，并缓存 `storybook-static/**`；交互测试不缓存，输出 JUnit 报告。本地开发使用文档工作区的 `storybook` 脚本。独立的 Vitest/Vite 配置保留组件库原有测试、exports、运行时依赖与 tarball 内容。自有 stories/config 不被覆盖；生成文件出现差异会阻止应用，要求重新审核。不默认接入任何托管视觉回归服务。
+
+## 复用发布与 hooks 自动化
+
+- `repo release auto-changeset --repository owner/repo --pr 123 --json` 冻结 GitHub revision 并预览自动记录；`--apply --expected plan.json` 仅在可信同仓审批上下文中提交。`--workflow --out <文件>` 导出固定版本的按需工作流。
+- `repo release validate-preparation --base <完整 SHA> --head <完整 SHA> --policy .github/release-validation.json --json` 在隔离元数据中重放 pnpm 原生版本准备。策略读取冻结 base；只有合法结果可以豁免普通 intent 检查。
+- `repo tooling hooks install --json` 是可复用的 `prepare` 安装器，保护用户 hooksPath，支持 worktree、CI 跳过和原生领域检查。混合暂存根 tooling 与包文件时分别执行对应 typecheck。
+- `repo release snapshot publish-prepared --publisher-workflow .github/workflows/release.yml` 传入可信 publisher 身份。`snapshot workflow` 支持 `--environment`、`--builder-workflow`、`--publisher-workflow`、`--builder-name`、`--publisher-name`，同步生成匹配的 builder 摘要。
+
+API、声明式策略、审批边界及迁移步骤见 [复用发布与 hooks 自动化](/zh/tasks/adoption)。

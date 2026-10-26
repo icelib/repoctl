@@ -6,6 +6,7 @@ import { localize } from '../../i18n'
 import { normalizeToolingTargets } from '../utils'
 import { registerCapabilityCommands } from './tooling/capabilities'
 import { registerDevContainerCommand } from './tooling/devcontainer'
+import { registerHooksCommands } from './tooling/hooks'
 import { registerProjectReferencesCommands } from './tooling/references'
 
 interface ToolingInitCommandOptions {
@@ -18,6 +19,7 @@ export function registerToolingCommands(program: Command, cwd: string) {
   registerProjectReferencesCommands(toolingCommand, cwd)
   registerCapabilityCommands(toolingCommand, cwd)
   registerDevContainerCommand(toolingCommand, cwd)
+  registerHooksCommands(toolingCommand, cwd)
 
   toolingCommand.command('init')
     .description(localize(`Generate tooling configuration (${initToolingTargets.join(', ')})`, `生成 tooling 配置（可选值：${initToolingTargets.join(', ')}）`))

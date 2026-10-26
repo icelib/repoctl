@@ -1,0 +1,43 @@
+name: Validate release preparation
+
+on:
+  workflow_call:
+    inputs:
+      base_sha:
+        required: true
+        type: string
+      head_sha:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.1
+      - name: Install pinned trusted tools outside the candidate checkout
+        working-directory: ${{ runner.temp }}
+        run: |
+          npm install --prefix "$RUNNER_TEMP/release-validation-tools" --ignore-scripts --no-audit --no-fund --package-lock=false repoctl@__REPOCTL_VERSION__ pnpm@__PNPM_VERSION__
+          echo "$RUNNER_TEMP/release-validation-tools/node_modules/.bin" >> "$GITHUB_PATH"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Replay native version preparation from frozen metadata
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+          HEAD_SHA: ${{ inputs.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/release-validation-tools/node_modules/.bin/repo" release validate-preparation \
+            --base "$BASE_SHA" --head "$HEAD_SHA" \
+            --policy .github/release-validation.json --json

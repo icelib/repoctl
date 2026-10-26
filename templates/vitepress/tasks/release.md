@@ -246,6 +246,19 @@ Select the exact pnpm 12 version declared by the workspace's `packageManager`. T
 
 Create a `pr-snapshot` environment with required reviewers and administrator bypass disabled. Configure each package's npm Trusted Publisher for this repository and `repoctl-snapshot-publish.yml`. The publisher uses the built-in GitHub token and npm OIDC; no GitHub App or PAT is needed. The freeze job waits for environment approval before obtaining a runner. Dispatch **repoctl PR snapshot build** on the default branch with an open, ready, mergeable, same-repository PR number. Fork PRs cannot use this publisher.
 
+The same exporter can match an existing publisher identity and approval environment:
+
+```bash
+repo release snapshot workflow --out reviewed-workflows \
+  --environment package-review \
+  --builder-workflow .github/workflows/pr-packages.yml \
+  --publisher-workflow .github/workflows/release.yml \
+  --builder-name "Approved PR packages" \
+  --publisher-name "Publish PR packages"
+```
+
+The output directory receives `pr-packages.yml` and `release.yml`. Review these files before placing them at the configured repository paths; existing files are never merged or overwritten. The exported builder source command, publisher verification policy, `workflow_run` name, npm publisher identity and exact builder SHA256 all agree. Paths must be distinct YAML files directly under `.github/workflows`; names and the environment must be static values. A hand-maintained publisher can pass `snapshot publish-prepared --publisher-workflow .github/workflows/release.yml` along with its matching builder and environment options. The workflow must still run as the trusted default-branch `workflow_run` publisher. Each npm package can have up to ten trusted publishers, so retaining the default snapshot publisher alongside an existing release publisher is also an option.
+
 The protected freeze job reads the current PR head/base/merge and immutable run identity, checks the merge parents, and creates the package/version/dependency plan using the pinned tool without installing or executing candidate code. It uploads `snapshot-plan.json` and records its artifact ID, digest and plan digest in its own job log. A separate job checks out the frozen merge commit, builds and validates the exact package closure with read-only permissions, and uploads only `snapshot-manifest.json` and its declared tarballs. Schema version 1 records repository and PR identity, full head/base/merge SHAs, workflow/run/attempt, exact snapshot versions and dependency edges, SHA512 integrity, and build/package checks.
 
 The default-branch `workflow_run` publisher verifies the trusted builder bytes, reviewer environment, approval, successful freeze/build jobs from the same attempt, the trusted freeze log, immutable artifact IDs and ZIP digests, and the current PR revision. It compares every package and dependency with the frozen plan and checks every tarball before requesting npm credentials. Extra or missing packages, altered bytes, unsafe paths, dangerous `publishConfig`, forks and stale revisions fail before upload. Missing or expired approval logs/artifacts require a fresh approved build.
@@ -265,7 +278,7 @@ The workflow uses these public CLI/API boundaries:
 | Publish the verified bundle     | `snapshot publish-prepared --run-id <id> --run-attempt <attempt> --builder-sha256 <trusted-hash> --output <external-directory>` | `publishPreparedSnapshot(options)`        |
 | Verify exact installed packages | `snapshot verify-consumer --report <publication.json> --output <external-directory>`                                            | `verifyPreparedSnapshotConsumer(options)` |
 
-Prefix the CLI entries above with `repo release`. The source and verifier infer the repository from `GITHUB_REPOSITORY`, or accept `--repository <owner/repo>`. `--json` emits structured results and `--out` writes a new result file. `snapshot seal` binds the uploaded plan to the trusted freeze log. `getSnapshotWorkflows({ pnpmVersion? })` returns the matched workflow strings. The prepared publisher supports public npm only; the existing local snapshot and nightly APIs remain compatible. All snapshot subcommands skip executable release configuration and leave formal changesets, versions, changelogs and the release ledger untouched.
+Prefix the CLI entries above with `repo release`. The source and verifier infer the repository from `GITHUB_REPOSITORY`, or accept `--repository <owner/repo>`. `--json` emits structured results and `--out` writes a new result file. `snapshot seal` binds the uploaded plan to the trusted freeze log. `getSnapshotWorkflows({ pnpmVersion?, environment?, builderWorkflowPath?, publisherWorkflowPath?, builderWorkflowName?, publisherWorkflowName? })` returns the matched workflow strings using the same settings as the exporter. The prepared publisher supports public npm only; the existing local snapshot and nightly APIs remain compatible. All snapshot subcommands skip executable release configuration and leave formal changesets, versions, changelogs and the release ledger untouched.
 
 ## Next
 
