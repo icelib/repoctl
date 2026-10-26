@@ -29,12 +29,11 @@ function missingVersionTarget(message: string, stack: unknown): string | undefin
   return reference?.replace(/^(?:@[^/@\s]+\/)?[^/@\s]+@npm:/u, '')
 }
 
-/** A confirmed upload can precede visibility in pnpm's installation packument. */
-export function missingBatchVersion(error: unknown, report: NightlyReport): boolean {
+/** Retry only named registry versions; unrelated resolution or authentication errors fail immediately. */
+export function missingRegistryVersion(error: unknown, expected: ReadonlySet<string>): boolean {
   if (!(error instanceof ConsumerCommandError) || error.command.exitCode === null) {
     return false
   }
-  const expected = new Set(report.packages.flatMap(pkg => [`${pkg.name}@snapshot-nightly`, `${pkg.name}@${pkg.version}`]))
   let missing = false
   for (const line of `${error.command.stdout}\n${error.command.stderr}`.split('\n').filter(line => line.trim())) {
     let record: unknown
@@ -67,4 +66,9 @@ export function missingBatchVersion(error: unknown, report: NightlyReport): bool
     missing = true
   }
   return missing
+}
+
+/** A confirmed upload can precede visibility in pnpm's installation packument. */
+export function missingBatchVersion(error: unknown, report: NightlyReport): boolean {
+  return missingRegistryVersion(error, new Set(report.packages.flatMap(pkg => [`${pkg.name}@snapshot-nightly`, `${pkg.name}@${pkg.version}`])))
 }

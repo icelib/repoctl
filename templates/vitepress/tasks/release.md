@@ -233,6 +233,40 @@ Publication defaults to the public npm registry; `--registry <https-url>` explic
 
 The public APIs are `createSnapshotPlan(options)` and `releaseSnapshot(options)`. Both expose `schemaVersion: 1`, the native plan, snapshot identity, candidates, exact versions, target tag and install instructions. `releaseSnapshot` adds retained artifacts and validation results; preparation failures return `status: failed` with `error`, and the CLI exits with code 1.
 
+### Publish a prepared PR snapshot from a separate trusted workflow
+
+For PR snapshots, export the approved builder and independent publisher together:
+
+```bash
+repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0 --dry-run --json
+repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0
+```
+
+Select the exact pnpm 12 version declared by the workspace's `packageManager`. The command creates `repoctl-snapshot-build.yml` and `repoctl-snapshot-publish.yml`; it protects existing different files and treats identical files as a no-op. To upgrade or customize the recipe, export into an empty directory, review both files together, and replace the reviewed pair. The publisher embeds the SHA256 of the exact builder bytes, so changing only the builder makes verification fail. Export pins the installed repoctl version; merge the reviewed pair into the default branch before use. This recipe is opt-in and does not change the ordinary PR CI or Release workflow.
+
+Create a `pr-snapshot` environment with required reviewers and administrator bypass disabled. Configure each package's npm Trusted Publisher for this repository and `repoctl-snapshot-publish.yml`. The publisher uses the built-in GitHub token and npm OIDC; no GitHub App or PAT is needed. The freeze job waits for environment approval before obtaining a runner. Dispatch **repoctl PR snapshot build** on the default branch with an open, ready, mergeable, same-repository PR number. Fork PRs cannot use this publisher.
+
+The protected freeze job reads the current PR head/base/merge and immutable run identity, checks the merge parents, and creates the package/version/dependency plan using the pinned tool without installing or executing candidate code. It uploads `snapshot-plan.json` and records its artifact ID, digest and plan digest in its own job log. A separate job checks out the frozen merge commit, builds and validates the exact package closure with read-only permissions, and uploads only `snapshot-manifest.json` and its declared tarballs. Schema version 1 records repository and PR identity, full head/base/merge SHAs, workflow/run/attempt, exact snapshot versions and dependency edges, SHA512 integrity, and build/package checks.
+
+The default-branch `workflow_run` publisher verifies the trusted builder bytes, reviewer environment, approval, successful freeze/build jobs from the same attempt, the trusted freeze log, immutable artifact IDs and ZIP digests, and the current PR revision. It compares every package and dependency with the frozen plan and checks every tarball before requesting npm credentials. Extra or missing packages, altered bytes, unsafe paths, dangerous `publishConfig`, forks and stale revisions fail before upload. Missing or expired approval logs/artifacts require a fresh approved build.
+
+The publishing job has no candidate checkout and never installs, imports or runs candidate code or package scripts. It uses the public OIDC audit with the real publisher identity, then publishes only the checked tarballs under `snapshot-pr-<number>`. It preserves `latest`, confirms registry integrity and the snapshot tag, and retries existing exact versions only when their integrity matches. A per-PR publication lock prevents competing uploads; an older build cannot roll the tag back. Npm publication is not an atomic batch: a failed run can leave confirmed packages, and retrying the same unchanged artifact reconciles them. Re-run all builder jobs for a new approval after a build failure; a publisher retry reuses the original builder run, attempt and immutable artifacts. Changes to PR head/base/merge require a new build.
+
+A separate consumer job without OIDC or write permissions installs the confirmed exact versions and checks their integrity, runtime entrypoints and types. A trusted reporting job writes the exact install command and the GitHub consumer job result to the PR. Consumer failures leave the workflow failed while reporting the packages that were already published. Provenance identifies the actual default-branch publisher; the manifest and report retain the separately verified candidate build source. The workflow never rewrites GitHub event or SHA variables to impersonate the builder.
+
+The workflow uses these public CLI/API boundaries:
+
+| Task                            | CLI                                                                                                                             | API                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Resolve frozen GitHub source    | `snapshot source --pr <N> --out <source.json>`                                                                                  | `freezeSnapshotSource(options)`           |
+| Plan checked-out metadata       | `snapshot freeze --source <source.json> --out <snapshot-plan.json>`                                                             | `createSnapshotBuildPlan(options)`        |
+| Build portable artifacts        | `snapshot prepare --plan <snapshot-plan.json> --output <external-directory>`                                                    | `prepareSnapshot(options)`                |
+| Verify completed build          | `snapshot verify --run-id <id> --run-attempt <attempt> --builder-sha256 <trusted-hash>`                                         | `verifySnapshotRun(options)`              |
+| Publish the verified bundle     | `snapshot publish-prepared --run-id <id> --run-attempt <attempt> --builder-sha256 <trusted-hash> --output <external-directory>` | `publishPreparedSnapshot(options)`        |
+| Verify exact installed packages | `snapshot verify-consumer --report <publication.json> --output <external-directory>`                                            | `verifyPreparedSnapshotConsumer(options)` |
+
+Prefix the CLI entries above with `repo release`. The source and verifier infer the repository from `GITHUB_REPOSITORY`, or accept `--repository <owner/repo>`. `--json` emits structured results and `--out` writes a new result file. `snapshot seal` binds the uploaded plan to the trusted freeze log. `getSnapshotWorkflows({ pnpmVersion? })` returns the matched workflow strings. The prepared publisher supports public npm only; the existing local snapshot and nightly APIs remain compatible. All snapshot subcommands skip executable release configuration and leave formal changesets, versions, changelogs and the release ledger untouched.
+
 ## Next
 
 Read [publishing and changelogs](/learn/monorepo/publish) for repository policy and [reports and output](/tasks/reports) for CI artifacts.

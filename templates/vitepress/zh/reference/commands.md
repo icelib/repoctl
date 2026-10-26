@@ -291,6 +291,8 @@ JSON 使用 schema version `1`、目录节点 ID 和稳定排序，字段名及�
 
 ## 分组命令
 
+`repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0 --dry-run --json` 预览按需启用的审批 builder 与可信 publisher；移除 `--dry-run` 后整体预检并创建两份文件，保护已有不同内容。pnpm 精确版本应与 `packageManager` 一致。`snapshot prepare --plan <冻结计划.json> --output <外部目录>` 构建可移交 bundle；`snapshot publish-prepared --run-id <id> --run-attempt <attempt> --builder-sha256 <可信摘要> --output <外部目录>` 核验已完成审批的 GitHub 构建并仅发布其已检查 tarball。审批、OIDC、消费者隔离和重试见 [PR 快照工作流配置与 API 表](/zh/tasks/release#由独立可信工作流发布已准备的-pr-快照)。
+
 可选根目录开发环境参阅 [Dev Container 预设](./devcontainer.md)：先运行 `repo tooling devcontainer --json --out ../plan.json`，审阅后使用 `repo tooling devcontainer --apply ../plan.json`。
 
 ```bash

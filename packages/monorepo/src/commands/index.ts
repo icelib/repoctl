@@ -177,12 +177,24 @@ export { createNightlyPlan, releaseNightly } from './release/nightly'
 export type { NightlyConsumerReport, NightlyOptions, NightlyPackage, NightlyReport } from './release/nightly'
 
 export { auditReleaseOidc } from './release/oidc'
-export type { ReleaseOidcAuditOptions, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from './release/oidc'
+export type { ReleaseOidcArtifactAuditOptions, ReleaseOidcAuditOptions, ReleaseOidcAuditPackage, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from './release/oidc'
 export { createReleasePlan } from './release/plan'
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
 export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
-
 export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
+export { verifyPreparedSnapshotConsumer } from './release/snapshot/prepared/consumer'
+export type { PreparedSnapshotConsumerOptions, PreparedSnapshotConsumerReport } from './release/snapshot/prepared/consumer'
+export { freezeSnapshotSource, verifySnapshotRun } from './release/snapshot/prepared/github'
+export type { FreezeSnapshotSourceOptions, SnapshotRunEvidence, SnapshotWorkflowPolicy, VerifiedSnapshotRun, VerifySnapshotRunOptions } from './release/snapshot/prepared/github/types'
+export { createSnapshotBuildPlan } from './release/snapshot/prepared/plan'
+export { prepareSnapshot } from './release/snapshot/prepared/prepare'
+export { publishPreparedSnapshot } from './release/snapshot/prepared/publish'
+export type { PreparedSnapshotPublishOptions, PreparedSnapshotPublishReport } from './release/snapshot/prepared/publish'
+export { snapshotPlanDigest } from './release/snapshot/prepared/schema'
+export type { PreparedSnapshot, PreparedSnapshotManifest, PrepareSnapshotOptions, SnapshotBuildPackage, SnapshotBuildPlan, SnapshotBuildPlanOptions, SnapshotDependency, SnapshotSource } from './release/snapshot/prepared/types'
+
+export { getSnapshotWorkflows } from './release/snapshot/prepared/workflow'
+export type { SnapshotWorkflowOptions, SnapshotWorkflows } from './release/snapshot/prepared/workflow'
 
 export * from './template-drift'
 

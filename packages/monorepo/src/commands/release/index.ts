@@ -7,7 +7,7 @@ export type { CloseLegacyPullRequestsOptions, EnsurePullRequestOptions, EnsureRe
 export { runAfterPublishHooks, runQualityScripts, runReleaseHooks } from './hooks'
 export type { ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './lifecycle/types'
 export { auditReleaseOidc } from './oidc'
-export type { ReleaseOidcAuditOptions, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from './oidc'
+export type { ReleaseOidcArtifactAuditOptions, ReleaseOidcAuditOptions, ReleaseOidcAuditPackage, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from './oidc'
 export { enterPrerelease, exitPrerelease, releasePrerelease } from './prerelease'
 export { reconcileRelease } from './reconcile'
 export type { ReleaseReconcileOptions } from './reconcile'
