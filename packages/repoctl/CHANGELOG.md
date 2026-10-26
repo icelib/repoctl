@@ -1,5 +1,18 @@
 # repoctl
 
+## 6.2.0
+
+### Minor Changes
+
+- 支持经审批的 PR snapshot 分阶段构建与可信 artifact 发布，提供完整性核验、OIDC 审计、隔离消费者验证及按需导出的官方工作流。
+
+- Add public automatic changeset planning and approved atomic commits, isolated native Release PR validation, safe Git hook installation and configurable prepared snapshot workflows.
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/monorepo@6.2.0
+
 ## 6.1.0
 
 ### Minor Changes

@@ -1,5 +1,12 @@
 # create-repoctl
 
+## 1.2.9
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/monorepo-templates@3.1.1
+
 ## 1.2.8
 
 ### Patch Changes

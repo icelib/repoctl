@@ -344,6 +344,11 @@
     - shaggy-beans-jump
     - short-plums-eat
     - tiny-cups-flash
+"@icebreakers/monorepo-templates@3.1.1":
+  dir: packages/monorepo-templates
+  intents:
+    - clever-ants-taste
+    - strong-jeans-return
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -597,6 +602,11 @@
     - neat-stars-retire
     - short-plums-eat
     - tidy-toys-taste
+"@icebreakers/monorepo@6.2.0":
+  dir: packages/monorepo
+  intents:
+    - kind-goats-report
+    - short-swans-chew
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -975,6 +985,11 @@ repoctl@6.1.0:
     - heavy-goats-bathe
     - lucky-mangos-leave
     - tidy-toys-taste
+repoctl@6.2.0:
+  dir: packages/repoctl
+  intents:
+    - kind-goats-report
+    - short-swans-chew
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:

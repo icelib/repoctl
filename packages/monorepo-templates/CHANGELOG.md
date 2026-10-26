@@ -1,5 +1,13 @@
 # @icebreakers/monorepo-templates
 
+## 3.1.1
+
+### Patch Changes
+
+- Require frozen native release preparation validation for release-like consumer pull requests instead of trusting branch prefixes.
+
+- 补充可信 PR snapshot 工作流的中英文使用说明、权限边界和恢复流程。
+
 ## 3.1.0
 
 ### Minor Changes
