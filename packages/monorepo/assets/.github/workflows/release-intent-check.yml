@@ -17,10 +17,43 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - name: Skip generated release PRs
+      - name: Check out trusted release validation dependencies
         if: startsWith(github.head_ref, 'pnpm-release/') || startsWith(github.head_ref, 'release/pnpm-version')
-        run: echo "Generated pnpm release PR detected; skipping validation"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: release-validation-tools
+          persist-credentials: false
+
+      - name: Set up the trusted validator runtime
+        if: startsWith(github.head_ref, 'pnpm-release/') || startsWith(github.head_ref, 'release/pnpm-version')
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.1
+
+      - name: Install the frozen base tools without lifecycle scripts
+        if: startsWith(github.head_ref, 'pnpm-release/') || startsWith(github.head_ref, 'release/pnpm-version')
+        working-directory: release-validation-tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global corepack@0.36.0
+          corepack enable
+          pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Validate exact release preparation
+        if: startsWith(github.head_ref, 'pnpm-release/') || startsWith(github.head_ref, 'release/pnpm-version')
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.base_ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$GITHUB_WORKSPACE/release-validation-tools/node_modules/.bin/repo" release validate-preparation \
+            --base "$BASE_SHA" --head "$HEAD_SHA" --branch "$BASE_REF" --json
 
       - name: Validate release intent presence
         if: ${{ !startsWith(github.head_ref, 'pnpm-release/') && !startsWith(github.head_ref, 'release/pnpm-version') }}

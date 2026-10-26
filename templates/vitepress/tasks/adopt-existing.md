@@ -157,3 +157,5 @@ or manually extend `pnpm-workspace.yaml`.
 - [Add checks to CI](/tasks/ci)
 - [Troubleshoot](/tasks/troubleshooting)
 - [Configuration](/reference/config)
+
+For complex workspaces, see [Reuse release and hook automation](./adoption) to replace copied automatic changeset, formal Release PR validation and hooks installer scripts with declarative policy.

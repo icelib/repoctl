@@ -36,6 +36,50 @@ it('pins an explicitly selected workspace pnpm version and rejects executable or
   }
 })
 
+it('binds custom workflow names, filenames and approval environments into the same trusted recipe', async () => {
+  const workflows = await getSnapshotWorkflows({
+    environment: '审批: snapshot',
+    builderWorkflowPath: '.github/workflows/pr-build.yaml',
+    publisherWorkflowPath: '.github/workflows/release.yml',
+    builderWorkflowName: 'PR packages: "approved"',
+    publisherWorkflowName: 'Release snapshots',
+  })
+  const build = parse(workflows.build)
+  const publish = parse(workflows.publish)
+  expect(build.name).toBe('PR packages: "approved"')
+  expect(build.jobs.freeze.environment).toBe('审批: snapshot')
+  expect(build.env.SNAPSHOT_BUILDER_WORKFLOW).toBe('.github/workflows/pr-build.yaml')
+  expect(publish.name).toBe('Release snapshots')
+  expect(publish.on.workflow_run.workflows).toEqual([build.name])
+  expect(publish.env).toMatchObject({
+    SNAPSHOT_BUILDER_SHA256: createHash('sha256').update(workflows.build).digest('hex'),
+    SNAPSHOT_BUILDER_WORKFLOW: '.github/workflows/pr-build.yaml',
+    SNAPSHOT_PUBLISHER_WORKFLOW: '.github/workflows/release.yml',
+    SNAPSHOT_BUILD_ENVIRONMENT: '审批: snapshot',
+  })
+  const command = publish.jobs.publish.steps.find((step: { run?: string }) => step.run?.includes('snapshot publish-prepared')).run
+  expect(command).toContain('--builder-workflow "$SNAPSHOT_BUILDER_WORKFLOW"')
+  expect(command).toContain('--publisher-workflow "$SNAPSHOT_PUBLISHER_WORKFLOW"')
+  expect(command).toContain('--environment "$SNAPSHOT_BUILD_ENVIRONMENT"')
+})
+
+it('rejects ambiguous destinations and executable YAML expressions before exporting', async () => {
+  for (const options of [
+    { builderWorkflowPath: '../outside.yml' },
+    { publisherWorkflowPath: '.github/workflows/nested/release.yml' },
+    { builderWorkflowPath: '.github/workflows/release.yml', publisherWorkflowPath: '.github/workflows/RELEASE.yml' },
+    { builderWorkflowName: 'same', publisherWorkflowName: 'Same' },
+    { environment: '$' + '{{ secrets.ENVIRONMENT }}' },
+    { publisherWorkflowName: 'name\nrun: injected' },
+    { environment: ' ' },
+  ]) {
+    await expect(getSnapshotWorkflows(options)).rejects.toThrow('Snapshot')
+  }
+  const literal = await getSnapshotWorkflows({ builderWorkflowName: '__VERSION__' })
+  expect(parse(literal.build).name).toBe('__VERSION__')
+  expect(parse(literal.publish).on.workflow_run.workflows).toEqual(['__VERSION__'])
+})
+
 it('uses runner contexts only on explicit run steps, never in workflow defaults', async () => {
   const workflows = await getSnapshotWorkflows()
   const expressionPrefix = '$' + '{{'

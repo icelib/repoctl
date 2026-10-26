@@ -1,9 +1,9 @@
 import type { SpawnSyncOptionsWithStringEncoding } from 'node:child_process'
-import { spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
+import crossSpawn from 'cross-spawn'
 import YAML from 'yaml'
 
 export const repoRoot = path.resolve(import.meta.dirname, '../../../..')
@@ -22,7 +22,7 @@ export function environment(cwd: string): NodeJS.ProcessEnv {
 
 export function run(cwd: string, executable: string, args: string[], env = environment(cwd)) {
   const options: SpawnSyncOptionsWithStringEncoding = { cwd, env, encoding: 'utf8', timeout: 30_000 }
-  const result = spawnSync(executable, args, options)
+  const result = crossSpawn.sync(executable, args, options)
   if (result.error) {
     throw result.error
   }

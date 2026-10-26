@@ -108,7 +108,7 @@ export function checkValidators(workflow, manual) {
   }
   assert.equal(jobs.build.if, githubExpression('needs.prepare.outputs.run_ci == \'true\''))
   assert.equal(jobs.devcontainer.if, githubExpression('needs.prepare.outputs.run_devcontainer == \'true\''))
-  for (const input of ['base_sha', 'head_sha', 'head_ref']) {
+  for (const input of ['base_sha', 'base_ref', 'head_sha', 'head_ref']) {
     assert.equal(jobs['release-intent'].with?.[input], githubExpression(`needs.prepare.outputs.${input}`))
   }
 }

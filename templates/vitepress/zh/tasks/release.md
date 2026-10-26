@@ -252,6 +252,19 @@ repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0
 
 创建 `pr-snapshot` 环境，配置 required reviewers，并关闭管理员绕过。为每个包配置本仓库、`repoctl-snapshot-publish.yml` 对应的 npm Trusted Publisher。流程只用内置 GitHub token 与 npm OIDC，不需要 GitHub App 或 PAT。freeze job 在环境审批通过前不分配 runner。从默认分支手动调度 **repoctl PR snapshot build**，填写已打开、非草稿、可合并的同仓库 PR 编号；fork PR 不能通过此流程发布。
 
+也可以直接匹配已有的发布身份和审批环境：
+
+```bash
+repo release snapshot workflow --out reviewed-workflows \
+  --environment package-review \
+  --builder-workflow .github/workflows/pr-packages.yml \
+  --publisher-workflow .github/workflows/release.yml \
+  --builder-name "Approved PR packages" \
+  --publisher-name "Publish PR packages"
+```
+
+输出目录中会生成 `pr-packages.yml` 和 `release.yml`。审核后放到指定的仓库相对路径；已有文件不会自动合并或覆盖。builder 来源命令、publisher 核验策略、`workflow_run` 名称、npm 发布身份和 builder 实际 SHA256 会一起生成。两个路径必须是 `.github/workflows` 直接包含的不同 YAML 文件；名称和环境必须是静态值。手工维护 publisher 时，可以传 `snapshot publish-prepared --publisher-workflow .github/workflows/release.yml`，并提供匹配的 builder 与 environment 参数；仍须由默认分支可信 `workflow_run` 执行。npm 每个包最多支持 10 个 trusted publishers，也可以保留默认 snapshot publisher，与已有正式发布身份并存。
+
 受保护的 freeze job 读取当前 PR head/base/merge 与不可变运行身份，检查 merge 双亲，再用固定版本工具生成包、版本及依赖计划，不安装或执行候选代码。它上传 `snapshot-plan.json`，并在自身日志中记录 artifact ID、摘要及计划摘要。独立 build job 检出冻结的 merge，以只读权限构建和校验完整依赖闭包，仅上传 `snapshot-manifest.json` 及声明的 tarball。schema 版本 1 包含仓库与 PR 身份、完整 head/base/merge SHA、workflow/run/attempt、精确快照版本及依赖边、SHA512 完整性和构建/包验证结果。
 
 默认分支的 `workflow_run` publisher 核验可信 builder 字节、reviewer 环境、审批记录、同一 attempt 内成功的 freeze/build job、可信 freeze 日志、不可变 artifact ID 和 ZIP 摘要，以及当前 PR revision。所有包和依赖必须与冻结计划一致，全部 tarball 通过检查后才请求 npm 凭据。额外或缺失包、内容篡改、危险路径和 `publishConfig`、fork、过期 revision 均在上传前失败。审批日志或 artifact 缺失、过期时，需要重新审批构建。
@@ -271,7 +284,7 @@ repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0
 | 发布核验过的 bundle  | `snapshot publish-prepared --run-id <id> --run-attempt <attempt> --builder-sha256 <可信摘要> --output <外部目录>` | `publishPreparedSnapshot(options)`        |
 | 验证精确安装结果     | `snapshot verify-consumer --report <publication.json> --output <外部目录>`                                        | `verifyPreparedSnapshotConsumer(options)` |
 
-上表 CLI 均加 `repo release` 前缀。source 和 verifier 默认从 `GITHUB_REPOSITORY` 读取仓库，也可传 `--repository <owner/repo>`。`--json` 输出结构化结果，`--out` 写入新的结果文件。`snapshot seal` 将已上传计划绑定到可信 freeze 日志。`getSnapshotWorkflows({ pnpmVersion? })` 返回配套工作流文本。prepared publisher 仅支持公共 npm；原有本地 snapshot 与 nightly API 保持兼容。所有 snapshot 子命令均跳过可执行发布配置，不消费正式 changeset，不修改正式版本、changelog 或 release ledger。
+上表 CLI 均加 `repo release` 前缀。source 和 verifier 默认从 `GITHUB_REPOSITORY` 读取仓库，也可传 `--repository <owner/repo>`。`--json` 输出结构化结果，`--out` 写入新的结果文件。`snapshot seal` 将已上传计划绑定到可信 freeze 日志。`getSnapshotWorkflows({ pnpmVersion?, environment?, builderWorkflowPath?, publisherWorkflowPath?, builderWorkflowName?, publisherWorkflowName? })` 与导出命令使用相同参数，返回配套工作流文本。prepared publisher 仅支持公共 npm；原有本地 snapshot 与 nightly API 保持兼容。所有 snapshot 子命令均跳过可执行发布配置，不消费正式 changeset，不修改正式版本、changelog 或 release ledger。
 
 ## 下一步
 

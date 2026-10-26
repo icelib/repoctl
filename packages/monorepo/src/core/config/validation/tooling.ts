@@ -8,6 +8,7 @@ const apiPackage = object({ entries: record(apiEntry), tsconfig: string } satisf
 
 export const toolingSchema = object({
   apiReports: record(apiPackage),
+  hooks: object({ preCommit: array(object({ name: string, run: string, glob: string, stageFixed: boolean }, ['name', 'run'])) }),
   projectReferences: object({ enabled: boolean, root: string, projects: strings, exclude: strings, relations: array(object({ source: string, target: string }, ['source', 'target'])) }),
   commitlint: opaque,
   eslint: opaque,

@@ -8,6 +8,7 @@ declare const report: PreparedSnapshotPublishReport
 expectType<Promise<SnapshotBuildPlan>>(createSnapshotBuildPlan({ cwd: '.', source }))
 expectType<Promise<PreparedSnapshot>>(prepareSnapshot({ cwd: '.', plan, outputDirectory: '/tmp/output' }))
 expectType<Promise<{ build: string, publish: string }>>(getSnapshotWorkflows())
+expectType<Promise<{ build: string, publish: string }>>(getSnapshotWorkflows({ environment: 'reviewed', builderWorkflowPath: '.github/workflows/build.yml', publisherWorkflowPath: '.github/workflows/release.yml', builderWorkflowName: 'Build packages', publisherWorkflowName: 'Publish packages' }))
 expectType<Promise<PreparedSnapshotPublishReport>>(publishPreparedSnapshot({
   repository: 'acme/repo',
   runId: 1,

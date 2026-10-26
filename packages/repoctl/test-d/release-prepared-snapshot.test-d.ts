@@ -12,3 +12,11 @@ expectType<Promise<PreparedSnapshotPublishReport>>(publishPreparedSnapshot(publi
 expectType<Promise<PreparedSnapshotConsumerReport>>(verifyPreparedSnapshotConsumer({ report, outputDirectory: '/tmp/output' }))
 expectType<Promise<{ build: string, publish: string }>>(getSnapshotWorkflows())
 void auditReleaseOidc({ packages: [{ name: 'pkg', version: '1.0.0' }] })
+
+expectType<Promise<{ build: string, publish: string }>>(getSnapshotWorkflows({
+  environment: 'release-snapshot',
+  builderWorkflowPath: '.github/workflows/build.yml',
+  publisherWorkflowPath: '.github/workflows/release.yml',
+  builderWorkflowName: 'Build candidate',
+  publisherWorkflowName: 'Publish candidate',
+}))

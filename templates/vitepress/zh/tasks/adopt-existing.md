@@ -159,3 +159,5 @@ pnpm exec repo init --yes
 - [把校验加入 CI](/zh/tasks/ci)
 - [排障](/zh/tasks/troubleshooting)
 - [配置文件](/zh/reference/config)
+
+复杂仓库可继续阅读 [复用发布与 hooks 自动化](./adoption)：以声明式策略替代自动 changeset、正式 Release PR 校验和 hooks 安装器的通用脚本。

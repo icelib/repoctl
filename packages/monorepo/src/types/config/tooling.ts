@@ -6,6 +6,7 @@ import type {
 import type { StylelintConfig as IcebreakerStylelintConfigOptions } from '@icebreakers/stylelint-config'
 import type { ViteUserConfig } from 'vitest/config'
 import type { PublicApiConfig } from '../../commands/api-report/types'
+import type { GitHooksConfig } from '../../commands/hooks/types'
 import type { ProjectReferencesConfig } from '../project-references'
 
 /**
@@ -190,6 +191,8 @@ export interface VitestProjectToolingConfig {
 export interface ToolingConfig {
   /** Explicit public declaration entrypoints and reviewed API baselines. */
   apiReports?: PublicApiConfig
+  /** Native Lefthook domain checks, preserving staged-file isolation and final typechecking. */
+  hooks?: GitHooksConfig
   commitlint?: CommitlintToolingConfig
   eslint?: EslintToolingConfig
   stylelint?: StylelintToolingConfig

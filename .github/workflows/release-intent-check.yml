@@ -9,6 +9,9 @@ on:
       base_sha:
         required: true
         type: string
+      base_ref:
+        required: true
+        type: string
       head_sha:
         required: true
         type: string
@@ -31,9 +34,43 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - name: Skip generated release PRs
+      - name: Check out the trusted base validator
         if: startsWith(inputs.head_ref, 'pnpm-release/') || startsWith(inputs.head_ref, 'release/pnpm-version')
-        run: echo "Generated pnpm release PR detected; skipping validation"
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.base_sha }}
+          path: release-validation-tools
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up the trusted validator runtime
+        if: startsWith(inputs.head_ref, 'pnpm-release/') || startsWith(inputs.head_ref, 'release/pnpm-version')
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.22.1
+
+      - name: Build the validator from the frozen trusted base
+        if: startsWith(inputs.head_ref, 'pnpm-release/') || startsWith(inputs.head_ref, 'release/pnpm-version')
+        working-directory: release-validation-tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --global corepack@0.36.0
+          corepack enable
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm --filter repoctl... build
+
+      - name: Validate the exact version preparation before granting an exemption
+        if: startsWith(inputs.head_ref, 'pnpm-release/') || startsWith(inputs.head_ref, 'release/pnpm-version')
+        env:
+          BASE_SHA: ${{ inputs.base_sha }}
+          HEAD_SHA: ${{ inputs.head_sha }}
+          BASE_REF: ${{ inputs.base_ref }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node "$GITHUB_WORKSPACE/release-validation-tools/packages/monorepo/bin/repo.js" release validate-preparation \
+            --base "$BASE_SHA" --head "$HEAD_SHA" --branch "$BASE_REF" --json
 
       - name: Validate release intent presence
         if: ${{ !startsWith(inputs.head_ref, 'pnpm-release/') && !startsWith(inputs.head_ref, 'release/pnpm-version') }}

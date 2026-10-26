@@ -6,10 +6,12 @@ import { resolveCommandConfig } from '../../core/config'
 import { resolveCommandValues } from '../../core/config/resolution'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
+import { registerAutoChangeset } from './release/auto-changeset'
 import { registerNightly } from './release/nightly'
 import { registerNpmMirror } from './release/npmmirror'
 import { registerReleasePlan } from './release/plan'
 import { registerSnapshot } from './release/snapshot'
+import { registerReleasePreparationValidation } from './release/validation'
 
 async function runReleaseAction(action: () => void | Promise<void>) {
   try {
@@ -35,6 +37,8 @@ export function registerReleaseCommands(program: Command, cwd: string) {
   registerSnapshot(releaseCommand, cwd)
   registerNightly(releaseCommand, cwd)
   registerNpmMirror(releaseCommand, cwd)
+  registerReleasePreparationValidation(releaseCommand, cwd)
+  registerAutoChangeset(releaseCommand, cwd)
 
   releaseCommand.command('ci')
     .description(localize('Prepare, publish, or recover versions in CI', '在 CI 中自动准备、发布和恢复版本'))

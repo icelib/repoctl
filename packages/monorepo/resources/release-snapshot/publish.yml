@@ -1,8 +1,8 @@
-name: repoctl PR snapshot publish
+name: __PUBLISHER_WORKFLOW_NAME__
 
 on:
   workflow_run:
-    workflows: [repoctl PR snapshot build]
+    workflows: [__BUILDER_WORKFLOW_NAME__]
     types: [completed]
 
 permissions:
@@ -14,6 +14,9 @@ defaults:
 
 env:
   SNAPSHOT_BUILDER_SHA256: __BUILDER_SHA256__
+  SNAPSHOT_BUILDER_WORKFLOW: __BUILDER_WORKFLOW_PATH__
+  SNAPSHOT_PUBLISHER_WORKFLOW: __PUBLISHER_WORKFLOW_PATH__
+  SNAPSHOT_BUILD_ENVIRONMENT: __ENVIRONMENT__
 
 jobs:
   verify:
@@ -43,7 +46,7 @@ jobs:
           SOURCE_RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
         working-directory: ${{ runner.temp }}
         run: |
-          "$RUNNER_TEMP/repoctl-tools/node_modules/.bin/repo" release snapshot verify --run-id "$SOURCE_RUN_ID" --run-attempt "$SOURCE_RUN_ATTEMPT" --builder-sha256 "$SNAPSHOT_BUILDER_SHA256" --out "$RUNNER_TEMP/snapshot-verified.json" --json
+          "$RUNNER_TEMP/repoctl-tools/node_modules/.bin/repo" release snapshot verify --run-id "$SOURCE_RUN_ID" --run-attempt "$SOURCE_RUN_ATTEMPT" --builder-workflow "$SNAPSHOT_BUILDER_WORKFLOW" --builder-sha256 "$SNAPSHOT_BUILDER_SHA256" --environment "$SNAPSHOT_BUILD_ENVIRONMENT" --out "$RUNNER_TEMP/snapshot-verified.json" --json
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           const result = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/snapshot-verified.json`, 'utf8'));
@@ -82,7 +85,7 @@ jobs:
           SOURCE_ARTIFACT_ID: ${{ needs.verify.outputs.artifact_id }}
         working-directory: ${{ runner.temp }}
         run: |
-          "$RUNNER_TEMP/repoctl-tools/node_modules/.bin/repo" release snapshot publish-prepared --run-id "$SOURCE_RUN_ID" --run-attempt "$SOURCE_RUN_ATTEMPT" --artifact-id "$SOURCE_ARTIFACT_ID" --builder-sha256 "$SNAPSHOT_BUILDER_SHA256" --output "$RUNNER_TEMP/snapshot-publication" --out "$RUNNER_TEMP/snapshot-publication.json" --json
+          "$RUNNER_TEMP/repoctl-tools/node_modules/.bin/repo" release snapshot publish-prepared --run-id "$SOURCE_RUN_ID" --run-attempt "$SOURCE_RUN_ATTEMPT" --artifact-id "$SOURCE_ARTIFACT_ID" --builder-workflow "$SNAPSHOT_BUILDER_WORKFLOW" --builder-sha256 "$SNAPSHOT_BUILDER_SHA256" --environment "$SNAPSHOT_BUILD_ENVIRONMENT" --publisher-workflow "$SNAPSHOT_PUBLISHER_WORKFLOW" --output "$RUNNER_TEMP/snapshot-publication" --out "$RUNNER_TEMP/snapshot-publication.json" --json
       - name: Retain the trusted publication report
         id: report
         if: always()

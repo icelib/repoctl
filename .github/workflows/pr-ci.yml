@@ -80,6 +80,7 @@ jobs:
     with:
       ref: ${{ needs.prepare.outputs.merge_sha }}
       base_sha: ${{ needs.prepare.outputs.base_sha }}
+      base_ref: ${{ needs.prepare.outputs.base_ref }}
       head_sha: ${{ needs.prepare.outputs.head_sha }}
       head_ref: ${{ needs.prepare.outputs.head_ref }}
 

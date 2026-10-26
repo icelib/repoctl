@@ -25,6 +25,16 @@ export function checkConsumerWorkflows(workspace) {
     if (filename === 'ci.yml') {
       assert.deepEqual(workflow.jobs.build.strategy.matrix['node-version'], ['22.23.4', '24.22.1', '26.12.1'])
     }
+    if (filename === 'release-intent-check.yml') {
+      const steps = workflow.jobs['release-intent'].steps
+      assert.ok(!steps.some(step => step.run?.includes('skipping validation')), 'A branch name must not grant a release exemption')
+      const validation = steps.find(step => step.run?.includes('release validate-preparation'))
+      assert.ok(validation, 'Release PRs must pass native preparation replay')
+      assert.equal(validation['continue-on-error'], undefined)
+      const trusted = steps.find(step => step.with?.path === 'release-validation-tools')
+      assert.equal(trusted?.with?.ref, '$' + '{{ github.event.pull_request.base.sha }}')
+      assert.equal(trusted?.with?.['persist-credentials'], false)
+    }
   }
   assert.equal(existsSync(path.join(github, 'workflows/pr-ci.yml')), false)
   assert.equal(existsSync(path.join(github, 'workflows/pr-ci-manual.yml')), false)
