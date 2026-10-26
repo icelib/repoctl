@@ -134,7 +134,8 @@
     "tinyglobby": "^0.2.17",
     "validate-npm-package-name": "^7.0.2",
     "vitest": "catalog:",
-    "yaml": "catalog:"
+    "yaml": "catalog:",
+    "yauzl": "3.4.0"
   },
   "devDependencies": {
     "@microsoft/api-extractor": "7.59.4",
@@ -145,6 +146,7 @@
     "@types/pacote": "^11.1.8",
     "@types/semver": "catalog:",
     "@types/validate-npm-package-name": "^4.0.2",
+    "@types/yauzl": "3.4.0",
     "ci-info": "^4.4.0",
     "fdir": "^6.5.0",
     "knip": "6.42.0"

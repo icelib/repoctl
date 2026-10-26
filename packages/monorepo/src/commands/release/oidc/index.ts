@@ -1,36 +1,19 @@
-import type { ReleaseOidcAuditOptions, ReleaseOidcAuditReport } from '../../../core/oidc/types'
+import type { ReleaseOidcArtifactAuditOptions, ReleaseOidcAuditOptions, ReleaseOidcAuditReport } from '../../../core/oidc/types'
 import type { ReleaseCiOptions } from '../types'
 import process from 'node:process'
 import { exchangePackage } from '../../../core/oidc/exchange'
-import { npmRegistry, record, requestIdentity } from '../../../core/oidc/identity'
-import { clearWorkspaceCache, getWorkspaceData } from '../../../core/workspace'
+import { requestIdentity } from '../../../core/oidc/identity'
 import { ReleaseCommandError } from '../errors'
 import { getReleaseEnv } from '../shared'
+import { auditCandidates } from './candidates'
 
-export type { ReleaseOidcAuditOptions, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from '../../../core/oidc/types'
+export type { ReleaseOidcArtifactAuditOptions, ReleaseOidcAuditOptions, ReleaseOidcAuditPackage, ReleaseOidcAuditReport, ReleaseOidcPackageResult } from '../../../core/oidc/types'
 
 /** 逐包核验官方 npm 的短时凭据交换；不发布、不执行 hooks，也不保存凭据。 */
-export async function auditReleaseOidc(options: ReleaseOidcAuditOptions): Promise<ReleaseOidcAuditReport> {
-  clearWorkspaceCache()
-  const { packages } = await getWorkspaceData(options.cwd, { ignoreRootPackage: !options.packageNames })
-  const available = packages.filter(({ manifest }) => typeof manifest.name === 'string' && typeof manifest.version === 'string')
-  const candidates = options.packageNames ? available.filter(pkg => options.packageNames!.includes(pkg.manifest.name!)) : available
-  if (options.packageNames && (new Set(options.packageNames).size !== options.packageNames.length
-    || candidates.length !== options.packageNames.length || new Set(candidates.map(pkg => pkg.manifest.name)).size !== candidates.length)) {
-    throw new ReleaseCommandError('OIDC audit candidates do not exactly match the public workspace package plan; no credentials were requested')
-  }
-  if (!candidates.length) {
-    throw new ReleaseCommandError('OIDC audit found no versioned publishable workspace packages')
-  }
-  if (candidates.some(({ manifest }) => {
-    const registry = record(record(manifest)['publishConfig'])['registry']
-    return registry !== undefined && (typeof registry !== 'string' || registry.replace(/\/$/, '') !== npmRegistry)
-  })) {
-    throw new ReleaseCommandError('OIDC audit supports only the official npm registry; no credentials were requested')
-  }
+export async function auditReleaseOidc(options: ReleaseOidcAuditOptions | ReleaseOidcArtifactAuditOptions): Promise<ReleaseOidcAuditReport> {
+  const names = await auditCandidates(options)
   const fetcher = options.fetch ?? globalThis.fetch
   const { idToken, requestToken, identity } = await requestIdentity(options.env ?? process.env, fetcher)
-  const names = [...new Set(candidates.map(pkg => pkg.manifest.name!))].sort()
   const results: ReleaseOidcAuditReport['results'] = []
   for (let start = 0; start < names.length; start += 4) {
     results.push(...await Promise.all(names.slice(start, start + 4)

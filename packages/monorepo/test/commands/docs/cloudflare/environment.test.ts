@@ -40,14 +40,16 @@ it.each(['preview', 'stable'] as const)('preserves the %s Worker identity throug
   const manifest = require.resolve('wrangler/package.json')
   const binary = path.resolve(path.dirname(manifest), JSON.parse(readFileSync(manifest, 'utf8')).bin.wrangler)
   const args = ['--require', path.join(h.cwd, 'wrangler-profile.cjs'), binary, 'deploy', '--dry-run', '--config', path.join(h.cwd, 'website/wrangler.jsonc'), '--env', channel === 'preview' ? 'next' : '']
-  const env = { ...uploadedEnvironment, XDG_CONFIG_HOME: path.join(h.cwd, 'xdg-config'), WRANGLER_SEND_METRICS: 'false', WRANGLER_SEND_ERROR_REPORTS: 'false', WRANGLER_OUTPUT_FILE_PATH: path.join(h.cwd, 'dry-run.jsonl'), WRANGLER_LOG_PATH: path.join(h.cwd, 'logs') }
+  // Hide the decorative banner: its npm update check can retain a live HTTPS
+  // socket after timing out, even after this offline dry run has completed.
+  const env = { ...uploadedEnvironment, XDG_CONFIG_HOME: path.join(h.cwd, 'xdg-config'), WRANGLER_HIDE_BANNER: 'true', WRANGLER_SEND_METRICS: 'false', WRANGLER_SEND_ERROR_REPORTS: 'false', WRANGLER_OUTPUT_FILE_PATH: path.join(h.cwd, 'dry-run.jsonl'), WRANGLER_LOG_PATH: path.join(h.cwd, 'logs') }
   const result = spawnSync(process.execPath, args, { cwd: h.cwd, env, encoding: 'utf8', timeout: 30_000, windowsHide: true })
-  expect(result.error).toBeUndefined()
+  expect(result.error, `${result.stdout}\n${result.stderr}`).toBeUndefined()
   expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(0)
   expect(`${result.stdout}\n${result.stderr}`).not.toMatch(/Failed to match Worker name|You need to provide the name/)
   expect(existsSync(path.join(h.cwd, 'wrangler-profile/.wrangler/metrics.json'))).toBe(true)
   const broken = spawnSync(process.execPath, args, { cwd: h.cwd, env: { ...env, WRANGLER_CI_OVERRIDE_NAME: '' }, encoding: 'utf8', timeout: 30_000, windowsHide: true })
-  expect(broken.error).toBeUndefined()
+  expect(broken.error, `${broken.stdout}\n${broken.stderr}`).toBeUndefined()
   expect(broken.status).not.toBe(0)
   expect(`${broken.stdout}\n${broken.stderr}`).toContain('You need to provide the name of your worker')
 }, 90_000)

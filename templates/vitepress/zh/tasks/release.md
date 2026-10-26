@@ -239,6 +239,40 @@ CLI 和 API 的快照计划均不加载或执行 `repoctl.config.*`，仅根据�
 
 公开 API 为 `createSnapshotPlan(options)` 与 `releaseSnapshot(options)`。两者均返回 `schemaVersion: 1`、原生计划、快照身份、候选、精确版本、目标 tag 与安装说明；后者追加保留产物和校验结果。准备失败返回 `status: failed` 与 `error`，CLI 以退出码 1 结束。
 
+### 由独立可信工作流发布已准备的 PR 快照
+
+PR 快照可以同时导出审批构建与独立发布两份工作流：
+
+```bash
+repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0 --dry-run --json
+repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0
+```
+
+选择与工作区 `packageManager` 一致的 pnpm 12 精确版本。命令生成 `repoctl-snapshot-build.yml` 和 `repoctl-snapshot-publish.yml`，遇到已有不同内容会整体拒绝，相同内容重复导出不修改文件。升级或自定义时，先导出到空目录，审核后一起替换两份文件。publisher 内嵌构建工作流实际字节的 SHA256，仅修改 builder 会被拒绝。导出固定当前已安装的 repoctl 版本；使用前先将审核后的两份文件合入默认分支。这是按需启用的独立流程，不改变普通 PR CI 或 Release 工作流。
+
+创建 `pr-snapshot` 环境，配置 required reviewers，并关闭管理员绕过。为每个包配置本仓库、`repoctl-snapshot-publish.yml` 对应的 npm Trusted Publisher。流程只用内置 GitHub token 与 npm OIDC，不需要 GitHub App 或 PAT。freeze job 在环境审批通过前不分配 runner。从默认分支手动调度 **repoctl PR snapshot build**，填写已打开、非草稿、可合并的同仓库 PR 编号；fork PR 不能通过此流程发布。
+
+受保护的 freeze job 读取当前 PR head/base/merge 与不可变运行身份，检查 merge 双亲，再用固定版本工具生成包、版本及依赖计划，不安装或执行候选代码。它上传 `snapshot-plan.json`，并在自身日志中记录 artifact ID、摘要及计划摘要。独立 build job 检出冻结的 merge，以只读权限构建和校验完整依赖闭包，仅上传 `snapshot-manifest.json` 及声明的 tarball。schema 版本 1 包含仓库与 PR 身份、完整 head/base/merge SHA、workflow/run/attempt、精确快照版本及依赖边、SHA512 完整性和构建/包验证结果。
+
+默认分支的 `workflow_run` publisher 核验可信 builder 字节、reviewer 环境、审批记录、同一 attempt 内成功的 freeze/build job、可信 freeze 日志、不可变 artifact ID 和 ZIP 摘要，以及当前 PR revision。所有包和依赖必须与冻结计划一致，全部 tarball 通过检查后才请求 npm 凭据。额外或缺失包、内容篡改、危险路径和 `publishConfig`、fork、过期 revision 均在上传前失败。审批日志或 artifact 缺失、过期时，需要重新审批构建。
+
+发布 job 没有候选 checkout，不安装、导入或执行候选代码及包脚本。它使用真实 publisher 身份运行公共 OIDC audit，仅将核验过的 tarball 发布到 `snapshot-pr-<编号>`，保持 `latest`，并确认 registry 完整性和快照 tag。重复版本只有在完整性一致时才能跳过上传。每个 PR 的发布串行执行，旧构建不能回退新构建的 tag。npm 批量发布不具备原子性：失败时可能已有部分包确认成功；用同一未改变的 artifact 重试会核对并跳过这些包。构建失败后应重跑全部 builder jobs，重新审批；仅重试 publisher 时复用原 builder run、attempt 和不可变 artifacts。PR head/base/merge 变化后需要新构建。
+
+独立 consumer job 没有 OIDC 或写权限，安装已确认的精确版本，验证完整性、运行入口和类型。可信报告 job 向 PR 回写准确安装命令及 GitHub consumer job 结果。消费者失败会让工作流保持失败，并说明已有发布结果。provenance 表示实际的默认分支 publisher，manifest 和报告另行保留经核验的候选构建来源；不通过改写 GitHub 事件或 SHA 冒充 builder。
+
+工作流使用以下公开 CLI/API 边界：
+
+| 任务                 | CLI                                                                                                               | API                                       |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| 读取冻结 GitHub 来源 | `snapshot source --pr <N> --out <source.json>`                                                                    | `freezeSnapshotSource(options)`           |
+| 规划已检出的元数据   | `snapshot freeze --source <source.json> --out <snapshot-plan.json>`                                               | `createSnapshotBuildPlan(options)`        |
+| 构建可移交产物       | `snapshot prepare --plan <snapshot-plan.json> --output <外部目录>`                                                | `prepareSnapshot(options)`                |
+| 核验完成的构建       | `snapshot verify --run-id <id> --run-attempt <attempt> --builder-sha256 <可信摘要>`                               | `verifySnapshotRun(options)`              |
+| 发布核验过的 bundle  | `snapshot publish-prepared --run-id <id> --run-attempt <attempt> --builder-sha256 <可信摘要> --output <外部目录>` | `publishPreparedSnapshot(options)`        |
+| 验证精确安装结果     | `snapshot verify-consumer --report <publication.json> --output <外部目录>`                                        | `verifyPreparedSnapshotConsumer(options)` |
+
+上表 CLI 均加 `repo release` 前缀。source 和 verifier 默认从 `GITHUB_REPOSITORY` 读取仓库，也可传 `--repository <owner/repo>`。`--json` 输出结构化结果，`--out` 写入新的结果文件。`snapshot seal` 将已上传计划绑定到可信 freeze 日志。`getSnapshotWorkflows({ pnpmVersion? })` 返回配套工作流文本。prepared publisher 仅支持公共 npm；原有本地 snapshot 与 nightly API 保持兼容。所有 snapshot 子命令均跳过可执行发布配置，不消费正式 changeset，不修改正式版本、changelog 或 release ledger。
+
 ## 下一步
 
 阅读[发包与变更日志](/zh/learn/monorepo/publish)，再查看[报告与输出](/zh/tasks/reports)了解 CI 产物。

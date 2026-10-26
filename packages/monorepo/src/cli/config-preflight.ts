@@ -16,7 +16,8 @@ export function registerConfigPreflight(program: Command, cwd: string) {
     }
     // Snapshots derive their plan from committed pnpm metadata without loading
     // executable release configuration, including through the CLI entrypoint.
-    if (action.name() === 'snapshot' && action.parent?.name() === 'release' && action.parent.parent === program) {
+    const snapshot = action.name() === 'snapshot' ? action : action.parent
+    if (snapshot?.name() === 'snapshot' && snapshot.parent?.name() === 'release' && snapshot.parent.parent === program) {
       return
     }
     // 核验与真实发布共享身份，但只读取 pnpm 元数据，不执行发布配置。

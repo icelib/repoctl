@@ -27,7 +27,7 @@ export async function getPublishCandidates(cwd: string): Promise<PublishedPackag
 }
 
 /** Only pnpm uploads; accepted versions never re-enter its retry filters. */
-export async function publishWithRetry(args: string[], options: ReleaseOptions & { quiet?: boolean, deferConfirmation?: boolean }, candidates: PublishedPackage[], confirmAll = false, recovery?: { accepted: PublishedPackage[], save: (accepted: PublishedPackage[]) => Promise<void> }) {
+export async function publishWithRetry(args: string[], options: ReleaseOptions & { quiet?: boolean, deferConfirmation?: boolean, beforeAttempt?: () => Promise<void> }, candidates: PublishedPackage[], confirmAll = false, recovery?: { accepted: PublishedPackage[], save: (accepted: PublishedPackage[]) => Promise<void> }) {
   const state = new PublishState(candidates, recovery?.save)
   state.accept(recovery?.accepted ?? [])
   let attemptArgs = args
@@ -35,6 +35,7 @@ export async function publishWithRetry(args: string[], options: ReleaseOptions &
   try {
     await state.save(options.cwd, 'publishing')
     for (let attempt = 1; attempt <= publishAttempts; attempt += 1) {
+      await options.beforeAttempt?.()
       const result = runPublishAttempt(attemptArgs, options)
       state.accept(acceptedFromOutput(result.output, candidates))
       state.accept(await readPublishSummary(options.cwd))

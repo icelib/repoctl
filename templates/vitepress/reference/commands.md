@@ -258,6 +258,8 @@ Programmatic users can call `getWorkspaceGraph(cwd, options)`, `filterWorkspaceG
 
 ## Grouped Commands
 
+`repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0 --dry-run --json` previews the opt-in approved builder and trusted publisher pair. Remove `--dry-run` to create both files with conflict protection. The pnpm pin must match `packageManager`. `snapshot prepare --plan <frozen-plan.json> --output <external-directory>` builds a portable bundle; `snapshot publish-prepared --run-id <id> --run-attempt <attempt> --builder-sha256 <trusted-hash> --output <external-directory>` verifies a completed approved GitHub build and publishes only its checked tarballs. See [PR snapshot workflow setup and the API table](/tasks/release#publish-a-prepared-pr-snapshot-from-a-separate-trusted-workflow) for approval, OIDC, consumer isolation and retries.
+
 For an optional root development environment, see the [Dev Container preset](./devcontainer.md): `repo tooling devcontainer --json --out ../plan.json`, then `repo tooling devcontainer --apply ../plan.json` after review.
 
 Use [`repo workspace remove`](./removal.md) to preview removal of one exact package, inspect consumers and manual reference candidates, then explicitly apply a reviewed JSON plan. Preview does not delete anything; dependencies block removal unless their exact manifest fields are included with `--remove-references`.
