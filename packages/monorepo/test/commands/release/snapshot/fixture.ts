@@ -26,7 +26,13 @@ export async function fixture() {
   await mkdir(store)
   const registry = await startSnapshotRegistry(store)
   const rootManifest = JSON.parse(await readFile(new URL('../../../../../../package.json', import.meta.url), 'utf8'))
-  const env = { ...process.env, npm_config_registry: registry, CI: 'true', GITHUB_ACTIONS: 'true', GITHUB_REPOSITORY: 'acme/repo', GITHUB_EVENT_NAME: 'pull_request', GITHUB_EVENT_PATH: path.join(root, 'event.json'), REPOCTL_SNAPSHOT_PUBLISH: '1' }
+  const hostEnv = { ...process.env }
+  // Fixtures model the unprivileged snapshot builder even inside a Release runner.
+  // Credential rejection tests inject their own values after this boundary.
+  for (const key of ['ACTIONS_ID_TOKEN_REQUEST_TOKEN', 'ACTIONS_ID_TOKEN_REQUEST_URL', 'NODE_AUTH_TOKEN', 'NPM_TOKEN']) {
+    delete hostEnv[key]
+  }
+  const env = { ...hostEnv, npm_config_registry: registry, CI: 'true', GITHUB_ACTIONS: 'true', GITHUB_REPOSITORY: 'acme/repo', GITHUB_EVENT_NAME: 'pull_request', GITHUB_EVENT_PATH: path.join(root, 'event.json'), REPOCTL_SNAPSHOT_PUBLISH: '1' }
   async function write(file: string, value: string) {
     await mkdir(path.dirname(path.join(cwd, file)), { recursive: true })
     await writeFile(path.join(cwd, file), value)

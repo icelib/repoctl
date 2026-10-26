@@ -61,6 +61,7 @@ describe('frozen release preparation validation', () => {
     expect(report.status).toBe('valid')
     await data.write('packages/excluded/package.json', '{ changed fixture')
     const changed = await validateReleasePreparation({ ...data, head: data.commit(), policy: { branch: 'main' } })
+    expect(changed.errors, JSON.stringify(changed, null, 2)).toEqual([])
     expect(changed.status).toBe('invalid')
     expect(changed.files).toContainEqual(expect.objectContaining({ path: 'packages/excluded/package.json', status: 'unexpected' }))
   }, 60000)
@@ -78,6 +79,7 @@ describe('frozen release preparation validation', () => {
       manifest.publishConfig.directory = 'unverified-output'
       await data.write(filename, JSON.stringify(manifest))
       const changed = await validateReleasePreparation({ ...data, head: data.commit(), policy: { branch: 'main' } })
+      expect(changed.errors, JSON.stringify(changed, null, 2)).toEqual([])
       expect(changed.status).toBe('invalid')
       expect(changed.files).toContainEqual(expect.objectContaining({ path: filename, status: 'mismatch' }))
     }
@@ -122,6 +124,7 @@ describe('frozen release preparation validation', () => {
     const head = data.commit()
     data.git('checkout', '-qb', 'release/pnpm-version-suspicious')
     const report = await validateReleasePreparation({ ...data, head, policy: { branch: 'main' } })
+    expect(report.errors, JSON.stringify(report, null, 2)).toEqual([])
     expect(report.status).toBe('invalid')
     expect(report.files.some(file => ['mismatch', 'missing', 'unexpected'].includes(file.status))).toBe(true)
   }, 60000)
@@ -131,13 +134,17 @@ describe('frozen release preparation validation', () => {
     const output = 'release inventory\n'
     await data.write('generated/inventory.txt', output)
     const head = data.commit()
-    expect((await validateReleasePreparation({ ...data, head, policy: { branch: 'main' } })).status).toBe('invalid')
+    const undeclared = await validateReleasePreparation({ ...data, head, policy: { branch: 'main' } })
+    expect(undeclared.errors, JSON.stringify(undeclared, null, 2)).toEqual([])
+    expect(undeclared.status).toBe('invalid')
     const sha256 = createHash('sha256').update(output).digest('hex')
     const digest = await validateReleasePreparation({ ...data, head, policy: { branch: 'main', generatedFiles: [{ path: 'generated/inventory.txt', sha256 }] } })
-    expect(digest.status).toBe('valid')
+    expect(digest.errors, JSON.stringify(digest, null, 2)).toEqual([])
+    expect(digest.status, JSON.stringify(digest, null, 2)).toBe('valid')
     expect(digest.files).toContainEqual(expect.objectContaining({ path: 'generated/inventory.txt', status: 'custom-verified' }))
     const callback = await validateReleasePreparation({ ...data, head, policy: { branch: 'main', generatedFiles: [{ path: 'generated/inventory.txt', validate: context => context.before === null && Buffer.from(context.after!).toString() === output }] } })
-    expect(callback.status).toBe('valid')
+    expect(callback.errors, JSON.stringify(callback, null, 2)).toEqual([])
+    expect(callback.status, JSON.stringify(callback, null, 2)).toBe('valid')
     for (const declarations of [
       [{ path: 'packages/a/package.json', sha256 }],
       [{ path: '../outside', sha256 }],
