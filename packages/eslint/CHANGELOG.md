@@ -1,5 +1,11 @@
 # @icebreakers/eslint-config
 
+## 8.0.12
+
+### Patch Changes
+
+- Publish the updated conventional commit rules and React ESLint runtime dependencies.
+
 ## 8.0.11
 
 ### Patch Changes
