@@ -1,5 +1,16 @@
 # @icebreakers/monorepo
 
+## 6.2.1
+
+### Patch Changes
+
+- Require release intents reliably when ripgrep is unavailable in source and generated CI workflows.
+
+- Updated dependencies:
+  - @icebreakers/commitlint-config@4.1.5
+  - @icebreakers/eslint-config@8.0.12
+  - @icebreakers/monorepo-templates@3.1.2
+
 ## 6.2.0
 
 ### Minor Changes

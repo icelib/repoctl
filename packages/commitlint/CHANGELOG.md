@@ -1,5 +1,11 @@
 # @icebreakers/commitlint-config
 
+## 4.1.5
+
+### Patch Changes
+
+- Publish the updated conventional commit rules and React ESLint runtime dependencies.
+
 ## 4.1.4
 
 ### Patch Changes

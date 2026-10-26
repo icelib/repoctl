@@ -1,5 +1,11 @@
 # @icebreakers/monorepo-templates
 
+## 3.1.2
+
+### Patch Changes
+
+- Require release intents reliably when ripgrep is unavailable in source and generated CI workflows.
+
 ## 3.1.1
 
 ### Patch Changes
