@@ -5,6 +5,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { consumerOptionalPeers } from '../../package-check/consumer/optional-peers'
 import { resolveConsumerPeerAliases } from '../../package-check/consumer/peer-aliases'
+import { consumerPackageApplicability } from '../../package-check/consumer/platform'
 import { consumerRuntimeClosure } from '../../package-check/consumer/runtime-closure'
 import { consumerTypeToolchain, installedConsumerTypeToolchain } from '../../package-check/consumer/typescript'
 import { matchesSnapshotMetadata } from '../snapshot/identity'
@@ -30,11 +31,18 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
       throw new Error('Nightly consumer requires an exact pnpm packageManager pin.')
     }
     const manifests = await nightlyConsumerManifests(report)
+    result.applicability = consumerPackageApplicability(manifests)
+    const applicable = new Set(result.applicability.filter(item => item.status === 'applicable').map(item => item.name))
+    const packages = report.packages.filter(pkg => applicable.has(pkg.name))
+    const closure = consumerRuntimeClosure(manifests.filter(manifest => applicable.has(String(manifest.name))), manifests)
+    if (!packages.length) {
+      result.status = 'verified'
+      return
+    }
     await mkdir(report.outputDirectory, { recursive: true })
     directory = await realpath(await mkdtemp(path.join(report.outputDirectory, 'consumer-')))
-    const checkTypes = report.snapshot.checks?.some(check => check.files.some(file => /\.d\.[cm]?ts$/u.test(file)))
-    const closure = consumerRuntimeClosure(manifests, manifests)
-    const dependencies = { ...consumerOptionalPeers(closure, new Map(report.packages.map(pkg => [pkg.name, report.provider === 'npm' ? `npm:${pkg.name}@snapshot-nightly` : pkg.locator]))), ...Object.fromEntries(report.packages.map(pkg => [pkg.name, report.provider === 'npm' ? 'snapshot-nightly' : pkg.locator])) }
+    const checkTypes = report.snapshot.checks?.some(check => applicable.has(check.name) && check.files.some(file => /\.d\.[cm]?ts$/u.test(file)))
+    const dependencies = { ...consumerOptionalPeers(closure, new Map(packages.map(pkg => [pkg.name, report.provider === 'npm' ? `npm:${pkg.name}@snapshot-nightly` : pkg.locator]))), ...Object.fromEntries(packages.map(pkg => [pkg.name, report.provider === 'npm' ? 'snapshot-nightly' : pkg.locator])) }
     const tooling = checkTypes ? await consumerTypeToolchain(options.cwd, dependencies, closure) : undefined
     const manifest = {
       name: 'repoctl-nightly-consumer',
@@ -64,7 +72,7 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
     await installNightlyConsumer(report, options, directory, run)
     const toolchain = tooling ? await installedConsumerTypeToolchain(directory, tooling) : undefined
     const validated = []
-    for (const pkg of report.packages) {
+    for (const pkg of packages) {
       const installed = await realpath(path.join(directory, 'node_modules', pkg.name))
       const relative = path.relative(directory, installed)
       if (!relative || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {

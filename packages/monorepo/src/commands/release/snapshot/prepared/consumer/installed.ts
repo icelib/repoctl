@@ -8,12 +8,15 @@ import { snapshotPublicationReport } from '../publish/context'
 import { object } from '../schema'
 
 /** Validate the entire installed batch before any candidate entrypoint can run. */
-export async function installedSnapshotPackages(manifest: PreparedSnapshotManifest, directory: string) {
+export async function installedSnapshotPackages(manifest: PreparedSnapshotManifest, directory: string, applicable?: ReadonlySet<string>) {
   const lock = object(parse(await readFile(path.join(directory, 'pnpm-lock.yaml'), 'utf8')))
   const packages = object(lock['packages'])
   const snapshot = snapshotPublicationReport(manifest, directory)
   const validated: Array<{ packed: PackedManifest, installed: string }> = []
   for (const pkg of manifest.packages) {
+    if (applicable && !applicable.has(pkg.name)) {
+      continue
+    }
     const resolution = object(object(packages[`${pkg.name}@${pkg.version}`])['resolution'])
     if (resolution['integrity'] !== pkg.integrity) {
       throw new Error(`Snapshot consumer installation did not retain the verified integrity for ${pkg.name}.`)

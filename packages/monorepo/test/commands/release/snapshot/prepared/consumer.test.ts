@@ -12,8 +12,9 @@ afterEach(async () => {
   await Promise.all(directories.splice(0).map(directory => rm(directory, { recursive: true, force: true })))
 })
 
-async function setup() {
+async function setup(configure?: (fixture: ReturnType<typeof bundle>) => void) {
   const fixture = bundle()
+  configure?.(fixture)
   const directory = await mkdtemp(path.join(os.tmpdir(), 'repoctl-prepared-consumer-'))
   directories.push(directory)
   const report: PreparedSnapshotPublishReport = {
@@ -166,5 +167,28 @@ it('fails registry authentication errors immediately without consumer execution 
   expect(result.status).toBe('failed')
   expect(result.error).toContain('HTTP 403')
   expect(sleep).not.toHaveBeenCalled()
+  expect(h.spawn).not.toHaveBeenCalled()
+})
+
+it('验证全部 registry 归档，仅安装并执行匹配真实宿主的包', async () => {
+  const h = await setup((fixture) => {
+    Object.assign(fixture.manifests[1]!, { os: [`!${process.platform}`] })
+    fixture.pack(1)
+  })
+  const result = await verifyPreparedSnapshotConsumer({ report: h.report, outputDirectory: h.directory, registryFetch: h.fetcher, spawn: h.spawn as never })
+  expect(result.status, result.error).toBe('verified')
+  expect(result.packages.map(pkg => pkg.name)).toEqual(['@scope/a'])
+  expect(result.applicability?.map(item => item.status)).toEqual(['applicable', 'not-applicable'])
+  expect(h.fetcher.mock.calls.filter(([url]) => String(url).includes('/tarballs/'))).toHaveLength(2)
+})
+
+it('准备式消费者在执行任何子进程前拒绝不兼容的必需依赖', async () => {
+  const h = await setup((fixture) => {
+    Object.assign(fixture.manifests[0]!, { cpu: [`!${process.arch}`] })
+    fixture.pack(0)
+  })
+  const result = await verifyPreparedSnapshotConsumer({ report: h.report, outputDirectory: h.directory, registryFetch: h.fetcher, spawn: h.spawn as never })
+  expect(result.status).toBe('failed')
+  expect(result.error).toContain('required dependency @scope/b>alias')
   expect(h.spawn).not.toHaveBeenCalled()
 })

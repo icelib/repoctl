@@ -35,7 +35,7 @@ function expand(subpath: string, target: string, files: string[]) {
   })
 }
 
-/** Only exercise declared Node entrypoints; browser/assets/type-only paths are not Node modules. */
+/** 仅执行声明的 Node 入口；原生扩展通过 CommonJS 实际加载。 */
 export function consumerEntries(manifest: PackedManifest, files: string[]): ConsumerEntry[] {
   const assets = consumerRuntimeAssets(manifest)
   const exports = manifest.exports
@@ -47,20 +47,24 @@ export function consumerEntries(manifest: PackedManifest, files: string[]): Cons
     for (const format of ['esm', 'cjs'] as const) {
       const condition = format === 'esm' ? 'import' : 'require'
       const runtimeTarget = resolveTarget(value, new Set(['node', condition, 'default']))
-      const runtime = !!runtimeTarget && /\.[cm]?js$/u.test(runtimeTarget)
+      const native = !!runtimeTarget && runtimeTarget.endsWith('.node')
+      if (native && format !== 'cjs') {
+        continue
+      }
+      const runtime = !!runtimeTarget && (/\.[cm]?js$/u.test(runtimeTarget) || native)
       const target = runtime ? runtimeTarget : resolveTarget(value, new Set(['types', 'node', condition, 'default'])) ?? (subpath === '.' ? manifest.types : undefined)
       if (!target || (!runtime && !/\.d\.[cm]?ts$/u.test(target))) {
         continue
       }
-      const targetFormat = /\.(?:mjs|mts)$/u.test(target) || (!/\.(?:cjs|cts)$/u.test(target) && manifest.type === 'module') ? 'esm' : 'cjs'
+      const targetFormat = !native && (/\.(?:mjs|mts)$/u.test(target) || (!/\.(?:cjs|cts)$/u.test(target) && manifest.type === 'module')) ? 'esm' : 'cjs'
       if (targetFormat !== format && !declaresCondition(value, condition)) {
         continue
       }
       for (const expanded of expand(subpath, target, files)) {
         const asset = assets.has(expanded.subpath)
         const declaration = expanded.target.replace(/\.([cm]?)js$/u, '.d.$1ts').replace(/^\.\//u, '')
-        const typecheck = declaresCondition(value, 'types') || (expanded.subpath === '.' && typeof manifest.types === 'string') || files.includes(declaration)
-        entries.push({ ...expanded, format, runtime, ...(asset ? { asset: true, typecheck } : {}) })
+        const typecheck = declaresCondition(value, 'types') || (expanded.subpath === '.' && typeof manifest.types === 'string') || (!native && files.includes(declaration))
+        entries.push({ ...expanded, format, runtime, ...(native ? { typecheck } : {}), ...(asset ? { asset: true, typecheck } : {}) })
       }
     }
   }
