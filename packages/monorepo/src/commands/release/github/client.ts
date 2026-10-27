@@ -142,6 +142,27 @@ export class GitHubClient extends GitHubTransport implements GitHubOperations {
     }
   }
 
+  /** 只按准确 tag 读取，分页集合不能证明某个已知版本不存在。 */
+  async readRelease(tag: string): Promise<GitHubRelease | undefined> {
+    let response
+    try {
+      response = await this.request<GitHubRelease>('GET', `/releases/tags/${encodeURIComponent(tag)}`)
+    }
+    catch (error) {
+      if (error instanceof GitHubApiError && error.status === 404) {
+        return undefined
+      }
+      throw error
+    }
+    const data = response.data
+    if (!data || Array.isArray(data) || typeof data !== 'object'
+      || !Number.isSafeInteger(data.id) || data.id <= 0 || typeof data.html_url !== 'string'
+      || data.tag_name !== tag || typeof data.draft !== 'boolean' || typeof data.prerelease !== 'boolean') {
+      throw new GitHubApiError(`GitHub returned invalid release response for ${tag}; release state is unknown`, response.status)
+    }
+    return data
+  }
+
   async listReleases() {
     const releases: GitHubRelease[] = []
     for (let page = 1; ; page++) {

@@ -42,7 +42,7 @@ export async function assertPreviousReleaseComplete(options: ReleaseCiOptions, d
     return
   }
   const github = options.github
-  const releases = github?.listReleases ? await github.listReleases() : undefined
+  const releases = !github?.readRelease && github?.listReleases ? await github.listReleases() : undefined
   const repository = getReleaseEnv(options)['GITHUB_REPOSITORY']
   const sources = new Map<string, string>()
   const cohorts = new Map<string, PublishedPackage[]>()
@@ -68,10 +68,10 @@ export async function assertPreviousReleaseComplete(options: ReleaseCiOptions, d
   const rule = options.config?.branches ? await resolveReleaseBranch(options) : undefined
   for (const pkg of prepared) {
     const published = await inspectRegistry(pkg, options)
-    const release = releases?.find(item => item.tag_name === packageKey(pkg))
+    const release = github?.readRelease ? await github.readRelease(packageKey(pkg)) : releases?.find(item => item.tag_name === packageKey(pkg))
     const tag = github?.readTagTarget ? await github.readTagTarget(packageKey(pkg)) : undefined
     if (!published || unfinished.has(packageKey(pkg))
-      || (releases && (!release || release.draft || Boolean(release.prerelease) !== Boolean(semver.prerelease(pkg.version))))
+      || ((github?.readRelease || releases) && (!release || release.draft || Boolean(release.prerelease) !== Boolean(semver.prerelease(pkg.version))))
       || (github?.readTagTarget && (!tag || (published.gitHead && tag !== published.gitHead)))) {
       const source = sources.get(packageKey(pkg))!
       const recovery = rule?.kind === 'maintenance' || distTag === 'latest'
