@@ -72,6 +72,7 @@ export async function prepareSnapshotSource(directory: string, report: SnapshotR
 
 /** 构建或打包生命周期不得替换已经核验的外部输入。 */
 export async function assertPreparedArtifacts(directory: string, report: SnapshotReport) {
+  await assertOmittedReferences(directory, report.referenceGitlinks ?? [])
   if (!report.preparation) {
     return
   }
@@ -81,5 +82,4 @@ export async function assertPreparedArtifacts(directory: string, report: Snapsho
       throw new Error(`Snapshot prepared artifact changed during build or pack: ${expected.path}`)
     }
   }
-  await assertOmittedReferences(directory, report.referenceGitlinks ?? [])
 }
