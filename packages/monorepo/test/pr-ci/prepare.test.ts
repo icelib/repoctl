@@ -65,6 +65,46 @@ describe('approved native PR preparation', () => {
     expect(h.client.compareCommits).not.toHaveBeenCalled()
   })
 
+  it.each([
+    ['expectedHeadSha', 'head.sha', preparedSha, headSha],
+    ['expectedBaseSha', 'base.sha', preparedSha, baseSha],
+    ['expectedBaseRef', 'base.ref', 'other-base', 'main'],
+    ['expectedHeadRef', 'head.ref', 'other-head', 'feature/fix'],
+    ['expectedHeadRepository', 'head.repo.full_name', 'other/repo', 'acme/repo'],
+    ['expectedReleaseLabels', 'releaseLabels', ['release:minor'], []],
+  ] as const)('诊断过期事件字段 %s，并保留审批阻断', async (option, field, expected, current) => {
+    const h = fixture()
+    Object.assign(h.options, { [option]: expected })
+    await expect(prepareValidation(h.client, h.options)).rejects.toThrow(`Event snapshot mismatches: ${JSON.stringify([{ field, expected, current }])}`)
+    expect(h.client.getCommit).not.toHaveBeenCalled()
+    expect(h.client.compareCommits).not.toHaveBeenCalled()
+    for (const write of [h.client.createStatus, h.client.createCommit, h.client.updateRef, h.client.createComment]) {
+      expect(write).not.toHaveBeenCalled()
+    }
+  })
+
+  it('同时报告安全身份字段的差异，不输出 PR 的其他内容', async () => {
+    const h = fixture()
+    h.options.expectedHeadSha = preparedSha
+    h.pr.labels = [{ name: 'release:minor' }, { name: 'bug' }, { name: 'release:major' }]
+    Object.assign(h.pr, { body: 'private PR body must not be logged' })
+    let message = ''
+    try {
+      await prepareValidation(h.client, h.options)
+    }
+    catch (error) {
+      message = String(error)
+    }
+    expect(message).toContain('approve the latest run.')
+    expect(message).toContain(`Event snapshot mismatches: ${JSON.stringify([
+      { field: 'head.sha', expected: preparedSha, current: headSha },
+      { field: 'releaseLabels', expected: [], current: ['release:major', 'release:minor'] },
+    ])}`)
+    expect(message).not.toContain('private PR body')
+    expect(message).not.toContain('bug')
+    expect(h.client.compareCommits).not.toHaveBeenCalled()
+  })
+
   it('freezes sorted release labels while ignoring ordinary labels', async () => {
     const h = fixture()
     h.pr.labels = [{ name: 'bug' }, { name: 'release:minor' }, { name: 'release:major' }]
