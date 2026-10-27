@@ -4,6 +4,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { consumerOptionalPeers } from '../../../../package-check/consumer/optional-peers'
 import { resolveConsumerPeerAliases } from '../../../../package-check/consumer/peer-aliases'
+import { consumerPackageApplicability } from '../../../../package-check/consumer/platform'
 import { consumerRuntimeClosure } from '../../../../package-check/consumer/runtime-closure'
 import { consumerTypeToolchain, installedConsumerTypeToolchain } from '../../../../package-check/consumer/typescript'
 import { checkInstalledEntries } from '../../../nightly/consumer/entries'
@@ -32,13 +33,20 @@ export async function verifyPreparedSnapshotConsumer(options: PreparedSnapshotCo
   try {
     const budget = snapshotConsumerBudget(options)
     const manifests = await publishedSnapshotManifests(manifest, options, budget)
+    result.applicability = consumerPackageApplicability(manifests)
+    const applicable = new Set(result.applicability.filter(item => item.status === 'applicable').map(item => item.name))
+    const packages = manifest.packages.filter(pkg => applicable.has(pkg.name))
+    const closure = consumerRuntimeClosure(manifests.filter(pkg => applicable.has(String(pkg.name))), manifests)
+    if (!packages.length) {
+      result.status = 'verified'
+      return result
+    }
     directory = await realpath(await mkdtemp(path.join(path.resolve(options.outputDirectory), 'snapshot-consumer-')))
     const clean = consumerEnvironment(options.env ?? process.env, directory)
     const run = consumerRunner(result, { ...options, cwd: directory }, directory, clean)
-    const closure = consumerRuntimeClosure(manifests, manifests)
-    const exact = Object.fromEntries(manifest.packages.map(pkg => [pkg.name, pkg.version]))
+    const exact = Object.fromEntries(packages.map(pkg => [pkg.name, pkg.version]))
     const dependencies = await resolveConsumerPeerAliases({ ...consumerOptionalPeers(closure, new Map(Object.entries(exact).map(([name, version]) => [name, `npm:${name}@${version}`]))), ...exact }, specifier => run('pnpm', [...consumerPnpmOptions, 'view', specifier, 'version', '--json']))
-    const checkTypes = manifest.checks.packages.some(check => check.files.some(file => /\.d\.[cm]?ts$/u.test(file)))
+    const checkTypes = manifest.checks.packages.some(check => applicable.has(check.name) && check.files.some(file => /\.d\.[cm]?ts$/u.test(file)))
     const toolchain = checkTypes ? await consumerTypeToolchain(directory, dependencies, closure) : undefined
     await Promise.all([
       writeFile(path.join(directory, 'package.json'), `${JSON.stringify({ name: 'repoctl-snapshot-consumer', private: true, type: 'module', packageManager: manifest.plan.packageManager, dependencies, ...(toolchain ? { devDependencies: toolchain.devDependencies } : {}) }, null, 2)}\n`),
@@ -51,11 +59,12 @@ export async function verifyPreparedSnapshotConsumer(options: PreparedSnapshotCo
       throw new Error(`Snapshot consumer requires pnpm ${expectedPnpm}.`)
     }
     await installPreparedSnapshotConsumer(manifest, directory, run, budget)
-    const installedPackages = await installedSnapshotPackages(manifest, directory)
+    const installedPackages = await installedSnapshotPackages(manifest, directory, applicable)
     const compiler = toolchain ? await installedConsumerTypeToolchain(directory, toolchain) : undefined
-    for (const [index, pkg] of manifest.packages.entries()) {
+    for (const [index, pkg] of packages.entries()) {
       const { packed, installed } = installedPackages[index]!
-      await checkInstalledEntries(packed, manifest.checks.packages[index]!.files, installed, directory, run, index, compiler)
+      const files = manifest.checks.packages.find(check => check.name === pkg.name)!.files
+      await checkInstalledEntries(packed, files, installed, directory, run, index, compiler)
       result.packages.push({ name: pkg.name, version: pkg.version })
     }
     result.status = 'verified'
@@ -73,7 +82,7 @@ export async function verifyPreparedSnapshotConsumer(options: PreparedSnapshotCo
         result.error = `Snapshot consumer cleanup failed: ${error instanceof Error ? error.message : String(error)}`
       }
     }
+    await writeFile(path.join(options.outputDirectory, 'consumer-report.json'), `${JSON.stringify(result, null, 2)}\n`)
   }
-  await writeFile(path.join(options.outputDirectory, 'consumer-report.json'), `${JSON.stringify(result, null, 2)}\n`)
   return result
 }

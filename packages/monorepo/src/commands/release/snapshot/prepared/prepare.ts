@@ -10,6 +10,9 @@ import { validatePreparedSnapshot } from './validate'
 
 /** Build on an unprivileged runner; emit a portable bundle separate from retained diagnostics. */
 export async function prepareSnapshot(options: PrepareSnapshotOptions): Promise<PreparedSnapshot> {
+  if ('referenceGitlinks' in options || 'prepareSource' in options) {
+    throw new Error('Prepared snapshots do not accept source preparation extensions outside the frozen plan.')
+  }
   const env = options.env ?? process.env
   if (['ACTIONS_ID_TOKEN_REQUEST_TOKEN', 'NODE_AUTH_TOKEN', 'NPM_TOKEN'].some(key => env[key])) {
     throw new Error('Snapshot preparation must run without OIDC or npm publishing credentials.')

@@ -6,6 +6,7 @@ import { prepareSnapshotArtifacts } from './artifacts'
 import { isolateSnapshot } from './isolate'
 import { writeSnapshotManifests } from './manifests'
 import { isolatedSnapshotEnvironment } from './process'
+import { assertPreparedArtifacts, prepareSnapshotSource } from './source/prepare'
 
 export async function checkpointSnapshot(report: SnapshotReport) {
   if (report.outputDirectory) {
@@ -21,7 +22,10 @@ export async function prepareNightlySnapshot(report: SnapshotReport, options: Sn
     const source = await isolateSnapshot(report, options)
     await checkpointSnapshot(report)
     const references = await writeSnapshotManifests(source, report)
+    await prepareSnapshotSource(source, report, options)
+    await checkpointSnapshot(report)
     await prepareSnapshotArtifacts(source, report, { ...options, env: isolatedSnapshotEnvironment(options, report.outputDirectory!) }, target, references)
+    await assertPreparedArtifacts(source, report)
     await checkpointSnapshot(report)
   }
   catch (error) {

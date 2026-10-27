@@ -6,6 +6,10 @@ export type SnapshotIdentity = { kind: 'pr', pullRequest: number, commit: string
 
 export interface SnapshotOptions extends Pick<ReleaseOptions, 'cwd' | 'env' | 'spawn' | 'sleep'> {
   identity: SnapshotIdentity
+  /** 仅省略明确列出的参考 gitlink；默认拒绝所有 gitlink。 */
+  referenceGitlinks?: readonly string[]
+  /** 在隔离安装及版本改写后、构建前准备经验证的外部产物，仅供程序化调用。 */
+  prepareSource?: (context: SnapshotPreparationContext) => Promise<SnapshotPreparationResult>
   /** Parent of a new isolated directory; must be outside the source repository. */
   outputDirectory?: string
   /** Explicit publication registry; defaults to the public npm registry. */
@@ -41,5 +45,35 @@ export interface SnapshotReport {
   installCommand: string
   outputDirectory?: string
   checks?: PackageCheckResult[]
+  /** 准确提交的真实 Git tree，包含被明确省略的 gitlink 身份。 */
+  sourceTree?: string
+  referenceGitlinks?: SnapshotReferenceGitlink[]
+  preparation?: SnapshotPreparationReceipt
   error?: string
+}
+
+export interface SnapshotReferenceGitlink {
+  path: string
+  commit: string
+}
+
+export interface SnapshotPreparationContext {
+  /** 隔离归档目录；不能更改其中已经存在的源码、配置或 manifest。 */
+  directory: string
+  identity: Readonly<SnapshotIdentity>
+  tree: string
+  packages: readonly Readonly<Pick<SnapshotPackage, 'name' | 'directory' | 'currentVersion' | 'version'>>[]
+  referenceGitlinks: readonly Readonly<SnapshotReferenceGitlink>[]
+}
+
+export interface SnapshotPreparationResult {
+  /** 新增产物的完整清单；路径为归档根目录内使用 / 的逻辑相对路径。 */
+  files: readonly { path: string, sha256: string }[]
+  /** 用于审计的字符串元数据，不作为发布授权。 */
+  metadata?: Readonly<Record<string, string>>
+}
+
+export interface SnapshotPreparationReceipt extends SnapshotPreparationResult {
+  commit: string
+  tree: string
 }

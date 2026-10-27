@@ -11,3 +11,6 @@ expectType<Promise<NightlyReport>>(createNightlyPlan({ cwd: '.' }))
 expectType<Promise<NightlyReport>>(releaseNightly({ cwd: '.', publish: true }))
 expectNotAssignable<ReleaseNightlyConfig>({ provider: 'other' })
 expectNotAssignable<NightlyOptions>({ cwd: '.', registry: 'https://example.invalid' })
+
+expectAssignable<NightlyOptions>({ cwd: '.', referenceGitlinks: ['references/tooling'], prepareSource: async context => ({ files: [], metadata: { source: context.tree } }) })
+expectNotAssignable<ReleaseNightlyConfig>({ prepareSource: async () => ({ files: [] }) })

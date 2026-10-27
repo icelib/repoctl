@@ -44,13 +44,16 @@ export async function prepareValidation(client, {
   const initial = await client.getPullRequest(number)
   openPullRequest(initial, client.repository)
   const labels = releaseLabels(initial)
-  if ((expectedHeadSha && initial.head.sha !== expectedHeadSha)
-    || (expectedBaseSha && initial.base.sha !== expectedBaseSha)
-    || (expectedBaseRef && initial.base.ref !== expectedBaseRef)
-    || (expectedHeadRef && initial.head.ref !== expectedHeadRef)
-    || (expectedHeadRepository && initial.head.repo.full_name !== expectedHeadRepository)
-    || (expectedReleaseLabels && JSON.stringify(labels) !== JSON.stringify([...expectedReleaseLabels].sort()))) {
-    throw new Error('PR or base changed while awaiting approval, or release labels changed; approve the latest run.')
+  const mismatches = [
+    ['head.sha', expectedHeadSha, initial.head.sha],
+    ['base.sha', expectedBaseSha, initial.base.sha],
+    ['base.ref', expectedBaseRef, initial.base.ref],
+    ['head.ref', expectedHeadRef, initial.head.ref],
+    ['head.repo.full_name', expectedHeadRepository, initial.head.repo.full_name],
+    ['releaseLabels', expectedReleaseLabels && [...expectedReleaseLabels].sort(), labels],
+  ].filter(([, expected, current]) => expected && JSON.stringify(expected) !== JSON.stringify(current)).map(([field, expected, current]) => ({ field, expected, current }))
+  if (mismatches.length) {
+    throw new Error(`PR or base changed while awaiting approval, or release labels changed; approve the latest run. Event snapshot mismatches: ${JSON.stringify(mismatches)}`)
   }
   const target = {
     number,

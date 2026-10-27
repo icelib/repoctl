@@ -7,6 +7,7 @@ import { stringify } from 'yaml'
 import { checkDependencyRanges, consumerDependency } from './consumer/dependencies'
 import { consumerOptionalPeers } from './consumer/optional-peers'
 import { resolveConsumerPeerAliases } from './consumer/peer-aliases'
+import { consumerApplicability } from './consumer/platform'
 import { consumerAssetSource } from './consumer/runtime-assets'
 import { consumerRuntimeClosure } from './consumer/runtime-closure'
 import { consumerTypeToolchain, installedConsumerTypeToolchain } from './consumer/typescript'
@@ -17,7 +18,11 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
   const { result } = pkg
   const { packageManager } = options
   checkDependencyRanges(pkg, packages, results, options.expectedWorkspaceLocators)
+  result.applicability = consumerApplicability(pkg.manifest)
   if (result.diagnostics.some(item => item.severity === 'error')) {
+    return
+  }
+  if (result.applicability.status === 'not-applicable') {
     return
   }
   const checkTypes = entries.length > 0 && result.files.some(file => /\.d\.[cm]?ts$/u.test(file))

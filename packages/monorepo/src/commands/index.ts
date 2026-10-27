@@ -168,7 +168,7 @@ export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintena
 export type { MaintenanceFile, MaintenancePresetChange, MaintenancePresetUpgrade, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
 
 export { checkPackages } from './package-check'
-export type { PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
+export type { ConsumerApplicability, ConsumerHost, ConsumerPackageApplicability, PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseCiStage, ReleaseCiStageResult, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
 export * from './release/auto-changeset'
@@ -185,7 +185,7 @@ export type { ReleaseOidcArtifactAuditOptions, ReleaseOidcAuditOptions, ReleaseO
 export { createReleasePlan } from './release/plan'
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
 export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
-export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
+export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotPreparationContext, SnapshotPreparationReceipt, SnapshotPreparationResult, SnapshotReferenceGitlink, SnapshotReport } from './release/snapshot'
 export { verifyPreparedSnapshotConsumer } from './release/snapshot/prepared/consumer'
 export type { PreparedSnapshotConsumerOptions, PreparedSnapshotConsumerReport } from './release/snapshot/prepared/consumer'
 export { freezeSnapshotSource, verifySnapshotRun } from './release/snapshot/prepared/github'

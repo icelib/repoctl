@@ -3,6 +3,7 @@ import { lstat, mkdir, mkdtemp, readdir, realpath, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { isolatedPnpmOptions, isolatedSnapshotEnvironment, snapshotCommand } from './process'
+import { assertOmittedReferences, assertSnapshotEvidence } from './source/references'
 
 function inside(root: string, target: string) {
   const relative = path.relative(root, target)
@@ -49,14 +50,14 @@ export async function isolateSnapshot(report: SnapshotReport, options: SnapshotO
   report.outputDirectory = directory
   const source = path.join(directory, 'source')
   await mkdir(source)
-  if (/^160000 /m.test(snapshotCommand('git', ['ls-tree', '-r', report.identity.commit], { ...options, cwd: report.source }))) {
-    throw new Error('Snapshot source archives do not support Git submodules.')
-  }
+  const evidence = assertSnapshotEvidence(report, options)
   const archive = path.join(directory, 'source.tar')
   snapshotCommand('git', ['archive', '--format=tar', '--output', archive, report.identity.commit], { ...options, cwd: report.source })
   snapshotCommand('tar', ['-xf', archive, '-C', source], options)
   await rm(archive)
   await rejectLinks(source)
+  await assertOmittedReferences(source, evidence.referenceGitlinks)
   snapshotCommand('pnpm', [...isolatedPnpmOptions, 'install', '--frozen-lockfile'], { ...options, cwd: source, env: isolatedSnapshotEnvironment(options, directory) })
+  await assertOmittedReferences(source, evidence.referenceGitlinks)
   return source
 }

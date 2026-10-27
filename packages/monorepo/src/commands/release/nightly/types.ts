@@ -1,10 +1,10 @@
 import type { ReleaseOidcAuditReport } from '../../../core/oidc/types'
 import type { NightlyProvider } from '../../../types/config'
-import type { PackageCheckCommand } from '../../package-check/types'
-import type { SnapshotReport } from '../snapshot/types'
+import type { ConsumerPackageApplicability, PackageCheckCommand } from '../../package-check/types'
+import type { SnapshotOptions, SnapshotReport } from '../snapshot/types'
 import type { ReleaseOptions } from '../types'
 
-export interface NightlyOptions extends Pick<ReleaseOptions, 'cwd' | 'env' | 'spawn' | 'sleep' | 'registryFetch' | 'config'> {
+export interface NightlyOptions extends Pick<ReleaseOptions, 'cwd' | 'env' | 'spawn' | 'sleep' | 'registryFetch' | 'config'>, Pick<SnapshotOptions, 'referenceGitlinks' | 'prepareSource'> {
   /** Parent directory for retained reports and artifacts, outside the source checkout. */
   outputDirectory?: string
   /** Publish only with REPOCTL_SNAPSHOT_PUBLISH=1 in the authorized GitHub Actions job. */
@@ -24,6 +24,8 @@ export interface NightlyPackage {
 export interface NightlyConsumerReport {
   status: 'verified' | 'failed'
   packages: { name: string, version: string }[]
+  /** 所有产物的静态检查保持不变，仅匹配宿主的包进入运行时消费。 */
+  applicability?: ConsumerPackageApplicability[]
   commands: PackageCheckCommand[]
   error?: string
 }

@@ -33,6 +33,23 @@ export interface PackageCheckCommand {
   stderr: string
 }
 
+export interface ConsumerHost {
+  os: string
+  cpu: string
+  libc?: string
+}
+
+export interface ConsumerApplicability {
+  status: 'applicable' | 'not-applicable'
+  host: ConsumerHost
+  reason?: string
+}
+
+export interface ConsumerPackageApplicability extends ConsumerApplicability {
+  name: string
+  version: string
+}
+
 export interface PackageCheckResult {
   name: string
   directory: string
@@ -43,6 +60,8 @@ export interface PackageCheckResult {
   files: string[]
   diagnostics: PackageCheckDiagnostic[]
   commands: PackageCheckCommand[]
+  /** 运行时消费仅在真实宿主支持该包时执行，静态校验始终保留。 */
+  applicability?: ConsumerApplicability
 }
 
 export interface PackageCheckReport {
@@ -75,6 +94,9 @@ export interface PackedManifest {
   optionalDependencies?: Record<string, string>
   peerDependencies?: Record<string, string>
   peerDependenciesMeta?: Record<string, { optional?: boolean }>
+  os?: string[]
+  cpu?: string[]
+  libc?: string[]
   repoctl?: { packageCheck?: { runtimeAssets?: unknown } }
 }
 

@@ -7,7 +7,7 @@ import { publishSnapshotArtifacts } from './publish'
 
 export { createSnapshotPlan } from './plan'
 export { prepareNightlySnapshot } from './prepare'
-export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './types'
+export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotPreparationContext, SnapshotPreparationReceipt, SnapshotPreparationResult, SnapshotReferenceGitlink, SnapshotReport } from './types'
 
 /** Prepare immutable package artifacts in an archive of HEAD; original files and Git refs are never versioned. */
 export async function releaseSnapshot(options: SnapshotOptions): Promise<SnapshotReport> {

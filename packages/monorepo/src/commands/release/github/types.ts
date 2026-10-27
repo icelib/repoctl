@@ -92,6 +92,8 @@ export interface GitHubOperations {
   ensureTag?: (options: EnsureTagOptions) => Promise<void>
   enrichReleaseNote?: (document: ReleaseNoteDocument) => Promise<ReleaseNoteDocument>
   readReleasePullRequestContributors?: (target: string) => Promise<string[]>
+  /** 按准确 tag 只读查询；仅明确 404 表示不存在，未知响应必须抛出。 */
+  readRelease?: (tag: string) => Promise<GitHubRelease | undefined>
   listReleases?: () => Promise<GitHubRelease[]>
   updateRelease?: (options: UpdateReleaseOptions) => Promise<GitHubRelease>
 }

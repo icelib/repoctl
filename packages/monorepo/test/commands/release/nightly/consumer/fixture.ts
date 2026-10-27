@@ -22,7 +22,7 @@ export function missingVersion(reference: string, code = 'ERR_PNPM_NO_MATCHING_V
   return JSON.stringify({ name: 'pnpm', level: 'error', code, message: `No matching version found for ${reference} while fetching it from https://registry.npmjs.org/\n\nFailed to resolve ${reference}` })
 }
 
-export async function consumerFixture(settings: { provider?: 'npm' | 'pkg-pr-new', mutate?: (manifest: Record<string, unknown>) => void, escapeBin?: boolean, manifest?: Record<string, unknown>, files?: Record<string, string> } = {}) {
+export async function consumerFixture(settings: { provider?: 'npm' | 'pkg-pr-new', mutate?: (manifest: Record<string, unknown>) => void, configure?: (manifest: Record<string, unknown>, index: number) => void, escapeBin?: boolean, manifest?: Record<string, unknown>, files?: Record<string, string> } = {}) {
   const root = await mkdtemp(path.join(tmpdir(), 'repoctl-nightly-consumer-test-'))
   roots.push(root)
   await writeFile(path.join(root, 'package.json'), '{"packageManager":"pnpm@12.13.0"}')
@@ -31,7 +31,11 @@ export async function consumerFixture(settings: { provider?: 'npm' | 'pkg-pr-new
   report.outputDirectory = root
   const files = { 'index.js': 'export const value = 1', 'bin.js': '', ...settings.files }
   report.snapshot!.checks = report.packages.map(pkg => ({ name: pkg.name, files: ['package.json', ...Object.keys(files)] })) as NonNullable<NonNullable<typeof report.snapshot>['checks']>
-  const manifests = new Map(report.packages.map(pkg => [pkg.name, { name: pkg.name, version: pkg.version, type: 'module', exports: './index.js', bin: 'bin.js', repoctlSnapshot: snapshotMetadata(report.snapshot!), ...settings.manifest }]))
+  const manifests = new Map(report.packages.map((pkg, index) => {
+    const manifest: Record<string, unknown> = { name: pkg.name, version: pkg.version, type: 'module', exports: './index.js', bin: 'bin.js', repoctlSnapshot: snapshotMetadata(report.snapshot!), ...settings.manifest }
+    settings.configure?.(manifest, index)
+    return [pkg.name, manifest] as const
+  }))
   for (const [index, pkg] of report.snapshot!.packages.entries()) {
     const archive = path.join(root, `archive-${index}`)
     await mkdir(path.join(archive, 'package'), { recursive: true })

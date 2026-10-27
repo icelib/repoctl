@@ -6,6 +6,7 @@ import { Buffer } from 'node:buffer'
 import { satisfies, validRange } from 'semver'
 import { dependencyReferences } from '../../../package-check/dependencies'
 import { matchesSnapshotMetadata } from '../identity'
+import { assertPreparedArchive } from '../source/archive'
 import { readSnapshotArchive, writeSnapshotArchive } from './index'
 
 export interface SnapshotPublicationTarget {
@@ -24,6 +25,7 @@ export async function finalizeSnapshotTarball(bytes: Uint8Array, pkg: SnapshotPa
     throw new Error('Snapshot pkg.pr.new target requires an owner/repository identity.')
   }
   const entries = await readSnapshotArchive(bytes)
+  assertPreparedArchive(entries, pkg, report)
   const entry = entries.find(item => item.path === 'package/package.json')
   if (!entry || entry.type !== 'File') {
     throw new Error(`Snapshot tarball has no package/package.json: ${pkg.name}.`)
