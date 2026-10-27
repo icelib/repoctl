@@ -623,6 +623,10 @@
   dir: packages/monorepo
   intents:
     - slow-deers-attack
+"@icebreakers/monorepo@6.3.0":
+  dir: packages/monorepo
+  intents:
+    - great-queens-live
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -1006,6 +1010,10 @@ repoctl@6.2.0:
   intents:
     - kind-goats-report
     - short-swans-chew
+repoctl@6.3.0:
+  dir: packages/repoctl
+  intents:
+    - great-queens-live
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
