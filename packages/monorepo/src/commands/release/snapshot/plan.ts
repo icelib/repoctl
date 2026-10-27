@@ -8,6 +8,7 @@ import { clearWorkspaceCache, getWorkspaceData } from '../../../core/workspace'
 import { dependencyReferences } from '../../package-check/dependencies'
 import { createNativeReleasePlan } from '../plan/native-report'
 import { assertSnapshotSource, snapshotIdentity } from './identity'
+import { assertReferenceDependencies, snapshotSourceEvidence } from './source/references'
 
 /** Reuse pnpm's version explanations, while snapshotting every public package together. */
 export async function createSnapshotPlan(options: SnapshotOptions): Promise<SnapshotReport> {
@@ -18,10 +19,7 @@ export async function createSnapshotPlan(options: SnapshotOptions): Promise<Snap
     throw new Error('Snapshot registry must use HTTPS (HTTP is only allowed for a local test registry), without URL credentials, queries or fragments.')
   }
   const source = await realpath(assertSnapshotSource(options))
-  const nativePlan = await createNativeReleasePlan({ ...options, cwd: source })
-  if (nativePlan.status === 'blocked') {
-    throw new Error(`Snapshot native release plan is blocked: ${nativePlan.blockers.map(item => `${item.id}: ${item.detail}`).join('; ')}`)
-  }
+  const evidence = snapshotSourceEvidence({ ...options, cwd: source })
   clearWorkspaceCache()
   const workspace = await getWorkspaceData(source, { ignorePrivatePackage: false, ignoreRootPackage: false })
   const manifest = parseYaml(await readFile(path.join(source, 'pnpm-workspace.yaml'), 'utf8'))
@@ -31,6 +29,7 @@ export async function createSnapshotPlan(options: SnapshotOptions): Promise<Snap
   const seen = new Set<string>()
   for (const pkg of workspace.packages) {
     const paths = [pkg.rootDir, ...dependencyReferences(pkg.manifest, pkg.rootDir, true).flatMap(ref => ref.directory ? [ref.directory] : [])]
+    assertReferenceDependencies(source, paths, evidence.referenceGitlinks)
     if (paths.some((target) => {
       const relative = path.relative(source, path.resolve(target))
       return relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)
@@ -43,6 +42,10 @@ export async function createSnapshotPlan(options: SnapshotOptions): Promise<Snap
       }
       seen.add(pkg.manifest.name)
     }
+  }
+  const nativePlan = await createNativeReleasePlan({ ...options, cwd: source })
+  if (nativePlan.status === 'blocked') {
+    throw new Error(`Snapshot native release plan is blocked: ${nativePlan.blockers.map(item => `${item.id}: ${item.detail}`).join('; ')}`)
   }
   const packages = workspace.packages.filter(pkg => pkg.manifest.private !== true).map((pkg) => {
     const name = pkg.manifest.name
@@ -70,6 +73,8 @@ export async function createSnapshotPlan(options: SnapshotOptions): Promise<Snap
     identity,
     identityKey: key,
     source,
+    sourceTree: evidence.tree,
+    referenceGitlinks: evidence.referenceGitlinks,
     tag,
     registry: registry.href,
     status: 'planned',

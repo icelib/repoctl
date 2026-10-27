@@ -13,6 +13,9 @@ export { snapshotPlanDigest, validateSnapshotBuildPlan } from './schema'
 
 /** Freeze the existing version solver and workspace graph without installing or building candidates. */
 export async function createSnapshotBuildPlan(options: SnapshotBuildPlanOptions): Promise<SnapshotBuildPlan> {
+  if ('referenceGitlinks' in options || 'prepareSource' in options) {
+    throw new Error('Prepared snapshots do not accept source preparation extensions outside the frozen plan.')
+  }
   const source = validateSnapshotSource(options.source)
   if (/^(?:120000|160000) /m.test(snapshotCommand('git', ['ls-tree', '-r', source.mergeSha], options))) {
     throw new Error('Prepared snapshots do not support source symbolic links or Git submodules.')

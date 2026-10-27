@@ -185,7 +185,7 @@ export type { ReleaseOidcArtifactAuditOptions, ReleaseOidcAuditOptions, ReleaseO
 export { createReleasePlan } from './release/plan'
 export type { ReleasePlan, ReleasePlanOptions, ReleasePlanPackage } from './release/plan'
 export { createSnapshotPlan, releaseSnapshot } from './release/snapshot'
-export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotReport } from './release/snapshot'
+export type { SnapshotIdentity, SnapshotOptions, SnapshotPackage, SnapshotPreparationContext, SnapshotPreparationReceipt, SnapshotPreparationResult, SnapshotReferenceGitlink, SnapshotReport } from './release/snapshot'
 export { verifyPreparedSnapshotConsumer } from './release/snapshot/prepared/consumer'
 export type { PreparedSnapshotConsumerOptions, PreparedSnapshotConsumerReport } from './release/snapshot/prepared/consumer'
 export { freezeSnapshotSource, verifySnapshotRun } from './release/snapshot/prepared/github'

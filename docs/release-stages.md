@@ -111,3 +111,37 @@ After publication, both providers install the reported targets in a clean consum
 For npm, the clean consumer exempts only the confirmed batch's exact `name@version` entries from pnpm's release-age policy so newly published snapshots can be verified immediately. Other versions and dependencies retain pnpm's default policy; the source workspace's overrides and cooldown settings are not copied into the consumer.
 
 If publication is confirmed but consumer verification fails, the run remains failed and its summary identifies the confirmed build. Review `nightly-report.json`, `consumer-report.json` and the retained tarballs before retrying. A scheduled npm run for the same commit may skip the already published batch without repeating consumer verification. After fixing the failure, if a new nightly publication is intended, manually run **Release → mode: nightly** with `dry-run: false`; this repeats the pipeline and publishes snapshots with a new build identity.
+
+### Preparing external build artifacts through the public API
+
+`releaseSnapshot()` and `releaseNightly()` accept two programmatic options. They are not executable configuration fields or CLI flags, and the frozen prepared-PR API rejects them:
+
+- `referenceGitlinks` lists exact repository-relative Git tree paths that contain reference-only submodules. Every gitlink must be explicitly listed, and every listed path must actually be a gitlink. The default continues to reject all submodules. The archive omits their contents without initializing or fetching them; workspace packages and local dependencies cannot resolve inside them.
+- `prepareSource(context)` runs once after the exact committed archive is installed and snapshot manifests are rewritten, before the existing root build. It does not run during dry-run inspection or a scheduled skip. The immutable context includes the isolated `directory`, original `identity`, real Git `tree`, package `currentVersion` / snapshot `version`, and omitted gitlink paths with their original commit IDs.
+
+A repository wrapper can validate artifacts built for the same commit before copying them into the isolated source. Import the repository's release configuration explicitly so its quality scripts and verify hooks remain active:
+
+```ts
+import { releaseNightly } from 'repoctl'
+import configuration from '../repoctl.config.ts'
+import { prepareVerifiedArtifacts } from './nightly-artifacts.ts'
+
+const report = await releaseNightly({
+  cwd: process.cwd(),
+  config: configuration.commands.release,
+  publish: true,
+  referenceGitlinks: ['references/compiler'],
+  prepareSource: async (context) => {
+    return prepareVerifiedArtifacts(context)
+  },
+})
+if (report.status === 'failed') {
+  throw new Error(report.error)
+}
+```
+
+`prepareVerifiedArtifacts` is repository-owned code, not a repoctl helper. It must verify the producer's exact commit/tree, source digests, original versions, target coverage, licenses and binary hashes before copying anything. If package metadata contains versions, validate against `currentVersion` first and then rewrite only that metadata to `version`; do not change compiled bytes. Returning a receipt does not replace these domain checks.
+
+The callback returns `{ files: [{ path, sha256 }], metadata?: Record<string, string> }`. Paths are canonical relative artifact paths with `/` separators, and SHA256 values are lowercase hex. The file list must exactly cover every new file outside `node_modules`. Missing, duplicate, unlisted, escaped, symlinked or hash-mismatched artifacts fail before build or upload. Existing source/configuration files, manifests and file modes must remain unchanged. Omitted gitlink directories must remain empty. The verified receipt is retained as `snapshot-report.json`'s `preparation`, with the exact original commit and tree; `sourceTree` and `referenceGitlinks` separately preserve source evidence.
+
+The callback has the same trust level as the repository's build scripts. These checks enforce the artifact contract; they are not a sandbox, and dependency files under `node_modules` are outside this inventory. Authentication, clean-source checks, OIDC audit, full package selection, package validation and immutable publication remain enforced by the normal orchestration. A callback exception leaves a failed checkpoint and uploads nothing. Avoid placing reports in the source checkout, and use the ordinary native CI matrix to verify each target's real ABI before collecting its artifacts.
