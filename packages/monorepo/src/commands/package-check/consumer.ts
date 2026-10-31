@@ -8,8 +8,8 @@ import { checkDependencyRanges, consumerDependency } from './consumer/dependenci
 import { consumerOptionalPeers } from './consumer/optional-peers'
 import { resolveConsumerPeerAliases } from './consumer/peer-aliases'
 import { consumerApplicability } from './consumer/platform'
-import { consumerAssetSource } from './consumer/runtime-assets'
 import { consumerRuntimeClosure } from './consumer/runtime-closure'
+import { consumerRuntimeInvocation } from './consumer/runtime-contexts'
 import { consumerTypeToolchain, installedConsumerTypeToolchain } from './consumer/typescript'
 import { dependencyReferences } from './dependencies'
 import { execute, failureMessage } from './process'
@@ -75,8 +75,8 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
   for (const [index, entry] of entries.entries()) {
     const specifier = `${pkg.manifest.name}${entry.subpath === '.' ? '' : entry.subpath.slice(1)}`
     if (entry.runtime) {
-      const source = entry.asset ? consumerAssetSource(entry, specifier, installed) : entry.format === 'esm' ? `await import(${JSON.stringify(specifier)})` : `require(${JSON.stringify(specifier)})`
-      const command = await execute(process.execPath, ['--input-type', entry.format === 'esm' ? 'module' : 'commonjs', '--eval', source], directory, timeout, options)
+      const args = await consumerRuntimeInvocation(entry, specifier, directory, installed)
+      const command = await execute(process.execPath, args, directory, timeout, options)
       result.commands.push(command)
       if (command.exitCode !== 0) {
         result.diagnostics.push({ source: 'node', code: entry.asset ? 'RUNTIME_ASSET' : 'RUNTIME_IMPORT', severity: 'error', entry: entry.subpath, file: entry.target, message: failureMessage(command) })

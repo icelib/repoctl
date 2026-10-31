@@ -4,7 +4,7 @@ import type { consumerRunner } from './run'
 import { realpath, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
-import { consumerAssetSource } from '../../../package-check/consumer/runtime-assets'
+import { consumerRuntimeInvocation } from '../../../package-check/consumer/runtime-contexts'
 import { consumerEntries } from '../../../package-check/entries'
 
 export async function checkInstalledEntries(manifest: PackedManifest, files: string[], installed: string, directory: string, run: ReturnType<typeof consumerRunner>, packageIndex: number, toolchain?: InstalledConsumerTypeToolchain) {
@@ -13,8 +13,7 @@ export async function checkInstalledEntries(manifest: PackedManifest, files: str
   for (const [index, entry] of entries.entries()) {
     const specifier = `${manifest.name}${entry.subpath === '.' ? '' : entry.subpath.slice(1)}`
     if (entry.runtime) {
-      const source = entry.asset ? consumerAssetSource(entry, specifier, installed) : entry.format === 'esm' ? `await import(${JSON.stringify(specifier)})` : `require(${JSON.stringify(specifier)})`
-      await run(process.execPath, ['--input-type', entry.format === 'esm' ? 'module' : 'commonjs', '--eval', source])
+      await run(process.execPath, await consumerRuntimeInvocation(entry, specifier, directory, installed))
       if (entry.asset) {
         await run(process.execPath, ['--check', path.resolve(installed, entry.target)])
       }

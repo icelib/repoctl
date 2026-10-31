@@ -1,5 +1,6 @@
 import type { ConsumerEntry, PackedManifest } from './types'
 import { consumerRuntimeAssets } from './consumer/runtime-assets'
+import { consumerRuntimeContexts, validateRuntimeContextEntries } from './consumer/runtime-contexts'
 
 function resolveTarget(value: unknown, conditions: Set<string>): string | undefined {
   if (typeof value === 'string') {
@@ -38,6 +39,7 @@ function expand(subpath: string, target: string, files: string[]) {
 /** 仅执行声明的 Node 入口；原生扩展通过 CommonJS 实际加载。 */
 export function consumerEntries(manifest: PackedManifest, files: string[]): ConsumerEntry[] {
   const assets = consumerRuntimeAssets(manifest)
+  const contexts = consumerRuntimeContexts(manifest)
   const exports = manifest.exports
   const mappings: Record<string, unknown> = exports && typeof exports === 'object' && !Array.isArray(exports) && Object.keys(exports).some(key => key.startsWith('.'))
     ? exports as Record<string, unknown>
@@ -64,10 +66,12 @@ export function consumerEntries(manifest: PackedManifest, files: string[]): Cons
         const asset = assets.has(expanded.subpath)
         const declaration = expanded.target.replace(/\.([cm]?)js$/u, '.d.$1ts').replace(/^\.\//u, '')
         const typecheck = declaresCondition(value, 'types') || (expanded.subpath === '.' && typeof manifest.types === 'string') || (!native && files.includes(declaration))
-        entries.push({ ...expanded, format, runtime, ...(native ? { typecheck } : {}), ...(asset ? { asset: true, typecheck } : {}) })
+        const context = contexts.get(expanded.subpath)
+        entries.push({ ...expanded, format, runtime, ...(context ? { context } : {}), ...(native ? { typecheck } : {}), ...(asset ? { asset: true, typecheck } : {}) })
       }
     }
   }
+  validateRuntimeContextEntries(manifest, files, entries, contexts)
   for (const asset of assets) {
     const matches = entries.filter(entry => entry.subpath === asset && entry.runtime)
     if (!matches.length || matches.some(entry => !entry.target.startsWith('./') || entry.target.split(/[\\/]/u).includes('..') || !files.includes(entry.target.slice(2)))) {
