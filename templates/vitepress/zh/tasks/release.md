@@ -170,6 +170,7 @@ export default {
       nightly: {
         provider: 'npm',
         schedule: '17 19 * * *',
+        qualityTimeoutMs: 60 * 60_000,
       },
     },
   },
@@ -206,6 +207,8 @@ npm 定时任务只有在全部公开包都对应当前提交和同一构建身�
 ### 检查与诊断
 
 nightly 执行配置的 `qualityScripts` 和 `hooks.verify`，在检出目录以外从已提交源码构建真实 tarball，并验证包导出、类型和隔离安装。版本包含基础版本、nightly 标记、完整提交 SHA 和构建摘要。发布后，干净消费者通过实际标签或 URL 安装，再核验身份、运行入口和类型。正式版本准备与发布后 hooks 仍属于普通发布流程。
+
+每个质量脚本和 verify hook 分别计时，默认超时为 `2_700_000` 毫秒（45 分钟）。可将 `commands.release.nightly.qualityTimeoutMs` 设为正安全整数毫秒数；上面的示例为每个脚本提供 60 分钟。工作流的 job 超时仍限制整个运行，若全部任务需要更长时间，需单独调整该限制。脚本超时会中止发布，并在诊断报告中保留命令输出。
 
 工作流使用 Node.js 24.22.1、仓库锁定的 pnpm、不保留凭据的 checkout，并复用现有发布并发组。成功与失败均保留报告、tarball 和消费者诊断 14 天；Actions 摘要提供结果与安装命令。
 

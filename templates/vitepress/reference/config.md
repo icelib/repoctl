@@ -55,13 +55,14 @@ export default defineMonorepoConfig({
 })
 ```
 
-| Option                            | Purpose                                                  |
-| --------------------------------- | -------------------------------------------------------- |
-| `commands.init.preset`            | Default setup preset                                     |
-| `commands.create.defaultTemplate` | Default template for `repo new <name>`                   |
-| `commands.clean.autoConfirm`      | Select all eligible packages without prompting           |
-| `commands.clean.dryRun`           | Preview deletions and dependency changes without writing |
-| `commands.upgrade.skipOverwrite`  | Whether upgrade preserves changed managed files          |
+| Option                                      | Purpose                                                                                |
+| ------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `commands.init.preset`                      | Default setup preset                                                                   |
+| `commands.create.defaultTemplate`           | Default template for `repo new <name>`                                                 |
+| `commands.clean.autoConfirm`                | Select all eligible packages without prompting                                         |
+| `commands.clean.dryRun`                     | Preview deletions and dependency changes without writing                               |
+| `commands.upgrade.skipOverwrite`            | Whether upgrade preserves changed managed files                                        |
+| `commands.release.nightly.qualityTimeoutMs` | Per-script nightly quality and verify timeout in milliseconds; defaults to `2_700_000` |
 
 ## Inspect Config
 
