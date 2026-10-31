@@ -12,7 +12,7 @@ import { isolatedSnapshotEnvironment, snapshotCommand } from '../snapshot/proces
 import { publishSnapshotArtifacts } from '../snapshot/publish'
 import { verifyNightlyConsumer } from './consumer'
 import { nightlyContext } from './context'
-import { nightlyCommand } from './process'
+import { nightlyQualityCommand } from './process'
 import { confirmNpmNightly, inspectNpmNightly } from './providers/npm'
 import { publishPkgPrNew } from './providers/pkg-pr-new'
 import { inspectPkgPrNew, pkgPrNewLocator } from './providers/pkg-pr-new/registry'
@@ -88,7 +88,7 @@ async function nightly(options: NightlyOptions, execute: boolean): Promise<Night
       }
     }
     await runUncachedQualityScripts({ ...options, cwd: report.source, env }, (command, args, settings) => {
-      nightlyCommand(report, settings, command, args, config.qualityTimeoutMs ?? defaultNightlyQualityTimeoutMs)
+      nightlyQualityCommand(report, settings, command, args, config.qualityTimeoutMs ?? defaultNightlyQualityTimeoutMs)
     })
     assertSnapshotSource(snapshotOptions)
     await checkpointNightly(report)
