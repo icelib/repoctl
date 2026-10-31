@@ -16,12 +16,13 @@ it('prepares real tarballs by default after quality and verify hooks, without st
     if (command === 'pnpm' && args?.[0] === 'run' && args[1] === 'nightly-verify') {
       hooks.push(args[1])
       expect(settings?.env?.['REPOCTL_SNAPSHOT_PUBLISH']).toBeUndefined()
+      expect(settings?.timeout).toBe(123_456)
       return { pid: 1, output: [null, 'verify output', ''], stdout: 'verify output', stderr: '', status: 0, signal: null }
     }
     return original(command, args, settings)
   }) as NonNullable<NightlyOptions['spawn']>
   const before = h.run('git', ['rev-parse', 'HEAD'])
-  const report = await releaseNightly({ ...h.options, spawn, config: { ...h.options.config, hooks: { verify: ['nightly-verify'], beforeVersion: ['must-not-run'], afterVersion: ['must-not-run'], beforePublish: ['must-not-run'], afterPublish: [{ script: 'must-not-run' }] } } })
+  const report = await releaseNightly({ ...h.options, spawn, config: { ...h.options.config, nightly: { ...h.options.config?.nightly, qualityTimeoutMs: 123_456 }, hooks: { verify: ['nightly-verify'], beforeVersion: ['must-not-run'], afterVersion: ['must-not-run'], beforePublish: ['must-not-run'], afterPublish: [{ script: 'must-not-run' }] } } })
   expect(report.status, report.error).toBe('prepared')
   expect(hooks).toEqual(['nightly-verify'])
   expect(report.snapshot?.checks?.every(check => check.status === 'passed')).toBe(true)
@@ -81,4 +82,53 @@ it('stops before quality or preparation when any planned npm Trusted Publisher f
   expect(report.commands).toEqual([])
   expect(report.snapshot?.packages.every(pkg => !pkg.tarball)).toBe(true)
   expect(h.uploads).toEqual([])
+})
+
+it.each([
+  { label: 'default quality timeout', qualityTimeoutMs: undefined, expected: 2_700_000, timeout: true },
+  { label: 'configured quality timeout', qualityTimeoutMs: 987_654, expected: 987_654, timeout: true },
+  { label: 'nonzero quality exit', qualityTimeoutMs: 987_654, expected: 987_654, timeout: false },
+])('retains a failed report and blocks later hooks, preparation and publication after the $label', async ({ qualityTimeoutMs, expected, timeout }) => {
+  const h = await fixture()
+  const original = h.options.spawn!
+  const scripts: string[] = []
+  const spawn: NonNullable<NightlyOptions['spawn']> = ((command, args, settings) => {
+    if (command === 'pnpm' && args?.[0] === 'run') {
+      scripts.push(args[1]!)
+      expect(settings?.timeout).toBe(expected)
+      if (args[1] === 'test') {
+        const failure = timeout ? { status: null, signal: 'SIGTERM', error: Object.assign(new Error('spawnSync pnpm ETIMEDOUT'), { code: 'ETIMEDOUT' }) } : { status: 1, signal: null }
+        return { pid: 1, output: [null, 'passing suite\n', 'partial stderr\n'], stdout: 'passing suite\n', stderr: 'partial stderr\n', ...failure }
+      }
+      return { pid: 1, output: [null, 'build passed', ''], stdout: 'build passed', stderr: '', status: 0, signal: null }
+    }
+    return original(command, args, settings)
+  }) as NonNullable<NightlyOptions['spawn']>
+  const registryFetch = vi.fn<typeof fetch>(async (input) => {
+    const url = new URL(String(input))
+    if (url.hostname === 'oidc.actions.githubusercontent.com') {
+      return json({ value: idToken })
+    }
+    return url.pathname.includes('/oidc/token/exchange/package/') ? json({ token: 'test-publish-token' }, 201) : json({}, 404)
+  })
+  const report = await releaseNightly({
+    ...h.options,
+    spawn,
+    publish: true,
+    registryFetch,
+    env: { ...h.env, ...oidcEnv },
+    config: { ...h.options.config, nightly: { ...h.options.config?.nightly, ...(qualityTimeoutMs === undefined ? {} : { qualityTimeoutMs }) }, qualityScripts: ['build', 'test', 'must-not-run'], hooks: { verify: ['must-not-verify'] } },
+  })
+  expect(report.status).toBe('failed')
+  expect(report.error).toBe(`Nightly pnpm run test failed: ${timeout ? `timed out after ${expected} ms (spawnSync pnpm ETIMEDOUT)` : 'partial stderr'}`)
+  expect(report.oidc?.ok).toBe(true)
+  expect(scripts).toEqual(['build', 'test'])
+  expect(report.commands.map(command => command.args)).toEqual([['run', 'build'], ['run', 'test']])
+  expect(report.commands[1]).toMatchObject({ exitCode: timeout ? null : 1, stdout: 'passing suite\n', stderr: 'partial stderr\n' })
+  expect(report.snapshot?.status).toBe('planned')
+  expect(report.snapshot?.packages.every(pkg => !pkg.tarball && !pkg.published)).toBe(true)
+  expect(h.uploads).toEqual([])
+  expect(JSON.parse(await readFile(path.join(report.outputDirectory!, 'nightly-report.json'), 'utf8'))).toEqual(report)
+  expect(await readFile(h.env.GITHUB_STEP_SUMMARY, 'utf8')).toContain(report.error!)
+  expect(h.run('git', ['status', '--porcelain'])).toBe('')
 })

@@ -2,7 +2,7 @@ import type { SnapshotOptions } from '../snapshot/types'
 import type { NightlyOptions, NightlyReport } from './types'
 import { realpath } from 'node:fs/promises'
 import process from 'node:process'
-import { resolveNightlyConfig } from '../../../core/nightly/config'
+import { defaultNightlyQualityTimeoutMs, resolveNightlyConfig } from '../../../core/nightly/config'
 import { clearWorkspaceCache, getWorkspaceData } from '../../../core/workspace'
 import { runUncachedQualityScripts } from '../hooks'
 import { auditReleaseOidc } from '../oidc'
@@ -88,7 +88,7 @@ async function nightly(options: NightlyOptions, execute: boolean): Promise<Night
       }
     }
     await runUncachedQualityScripts({ ...options, cwd: report.source, env }, (command, args, settings) => {
-      nightlyCommand(report, settings, command, args)
+      nightlyCommand(report, settings, command, args, config.qualityTimeoutMs ?? defaultNightlyQualityTimeoutMs)
     })
     assertSnapshotSource(snapshotOptions)
     await checkpointNightly(report)

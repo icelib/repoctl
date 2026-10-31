@@ -28,6 +28,8 @@ export interface ReleaseNightlyConfig {
   provider?: NightlyProvider
   /** Five-field UTC cron. Omit for manual nightly only; synchronize with repo upgrade. */
   schedule?: string
+  /** Timeout for each nightly quality script and verify hook, in positive safe integer milliseconds. @default 2700000 */
+  qualityTimeoutMs?: number
 }
 
 export interface ReleaseCommandConfig {

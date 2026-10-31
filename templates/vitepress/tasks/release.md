@@ -164,6 +164,7 @@ export default {
       nightly: {
         provider: 'npm',
         schedule: '17 19 * * *',
+        qualityTimeoutMs: 60 * 60_000,
       },
     },
   },
@@ -200,6 +201,8 @@ Scheduled npm checks skip only when every current public package is already avai
 ### Checks and diagnostics
 
 Nightly runs configured `qualityScripts` and `hooks.verify`, prepares real tarballs from committed source outside the checkout, and validates package exports, types and isolated installation. Versions include the base version, nightly marker, full commit SHA and build digest. After publication, a clean consumer installs the actual tags or URLs and checks identities, entrypoints and types. Formal versioning and post-publication hooks remain part of the normal release flow.
+
+Each quality script and verify hook has its own timeout, defaulting to `2_700_000` milliseconds (45 minutes). Set `commands.release.nightly.qualityTimeoutMs` to a positive safe integer number of milliseconds to override it; the example above allows 60 minutes per script. The workflow's job timeout still limits the whole run, so increase that separately if the combined work needs more time. A timeout stops publication and retains the command's output in the diagnostic report.
 
 The workflow uses Node.js 24.22.1, the workspace's pinned pnpm, checkout without persisted credentials and the existing publication concurrency group. Reports, tarballs and consumer diagnostics are retained for 14 days, including failed runs; the Actions summary contains the result and install commands.
 

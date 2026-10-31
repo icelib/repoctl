@@ -26,6 +26,7 @@ async function publisherFixture() {
     expect(parameters[0]).toContain('pkg-pr-new')
     expect(parameters[0]).toMatch(/bin[/\\]cli\.js$/)
     expect(options?.cwd).toBe(path.join(h.root, 'pkg-pr-new-publication'))
+    expect(options?.timeout).toBe(600_000)
     expect(options?.env?.['GIT_DIR']).toBeUndefined()
     expect(options?.env?.['GIT_WORK_TREE']).toBeUndefined()
     expect(options?.env?.['GIT_CEILING_DIRECTORIES']).toBe(h.root)
@@ -52,11 +53,15 @@ it('derives a deterministic pkg.pr.new identity from repository and full commit,
   expect(moved.identity.buildId).not.toBe(first.identity.buildId)
 })
 
-it('uploads the whole missing batch exactly once with pinned tooling and verifies downloaded bytes', async () => {
+it.each([
+  { label: 'default quality settings', qualityTimeoutMs: undefined },
+  { label: 'a custom quality timeout', qualityTimeoutMs: 123_456 },
+])('uploads the whole missing batch once with the original upload budget under $label and verifies downloaded bytes', async ({ qualityTimeoutMs }) => {
   const h = await publisherFixture()
-  expect(await inspectPkgPrNew(h.report, h.options)).toBe(false)
+  const options = { ...h.options, config: { nightly: qualityTimeoutMs === undefined ? {} : { qualityTimeoutMs } } }
+  expect(await inspectPkgPrNew(h.report, options)).toBe(false)
   const checkpoint = vi.fn(async () => {})
-  await publishPkgPrNew(h.report, h.options, checkpoint)
+  await publishPkgPrNew(h.report, options, checkpoint)
   expect(h.calls).toHaveLength(1)
   expect(h.calls[0]).toEqual(expect.arrayContaining(['publish', '--no-compact', '--comment=off', '--no-template', '--json', ...h.report.snapshot!.packages.map(pkg => pkg.tarball!)]))
   expect(h.report.confirmed).toBe(true)

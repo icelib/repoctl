@@ -1,5 +1,7 @@
 import type { ReleaseNightlyConfig } from '../../types/release'
 
+export const defaultNightlyQualityTimeoutMs = 2_700_000
+
 const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
@@ -37,6 +39,10 @@ export function isNightlySchedule(value: unknown): value is string {
     && cronField(fields[4]!, 0, 6, weekdays)
 }
 
+export function isNightlyQualityTimeout(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0
+}
+
 export function resolveNightlyConfig(config: ReleaseNightlyConfig = {}) {
   const provider = config.provider ?? 'npm'
   if (provider !== 'npm' && provider !== 'pkg-pr-new') {
@@ -45,5 +51,12 @@ export function resolveNightlyConfig(config: ReleaseNightlyConfig = {}) {
   if (config.schedule !== undefined && !isNightlySchedule(config.schedule)) {
     throw new Error('Nightly schedule must be a valid five-field UTC GitHub Actions cron expression.')
   }
-  return { provider, ...(config.schedule === undefined ? {} : { schedule: config.schedule.trim().toUpperCase().replaceAll(/\s+/gu, ' ') }) }
+  if (config.qualityTimeoutMs !== undefined && !isNightlyQualityTimeout(config.qualityTimeoutMs)) {
+    throw new Error('Nightly quality timeout must be a positive safe integer in milliseconds.')
+  }
+  return {
+    provider,
+    ...(config.schedule === undefined ? {} : { schedule: config.schedule.trim().toUpperCase().replaceAll(/\s+/gu, ' ') }),
+    ...(config.qualityTimeoutMs === undefined ? {} : { qualityTimeoutMs: config.qualityTimeoutMs }),
+  }
 }

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { resolveCommandValues } from '../../src/core/config/resolution'
-import { isNightlySchedule, resolveNightlyConfig } from '../../src/core/nightly/config'
+import { defaultNightlyQualityTimeoutMs, isNightlyQualityTimeout, isNightlySchedule, resolveNightlyConfig } from '../../src/core/nightly/config'
 
 describe('nightly configuration', () => {
   it('defaults to npm and manual dispatch', () => {
+    expect(defaultNightlyQualityTimeoutMs).toBe(45 * 60_000)
     expect(resolveNightlyConfig()).toEqual({ provider: 'npm' })
     expect(resolveCommandValues('release').values.nightly).toEqual({ provider: 'npm' })
   })
@@ -24,5 +25,18 @@ describe('nightly configuration', () => {
 
   it('rejects unknown providers through project validation', () => {
     expect(() => resolveCommandValues('release', JSON.parse('{"nightly":{"provider":"other"}}'))).toThrow()
+  })
+
+  it.each([1, 2_700_000, Number.MAX_SAFE_INTEGER])('preserves the configured quality timeout %i', (qualityTimeoutMs) => {
+    expect(isNightlyQualityTimeout(qualityTimeoutMs)).toBe(true)
+    expect(resolveNightlyConfig({ qualityTimeoutMs })).toEqual({ provider: 'npm', qualityTimeoutMs })
+    expect(resolveCommandValues('release', { nightly: { qualityTimeoutMs } }).values.nightly).toEqual({ provider: 'npm', qualityTimeoutMs })
+  })
+
+  it.each([0, -1, 0.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1, '2700000', null])('rejects invalid quality timeout %j in direct and project configuration', (qualityTimeoutMs) => {
+    const nightly = { qualityTimeoutMs } as never
+    expect(isNightlyQualityTimeout(qualityTimeoutMs)).toBe(false)
+    expect(() => resolveNightlyConfig(nightly)).toThrow('positive safe integer')
+    expect(() => resolveCommandValues('release', { nightly })).toThrow('commands.release.nightly.qualityTimeoutMs')
   })
 })
