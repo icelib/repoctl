@@ -150,6 +150,34 @@ Undeclared module formats are not required. Browser-only and non-JavaScript asse
 
 Each declared resource must be a packed JavaScript export. Consumers verify its export resolution, existence, package boundary and JavaScript syntax without executing browser globals. Missing paths, wildcard declarations, escaping links and invalid syntax fail. A resource does not need types merely because other exports have them; explicit or adjacent declarations attached to the resource are still checked. Other runtime exports and declaration checks remain enabled. Snapshot and published nightly consumers use the same contract; nightly derives optional integrations from checked tarballs after validating integrity and snapshot identity. Installation can contact the registry, while dependency install scripts are disabled. Workspace build and pack lifecycle scripts run normally.
 
+Required peers that refer to workspace packages in the checked runtime closure are also installed explicitly from the current candidate tarballs or publication locators. This includes transitive peers and npm aliases, so automatic peer installation cannot substitute an older registry package. Their declared version ranges must still accept the checked package. External required peers retain the package manager's existing resolution behavior.
+
+Some ESM exports require a particular execution context. Declare each exact export in the published `package.json`:
+
+```json
+{
+  "peerDependencies": { "vitest": "^5.0.5" },
+  "repoctl": {
+    "packageCheck": {
+      "runtimeContexts": {
+        "./vitest/setup": "vitest",
+        "./routes": {
+          "kind": "expected-error",
+          "name": "Error",
+          "message": "Requires the build plugin."
+        }
+      }
+    }
+  }
+}
+```
+
+The `vitest` context executes the export as a real setup file before a smoke test using Vitest installed inside the isolated consumer. Setup hooks must complete successfully. Vitest must be a dependency, optional dependency, or peer of the published package; a development dependency alone is insufficient. The consumer rejects a framework resolved outside its isolated directory.
+
+The `expected-error` context actually imports an entry that is intentionally unavailable without its host or build plugin. It succeeds only if the import throws an `Error` whose name and complete message exactly match the declaration. An import that succeeds or throws any different error fails validation. Only `name: "Error"` is supported.
+
+Contexts require existing packed ESM exports. Unknown paths, wildcard or noncanonical paths, missing files, type-only/browser-only exports, CommonJS or dual-format exports, and paths also declared in `runtimeAssets` are rejected. Ordinary entries retain their normal import checks, and declaration checks remain strict for contextual entries. Package check, snapshot, and published nightly consumers share this contract. TypeScript callers can use the exported `ConsumerRuntimeContext` and `PackageCheckManifestOptions` types when authoring manifest metadata.
+
 JSON contains each package's file list, stable diagnostic source/code, original upstream details, and subprocess argument arrays. `--strict` also fails on warnings. `--keep-temp` preserves the tarballs, consumer manifests and command working directories for reproduction; otherwise temporary files are removed even after failure. The command never publishes, changes package versions, or writes release state.
 
 To use it as a release gate, add a package script such as `"package:check": "repoctl package check --strict"` and reference `package:check` in `commands.release.hooks.verify`. Do not put this command in a build/prepack script, since it runs those stages itself.

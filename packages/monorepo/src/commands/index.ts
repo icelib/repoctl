@@ -168,7 +168,7 @@ export { detectMaintenanceVersionChange, getMaintenanceWorkflow, prepareMaintena
 export type { MaintenanceFile, MaintenancePresetChange, MaintenancePresetUpgrade, MaintenanceUpgradeOptions, MaintenanceUpgradeReport, MaintenanceVersionChange } from './maintenance'
 
 export { checkPackages } from './package-check'
-export type { ConsumerApplicability, ConsumerHost, ConsumerPackageApplicability, PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
+export type { ConsumerApplicability, ConsumerHost, ConsumerPackageApplicability, ConsumerRuntimeContext, PackageCheckCommand, PackageCheckDiagnostic, PackageCheckManifestOptions, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './package-check'
 export { applyProjectReferencesPlan, checkProjectReferences, planProjectReferences, syncProjectReferences } from './project-references'
 export type { GitHubRelease, ReleaseCiOptions, ReleaseCiStage, ReleaseCiStageResult, ReleaseLifecycleState, ReleaseStateSnapshot, ReleaseTarget } from './release'
 export * from './release/auto-changeset'

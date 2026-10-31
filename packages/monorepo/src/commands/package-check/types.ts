@@ -81,6 +81,17 @@ export interface PackedPackage {
   bytes: Uint8Array<ArrayBuffer>
 }
 
+/** 公开入口所需的隔离运行环境或精确的平台保护错误。 */
+export type ConsumerRuntimeContext = 'vitest' | { kind: 'expected-error', name: 'Error', message: string }
+
+/** package.json 中 repoctl.packageCheck 的公开配置合同。 */
+export interface PackageCheckManifestOptions {
+  /** 只做解析与语法检查的精确 JavaScript 资源导出。 */
+  runtimeAssets?: string[]
+  /** 在对应环境中真实执行的精确 ESM 导出。 */
+  runtimeContexts?: Record<string, ConsumerRuntimeContext>
+}
+
 export interface PackedManifest {
   name?: string
   version?: string
@@ -97,7 +108,7 @@ export interface PackedManifest {
   os?: string[]
   cpu?: string[]
   libc?: string[]
-  repoctl?: { packageCheck?: { runtimeAssets?: unknown } }
+  repoctl?: { packageCheck?: { runtimeAssets?: unknown, runtimeContexts?: unknown } }
 }
 
 export interface ConsumerEntry {
@@ -106,6 +117,7 @@ export interface ConsumerEntry {
   format: 'esm' | 'cjs'
   runtime: boolean
   asset?: boolean
+  context?: ConsumerRuntimeContext
   /** Resources without their own declaration contract are resolved as files, not imported as types. */
   typecheck?: boolean
 }

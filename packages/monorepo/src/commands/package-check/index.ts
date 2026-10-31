@@ -9,7 +9,7 @@ import { consumerEntries } from './entries'
 import { execute, failureMessage } from './process'
 import { packageBuildSelector, selectPackages } from './workspace'
 
-export type { ConsumerApplicability, ConsumerHost, ConsumerPackageApplicability, PackageCheckCommand, PackageCheckDiagnostic, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './types'
+export type { ConsumerApplicability, ConsumerHost, ConsumerPackageApplicability, ConsumerRuntimeContext, PackageCheckCommand, PackageCheckDiagnostic, PackageCheckManifestOptions, PackageCheckOptions, PackageCheckReport, PackageCheckResult } from './types'
 
 /** Build, pack, and consume actual publish artifacts without publishing or versioning. */
 export async function checkPackages(options: PackageCheckOptions): Promise<PackageCheckReport> {

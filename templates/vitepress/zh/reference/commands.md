@@ -172,6 +172,34 @@ repo package check --filter my-library --keep-temp --json
 
 每个资源必须对应实际打包的 JavaScript 导出。消费者验证导出解析、文件存在、包目录边界和 JavaScript 语法，不执行浏览器全局变量；缺失路径、通配符、越界链接和错误语法仍失败。包的其他入口有类型，不会强制复制资源也提供类型；资源显式声明的类型或相邻声明文件仍会校验，其他运行入口和类型声明也继续检查。Snapshot 与发布后的 nightly 消费者共用该契约；nightly 复核 tarball 完整性及 snapshot 身份后，从已校验产物读取可选集成依赖。安装可能访问 registry，依赖安装脚本默认禁用；workspace 构建与 pack 生命周期脚本正常执行。
 
+required peer 引用本次运行依赖闭包内的 workspace 包时，消费者也会显式安装当前候选 tarball 或发布 locator，覆盖传递 peer 和 npm alias，避免自动安装 peer 时取到 registry 中的旧包。声明的版本范围仍必须接受被检查的包；外部 required peer 保持包管理器原有的解析方式。
+
+部分 ESM 入口需要特定执行环境，可在发布的 `package.json` 中逐一声明精确导出子路径：
+
+```json
+{
+  "peerDependencies": { "vitest": "^5.0.5" },
+  "repoctl": {
+    "packageCheck": {
+      "runtimeContexts": {
+        "./vitest/setup": "vitest",
+        "./routes": {
+          "kind": "expected-error",
+          "name": "Error",
+          "message": "Requires the build plugin."
+        }
+      }
+    }
+  }
+}
+```
+
+`vitest` 上下文使用隔离消费者内安装的真实 Vitest，把入口作为 setup file 执行，再运行 smoke test，setup 注册的 hook 也必须成功。Vitest 必须是发布包的 dependency、optional dependency 或 peer；只在 devDependencies 中声明不足以启用该上下文。框架解析到隔离目录以外时检查失败。
+
+`expected-error` 上下文会真实导入需要宿主或构建插件的入口，只有抛出的 `Error` 名称及完整消息与声明完全相同时才通过；意外导入成功或抛出其他错误均失败。目前仅支持 `name: "Error"`。
+
+上下文必须对应实际打包的 ESM 导出。未知路径、通配符、非规范路径、缺失文件、仅类型或仅浏览器导出、CommonJS 或双格式导出，以及同时列入 `runtimeAssets` 的路径均会被拒绝。普通入口继续执行默认导入检查，上下文入口的声明文件也继续严格校验。Package check、snapshot 与发布后的 nightly 消费者共用该契约。编写清单元数据时，可使用公开的 `ConsumerRuntimeContext` 和 `PackageCheckManifestOptions` TypeScript 类型。
+
 JSON 包含每个包的文件清单、稳定的诊断来源/代码、上游原始细节及子进程参数数组。`--strict` 将 warning 视为失败。`--keep-temp` 保留 tarball、消费者清单和命令工作目录，方便复现；未启用时，失败后也会清理临时文件。命令不会发布包、修改版本或写入发布状态。
 
 接入发布门禁时，可以添加 `"package:check": "repoctl package check --strict"` 脚本，再把 `package:check` 加入 `commands.release.hooks.verify`。不要从 build/prepack 脚本调用本命令，以免循环执行。
