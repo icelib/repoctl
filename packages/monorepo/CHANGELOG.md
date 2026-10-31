@@ -1,5 +1,16 @@
 # @icebreakers/monorepo
 
+## 6.3.1
+
+### Patch Changes
+
+- fix(package): 让隔离消费者使用候选 workspace peer，并验证显式的 Vitest 与预期错误入口合同
+
+- Allow configurable nightly quality script timeouts, defaulting to 45 minutes, and retain diagnostics when a timeout prevents publication.
+
+- Updated dependencies:
+  - @icebreakers/monorepo-templates@3.1.3
+
 ## 6.3.0
 
 ### Minor Changes
