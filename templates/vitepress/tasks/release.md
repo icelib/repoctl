@@ -204,6 +204,8 @@ Nightly runs configured `qualityScripts` and `hooks.verify`, prepares real tarba
 
 Each quality script and verify hook has its own timeout, defaulting to `2_700_000` milliseconds (45 minutes). Set `commands.release.nightly.qualityTimeoutMs` to a positive safe integer number of milliseconds to override it; the example above allows 60 minutes per script. The workflow's job timeout still limits the whole run, so increase that separately if the combined work needs more time. A timeout stops publication and retains the command's output in the diagnostic report.
 
+To share one budget across all quality scripts and verify hooks, set `REPOCTL_NIGHTLY_QUALITY_DEADLINE_EPOCH` to an absolute Unix timestamp in seconds before running nightly. This overrides each quality command's timeout with the remaining time, capped at `2_147_483_647` milliseconds. The value must contain only digits, be positive and convert safely to integer milliseconds. An invalid or exhausted deadline stops quality before the next command starts. Build, upload and consumer commands retain their independent timeouts; omitting this variable preserves `qualityTimeoutMs`.
+
 The workflow uses Node.js 24.22.1, the workspace's pinned pnpm, checkout without persisted credentials and the existing publication concurrency group. Reports, tarballs and consumer diagnostics are retained for 14 days, including failed runs; the Actions summary contains the result and install commands.
 
 The workflow command is:

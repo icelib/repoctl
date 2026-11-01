@@ -210,6 +210,8 @@ nightly 执行配置的 `qualityScripts` 和 `hooks.verify`，在检出目录以
 
 每个质量脚本和 verify hook 分别计时，默认超时为 `2_700_000` 毫秒（45 分钟）。可将 `commands.release.nightly.qualityTimeoutMs` 设为正安全整数毫秒数；上面的示例为每个脚本提供 60 分钟。工作流的 job 超时仍限制整个运行，若全部任务需要更长时间，需单独调整该限制。脚本超时会中止发布，并在诊断报告中保留命令输出。
 
+若全部质量脚本与 verify hooks 需要共用预算，可在运行 nightly 前将 `REPOCTL_NIGHTLY_QUALITY_DEADLINE_EPOCH` 设为 Unix 截止时间戳，单位为秒。每条质量命令使用启动时的剩余时间，覆盖单命令超时，最多为 `2_147_483_647` 毫秒。该值必须只含数字、为正数且能安全转换为整数毫秒；无效或已耗尽时，不启动下一条质量命令。构建、上传与 consumer 继续使用各自独立的超时；未设置该变量时保留 `qualityTimeoutMs`。
+
 工作流使用 Node.js 24.22.1、仓库锁定的 pnpm、不保留凭据的 checkout，并复用现有发布并发组。成功与失败均保留报告、tarball 和消费者诊断 14 天；Actions 摘要提供结果与安装命令。
 
 工作流执行：
