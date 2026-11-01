@@ -1,5 +1,14 @@
 # repoctl
 
+## 6.3.2
+
+### Patch Changes
+
+- 修复 nightly 质量阶段共享截止预算，保留上传独立超时并刷新发布模板 artifact Actions
+
+- Updated dependencies:
+  - @icebreakers/monorepo@6.3.2
+
 ## 6.3.1
 
 ### Patch Changes
