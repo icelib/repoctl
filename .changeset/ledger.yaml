@@ -366,6 +366,10 @@
   intents:
     - honest-maps-visit
     - polite-turtles-kick
+"@icebreakers/monorepo-templates@3.1.4":
+  dir: packages/monorepo-templates
+  intents:
+    - olive-pumas-ask
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -637,6 +641,10 @@
   intents:
     - polite-turtles-kick
     - strong-geese-guess
+"@icebreakers/monorepo@6.3.2":
+  dir: packages/monorepo
+  intents:
+    - olive-pumas-ask
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -1024,6 +1032,10 @@ repoctl@6.3.0:
   dir: packages/repoctl
   intents:
     - great-queens-live
+repoctl@6.3.2:
+  dir: packages/repoctl
+  intents:
+    - olive-pumas-ask
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
