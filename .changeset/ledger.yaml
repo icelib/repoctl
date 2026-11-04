@@ -370,6 +370,10 @@
   dir: packages/monorepo-templates
   intents:
     - olive-pumas-ask
+"@icebreakers/monorepo-templates@3.2.0":
+  dir: packages/monorepo-templates
+  intents:
+    - reusable-bootstrap-publication
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -645,6 +649,11 @@
   dir: packages/monorepo
   intents:
     - olive-pumas-ask
+"@icebreakers/monorepo@6.4.0":
+  dir: packages/monorepo
+  intents:
+    - bootstrap-runner-isolation
+    - reusable-bootstrap-publication
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -1036,6 +1045,10 @@ repoctl@6.3.2:
   dir: packages/repoctl
   intents:
     - olive-pumas-ask
+repoctl@6.4.0:
+  dir: packages/repoctl
+  intents:
+    - reusable-bootstrap-publication
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
