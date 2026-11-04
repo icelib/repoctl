@@ -111,3 +111,24 @@ it('does not leak future source schedule or provider changes into consumer defau
   expect(workflow.jobs.nightly.permissions).toEqual({ 'contents': 'read', 'id-token': 'write' })
   expect(sanitizePublishedReleaseWorkflowContent(output)).toBe(output)
 })
+
+it('pins isolated bootstrap jobs to the released repoctl version and preserves their read-only permissions', () => {
+  const source = YAML.stringify({
+    permissions: { 'contents': 'write', 'actions': 'write', 'id-token': 'write' },
+    jobs: Object.fromEntries(['bootstrap-publish', 'bootstrap-verify'].map(name => [name, {
+      permissions: { contents: 'read', actions: 'read', ...(name === 'bootstrap-publish' ? { 'id-token': 'write' } : {}) },
+      env: { REPOCTL_BOOTSTRAP_TOOL_VERSION: '6.3.2' },
+      steps: [{ id: 'bootstrap-tool', run: 'npm install --ignore-scripts "repoctl@$REPOCTL_BOOTSTRAP_TOOL_VERSION"' }],
+    }])),
+  })
+  const output = sanitizePublishedReleaseWorkflowContent(source, '7.1.0')
+  const workflow = YAML.parse(output)
+  expect(workflow.permissions.actions).toBeUndefined()
+  expect(workflow.jobs['bootstrap-publish'].permissions).toEqual({ 'contents': 'read', 'actions': 'read', 'id-token': 'write' })
+  expect(workflow.jobs['bootstrap-verify'].permissions).toEqual({ contents: 'read', actions: 'read' })
+  for (const job of Object.values(workflow.jobs) as { env: { REPOCTL_BOOTSTRAP_TOOL_VERSION: string } }[]) {
+    expect(job.env.REPOCTL_BOOTSTRAP_TOOL_VERSION).toBe('7.1.0')
+  }
+  expect(sanitizePublishedReleaseWorkflowContent(output, '7.1.0')).toBe(output)
+  expect(() => sanitizePublishedReleaseWorkflowContent(source, 'latest')).toThrow('exact repoctl version')
+})

@@ -8,6 +8,8 @@ export type ReleaseMode = 'auto' | 'prepare' | 'publish' | 'publish-unpublished'
 
 export type ReleaseCiStage = 'all' | 'plan' | 'verify' | 'prepare' | 'upload' | 'confirm' | 'finalize'
 
+export type ReleaseBootstrapStage = 'prepare' | 'publish' | 'verify'
+
 export interface ReleaseOptions {
   /** Optional registry HTTP transport, primarily for deterministic testing. */
   registryFetch?: typeof globalThis.fetch

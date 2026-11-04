@@ -14,7 +14,15 @@ import { consumerTypeToolchain, installedConsumerTypeToolchain } from './consume
 import { dependencyReferences } from './dependencies'
 import { execute, failureMessage } from './process'
 
-export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[], entries: ConsumerEntry[], directory: string, timeout: number, options: { env?: NodeJS.ProcessEnv, signal?: AbortSignal | undefined, packageManager?: string, expectedWorkspaceLocators?: ExpectedWorkspaceLocators } = {}) {
+interface ConsumerOptions {
+  env?: NodeJS.ProcessEnv
+  signal?: AbortSignal | undefined
+  packageManager?: string
+  packageManagerLauncher?: 'corepack' | 'installed'
+  expectedWorkspaceLocators?: ExpectedWorkspaceLocators
+}
+
+export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[], entries: ConsumerEntry[], directory: string, timeout: number, options: ConsumerOptions = {}) {
   const { result } = pkg
   const { packageManager } = options
   checkDependencyRanges(pkg, packages, results, options.expectedWorkspaceLocators)
@@ -51,8 +59,24 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
       })),
     ]),
   }))
+  if (packageManager && options.packageManagerLauncher === 'installed') {
+    const version = /^pnpm@(\d+\.\d+\.\d+)(?:\+sha\d+\.[a-f0-9]+)?$/u.exec(packageManager)?.[1]
+    if (!version) {
+      result.diagnostics.push({ source: 'repoctl', code: 'CONSUMER_PACKAGE_MANAGER', severity: 'error', message: 'Installed consumer launcher requires an exact pnpm packageManager pin.' })
+      return
+    }
+    const observed = await execute('pnpm', ['--version'], directory, timeout, options)
+    result.commands.push(observed)
+    if (observed.exitCode !== 0 || observed.stdout.trim() !== version) {
+      result.diagnostics.push({ source: 'repoctl', code: 'CONSUMER_PACKAGE_MANAGER', severity: 'error', message: observed.exitCode !== 0 ? failureMessage(observed) : `Consumer requires installed pnpm@${version}; observed ${observed.stdout.trim() || 'no version'}.` })
+      return
+    }
+  }
+  const useCorepack = Boolean(packageManager && options.packageManagerLauncher !== 'installed')
+  const executable = useCorepack ? 'corepack' : 'pnpm'
+  const prefix = useCorepack ? ['pnpm'] : []
   manifest.dependencies = await resolveConsumerPeerAliases(dependencies, async (specifier) => {
-    const query = await execute(packageManager ? 'corepack' : 'pnpm', [...(packageManager ? ['pnpm'] : []), 'view', specifier, 'version', '--json', '--config.manage-package-manager-versions=false'], directory, timeout, options)
+    const query = await execute(executable, [...prefix, 'view', specifier, 'version', '--json', '--config.manage-package-manager-versions=false'], directory, timeout, options)
     result.commands.push(query)
     if (query.exitCode !== 0) {
       throw new Error(failureMessage(query))
@@ -60,7 +84,7 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
     return query.stdout
   })
   await writeFile(path.join(directory, 'package.json'), JSON.stringify(manifest, null, 2))
-  const install = await execute(packageManager ? 'corepack' : 'pnpm', [...(packageManager ? ['pnpm'] : []), 'install', '--ignore-scripts', '--no-frozen-lockfile', '--config.manage-package-manager-versions=false'], directory, timeout, options)
+  const install = await execute(executable, [...prefix, 'install', '--ignore-scripts', '--no-frozen-lockfile', '--config.manage-package-manager-versions=false'], directory, timeout, options)
   result.commands.push(install)
   if (install.exitCode !== 0) {
     result.diagnostics.push({ source: 'repoctl', code: 'CONSUMER_INSTALL', severity: 'error', message: failureMessage(install) })

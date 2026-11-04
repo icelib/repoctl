@@ -7,6 +7,7 @@ import { resolveCommandValues } from '../../core/config/resolution'
 import { logger } from '../../core/logger'
 import { localize } from '../../i18n'
 import { registerAutoChangeset } from './release/auto-changeset'
+import { registerBootstrap } from './release/bootstrap'
 import { registerNightly } from './release/nightly'
 import { registerNpmMirror } from './release/npmmirror'
 import { registerReleasePlan } from './release/plan'
@@ -34,6 +35,7 @@ async function resolveReleaseOptions(cwd: string): Promise<ReleaseOptions> {
 export function registerReleaseCommands(program: Command, cwd: string) {
   const releaseCommand = program.command('release').description(localize('Release and pnpm versioning commands', '发布与 pnpm versioning 工具集'))
   registerReleasePlan(releaseCommand, cwd)
+  registerBootstrap(releaseCommand, cwd)
   registerSnapshot(releaseCommand, cwd)
   registerNightly(releaseCommand, cwd)
   registerNpmMirror(releaseCommand, cwd)
@@ -44,7 +46,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
     .description(localize('Prepare, publish, or recover versions in CI', '在 CI 中自动准备、发布和恢复版本'))
     .option('--stage <stage>', 'all / plan / verify / prepare / upload / confirm / finalize', 'all')
     .option('--mode <mode>', 'auto / prepare / publish / publish-unpublished / reconcile / oidc-audit', 'auto')
-    .option('--package <name>', localize('Package used by publish-unpublished mode', 'publish-unpublished 使用的 package'))
+    .option('--package <name>', localize('Exact package for recovery or OIDC audit', '恢复发布或 OIDC 审计精确指定的 package'))
     .option('--version <version>', localize('Version used by publish-unpublished mode', 'publish-unpublished 使用的版本'))
     .option('--source-sha <sha>', localize('Recover a prepared release from the selected line history', '从所选发布线的历史提交恢复整批发布'))
     .option('--dry-run', localize('Preview reconcile changes without updating GitHub', '只预览 reconcile 变更，不更新 GitHub'))
@@ -57,7 +59,7 @@ export function registerReleaseCommands(program: Command, cwd: string) {
           ...releaseOptions,
           ...(opts.stage ? { stage: opts.stage } : {}),
           ...(opts.mode ? { mode: opts.mode } : {}),
-          ...(opts.package ? { packageName: opts.package } : {}),
+          ...(opts.package !== undefined ? { packageName: opts.package } : {}),
           ...(opts.version ? { packageVersion: opts.version } : {}),
           ...(opts.sourceSha ? { sourceSha: opts.sourceSha } : {}),
           ...(opts.dryRun ? { dryRun: true } : {}),

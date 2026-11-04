@@ -186,14 +186,42 @@ Usage:
 - `pnpm exec repo release ci --mode publish`
 - `pnpm exec repo release ci --mode publish-unpublished --package <name> --version <version>`
 - `pnpm exec repo release ci --mode oidc-audit`
+- `pnpm exec repo release ci --mode oidc-audit --package <exact-public-name>`
 
 The command uses `GITHUB_TOKEN`, `GITHUB_REPOSITORY`, `GITHUB_API_URL`, and
 `GITHUB_SHA` to upsert the Release PR, package tags, and GitHub Releases. It
 consumes `pnpm-publish-summary.json` and is safe to retry.
 
-`oidc-audit` independently checks every versioned public child package using the current GitHub-hosted job's OIDC identity and the official npm registry. It returns safe JSON (`schemaVersion: 1`) with allowlisted identity fields, per-package HTTP status/message and aggregate success. The CLI fails if any exchange fails, but still checks all packages. It does not load release configuration, consume intents, execute quality scripts/hooks, publish, or create tags/Releases. Recovery flags (`source-sha`, `dry-run`, `package`, `version`) are incompatible. The managed workflow has a separate read-only audit job with Node.js 24.22.1, `id-token: write` and installation lifecycle scripts disabled; generated projects need only installed repoctl, while the source workspace builds its tooling closure.
+`oidc-audit` independently checks every versioned public child package using the current GitHub-hosted job's OIDC identity and the official npm registry. Optional `--package <exact-public-name>` (or the workflow's `package` input) selects one package; omit it to audit all public packages. It returns safe JSON (`schemaVersion: 1`) with allowlisted identity fields, per-package HTTP status/message and aggregate success. The CLI fails if any exchange fails, but still checks every selected package. It does not load release configuration, consume intents, execute quality scripts/hooks, publish, or create tags/Releases. Recovery flags (`source-sha`, `dry-run`, `version`) are incompatible. The managed workflow has a separate read-only audit job with Node.js 24.22.1, `id-token: write` and installation lifecycle scripts disabled; generated projects need only installed repoctl, while the source workspace builds its tooling closure.
 
-Use `auditReleaseOidc({ cwd, env?, fetch? })` for the same programmatic report. JWTs, request tokens and exchange tokens are never included or saved. A 404 alone cannot identify expired trust: check npm package settings and repository/workflow/environment matching. If npm explicitly says `Expired`, delete/recreate the configuration and perform the first successful publish within 48 hours under [npm's policy](https://github.blog/changelog/2026-10-02-unvalidated-npm-trusted-publishing-configurations-now-expire/). A successful exchange does not complete that initial publish validation; auditing immediately before publishing narrows that gap.
+Use `auditReleaseOidc({ cwd, packageNames?, env?, fetch? })` for the same programmatic report. JWTs, request tokens and exchange tokens are never included or saved. A 404 alone cannot identify expired trust: check npm package settings and repository/workflow/environment matching. If npm explicitly says `Expired`, delete/recreate the configuration and perform the first successful publish within 48 hours under [npm's policy](https://github.blog/changelog/2026-10-02-unvalidated-npm-trusted-publishing-configurations-now-expire/). A successful exchange does not complete that initial publish validation; auditing immediately before publishing narrows that gap.
+
+## release bootstrap
+
+Purpose: publish one real preview through managed `release.yml`, including the first publish required by a new npm Trusted Publisher. The same entrypoint supports new and previously published packages. Only the official npm registry is supported.
+
+```bash
+pnpm exec repo release bootstrap --package @acme/new-library --version 0.1.0-alpha.0 --tag alpha --dry-run --json
+gh workflow run release.yml --ref main -f mode=bootstrap -f package=@acme/new-library -f version=0.1.0-alpha.0 -f tag=alpha -F dry-run=true
+```
+
+Use the actual default branch instead of `main`. The CLI example runs within a frozen GitHub context with a clean checkout at the source commit and matching identity. Dispatch the workflow's dry run from a normal local terminal. The CLI defaults to the `prepare` stage; without `--dry-run`, it builds and checks artifacts without uploading. Remove `dry-run=true` from the workflow dispatch for a real publication. A package selector must be an exact public workspace package name; the version must be an explicit SemVer prerelease. The tag defaults to `alpha`; stable release-line tags and repoctl's reserved nightly/PR snapshot tags are rejected. Do not use this command for a formal release.
+
+Preparation archives the frozen default-branch source, changes the preview version only in isolation, builds the dependency closure and checks one tarball. Required internal runtime dependencies must already be available from npm; the publisher never expands the upload to other packages. Formal versions, intents, changelogs, ledger and Git tags stay unchanged, and formal finalize hooks do not run.
+
+The workflow separates read-only preparation from the OIDC publisher. Publication first audits trust, then uploads the original checked tarball with provenance. Confirmation checks the version, integrity, preview tag and stable tags; isolated consumption checks public entries, types and npm signatures. npm's initial `latest` promotion from a placeholder to the first real prerelease is recorded separately; an existing stable release must never move.
+
+If upload was accepted but confirmation or consumer verification failed, keep the original run and artifact, then dispatch:
+
+```bash
+gh workflow run release.yml --ref main -f mode=bootstrap -f package=@acme/new-library -f version=0.1.0-alpha.0 -f tag=alpha -f verify-run-id=123456789
+```
+
+Recovery restores the original immutable artifact and evidence and repeats only confirmation and consumer checks, without OIDC, a rebuild or an upload. It retains the original failure and later verification results. Never bump the version or repeat an accepted upload as recovery.
+
+CLI stages are `--stage prepare|publish|verify`; `--verify-run-id` always selects verification. Package, version and tag must match the original artifact in recovery. `--output` selects the artifact directory and `--out` adds a JSON report file. `--run-id` / `--run-attempt` bind the preparation run. Public APIs are `createBootstrapPlan`, `prepareBootstrap`, `publishBootstrap`, `verifyBootstrapPublication` and `releaseBootstrap`, with public `BootstrapOptions`, `BootstrapSource`, `BootstrapPlan`, `BootstrapManifest` and `BootstrapReport` types. API options use `packageName` instead of the CLI's `--package`.
+
+Create the package and its Trusted Publisher through npm's normal flow. `Pending` means the configuration still needs a successful publish before the npm page's deadline; `Expired` requires deleting and recreating it. An audit only proves credential exchange. A successful publish validates only the matching repository, workflow and environment configuration, so publishing through another workflow cannot validate `release.yml`. No long-lived npm token is needed.
 
 ## workspace upgrade (alias: ws up)
 

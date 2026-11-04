@@ -21,6 +21,7 @@ async function createFixture() {
     outputFile(path.join(root, '.github/workflows/pr-ci-manual.yml'), 'on: [workflow_dispatch]\njobs: {}\n'),
     outputFile(path.join(root, '.github/workflows/devcontainer.yml'), 'on: [workflow_call]\njobs: {}\n'),
     outputFile(path.join(root, '.github/workflows/release.yml'), 'on: [push]\njobs: {}\n'),
+    outputFile(path.join(root, 'packages/repoctl/package.json'), '{"name":"repoctl","version":"7.0.0"}\n'),
     outputFile(path.join(root, '.github/pr-ci/index.mjs'), 'throw new Error("Source-only approval tooling")\n'),
     outputFile(path.join(root, '.github/nightly/index.mjs'), 'throw new Error("Source-only nightly tooling")\n'),
     outputFile(path.join(root, '.github/auto-changeset/index.mjs'), 'console.log("Shared changeset tooling")\n'),
@@ -110,14 +111,17 @@ it('preserves stable docs while preparing manual consumer nightly without the so
     const release = YAML.parse(content)
     expect(release.on.push.branches).toEqual(['main', 'alpha', 'beta', 'rc', 'next'])
     expect(release.on.schedule).toBeUndefined()
-    expect(release.on.workflow_dispatch.inputs.mode.options).toEqual(['auto', 'prepare', 'publish', 'publish-unpublished', 'reconcile', 'oidc-audit', 'nightly'])
-    expect(Object.keys(release.jobs).sort()).toEqual(['docs', 'nightly', 'oidc-audit', 'release'])
-    expect(release.jobs.release.if).toBe('$' + '{{ github.event_name != \'schedule\' && inputs.mode != \'nightly\' && inputs.mode != \'oidc-audit\' }}')
+    expect(release.on.workflow_dispatch.inputs.mode.options).toEqual(['auto', 'prepare', 'publish', 'publish-unpublished', 'reconcile', 'oidc-audit', 'nightly', 'bootstrap'])
+    expect(Object.keys(release.jobs).sort()).toEqual(['bootstrap-prepare', 'bootstrap-publish', 'bootstrap-verify', 'docs', 'nightly', 'oidc-audit', 'release'])
+    expect(release.jobs.release.if).toBe('$' + '{{ github.event_name != \'schedule\' && inputs.mode != \'nightly\' && inputs.mode != \'oidc-audit\' && inputs.mode != \'bootstrap\' }}')
     expect(release.jobs.release.outputs).toEqual({
       'release-record': '$' + '{{ steps.release-finalize.outputs.release-record }}',
       'docs-sites': '$' + '{{ steps.release-finalize.outputs.docs-sites }}',
     })
     expect(release.jobs.docs).toEqual(YAML.parse(source).jobs.docs)
+    for (const job of ['bootstrap-publish', 'bootstrap-verify']) {
+      expect(release.jobs[job].env.REPOCTL_BOOTSTRAP_TOOL_VERSION).toBe('7.0.0')
+    }
     expect(release.jobs.docs).toMatchObject({
       needs: 'release',
       uses: './.github/workflows/repoctl-docs-deploy.yml',
@@ -128,6 +132,12 @@ it('preserves stable docs while preparing manual consumer nightly without the so
     expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(true)
     await preparePublishedGithubAssets(fixture.root, fixture.assets, false)
     expect(await readFile(path.join(fixture.assets, '.github/workflows/release.yml'), 'utf8')).toBe(content)
+    await outputFile(path.join(fixture.root, 'packages/repoctl/package.json'), '{"name":"repoctl","version":"7.0.1"}\n')
+    expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(false)
+    await preparePublishedGithubAssets(fixture.root, fixture.assets, false)
+    const upgraded = YAML.parse(await readFile(path.join(fixture.assets, '.github/workflows/release.yml'), 'utf8'))
+    expect(upgraded.jobs['bootstrap-publish'].env.REPOCTL_BOOTSTRAP_TOOL_VERSION).toBe('7.0.1')
+    expect(upgraded.jobs['bootstrap-verify'].env.REPOCTL_BOOTSTRAP_TOOL_VERSION).toBe('7.0.1')
   }
   finally {
     await rm(fixture.root, { recursive: true, force: true })

@@ -20,7 +20,7 @@ export function registerConfigPreflight(program: Command, cwd: string) {
     if (snapshot?.name() === 'snapshot' && snapshot.parent?.name() === 'release' && snapshot.parent.parent === program) {
       return
     }
-    if (['auto-changeset', 'validate-preparation'].includes(action.name())
+    if (['auto-changeset', 'validate-preparation', 'bootstrap'].includes(action.name())
       && action.parent?.name() === 'release' && action.parent.parent === program) {
       return
     }

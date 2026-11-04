@@ -56,7 +56,12 @@ export async function fixture() {
 }
 
 export function cli(cwd: string, args: string[], command: string[] = ['upgrade']) {
-  return spawnSync(process.execPath, [path.resolve(import.meta.dirname, '../../../../bin/repoctl.js'), '--lang', 'en', ...command, ...args], { cwd, encoding: 'utf8', env: { ...process.env, NODE_ENV: 'production', NO_COLOR: '1' }, timeout: 30000 })
+  const result = spawnSync(process.execPath, [path.resolve(import.meta.dirname, '../../../../bin/repoctl.js'), '--lang', 'en', ...command, ...args], { cwd, encoding: 'utf8', env: { ...process.env, NODE_ENV: 'production', NO_COLOR: '1' }, timeout: 30000, maxBuffer: 16 * 1024 * 1024 })
+  if (result.error) {
+    const code = (result.error as NodeJS.ErrnoException).code ?? 'UNKNOWN'
+    throw new Error(`Upgrade CLI failed (${code}): ${result.error.message}`, { cause: result.error })
+  }
+  return result
 }
 
 export async function snapshot(root: string): Promise<Record<string, string>> {

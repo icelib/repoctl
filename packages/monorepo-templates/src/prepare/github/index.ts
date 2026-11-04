@@ -15,9 +15,17 @@ function isPublishedSourcePath(sourceRoot: string, source: string) {
   return !relative.startsWith('workflows/') || relative === 'workflows/release.yml'
 }
 
-function consumerWorkflowContent(filename: string, content: string) {
+async function consumerWorkflowContent(repoRoot: string, filename: string, content: string) {
   if (filename === 'release.yml') {
-    return sanitizePublishedReleaseWorkflowContent(content)
+    let version: string | undefined
+    if (content.includes('REPOCTL_BOOTSTRAP_TOOL_VERSION')) {
+      const manifest: unknown = JSON.parse(await readFile(path.join(repoRoot, 'packages/repoctl/package.json'), 'utf8'))
+      if (typeof manifest !== 'object' || manifest === null || !('version' in manifest) || typeof manifest.version !== 'string') {
+        throw new Error('Cannot prepare bootstrap workflows without repoctl package metadata.')
+      }
+      version = manifest.version
+    }
+    return sanitizePublishedReleaseWorkflowContent(content, version)
   }
   return filename === 'ci.yml' ? sanitizePublishedCiWorkflowContent(content) : content
 }
@@ -52,7 +60,7 @@ export async function preparePublishedGithubAssets(repoRoot: string, assetRoot: 
   await mkdir(path.join(targetRoot, 'workflows'), { recursive: true })
   await Promise.all([...consumerWorkflowNames, 'release.yml'].map(async (filename) => {
     const content = await readFile(workflowSource(repoRoot, filename), 'utf8')
-    await writeFile(path.join(targetRoot, 'workflows', filename), consumerWorkflowContent(filename, content))
+    await writeFile(path.join(targetRoot, 'workflows', filename), await consumerWorkflowContent(repoRoot, filename, content))
   }))
 }
 
@@ -64,7 +72,7 @@ export async function arePublishedGithubAssetsPrepared(repoRoot: string, assetRo
         readFile(workflowSource(repoRoot, filename), 'utf8'),
         readFile(path.join(targetRoot, 'workflows', filename), 'utf8'),
       ])
-      return consumerWorkflowContent(filename, source) === prepared
+      return await consumerWorkflowContent(repoRoot, filename, source) === prepared
     }))
     for (const entry of sourceOnlyGithubPaths) {
       try {

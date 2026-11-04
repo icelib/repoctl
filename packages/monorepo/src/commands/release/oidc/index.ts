@@ -33,11 +33,11 @@ export async function runReleaseOidcAudit(options: ReleaseCiOptions) {
   const env = getReleaseEnv(options)
   if (options.sourceSha || env['REPO_RELEASE_RECOVERY_SOURCE_SHA']?.trim()
     || options.dryRun || env['REPO_RELEASE_DRY_RUN'] === 'true'
-    || options.packageName || options.packageVersion
-    || env['REPO_RELEASE_PACKAGE']?.trim() || env['REPO_RELEASE_VERSION']?.trim()) {
-    throw new ReleaseCommandError('oidc-audit cannot be combined with source-sha, dry-run, package or version recovery options')
+    || options.packageVersion || env['REPO_RELEASE_VERSION']?.trim()) {
+    throw new ReleaseCommandError('oidc-audit cannot be combined with source-sha, dry-run or version recovery options')
   }
-  const report = await auditReleaseOidc({ cwd: options.cwd, env })
+  const packageName = options.packageName ?? (env['REPO_RELEASE_PACKAGE']?.trim() || undefined)
+  const report = await auditReleaseOidc({ cwd: options.cwd, env, ...(packageName !== undefined ? { packageNames: [packageName] } : {}) })
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`)
   if (!report.ok) {
     throw new ReleaseCommandError(`npm OIDC audit failed for ${report.results.filter(result => !result.ok).length}/${report.results.length} packages; see the safe report above`)

@@ -38,14 +38,37 @@ function resetPublishedNightlyDefaults(document: Document) {
   return true
 }
 
+function pinPublishedBootstrapTool(document: Document, version: string | undefined) {
+  if (version === undefined) {
+    return false
+  }
+  if (!/^\d+\.\d+\.\d+(?:-[\dA-Z.-]+)?$/i.test(version)) {
+    throw new Error('Cannot publish bootstrap workflows without an exact repoctl version.')
+  }
+  let changed = false
+  for (const name of ['bootstrap-publish', 'bootstrap-verify']) {
+    const steps = document.getIn(['jobs', name, 'steps'], true)
+    if (!YAML.isSeq(steps) || !steps.items.some(step => YAML.isMap(step) && step.get('id') === 'bootstrap-tool')) {
+      continue
+    }
+    const field = ['jobs', name, 'env', 'REPOCTL_BOOTSTRAP_TOOL_VERSION']
+    if (document.getIn(field) !== version) {
+      document.setIn(field, version)
+      changed = true
+    }
+  }
+  return changed
+}
+
 /** Keep source approval and cron configuration out of the shared release workflow. */
-export function sanitizePublishedReleaseWorkflowContent(content: string) {
+export function sanitizePublishedReleaseWorkflowContent(content: string, repoctlVersion?: string) {
   const cleaned = removeSourceRepoReleaseToolingBuildStepContent(content)
   const document = YAML.parseDocument(cleaned)
   if (document.errors.length) {
     throw new Error('Cannot publish an invalid release workflow.')
   }
   let changed = resetPublishedNightlyDefaults(document)
+  changed = pinPublishedBootstrapTool(document, repoctlVersion) || changed
   const permissions = document.get('permissions', true)
   if (YAML.isMap(permissions) && permissions.has('actions')) {
     permissions.delete('actions')

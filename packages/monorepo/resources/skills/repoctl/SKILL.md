@@ -56,6 +56,14 @@ pnpm exec repo doctor
 pnpm exec repo check
 ```
 
+## Preview publication and npm trusted publishing
+
+Upgrade to an official npm release of repoctl containing bootstrap, then preview and apply `repo upgrade`. Review and merge `release.yml` before dispatching; both `bootstrap-publish` and `bootstrap-verify` must pin `REPOCTL_BOOTSTRAP_TOOL_VERSION` to the exact published tool version. A source checkout, linked CLI or copied workflow cannot supply an unreleased tool to these isolated jobs.
+
+Use the managed `release.yml` workflow's `mode=bootstrap` to publish one public workspace package with an explicit prerelease version and a preview tag (default `alpha`). The workflow's `dry-run` previews first. Inside its frozen GitHub context, `repo release bootstrap --package <exact-name> --version <prerelease> --dry-run --json` exposes the plan; without `--dry-run`, the default stage prepares checked artifacts and does not upload. Each package reuses the same workflow and its own npm Trusted Publisher configuration. Keep the formal package versions, intents and ledger unchanged.
+
+`oidc-audit` checks exchange permission; it does not satisfy npm's first successful publish deadline. Recover an accepted upload with `verify-run-id` and its original artifacts, never by rebuilding, uploading again or increasing the version. Read `references/commands.md` before dispatching publication or changing trust settings.
+
 ## Do not
 
 - Do not add packages by copying folders.
