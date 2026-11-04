@@ -18,8 +18,8 @@ it('refuses to overwrite previous preparation evidence before installing or pack
   expect(await readdir(h.options.outputDirectory!)).toEqual(['bootstrap-manifest.json'])
 }, 30_000)
 
-it('builds only the dependency closure, runs package checks and emits one portable native tarball', async () => {
-  const h = await prepareFixture()
+it('builds only the dependency closure and consumes the native tarball with a cold offline Corepack cache', async () => {
+  const h = await prepareFixture({ coldCorepack: true })
   const original = await readFile(path.join(h.cwd, 'packages/a/package.json'), 'utf8')
   const plan = await createBootstrapPlan(h.options)
   const report = await prepareBootstrap({ ...h.options, plan })
@@ -32,6 +32,18 @@ it('builds only the dependency closure, runs package checks and emits one portab
   expect(report.manifest?.checks.package.commands).toEqual([])
   expect(report.manifest?.checks.package.directory).toBe('packages/a')
   expect(report.manifest?.entries).toEqual([expect.objectContaining({ subpath: '.', target: './dist/index.js', format: 'esm', runtime: true })])
+  const consumerInstall = report.checks![0]!.commands.find(command => command.executable === 'pnpm' && command.args[0] === 'install')!
+  expect(consumerInstall.exitCode).toBe(0)
+  const consumerVersion = report.checks![0]!.commands.find(command => command.cwd === consumerInstall.cwd && command.executable === 'pnpm' && command.args[0] === '--version')!
+  expect(consumerVersion.exitCode).toBe(0)
+  expect(consumerVersion.stdout.trim()).toBe(plan.pnpmVersion)
+  expect(report.checks![0]!.commands.some(command => command.executable === 'corepack')).toBe(false)
+  expect(JSON.parse(await readFile(path.join(consumerInstall.cwd, 'package.json'), 'utf8'))).toMatchObject({ packageManager: `pnpm@${plan.pnpmVersion}` })
+  const invocations = await h.pnpmInvocations()
+  expect(invocations.filter(call => call.cwd === consumerInstall.cwd).map(call => call.args[0])).toEqual(['--version', 'install'])
+  expect(invocations.filter(call => call.cwd === consumerInstall.cwd).every(call => call.network === '0' && call.home === h.env['HOME'])).toBe(true)
+  expect(existsSync(h.env['COREPACK_HOME']!)).toBe(false)
+  expect(existsSync(path.join(h.env['HOME']!, '.cache/node/corepack'))).toBe(false)
   const isolated = report.checks![0]!.directory
   expect(await readFile(path.join(isolated, 'checks.log'), 'utf8')).toBe('lint\ntypecheck\ntest\ntest:types\n')
   expect(existsSync(path.join(isolated, '../build/dist'))).toBe(true)
@@ -47,8 +59,8 @@ it('builds only the dependency closure, runs package checks and emits one portab
   expect(JSON.parse(await readFile(path.join(moved, 'bootstrap-manifest.json'), 'utf8'))).toEqual(report.manifest)
 }, 120_000)
 
-it('prepares and consumes public declarations for a scoped package in a nested non-packages layout', async () => {
-  const h = await prepareFixture()
+it('consumes scoped public declarations with installed pnpm and a cold offline Corepack cache', async () => {
+  const h = await prepareFixture({ coldCorepack: true })
   const target = 'modules/nested/markup'
   const packageName = '@fixture/template-engine'
   await mkdir(path.join(h.cwd, 'modules/nested'), { recursive: true })
@@ -69,6 +81,9 @@ it('prepares and consumes public declarations for a scoped package in a nested n
   expect(report.manifest?.package).toMatchObject({ name: packageName, directory: target, version: options.version, files: expect.arrayContaining(['dist/index.js', 'dist/index.d.ts', 'package.json']) })
   expect(report.manifest?.entries).toContainEqual(expect.objectContaining({ subpath: '.', format: 'esm', target: './dist/index.js', runtime: true }))
   expect(report.checks![0]!.commands.some(command => command.args.includes('--noEmit') && command.args.includes('--strict') && command.exitCode === 0)).toBe(true)
+  expect(report.checks![0]!.commands.some(command => command.executable === 'corepack')).toBe(false)
+  expect(existsSync(h.env['COREPACK_HOME']!)).toBe(false)
+  expect(existsSync(path.join(h.env['HOME']!, '.cache/node/corepack'))).toBe(false)
   expect(h.run('git', ['status', '--porcelain'])).toBe('')
 }, 120_000)
 

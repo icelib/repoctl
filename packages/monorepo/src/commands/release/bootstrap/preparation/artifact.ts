@@ -83,7 +83,7 @@ export async function bootstrapArtifact(context: PreparationContext, plan: Boots
   await analyzeTarball(item)
   await assertRegistryDependencies(item, names, context, options)
   const entries = consumerEntries(item.manifest, result.files)
-  await consumeTarball(item, [item], [result], entries, path.join(context.directory, 'consumer'), 600_000, { env: context.env, packageManager: `pnpm@${plan.pnpmVersion}` })
+  await consumeTarball(item, [item], [result], entries, path.join(context.directory, 'consumer'), 600_000, { env: context.env, packageManager: `pnpm@${plan.pnpmVersion}`, packageManagerLauncher: 'installed' })
   if (result.diagnostics.some(diagnostic => diagnostic.severity === 'error')) {
     result.status = 'failed'
     throw new Error(`Bootstrap package validation failed: ${result.diagnostics.filter(diagnostic => diagnostic.severity === 'error').map(diagnostic => `${diagnostic.code}: ${diagnostic.message}`).join('; ')}`)
