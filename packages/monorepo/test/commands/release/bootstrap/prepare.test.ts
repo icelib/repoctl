@@ -1,9 +1,10 @@
 import { existsSync } from 'node:fs'
 import { mkdir, readdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import process from 'node:process'
 import { createBootstrapPlan, prepareBootstrap } from '@icebreakers/monorepo'
 import crossSpawn from 'cross-spawn'
-import { expect, it } from 'vitest'
+import { expect, it, vi } from 'vitest'
 import { readSnapshotArchive } from '../../../../src/commands/release/snapshot/archive'
 import { prepareFixture } from './prepareFixture'
 
@@ -95,6 +96,23 @@ it('rejects credentials and frozen-plan drift before creating the preparation di
   }
   await expect(prepareBootstrap({ ...h.options, plan: { ...plan, buildDirectories: ['packages/unrelated'] } })).rejects.toThrow('trusted frozen plan')
   expect(existsSync(h.options.outputDirectory!)).toBe(false)
+}, 30_000)
+
+it.each(['ACTIONS_ID_TOKEN_REQUEST_TOKEN', 'NODE_AUTH_TOKEN', 'NPM_TOKEN', 'REPOCTL_BOOTSTRAP_RUNNING'])('rejects ambient %s even with a frozen plan and an empty child environment', async (key) => {
+  const h = await prepareFixture()
+  const plan = await createBootstrapPlan(h.options)
+  try {
+    vi.stubEnv(key, 'unexpected')
+    const message = key === 'REPOCTL_BOOTSTRAP_RUNNING' ? 'cannot run recursively' : 'without OIDC or npm publishing credentials'
+    await expect(prepareBootstrap({ ...h.options, plan, env: {} })).rejects.toThrow(message)
+    expect(existsSync(h.options.outputDirectory!)).toBe(false)
+    expect(existsSync(path.join(h.cwd, 'packages/a/dist'))).toBe(false)
+  }
+  finally {
+    vi.unstubAllEnvs()
+  }
+  expect(process.env[key]).toBeUndefined()
+  await expect(prepareBootstrap({ ...h.options, plan, dryRun: true })).resolves.toMatchObject({ status: 'planned' })
 }, 30_000)
 
 it('rejects lifecycle changes to the packed identity', async () => {

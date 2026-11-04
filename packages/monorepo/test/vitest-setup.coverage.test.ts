@@ -4,6 +4,18 @@ import process from 'node:process'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createPackageManagerFixture } from '../../monorepo-templates/src/package-manager/test-support/fixture'
 
+const runnerVariables = [
+  'GITHUB_EVENT_NAME',
+  'GITHUB_EVENT_PATH',
+  'GITHUB_REF_NAME',
+  'GITHUB_SHA',
+  'ACTIONS_ID_TOKEN_REQUEST_TOKEN',
+  'ACTIONS_ID_TOKEN_REQUEST_URL',
+  'NODE_AUTH_TOKEN',
+  'NPM_TOKEN',
+  'REPOCTL_BOOTSTRAP_RUNNING',
+] as const
+
 afterEach(() => {
   vi.doUnmock('@icebreakers/monorepo-templates')
   vi.unstubAllEnvs()
@@ -14,7 +26,7 @@ describe('test setup readiness', () => {
     const fixture = await createPackageManagerFixture()
     try {
       expect(await readFile(path.join(fixture.assetsDir, 'LICENSE'), 'utf8')).toBe('outdated cached asset\n')
-      for (const name of ['GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH', 'GITHUB_REF_NAME', 'GITHUB_SHA']) {
+      for (const name of runnerVariables) {
         vi.stubEnv(name, 'runner-specific-value')
       }
       await vi.resetModules()
@@ -25,7 +37,7 @@ describe('test setup readiness', () => {
       expect(JSON.parse(await readFile(path.join(fixture.assetsDir, 'package.json'), 'utf8')).packageManager).toBe(fixture.packageManager)
       expect(await readFile(path.join(fixture.assetsDir, 'npmrc'), 'utf8')).toBe(fixture.npmrc)
       expect(await readFile(path.join(fixture.assetsDir, 'pnpm-workspace.yaml'), 'utf8')).toContain('pmOnFail: error')
-      for (const name of ['GITHUB_EVENT_NAME', 'GITHUB_EVENT_PATH', 'GITHUB_REF_NAME', 'GITHUB_SHA']) {
+      for (const name of runnerVariables) {
         expect(process.env[name]).toBeUndefined()
       }
     }
