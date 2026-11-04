@@ -27,6 +27,7 @@ export async function createPackageManagerFixture() {
   const sourceFiles = [
     'LICENSE',
     '.github/workflows/release.yml',
+    'packages/repoctl/package.json',
     'packages/monorepo/assets/AGENTS.md',
     'packages/monorepo/assets/CLAUDE.md',
     'packages/monorepo/assets/.github/workflows/ci.yml',

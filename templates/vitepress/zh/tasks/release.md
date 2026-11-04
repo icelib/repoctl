@@ -151,11 +151,41 @@ pnpm exec repo release ci --mode oidc-audit
 
 job 需要 `id-token: write` 和 Node.js 24.22.1，并使用实际发布时的仓库、工作流文件及 environment。另建诊断工作流会改变身份。受管工作流使用独立的核验 job，只授予 `contents: read` 和 `id-token: write`，关闭安装 lifecycle scripts，跳过 GitHub App 令牌及发布质量检查。只有 repoctl 源码仓库构建工具依赖闭包；消费方直接使用已安装的 CLI。自定义工作流也应隔离这些步骤，使用 `pnpm install --frozen-lockfile --ignore-scripts` 安装。
 
-命令在加载发布配置前独立路由，向官方 npm registry 逐个核验有版本号的公开子包，包含已发布的包。它只申请短时交换凭据，不上传包、不修改版本或 intent、不运行 hooks、不写进度文件、不创建 tag/Release，也不保存 token。`source-sha`、`dry-run`、`package` 和 `version` 恢复输入必须为空。JSON 包含 `schemaVersion: 1`、允许展示的身份字段、每包 HTTP 状态及 npm 错误信息、整体 `ok`；即使某包失败也会继续完成全部包报告，最后以退出码 1 失败。程序化 API `auditReleaseOidc({ cwd, env?, fetch? })` 返回同一报告而不打印；调用者须检查 `ok`。
+命令在加载发布配置前独立路由，向官方 npm registry 逐个核验有版本号的公开子包，包含已发布的包。使用 `--package @acme/new-library` 或工作流的 `package` 输入，可以只核验一个精确公开工作区包。它只申请短时交换凭据，不上传包、不修改版本或 intent、不运行 hooks、不写进度文件、不创建 tag/Release，也不保存 token。`source-sha`、`dry-run` 和 `version` 恢复输入必须为空。JSON 包含 `schemaVersion: 1`、允许展示的身份字段、每包 HTTP 状态及 npm 错误信息、整体 `ok`；即使某包失败也会完成所选包的报告，最后以退出码 1 失败。程序化 API `auditReleaseOidc({ cwd, packageNames?, env?, fetch? })` 返回同一报告而不打印；调用者须检查 `ok`。
 
 HTTP 404 或 `OIDC token exchange error - package not found` 本身无法区分包不存在、信任声明不匹配或配置过期。核对 npm 包设置里的 trusted publisher 状态，以及报告中的仓库、工作流和 environment。不要把 JWT 或交换 token 复制到日志或求助信息。
 
-根据 [npm 首次发布验证策略](https://github.blog/changelog/2026-10-02-unvalidated-npm-trusted-publishing-configurations-now-expire/)，创建后 48 小时内没有首次成功发布的配置会过期。只有 npm 页面明确显示 `Expired` 时，才按过期处理：删除并重建该包的配置，在 48 小时内完成首次发布；单纯编辑不会重置它。“配置存在”“交换成功”“首次成功发布”是不同证据；核验不能重置或完成这个时限。首次成功发布后不再受初始 48 小时限制。实际发布继续使用 OIDC/provenance，不在发布 job 增加 npm token 兜底。
+根据 [npm 首次发布验证策略](https://github.blog/changelog/2026-10-02-unvalidated-npm-trusted-publishing-configurations-now-expire/)，创建后 48 小时内没有首次成功发布的配置会过期。`Pending` 表示仍需在 npm 页面给出的期限前完成首次发布。只有 npm 页面明确显示 `Expired` 时，才按过期处理：删除并重建该包的配置，在 48 小时内完成首次发布；单纯编辑不会重置它。“配置存在”“交换成功”“首次成功发布”是不同证据；核验不能重置或完成这个时限。首次成功发布后不再受初始 48 小时限制。实际发布继续使用 OIDC/provenance，不在发布 job 增加 npm token 兜底。
+
+## 单包预览发布与 Trusted Publisher 首次验证
+
+受管 `release.yml` 的 `bootstrap` 模式用于在正式版本准备前发布一个真实可用的预览版。新公开工作区包可以使用它；已有包新增 Trusted Publisher 后，也可以通过它完成该配置的首次发布。所有包复用同一工作流，npm 配置必须匹配仓库、`release.yml` 和发布 environment。其他工作流发布成功只验证它自己的配置。
+
+先升级到 npm 上已正式发布、包含此能力的 repoctl，再预览并应用 `repo upgrade`，审阅并合并生成的 `release.yml` 后再调度。`bootstrap-publish` 和 `bootstrap-verify` 的 `REPOCTL_BOOTSTRAP_TOOL_VERSION` 都必须精确指向该已发布工具版本。源码检出、链接本地 CLI 或复制工作流，不能让隔离 job 安装尚未发布的工具。
+
+先通过 npm 正常流程建立可配置的包。新包可利用 staged publishing 创建 `0.0.0-stage` 占位版本；占位版不包含可用的库。配置允许直接 `npm publish` 的 Trusted Publisher，并在 npm 页面给出的期限内完成真实发布。临时初始化内容不能代替已经检查的包产物，不应批准为正式交付。
+
+进入 **Actions → Release → Run workflow**，选择仓库默认分支，填写 `mode=bootstrap`、精确的 `package`、明确的预发布 `version` 和 `tag`（默认 `alpha`）。先预览计划：
+
+```bash
+gh workflow run release.yml --ref main -f mode=bootstrap -f package=@acme/new-library -f version=0.1.0-alpha.0 -f tag=alpha -F dry-run=true
+```
+
+将 `main` 换成实际默认分支，去掉 `dry-run=true` 后再次运行才会准备并发布。版本必须是 SemVer 预发布版本，不接受稳定发布标签。源码版本、intent、changelog、ledger 和 Git tag 保持不变。准备阶段归档冻结的默认分支提交，检查目标包，构建依赖闭包，再生成一个 tarball；上传范围始终只有指定包。必需的内部运行时依赖应已能从 npm 安装，缺少版本时失败，不自动扩大上传范围。
+
+准备阶段只读；发布阶段获得 OIDC，仅上传经过核验的原 tarball，不执行候选 lifecycle scripts。发布后核对精确版本、归档完整性、标签和 provenance，再通过 registry 隔离安装检查公开入口、类型和 npm 签名。已有稳定标签必须不变。npm 首次真实发布可能自动把 `latest` 从初始化占位版移到预览版，此例外会明确记录，不能用于替换已有正式版。
+
+如果 npm 已接受上传，但确认或 consumer 检查失败，保留原运行及产物，使用相同的包、版本和标签传入 `verify-run-id`：
+
+```bash
+gh workflow run release.yml --ref main -f mode=bootstrap -f package=@acme/new-library -f version=0.1.0-alpha.0 -f tag=alpha -f verify-run-id=123456789
+```
+
+该路径核验原来源及不可变产物，重新执行确认和消费检查，不获取 OIDC、不重建、不再次上传，并保留原失败和本轮结果。已存在版本不能覆盖，递增版本不能代替恢复。只有配置对应的工作流成功发布，才满足 npm 首次验证要求；完整发布验收还要求后置检查通过。
+
+在冻结的 GitHub 工作流上下文中，CLI 可通过 `repo release bootstrap --package @acme/new-library --version 0.1.0-alpha.0 --tag alpha --dry-run --json` 查看同一计划。它要求工作树干净、HEAD 对应冻结提交，且 GitHub 身份匹配；普通本地终端应调度工作流的 dry-run。默认阶段为 `prepare`，移除 `--dry-run` 后只准备已检查产物，不发布。受管工作流负责协调 `prepare`、`publish` 和 `verify` 阶段，真实 OIDC 发布与证据保留优先使用该入口。传入 `--verify-run-id` 后始终走验收，即使同时请求发布也不会再次上传。
+
+程序化 API 包括 `createBootstrapPlan(options)`、`prepareBootstrap(options)`、`publishBootstrap(options)`、`verifyBootstrapPublication(options)` 和阶段协调函数 `releaseBootstrap(options)`。返回公开的 `BootstrapPlan` / `BootstrapReport`；跨 job 的 `BootstrapManifest` 携带已检查产物与入口元数据。`BootstrapOptions.packageName` 精确选择包，对应 CLI 的 `--package`。受控本地集成可为准备阶段显式提供冻结的 `BootstrapSource`，但此身份不能授予发布权限。CLI 的 `--output` 指定产物目录，`--out` 另写 JSON 报告；`--run-id`、`--run-attempt` 绑定原准备运行。
 
 ## 受管 nightly 发布
 

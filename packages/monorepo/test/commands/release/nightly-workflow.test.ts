@@ -15,7 +15,7 @@ async function workflow(root = rootDir) {
 
 function evaluateCondition(condition: string, context: object) {
   // Actions permits hyphenated output names in property access; JavaScript needs brackets.
-  const expression = condition.slice(3, -2).trim().replace(/needs\.release\.outputs\.([\w-]+)/g, 'needs.release.outputs["$1"]')
+  const expression = condition.slice(3, -2).trim().replace(/\.(\w+-[\w-]+)/g, '["$1"]')
   return runInNewContext(expression, context, { timeout: 1000 })
 }
 
@@ -30,6 +30,7 @@ describe('managed nightly workflow', () => {
     ['schedule', undefined, '30 8 * * 1', []],
     ['workflow_dispatch', 'nightly', undefined, ['nightly']],
     ['workflow_dispatch', 'oidc-audit', undefined, ['oidc-audit']],
+    ['workflow_dispatch', 'bootstrap', undefined, ['bootstrap-prepare']],
     ['workflow_dispatch', 'auto', undefined, ['release']],
     ['workflow_dispatch', 'publish', undefined, ['release']],
     ['push', undefined, undefined, ['release']],
@@ -39,8 +40,8 @@ describe('managed nightly workflow', () => {
       return evaluateCondition((job as { if: string }).if, {
         cancelled: () => false,
         github: { event_name: event, event: { schedule }, ref: 'refs/heads/main' },
-        inputs: { mode },
-        needs: { release: { outputs: { 'release-record': '', 'docs-sites': '' } } },
+        inputs: { mode, 'verify-run-id': '', 'dry-run': false },
+        needs: { 'release': { outputs: { 'release-record': '', 'docs-sites': '' } }, 'bootstrap-prepare': { result: 'pending' }, 'bootstrap-publish': { result: 'pending' } },
       })
     }).map(([name]) => name)
     expect(selected).toEqual(expected)
@@ -87,7 +88,7 @@ describe('managed nightly workflow', () => {
     expect(consumer.on.schedule).toBeUndefined()
     expect(consumer.on.workflow_dispatch.inputs.mode.options).toContain('nightly')
     expect(() => checkNightlyWorkflow(consumer, { schedule: '' })).not.toThrow()
-    expect(consumer.jobs.release.if).toBe('$' + '{{ github.event_name != \'schedule\' && inputs.mode != \'nightly\' && inputs.mode != \'oidc-audit\' }}')
+    expect(consumer.jobs.release.if).toBe('$' + '{{ github.event_name != \'schedule\' && inputs.mode != \'nightly\' && inputs.mode != \'oidc-audit\' && inputs.mode != \'bootstrap\' }}')
     expect(JSON.stringify(consumer)).not.toContain('.github/nightly/')
   })
 

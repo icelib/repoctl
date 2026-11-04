@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { checkBootstrapWorkflow } from './bootstrap.mjs'
 import { checkNightlyWorkflow } from './nightly.mjs'
 import { assertPinnedActions, checkAppAuthentication, getSteps, githubExpression, readWorkflow } from './shared.mjs'
 
@@ -18,9 +19,10 @@ export function checkReleaseWorkflow(rootDir) {
 
   assert.ok(source.startsWith('# repoctl-managed: release/v2\n'))
   assert.deepEqual(branches, ['main', 'alpha', 'beta', 'rc', 'next'])
-  assert.deepEqual(modes, ['auto', 'prepare', 'publish', 'publish-unpublished', 'reconcile', 'oidc-audit', 'nightly'])
-  assert.equal(release.if, githubExpression('github.event_name != \'schedule\' && inputs.mode != \'nightly\' && inputs.mode != \'oidc-audit\''))
+  assert.deepEqual(modes, ['auto', 'prepare', 'publish', 'publish-unpublished', 'reconcile', 'oidc-audit', 'nightly', 'bootstrap'])
+  assert.equal(release.if, githubExpression('github.event_name != \'schedule\' && inputs.mode != \'nightly\' && inputs.mode != \'oidc-audit\' && inputs.mode != \'bootstrap\''))
   checkNightlyWorkflow(workflow)
+  checkBootstrapWorkflow(workflow)
   const audit = workflow.jobs?.['oidc-audit']
   assert.equal(audit?.if, githubExpression('github.event_name == \'workflow_dispatch\' && inputs.mode == \'oidc-audit\''))
   assert.deepEqual(audit?.permissions, { 'contents': 'read', 'id-token': 'write' })

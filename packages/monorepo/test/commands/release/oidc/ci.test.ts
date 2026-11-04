@@ -42,11 +42,9 @@ it('prints the complete safe report then fails CI on an exchange failure', async
 it.each([
   { sourceSha: 'a'.repeat(40) },
   { dryRun: true },
-  { packageName: 'repoctl' },
   { packageVersion: '1.0.0' },
   { env: { ...env, REPO_RELEASE_RECOVERY_SOURCE_SHA: 'a'.repeat(40) } },
   { env: { ...env, REPO_RELEASE_DRY_RUN: 'true' } },
-  { env: { ...env, REPO_RELEASE_PACKAGE: 'repoctl' } },
 ])('rejects recovery flags before network or subprocesses: %j', async (options) => {
   const fetcher = mockFetch()
   const spawn = vi.fn()
@@ -54,6 +52,31 @@ it.each([
   await expect(releaseCi({ cwd: await workspace(), mode: 'oidc-audit', env, spawn, ...options })).rejects.toThrow('cannot be combined')
   expect(fetcher).not.toHaveBeenCalled()
   expect(spawn).not.toHaveBeenCalled()
+})
+
+it.each(['explicit', 'environment'])('audits only the exact %s package without executable configuration', async (selection) => {
+  const cwd = await workspace(['bad', 'good'])
+  await writeFile(path.join(cwd, 'repoctl.config.mjs'), 'throw new Error("audit must not load config")')
+  const fetcher = mockFetch(name => name === 'bad' ? json({ message: 'must not exchange' }, 404) : json({ token: 'unused' }))
+  vi.stubGlobal('fetch', fetcher)
+  vi.spyOn(process.stdout, 'write').mockReturnValue(true)
+  const result = await releaseCi({
+    cwd,
+    mode: 'oidc-audit',
+    env: { ...env, ...(selection === 'environment' ? { REPO_RELEASE_PACKAGE: 'good' } : {}) },
+    ...(selection === 'explicit' ? { packageName: 'good' } : {}),
+  })
+  expect(result).toMatchObject({ ok: true, results: [{ package: 'good' }] })
+  expect(fetcher).toHaveBeenCalledTimes(2)
+})
+
+it.each(['unknown', 'private', 'good*', '', ' '])('rejects an unavailable exact audit package before credentials: %s', async (packageName) => {
+  const cwd = await workspace(['good', 'private'])
+  await writeFile(path.join(cwd, 'packages/p1/package.json'), JSON.stringify({ name: 'private', version: '1.0.0', private: true }))
+  const fetcher = mockFetch()
+  vi.stubGlobal('fetch', fetcher)
+  await expect(releaseCi({ cwd, mode: 'oidc-audit', packageName, env })).rejects.toThrow(/exactly match|valid artifact/)
+  expect(fetcher).not.toHaveBeenCalled()
 })
 
 it('hides credential-bearing GitHub request exceptions and response bodies', async () => {

@@ -1,6 +1,7 @@
 import type { ReleaseCommandConfig } from '../../../types/release'
 import type { ReleaseBranchesConfig } from './types'
 import YAML from 'yaml'
+import { version } from '../../../constants'
 import { resolveNightlyConfig } from '../../../core/nightly/config'
 import { resolveReleaseBranches } from './config'
 
@@ -30,6 +31,12 @@ export function renderReleaseWorkflow(content: string, config?: ReleaseCommandCo
   const document = YAML.parseDocument(renderReleaseBranchesWorkflow(content, config?.branches))
   if (document.errors.length) {
     throw new Error('Managed release workflow is invalid YAML')
+  }
+  for (const name of ['bootstrap-publish', 'bootstrap-verify']) {
+    const steps = document.getIn(['jobs', name, 'steps'], true)
+    if (YAML.isSeq(steps) && steps.items.some(step => YAML.isMap(step) && step.get('id') === 'bootstrap-tool')) {
+      document.setIn(['jobs', name, 'env', 'REPOCTL_BOOTSTRAP_TOOL_VERSION'], version)
+    }
   }
   if (!document.hasIn(['jobs', 'nightly'])) {
     return document.toString({ lineWidth: 0 })
