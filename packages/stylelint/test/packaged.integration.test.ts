@@ -63,7 +63,9 @@ const bridge = resolveStylelintConfig({ miniProgram: true })
 for (const [filename, code] of [
   ['valid.css', '.page-shell { color: red; }'],
   ['valid.scss', '@mixin good-name { color: red; }'],
+  ['values.scss', '.page-shell { background: linear-gradient(90deg, $first, $second); border: 2px solid $border-color; }'],
   ['valid.vue', '<template><div /></template><style lang="scss">.page-shell { color: v-bind(color); }</style>'],
+  ['values.vue', '<style lang="scss">.page-shell { border: 2px solid $border-color; }</style>'],
   ['valid.wxss', 'page { width: 10rpx; }'],
 ]) {
   const result = await stylelint.lint({ code, codeFilename: filename, config })

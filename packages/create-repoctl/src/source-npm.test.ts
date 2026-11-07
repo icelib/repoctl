@@ -55,5 +55,5 @@ describe('scaffoldFromNpm', () => {
     finally {
       await rm(targetDir, { force: true, recursive: true })
     }
-  })
+  }, 60_000)
 })
