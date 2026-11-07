@@ -85,6 +85,18 @@ it('rejects altered registry bytes before starting any consumer subprocess', asy
   expect(spawn).not.toHaveBeenCalled()
 })
 
+it('rejects a mismatched pnpm version before installing or executing candidate packages', async () => {
+  const h = await setup()
+  const spawn = h.spawn.getMockImplementation()!
+  h.spawn.mockImplementation((command, args, options) => args.includes('--version')
+    ? { status: 0, stdout: '12.13.0', stderr: '' }
+    : spawn(command, args, options))
+  const result = await verifyPreparedSnapshotConsumer({ report: h.report, outputDirectory: h.directory, registryFetch: h.fetcher, spawn: h.spawn as never })
+  expect(result.status).toBe('failed')
+  expect(result.error).toBe('Snapshot consumer requires pnpm 12.14.0.')
+  expect(h.spawn.mock.calls.some(([, args]) => args.includes('install') || args.includes('--eval'))).toBe(false)
+})
+
 it('does not verify a partially published batch', async () => {
   const { directory, report, fetcher, spawn } = await setup()
   report.packages[1]!.published = false

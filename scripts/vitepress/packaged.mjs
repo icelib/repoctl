@@ -4,10 +4,12 @@ import path from 'node:path'
 import process from 'node:process'
 import YAML from 'yaml'
 import { checkDocsEnvironment, checkVitepressCache } from '../docs-context/cache.mjs'
-import { packDependencies, registry } from '../packaged-template/workspace.mjs'
+import { packDependencies, registry, repoRoot } from '../packaged-template/workspace.mjs'
 import { checkWebsiteArtifacts } from './artifacts.mjs'
 import { checkWebsiteBrowser } from './browser.mjs'
 import { writeDiagramFixtures } from './fixtures.mjs'
+
+const sourceManifest = JSON.parse(readFileSync(path.join(repoRoot, 'templates/vitepress/package.json'), 'utf8'))
 
 export async function checkPackagedWebsite({ cliPath, bootstrapDir, tempRoot, run }) {
   const workspace = path.join(tempRoot, 'docs-workspace')
@@ -19,7 +21,7 @@ export async function checkPackagedWebsite({ cliPath, bootstrapDir, tempRoot, ru
   assert.ok(Object.values(rootManifest.devDependencies).every(version => !version.startsWith('workspace:')), 'generated tooling dependencies must be installable from the registry')
   assert.ok(!workflow.includes('playwright install') && !workflow.includes('test:packaged-create'), 'source acceptance jobs must not leak into generated CI')
   const manifest = JSON.parse(readFileSync(path.join(website, 'package.json'), 'utf8'))
-  assert.equal(manifest.devDependencies.vitepress, '2.0.0-alpha.20')
+  assert.equal(manifest.devDependencies.vitepress, sourceManifest.devDependencies.vitepress, 'packaged VitePress must match the source template version')
   assert.equal(manifest.devDependencies['vitepress-plugin-mermaid'], undefined)
   assert.equal(manifest.devDependencies.repoctl, 'latest')
   assert.ok(!JSON.stringify(manifest).includes('workspace:'), 'template dependencies are installable')

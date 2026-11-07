@@ -1,7 +1,7 @@
 import type { PreparedSnapshotConsumerOptions, PreparedSnapshotPublishReport } from '@icebreakers/monorepo'
 import { Buffer } from 'node:buffer'
 import { createHash } from 'node:crypto'
-import { mkdtemp, readdir, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
@@ -13,7 +13,8 @@ import { writeSnapshotArchive } from '../../../../../src/commands/release/snapsh
 import { bundle } from './fixture'
 
 it('consumes a real two-package registry batch through the built public API with exact aliases and disabled lifecycle scripts', async () => {
-  const fixture = bundle()
+  const rootManifest = JSON.parse(await readFile(new URL('../../../../../../../package.json', import.meta.url), 'utf8')) as { packageManager: string }
+  const fixture = bundle(rootManifest.packageManager)
   const directory = await mkdtemp(path.join(tmpdir(), 'repoctl-snapshot-registry-consumer-'))
   const manifests = fixture.manifests.map(manifest => ({ ...manifest, type: 'module', exports: './index.js', scripts: { postinstall: 'node -e "throw new Error(\'Candidate install scripts must not run\')"' } }))
   const bodies = [
