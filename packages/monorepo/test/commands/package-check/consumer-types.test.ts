@@ -86,7 +86,7 @@ it('preserves older runtime TypeScript and Node peers and occupied tool aliases 
   const compiler = JSON.parse(await readFile(path.join(source, 'package.json'), 'utf8'))
   const nodeTypes = JSON.parse(await readFile(require.resolve('@types/node/package.json'), 'utf8'))
   expect(compiler.version).toMatch(/^6\./)
-  expect(nodeTypes.version).toMatch(/^22\./)
+  expect(nodeTypes.version).toMatch(/^26\./)
   await mkdir(path.join(cwd, 'node_modules'))
   await symlink(source, path.join(cwd, 'node_modules/typescript'), 'junction')
   await addPackage(cwd, 'fixture-runtime-tooling', {
