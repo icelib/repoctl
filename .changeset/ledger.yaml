@@ -42,6 +42,10 @@
   dir: packages/changelog-github
   intents:
     - great-mice-wonder
+"@icebreakers/changelog-github@2.1.8":
+  dir: packages/changelog-github
+  intents:
+    - old-spoons-refuse
 "@icebreakers/commitlint-config@4.0.6":
   dir: packages/commitlint
   intents:
@@ -121,6 +125,10 @@
   dir: packages/eslint
   intents:
     - khaki-birds-type
+"@icebreakers/eslint-config@8.0.13":
+  dir: packages/eslint
+  intents:
+    - old-spoons-refuse
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -374,6 +382,12 @@
   dir: packages/monorepo-templates
   intents:
     - reusable-bootstrap-publication
+"@icebreakers/monorepo-templates@3.2.1":
+  dir: packages/monorepo-templates
+  intents:
+    - light-knives-tap
+    - old-spoons-refuse
+    - vast-eagles-chew
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -654,6 +668,11 @@
   intents:
     - bootstrap-runner-isolation
     - reusable-bootstrap-publication
+"@icebreakers/monorepo@6.4.1":
+  dir: packages/monorepo
+  intents:
+    - light-knives-tap
+    - old-spoons-refuse
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -677,6 +696,11 @@
   dir: packages/stylelint
   intents:
     - great-mice-wonder
+"@icebreakers/stylelint-config@6.0.0":
+  dir: packages/stylelint
+  intents:
+    - light-knives-tap
+    - old-spoons-refuse
 create-icebreaker@1.1.0:
   dir: packages/create-icebreaker
   intents:
@@ -799,6 +823,10 @@ eslint-plugin-better-stylelint@2.1.3:
   dir: packages/eslint-plugin-better-stylelint
   intents:
     - great-mice-wonder
+eslint-plugin-better-stylelint@2.2.0:
+  dir: packages/eslint-plugin-better-stylelint
+  intents:
+    - light-knives-tap
 lightningcss-tailwindcss@2.0.4:
   dir: packages/lightningcss-tailwindcss
   intents:
@@ -856,6 +884,10 @@ postcss-tailwindcss@3.1.5:
   dir: packages/postcss-tailwindcss
   intents:
     - great-mice-wonder
+postcss-tailwindcss@3.1.6:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - old-spoons-refuse
 repoctl@5.10.0:
   dir: packages/repoctl
   intents:
@@ -1049,6 +1081,10 @@ repoctl@6.4.0:
   dir: packages/repoctl
   intents:
     - reusable-bootstrap-publication
+repoctl@6.4.1:
+  dir: packages/repoctl
+  intents:
+    - light-knives-tap
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
@@ -1088,3 +1124,8 @@ stylelint-plugin-tailwindcss@3.1.5:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
     - great-mice-wonder
+stylelint-plugin-tailwindcss@3.2.0:
+  dir: packages/stylelint-plugin-tailwindcss
+  intents:
+    - light-knives-tap
+    - old-spoons-refuse

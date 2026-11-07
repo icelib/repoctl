@@ -1,5 +1,11 @@
 # postcss-tailwindcss
 
+## 3.1.6
+
+### Patch Changes
+
+- Update stable dependencies across the shared tooling, runtime packages, and generated templates.
+
 ## 3.1.5
 
 ### Patch Changes
