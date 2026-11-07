@@ -193,6 +193,7 @@ overrides:
   prettier: 3.9.10
   typescript: 6.0.3
   '@arethetypeswrong/core>typescript': 5.9.3
+  '@napi-rs/wasm-runtime@1.2.4>@emnapi/runtime': 1.11.3
   vite: 8.3.4
   postcss: 8.5.30
   postcss-selector-parser: 7.1.6
@@ -2822,7 +2823,7 @@ packages:
     engines: {node: ^20.19.0 || ^22.13.0 || >=23.5.0}
     peerDependencies:
       '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.4
-      '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.4
+      '@emnapi/runtime': 1.11.3
 
   '@next/env@16.4.2':
     resolution: {integrity: sha512-nTUTFH7G5/J/fmpkjVLegOkqyKOP0CEsJcMsyO4UCYeN1su+YMW/MfaSErnJskL7XM+UDK6aTvslxsRCyya/sA==}
