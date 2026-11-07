@@ -68,7 +68,7 @@ export interface IcebreakerStylelintOptions {
   presets?: PresetToggles
   /** Control the bundled Tailwind/UnoCSS policy layer. */
   tailwindcssPreset?: TailwindcssPresetLevel
-  /** Enable fix-oriented formatting conventions that remain supported in Stylelint 16+. */
+  /** 启用在 Stylelint 18 中仍受支持的修复型格式规则。 */
   formattingPreset?: FormattingPresetLevel
   /** Append extra extends entries. */
   extends?: StylelintConfig['extends']

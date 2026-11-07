@@ -9,7 +9,7 @@
 ## Requirements
 
 - Node.js `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended)
-- Stylelint 16 (flat-compatible configuration)
+- Stylelint 18 (flat-compatible configuration)
 
 ## Installation
 
@@ -138,7 +138,7 @@ export default createStylelintConfig({
 ```
 
 `formattingPreset: 'safe'` is intentionally conservative. It focuses on rules
-that Stylelint 16+ still supports and can fix reliably, such as:
+that Stylelint 18 still supports and can fix reliably, such as:
 
 - modern color function notation (`rgba()` -> `rgb(... / ...)`)
 - quoted `url(...)` values

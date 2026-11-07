@@ -14,6 +14,10 @@ function normalizePath(value: string) {
   return value.replaceAll('\\', '/')
 }
 
+function expectBundledStandardScssPreset(value: string) {
+  expect(normalizePath(value)).toMatch(/\/presets\/stylelint-config-standard-scss\.mjs$/)
+}
+
 function normalizeExtendsList(config: { extends?: string | string[] }) {
   const extendsList = Array.isArray(config.extends)
     ? config.extends
@@ -216,7 +220,7 @@ describe('createIcebreakerStylelintConfig', () => {
     const config = createIcebreakerStylelintConfig()
 
     expect(config.extends).toEqual([
-      `/virtual/${PRESET_STANDARD_SCSS}`,
+      expect.stringMatching(/\/presets\/stylelint-config-standard-scss\.mjs$/),
       `/virtual/${PRESET_VUE_SCSS}`,
       `/virtual/${PRESET_RECESS_ORDER}`,
     ])
@@ -238,8 +242,9 @@ describe('createIcebreakerStylelintConfig', () => {
     const { createIcebreakerStylelintConfig } = await withImportMetaResolveDisabled(loadConfig)
     const config = createIcebreakerStylelintConfig()
 
-    expect(normalizeExtendsList(config)).toEqual([
-      PRESET_STANDARD_SCSS,
+    const extendsList = normalizeExtendsList(config)
+    expectBundledStandardScssPreset(extendsList[0] ?? '')
+    expect(extendsList.slice(1)).toEqual([
       PRESET_VUE_SCSS,
       PRESET_RECESS_ORDER,
     ])

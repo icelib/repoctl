@@ -26,6 +26,17 @@ const ROOT_DIR = path.resolve(__dirname, '..')
 const FIXTURE_DIR = path.join(ROOT_DIR, 'fixtures')
 
 describe('stylelint integration', () => {
+  it('loads the bundled SCSS preset with Stylelint 18', async () => {
+    const result = await stylelint.lint({
+      code: '.page-shell { color: red; }',
+      codeFilename: path.join(FIXTURE_DIR, 'stylelint-18.scss'),
+      config: icebreaker() as StylelintConfig,
+    })
+
+    expect(result.errored).toBe(false)
+    expect(result.results[0]?.warnings ?? []).toEqual([])
+  })
+
   it('uses prefix media feature notation to stay aligned with prettier output', async () => {
     const validResult = await stylelint.lint({
       code: [

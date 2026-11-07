@@ -7,7 +7,7 @@
 ## 环境要求
 
 - Node.js `^22.23.4 || ^24.22.1 || >=26.12.1`（推荐 24.22.1 LTS）
-- Stylelint 16（支持 Flat Config）
+- Stylelint 18（支持 Flat Config）
 
 ## 安装
 
@@ -134,7 +134,7 @@ export default createStylelintConfig({
 })
 ```
 
-`formattingPreset: 'safe'` 是一层刻意保守的配置，只包含 Stylelint 16+
+`formattingPreset: 'safe'` 是一层刻意保守的配置，只包含 Stylelint 18
 仍支持、且 `--fix` 行为稳定的规则，例如：
 
 - 使用现代颜色函数写法（如 `rgba()` 转成 `rgb(... / ...)`）
