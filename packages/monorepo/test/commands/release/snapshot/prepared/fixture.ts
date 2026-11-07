@@ -9,7 +9,7 @@ export function source(commit = 'a'.repeat(40)): SnapshotSource {
   return { repository: 'acme/repo', repositoryId: 12, pullRequest: 42, headSha: 'b'.repeat(40), baseSha: 'c'.repeat(40), baseRef: 'main', mergeSha: commit, runId: 123, runAttempt: 2, workflowId: 456, workflowPath: '.github/workflows/snapshot-build.yml', workflowSha: 'd'.repeat(40), defaultBranch: 'main' }
 }
 
-export function bundle() {
+export function bundle(packageManager = 'pnpm@12.14.0') {
   const frozen = source()
   const identity = { kind: 'pr' as const, pullRequest: frozen.pullRequest, commit: frozen.mergeSha, buildId: `run-${frozen.runId}-attempt-${frozen.runAttempt}` }
   const { key, tag } = snapshotIdentity({ cwd: '', identity })
@@ -21,7 +21,7 @@ export function bundle() {
     identityKey: key,
     tag,
     registry: 'https://registry.npmjs.org/',
-    packageManager: 'pnpm@12.14.0',
+    packageManager,
     packages: [
       { name: '@scope/a', directory: 'packages/a', currentVersion: '1.0.0', version, reasons: ['intent'], dependencies: [] },
       { name: '@scope/b', directory: 'packages/b', currentVersion: '1.0.0', version, reasons: ['dependency'], dependencies: [
