@@ -19,7 +19,7 @@
     "check:locales": "node scripts/check-locales.mjs"
   },
   "dependencies": {
-    "@cloudflare/nimbus-docs": "0.17.0",
+    "@cloudflare/nimbus-docs": "0.19.1",
     "astro": "7.4.4"
   },
   "devDependencies": {
