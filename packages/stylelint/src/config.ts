@@ -25,7 +25,7 @@ import {
   unocssNoInvalidApplyRuleName,
   unocssNoVariantGroupRuleName,
 } from 'stylelint-plugin-tailwindcss'
-import { PRESET_RECESS_ORDER, PRESET_STANDARD_SCSS, PRESET_VUE_SCSS } from './constants'
+import { PRESET_RECESS_ORDER, PRESET_VUE_SCSS } from './constants'
 import { normalizeExtends, resolveIgnoreList, toArray, unique } from './utils'
 
 const requireFromConfig = createRequire(import.meta.url)
@@ -53,7 +53,11 @@ function resolvePresetPath(specifier: string): string {
   }
 }
 
-const PRESET_PATH_STANDARD_SCSS = resolvePresetPath(PRESET_STANDARD_SCSS)
+// Stylelint SCSS preset 的上游版本尚未声明 Stylelint 18 peer 范围。
+// 在本包内保留同等规则层，并让它继承已支持 Stylelint 18 的 standard 配置。
+const PRESET_PATH_STANDARD_SCSS = fileURLToPath(
+  new URL('../presets/stylelint-config-standard-scss.mjs', import.meta.url),
+)
 const PRESET_PATH_VUE_SCSS = resolvePresetPath(PRESET_VUE_SCSS)
 const PRESET_PATH_RECESS_ORDER = resolvePresetPath(PRESET_RECESS_ORDER)
 const MINI_PROGRAM_IGNORE_FILES = [
