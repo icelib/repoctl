@@ -24,9 +24,7 @@ function stripUnsupportedRules(configs: unknown[]): Linter.Config[] {
     const { 'ts/ban-types': _banTypes, ...rest } = config.rules
     return {
       ...config,
-      ...(Object.keys(rest).length > 0
-        ? { rules: rest }
-        : {}),
+      ...(Object.keys(rest).length > 0 ? { rules: rest } : {}),
     }
   })
 }
@@ -48,7 +46,7 @@ describe('eslint branch config behavior', () => {
     )
     await fs.writeFile(
       path.join(tempDir, 'sample.js'),
-      'wx.showToast({\n  title: String(getCurrentPages().length),\n})\n',
+      'wx.showToast({ title: String(getCurrentPages().length) })\n',
       'utf8',
     )
     await fs.writeFile(

@@ -23,6 +23,10 @@ const BASE_DEFAULTS: Pick<UserDefinedOptions, 'formatters' | 'javascript' | 'tes
 }
 
 const BASE_RULES: Partial<Linter.RulesRecord> = {
+  // Keep the formatting baseline from @antfu/eslint-config 9.x. Version 10
+  // enables this new rule by default, which would require reformatting a large
+  // existing codebase on every consumer upgrade.
+  'antfu/reasonable-newline': 'off',
   // `noPropertyAccessFromIndexSignature` requires bracket access (`obj['key']`)
   // for index-signature properties, which conflicts with ESLint core `dot-notation`.
   'dot-notation': 'off',
