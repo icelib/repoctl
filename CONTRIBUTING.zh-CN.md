@@ -27,6 +27,15 @@ pnpm test
 
 对于自动化启用前已经合并的 PR，可以手动运行 `Automatic Release Intent` 工作流，并输入逗号分隔的 PR 编号。工作流会创建一个补录 PR，后续 `repo release ci` 会按正常流程消费其中的 changeset。
 
+
+## 依赖升级 PR 与 CI
+
+依赖升级 PR 仍然要逐个审查；对于修改同一锁文件或同一依赖图、风险较低且相互兼容的升级，将已审查的变更批量放进一个短期集成 PR。集成分支必须从最新 `main` 创建，只带入已批准的 PR，统一解决一次锁文件冲突，并为每个可发布变更保留 release intent。如果 Renovate PR 没有自动生成 intent，应在集成 PR 中补充已审查的 intent，或先运行补录工作流再验证。
+
+先运行受影响 workspace 的本地重点检查，再批准 `pr-ci`，等待集成 PR 的一轮完整 `PR Checks`。合并前确认当前 head SHA、`main` base SHA 与该轮运行冻结值一致，并确认 Release Intent、9 个 CI 矩阵、2 个 Dev Container 以及 PR Validation 全部成功。使用 `gh pr merge <number> --match-head-commit <verified-head>` squash 合并，然后在被替代的源 PR 中留言链接集成 PR 并关闭它们。
+
+重大、草稿或高风险升级保持独立 PR。head 或 base 发生变化后不得复用旧的绿色运行。目前工作流没有监听 `merge_group`，因此 merge queue 不能减少这类验证成本；在工作流改变前，以集成 PR 批处理为准。
+
 本仓库同时维护 repoctl CLI、monorepo engine、模板资产、共享 lint/config 包以及 `apps/mock` fixture demo。跨这些目录修改时，请保持包的公开 API 和独立版本线不变。
 
 修改模板或受管根资产时，先修改源码，再运行 `pnpm --filter @icebreakers/monorepo-templates sync:assets` 刷新随包副本。
