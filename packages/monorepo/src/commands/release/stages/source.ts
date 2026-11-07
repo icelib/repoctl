@@ -1,5 +1,7 @@
 import type { ReleaseCiOptions } from '../types'
-import { mkdir, rm } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { mkdir, realpath, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import path from 'pathe'
 import { resolveCommandConfig } from '../../../core/config'
 import { clearWorkspaceCache } from '../../../core/workspace'
@@ -10,9 +12,24 @@ import { resolveGitHub } from '../metadata'
 import { getPublishCandidates } from '../publish'
 import { packageKey } from '../publish/state'
 import { readSourceCandidates } from '../recovery/candidates'
-import { sourcePackageManagerEnvironment } from '../recovery/environment'
+import { assertRecoveryDirectory, sourcePackageManagerEnvironment } from '../recovery/environment'
 import { capture, getReleaseEnv, hasPendingIntents, resolveReleaseMode, run } from '../shared'
 import { stageDirectory } from './receipt'
+
+export async function stagedSourceDirectory(options: ReleaseCiOptions) {
+  const env = getReleaseEnv(options)
+  const identity = JSON.stringify([
+    stageDirectory(options),
+    options.sourceSha ?? env['REPO_RELEASE_RECOVERY_SOURCE_SHA']?.trim(),
+    env['GITHUB_RUN_ID'],
+    env['GITHUB_RUN_ATTEMPT'],
+  ])
+  const key = createHash('sha256').update(identity).digest('hex')
+  // TypeScript 忽略 .git 下的符号链接缓存，执行目录必须位于 Git 元数据之外。
+  const root = path.join(await realpath(tmpdir()), `repoctl-release-source-${key}`)
+  await assertRecoveryDirectory(root)
+  return root
+}
 
 export async function stagedSource(options: ReleaseCiOptions, create = false, install = false) {
   const source = options.sourceSha ?? getReleaseEnv(options)['REPO_RELEASE_RECOVERY_SOURCE_SHA']?.trim()
@@ -28,7 +45,7 @@ export async function stagedSource(options: ReleaseCiOptions, create = false, in
     throw new ReleaseCommandError('Source recovery requires full Git history')
   }
   run('git', ['merge-base', '--is-ancestor', source, `refs/remotes/origin/${rule.branch}`], options)
-  const root = path.join(stageDirectory(options), 'source')
+  const root = await stagedSourceDirectory(options)
   const cwd = path.join(root, 'checkout')
   const env: NodeJS.ProcessEnv = { ...getReleaseEnv(options), REPO_RELEASE_SOURCE_SHA: source }
   let recovery: ReleaseCiOptions = { ...options, cwd, branch: rule.branch, env }
@@ -39,6 +56,7 @@ export async function stagedSource(options: ReleaseCiOptions, create = false, in
     run('git', ['remote', 'set-url', 'origin', capture('git', ['remote', 'get-url', 'origin'], options)], recovery)
     run('git', ['checkout', '--detach', source], recovery)
   }
+  await assertRecoveryDirectory(cwd)
   if (capture('git', ['rev-parse', 'HEAD'], recovery) !== source || capture('git', ['diff', '--binary', 'HEAD'], recovery)) {
     throw new ReleaseCommandError('Recovery checkout changed; restart at plan and verify')
   }

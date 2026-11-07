@@ -34,25 +34,7 @@ exports[`index > common 1`] = `
         ],
       },
     ],
-    "at-rule-no-unknown": [
-      true,
-      {
-        "ignoreAtRules": [
-          "tailwind",
-          "theme",
-          "screen",
-          "apply",
-          "source",
-          "utility",
-          "variant",
-          "custom-variant",
-          "reference",
-          "config",
-          "plugin",
-          "unocss",
-        ],
-      },
-    ],
+    "at-rule-no-unknown": null,
     "function-name-case": null,
     "media-feature-range-notation": "prefix",
     "property-no-vendor-prefix": [

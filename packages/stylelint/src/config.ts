@@ -4,8 +4,6 @@ import type {
   StylelintConfig,
   StylelintPlugin,
 } from './types'
-import { createRequire } from 'node:module'
-import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import {
   noApplyRuleName,
@@ -25,41 +23,21 @@ import {
   unocssNoInvalidApplyRuleName,
   unocssNoVariantGroupRuleName,
 } from 'stylelint-plugin-tailwindcss'
-import { PRESET_RECESS_ORDER, PRESET_VUE_SCSS } from './constants'
 import { normalizeExtends, resolveIgnoreList, toArray, unique } from './utils'
 
-const requireFromConfig = createRequire(import.meta.url)
-
 const BEM_OOCSS_CLASS_NAME_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:__[a-z0-9]+(?:-[a-z0-9]+)*)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)*$/
-
-function resolvePresetPath(specifier: string): string {
-  const disableImportMetaResolve = process.env['ICEBREAKER_STYLELINT_DISABLE_IMPORT_META_RESOLVE'] === '1'
-
-  if (!disableImportMetaResolve && typeof import.meta.resolve === 'function') {
-    try {
-      const resolved = import.meta.resolve(specifier)
-      return fileURLToPath(resolved)
-    }
-    catch {
-      // fall through to require.resolve
-    }
-  }
-
-  try {
-    return requireFromConfig.resolve(specifier)
-  }
-  catch {
-    return specifier
-  }
-}
 
 // Stylelint SCSS preset 的上游版本尚未声明 Stylelint 18 peer 范围。
 // 在本包内保留同等规则层，并让它继承已支持 Stylelint 18 的 standard 配置。
 const PRESET_PATH_STANDARD_SCSS = fileURLToPath(
   new URL('../presets/stylelint-config-standard-scss.mjs', import.meta.url),
 )
-const PRESET_PATH_VUE_SCSS = resolvePresetPath(PRESET_VUE_SCSS)
-const PRESET_PATH_RECESS_ORDER = resolvePresetPath(PRESET_RECESS_ORDER)
+const PRESET_PATH_VUE_SCSS = fileURLToPath(
+  new URL('../presets/stylelint-config-recommended-vue.mjs', import.meta.url),
+)
+const PRESET_PATH_RECESS_ORDER = fileURLToPath(
+  new URL('../presets/stylelint-config-recess-order.mjs', import.meta.url),
+)
 const MINI_PROGRAM_IGNORE_FILES = [
   'dist/**',
   '.weapp-vite/**',
@@ -165,12 +143,9 @@ function resolveRules(options: IcebreakerStylelintOptions | undefined): NonNulla
         ignoreAtRules,
       },
     ],
-    'at-rule-no-unknown': [
-      true,
-      {
-        ignoreAtRules,
-      },
-    ],
+    'at-rule-no-unknown': options?.presets?.scss === false
+      ? [true, { ignoreAtRules }]
+      : null,
     'scss/selector-no-redundant-nesting-selector': true,
     'scss/at-rule-no-unknown': [
       true,

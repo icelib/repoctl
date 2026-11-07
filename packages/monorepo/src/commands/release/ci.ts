@@ -1,12 +1,13 @@
 import type { ReleaseCiOptions } from './types'
 import { resolveCommandConfig } from '../../core/config'
 import { logger } from '../../core/logger'
-import { buildReleaseNoteDocument, readPendingIntentCommits, renderReleasePullRequest } from './body'
+import { buildReleaseNoteDocument, readPendingIntentCommits } from './body'
 import { ReleaseCommandError } from './errors'
 import { runAfterPublishHooks, runQualityScripts, runReleaseHooks } from './hooks'
 import { publishLifecycle } from './lifecycle'
 import { assertReleaseLineVersions, releasePullRequestHead, resolveReleaseBranch, resolveStableReleaseBranch } from './lines'
 import { publishMetadata, resolveGitHub, resolveReleaseLocale } from './metadata'
+import { renderBoundedReleasePullRequest } from './notes/pull-request'
 import { runReleaseOidcAudit } from './oidc'
 import { releasePrerelease } from './prerelease'
 import { getPublishCandidates, publishWithRetry } from './publish'
@@ -60,6 +61,7 @@ async function createReleasePullRequest(options: ReleaseCiOptions) {
   run('git', ['checkout', '-B', releaseBranch], options)
   run('git', ['add', '-A'], options)
   run('git', ['commit', '-m', 'chore(release): version packages'], options)
+  const pullRequestBody = await renderBoundedReleasePullRequest(noteDocument, metadata, options)
   run('git', ['push', '--force', 'origin', `HEAD:${releaseBranch}`], options)
 
   await github.ensurePullRequest({
@@ -68,7 +70,7 @@ async function createReleasePullRequest(options: ReleaseCiOptions) {
     title: resolveReleaseLocale(options) === 'zh-CN'
       ? 'chore(release): 更新包版本'
       : 'chore(release): version packages',
-    body: renderReleasePullRequest(noteDocument, metadata),
+    body: pullRequestBody,
   })
   await github.closeLegacyReleasePullRequests?.({ head: `changeset-release/${rule.branch}`, base: rule.branch })
   return true

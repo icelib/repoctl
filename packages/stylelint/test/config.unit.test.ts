@@ -1,7 +1,6 @@
 import {
   PRESET_RECESS_ORDER,
   PRESET_STANDARD_SCSS,
-  PRESET_VUE_SCSS,
 } from '@/constants'
 
 async function loadConfig() {
@@ -57,7 +56,7 @@ describe('createIcebreakerStylelintConfig', () => {
 
     expect(normalizeExtendsList(config)).toEqual([
       expect.stringContaining(PRESET_STANDARD_SCSS),
-      expect.stringContaining(PRESET_VUE_SCSS),
+      expect.stringContaining('stylelint-config-recommended-vue.mjs'),
       expect.stringContaining(PRESET_RECESS_ORDER),
     ])
     expect(config.plugins).toHaveLength(4)
@@ -205,49 +204,16 @@ describe('createIcebreakerStylelintConfig', () => {
     expect(config.rules?.['property-no-vendor-prefix']).toBeNull()
   })
 
-  it('uses require.resolve when import.meta.resolve is disabled', async () => {
-    vi.doMock('node:module', () => {
-      return {
-        createRequire: () => {
-          return {
-            resolve: (specifier: string) => `/virtual/${specifier}`,
-          }
-        },
-      }
-    })
-
+  it('resolves all presets from its own package when external resolvers are unavailable', async () => {
+    vi.doMock('node:module', () => ({
+      createRequire: () => {
+        throw new Error('external resolver unavailable')
+      },
+    }))
     const { createIcebreakerStylelintConfig } = await withImportMetaResolveDisabled(loadConfig)
-    const config = createIcebreakerStylelintConfig()
-
-    const extendsList = normalizeExtendsList(config)
+    const extendsList = normalizeExtendsList(createIcebreakerStylelintConfig())
     expectBundledStandardScssPreset(extendsList[0] ?? '')
-    expect(extendsList.slice(1)).toEqual([
-      `/virtual/${PRESET_VUE_SCSS}`,
-      `/virtual/${PRESET_RECESS_ORDER}`,
-    ])
-  })
-
-  it('falls back to module specifiers when require.resolve fails', async () => {
-    vi.doMock('node:module', () => {
-      return {
-        createRequire: () => {
-          return {
-            resolve: () => {
-              throw new Error('resolve failed')
-            },
-          }
-        },
-      }
-    })
-
-    const { createIcebreakerStylelintConfig } = await withImportMetaResolveDisabled(loadConfig)
-    const config = createIcebreakerStylelintConfig()
-
-    const extendsList = normalizeExtendsList(config)
-    expectBundledStandardScssPreset(extendsList[0] ?? '')
-    expect(extendsList.slice(1)).toEqual([
-      PRESET_VUE_SCSS,
-      PRESET_RECESS_ORDER,
-    ])
+    expect(extendsList[1]).toMatch(/\/presets\/stylelint-config-recommended-vue\.mjs$/)
+    expect(extendsList[2]).toMatch(/\/presets\/stylelint-config-recess-order\.mjs$/)
   })
 })

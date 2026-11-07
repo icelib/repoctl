@@ -9,7 +9,7 @@
 - Node.js `^22.23.4 || ^24.22.1 || >=26.12.1`（推荐 24.22.1 LTS）
 - Stylelint 18（支持 Flat Config）
 
-默认 SCSS、Vue 和排序预设已通过 Stylelint 18 验证。SCSS 与 recess-order 上游包仍声明 Stylelint 17 的 peer 范围，包管理器可能报告 peer 警告；在上游发布兼容声明前，不支持严格 peer 安装。本包不使用 peer override。预设外自行启用的 `stylelint-scss` 规则仍需独立验证其 Stylelint 18 兼容性。
+默认 SCSS、Vue 和排序预设支持 Stylelint 18 和严格 peer 安装。尚未更新 peer 范围的上游 SCSS 插件与预设在构建时打包，运行时使用本包预设，无需消费端 peer override。保留完整规则和上游许可证，使用隔离 tarball 消费者验证 CSS、SCSS、Vue、WXSS、属性排序修复及 ESLint 样式桥接。预设外自行安装的 `stylelint-scss` 仍遵循其自身的兼容范围。
 
 ## 安装
 

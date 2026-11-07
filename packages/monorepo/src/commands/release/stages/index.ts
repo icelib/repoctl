@@ -19,8 +19,8 @@ import { reconcileRelease } from '../reconcile'
 import { assertLaneAssignments, assertStableLaneAssignments, getReleaseEnv, hasPendingIntents, resolveReleaseMode } from '../shared'
 import { assertStablePublish } from '../stable'
 import { readReleaseTriggerContext, shouldRunRelease } from '../trigger'
-import { readReceipt, receiptOutput, reportStage, saveReceipt, stageDirectory, stageIdentity } from './receipt'
-import { stagedSource } from './source'
+import { readReceipt, receiptOutput, reportStage, saveReceipt, stageIdentity } from './receipt'
+import { stagedSource, stagedSourceDirectory } from './source'
 import { authorizeVerification } from './verification'
 
 const stages: ReleaseCiStage[] = ['plan', 'verify', 'prepare', 'upload', 'confirm', 'finalize']
@@ -113,6 +113,7 @@ export async function releaseCiStage(options: ReleaseCiOptions) {
   }
   await saveReceipt(receipt, options)
   let effective = options
+  let completed = false
   try {
     if (receipt.action !== 'skip') {
       const source = stage === 'plan' ? undefined : await stagedSource(options, false, stage === 'verify')
@@ -176,6 +177,7 @@ export async function releaseCiStage(options: ReleaseCiOptions) {
     receipt.identity = await stageIdentity(options)
     receipt.effectiveIdentity = await stageIdentity(effective)
     await reportStage(receipt, options, stage, started, 'complete', effective.cwd)
+    completed = true
   }
   catch (error) {
     await reportStage(receipt, options, stage, started, 'failed', effective.cwd)
@@ -190,8 +192,8 @@ export async function releaseCiStage(options: ReleaseCiOptions) {
           }
         })
       }
-      if (stage === 'finalize' && receipt.done.includes('finalize')) {
-        await rm(path.join(stageDirectory(options), 'source'), { recursive: true, force: true })
+      if (stage === 'finalize' && completed) {
+        await rm(await stagedSourceDirectory(options), { recursive: true, force: true })
       }
     }
   }

@@ -11,7 +11,7 @@
 - Node.js `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended)
 - Stylelint 18 (flat-compatible configuration)
 
-The default SCSS, Vue and ordering presets are tested with Stylelint 18. The SCSS and recess-order upstream packages still declare Stylelint 17 peer ranges, so package managers can report peer warnings; strict peer installation is not supported until those packages publish compatible metadata. No peer overrides are applied. Custom `stylelint-scss` rules outside this preset may require their own Stylelint 18 migration.
+The default SCSS, Vue and ordering presets support Stylelint 18 with strict peer installation. The upstream SCSS implementation and presets whose peer ranges have not caught up are bundled at build time, with their rules and licenses preserved. Consumers need no peer overrides. Isolated tarball tests verify CSS, SCSS, Vue, WXSS, property-order fixes and the ESLint style bridge. A separately installed `stylelint-scss` package still follows its own compatibility range.
 
 ## Installation
 

@@ -19,7 +19,7 @@ import {
   unocssNoInvalidApplyRuleName,
   unocssNoVariantGroupRuleName,
 } from 'stylelint-plugin-tailwindcss'
-import { PRESET_RECESS_ORDER, PRESET_VUE_SCSS } from '@/constants'
+import { PRESET_RECESS_ORDER } from '@/constants'
 import { createStylelintConfig, icebreaker } from '@/index'
 
 const ROOT_DIR = path.resolve(__dirname, '..')
@@ -577,7 +577,7 @@ describe('stylelint integration', () => {
         : []
 
     expect(
-      extendsList.some(entry => String(entry).includes(PRESET_VUE_SCSS)),
+      extendsList.some(entry => String(entry).includes('stylelint-config-recommended-vue.mjs')),
     ).toBe(false)
     expect(
       extendsList.some(entry => String(entry).includes(PRESET_RECESS_ORDER)),

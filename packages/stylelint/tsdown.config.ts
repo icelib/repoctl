@@ -5,8 +5,11 @@ export default defineConfig({
     pluginTimings: false,
   },
   entry: {
-    index: 'src/index.ts',
-    cli: 'src/cli.ts',
+    'index': 'src/index.ts',
+    'cli': 'src/cli.ts',
+    'presets/scss': 'src/presets/scss.ts',
+    'presets/vue': 'src/presets/vue.ts',
+    'presets/order': 'src/presets/order.ts',
   },
   format: ['esm'],
   dts: {
@@ -15,6 +18,8 @@ export default defineConfig({
   clean: true,
   fixedExtension: false,
   deps: {
+    alwaysBundle: ['stylelint-scss', 'stylelint-config-recommended-scss', 'stylelint-config-recommended-vue', 'stylelint-config-recess-order'],
+    neverBundle: ['stylelint', 'postcss-scss', 'stylelint-order'],
     onlyBundle: false,
   },
 })
