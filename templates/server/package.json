@@ -66,8 +66,8 @@
   "devDependencies": {
     "@hono/node-server": "^2.1.5",
     "consola": "^3.4.2",
-    "hono": "^4.13.13",
-    "tsdown": "0.23.1",
+    "hono": "^4.13.14",
+    "tsdown": "0.23.4",
     "wrangler": "^4.135.0",
     "zod": "^4.6.7"
   }
