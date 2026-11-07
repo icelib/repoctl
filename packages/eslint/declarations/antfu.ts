@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
 
-export const antfuDeclarationVersion = '9.5.1'
+export const antfuDeclarationVersion = '10.0.0'
 
 const validTitle = `type TestValidTitle = [] | [{
   ignoreTypeOfDescribeName?: boolean;
@@ -64,7 +64,10 @@ async function readAntfuSource(directory: string) {
 // tsdown assigns shared copies to one format, including single-format and watch builds.
 export const antfuLicenseCopy: CopyOptionsFn = async ({ cwd }) => {
   const { dependencyRoot } = await readAntfuSource(cwd)
-  return { from: path.join(dependencyRoot, 'LICENSE'), rename: 'ANTFU-LICENSE' }
+  return {
+    from: path.join(dependencyRoot, 'LICENSE'),
+    rename: 'ANTFU-LICENSE',
+  }
 }
 
 /** Post-process both ESM and CJS declaration builds without modifying dependency files. */
