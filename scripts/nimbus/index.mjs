@@ -46,6 +46,7 @@ try {
     await checkNimbusBrowser(docs, channel)
   }
   run('pnpm', ['lint'], docs)
+  run(process.execPath, ['--input-type=module', '-e', 'await import("@astrojs/check")'], docs)
   run('pnpm', ['typecheck'], docs)
   run('pnpm', ['build'], website)
   checkCache(workspace, docs)
