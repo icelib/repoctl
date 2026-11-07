@@ -133,6 +133,10 @@
   dir: packages/eslint
   intents:
     - auto-pr-1138
+"@icebreakers/eslint-config@8.0.15":
+  dir: packages/eslint
+  intents:
+    - pretty-mice-drive
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -690,6 +694,10 @@
     - auto-pr-1142
     - auto-pr-1144
     - auto-pr-1145
+"@icebreakers/monorepo@6.4.4":
+  dir: packages/monorepo
+  intents:
+    - new-dolphins-move
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -718,6 +726,10 @@
   intents:
     - light-knives-tap
     - old-spoons-refuse
+"@icebreakers/stylelint-config@6.0.1":
+  dir: packages/stylelint
+  intents:
+    - pretty-mice-drive
 create-icebreaker@1.1.0:
   dir: packages/create-icebreaker
   intents:
@@ -1102,6 +1114,10 @@ repoctl@6.4.1:
   dir: packages/repoctl
   intents:
     - light-knives-tap
+repoctl@6.4.4:
+  dir: packages/repoctl
+  intents:
+    - new-dolphins-move
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
