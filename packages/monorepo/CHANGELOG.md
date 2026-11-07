@@ -1,5 +1,24 @@
 # @icebreakers/monorepo
 
+## 6.4.2
+
+### Patch Changes
+
+- chore(deps): update dependency @babel/parser to v8 (#1139)
+
+- chore(deps): update dependency @npmcli/config to v11 (#1140)
+
+- chore(deps): update dependency @types/node to v26 (#1141)
+
+- chore(deps): update dependency p-queue to v10 (#1142)
+
+- chore(deps): update dependency pacote to v22 (#1144)
+
+- chore(deps): update all non-major dependencies (#1145)
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.14
+
 ## 6.4.1
 
 ### Patch Changes

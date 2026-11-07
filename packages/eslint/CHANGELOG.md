@@ -1,5 +1,11 @@
 # @icebreakers/eslint-config
 
+## 8.0.14
+
+### Patch Changes
+
+- chore(deps): update dependency @antfu/eslint-config to v10 (#1138)
+
 ## 8.0.13
 
 ### Patch Changes
