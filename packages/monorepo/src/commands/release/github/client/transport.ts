@@ -1,6 +1,7 @@
 import type { GitHubClientOptions } from '../types'
 import process from 'node:process'
 import { GitHubApiError } from '../errors'
+import { formatGitHubApiErrorMessage } from './diagnostics'
 
 /** Shared authenticated transport; mutation callers own reconciliation. */
 export class GitHubTransport {
@@ -88,9 +89,7 @@ export class GitHubTransport {
         }
       }
       if (!response.ok) {
-        const message = typeof data === 'object' && data !== null && 'message' in data
-          ? String((data as { message: unknown }).message)
-          : text || response.statusText
+        const message = formatGitHubApiErrorMessage(data, response.statusText, this.token, body)
         if (method !== 'POST' && method !== 'PUT' && (response.status === 429 || response.status >= 500) && attempt < this.retryAttempts) {
           const retryAfter = response.headers.get('retry-after')
           const reset = response.headers.get('x-ratelimit-reset')

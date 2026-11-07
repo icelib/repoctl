@@ -60,11 +60,11 @@
   },
   "dependencies": {
     "comment-json": "catalog:",
+    "css-tree": "^3.2.1",
     "postcss-html": "^2.0.0",
-    "stylelint-config-recess-order": "^7.9.0",
+    "postcss-scss": "^4.0.9",
+    "stylelint-config-html": "^2.0.0",
     "stylelint-config-recommended": "^19.0.0",
-    "stylelint-config-recommended-scss": "^17.0.1",
-    "stylelint-config-recommended-vue": "^2.0.0",
     "stylelint-config-standard": "^41.0.0",
     "stylelint-order": "^8.1.3",
     "stylelint-plugin-tailwindcss": "workspace:*"
@@ -81,6 +81,10 @@
     }
   },
   "devDependencies": {
+    "stylelint-config-recess-order": "7.9.0",
+    "stylelint-config-recommended-scss": "17.0.1",
+    "stylelint-config-recommended-vue": "2.0.0",
+    "stylelint-scss": "7.2.0",
     "tailwindcss": "^4.3.3"
   }
 }

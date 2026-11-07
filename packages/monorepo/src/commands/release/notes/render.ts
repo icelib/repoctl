@@ -6,7 +6,7 @@ function isChinese(metadata: ReleaseBodyMetadata) {
   return (metadata.locale ?? resolveRepoctlLocale()) === 'zh-CN'
 }
 
-function localized(metadata: ReleaseBodyMetadata, english: string, simplifiedChinese: string) {
+export function localized(metadata: ReleaseBodyMetadata, english: string, simplifiedChinese: string) {
   return isChinese(metadata) ? simplifiedChinese : english
 }
 
@@ -35,7 +35,7 @@ function formatEntry(entry: ReleaseNoteEntry, metadata: ReleaseBodyMetadata, lin
   return `- **${packageLabel}**: ${entry.summary}${formatReferenceLinks(entry, metadata)}`
 }
 
-function formatCategoryEntries(
+export function formatCategoryEntries(
   entries: ReleaseNoteEntry[],
   category: ReleaseCategory,
   metadata: ReleaseBodyMetadata,
@@ -60,14 +60,14 @@ function formatContributor(value: string) {
   return /^[\w-]+$/.test(value) ? `@${value}` : value
 }
 
-function formatContributors(contributors: string[], metadata: ReleaseBodyMetadata) {
+export function formatContributors(contributors: string[], metadata: ReleaseBodyMetadata) {
   const unique = uniqueContributors(contributors).sort((a, b) => a.localeCompare(b))
   return unique.length
     ? [`## ❤️ ${localized(metadata, 'Contributors', '贡献者')}`, '', `${localized(metadata, 'Thanks to', '感谢')} ${unique.map(formatContributor).join(' · ')}`]
     : []
 }
 
-function formatVersion(version: string, npmUrl?: string) {
+export function formatVersion(version: string, npmUrl?: string) {
   return npmUrl ? `[\`${version}\`](${npmUrl})` : `\`${version}\``
 }
 

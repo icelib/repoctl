@@ -8,7 +8,7 @@ function normalizePresetPath(value: string) {
   if (normalizedValue.includes(PRESET_STANDARD_SCSS)) {
     return PRESET_STANDARD_SCSS
   }
-  if (normalizedValue.includes(PRESET_VUE_SCSS)) {
+  if (normalizedValue.includes('stylelint-config-recommended-vue.mjs')) {
     return PRESET_VUE_SCSS
   }
   if (normalizedValue.includes(PRESET_RECESS_ORDER)) {

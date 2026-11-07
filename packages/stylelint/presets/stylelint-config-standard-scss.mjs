@@ -1,6 +1,6 @@
 // 基于 stylelint-config-standard-scss@17.0.0；许可见同目录 LICENSE.stylelint-config-standard-scss。
 export default {
-  extends: ['stylelint-config-standard', 'stylelint-config-recommended-scss'],
+  extends: ['stylelint-config-standard', './stylelint-config-recommended-scss.mjs'],
   rules: {
     'at-rule-empty-line-before': [
       'always',
