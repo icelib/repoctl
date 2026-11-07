@@ -132,7 +132,7 @@
     "simple-git": "^4.0.2",
     "tar": "7.5.22",
     "tinyglobby": "^0.2.17",
-    "validate-npm-package-name": "^7.0.2",
+    "validate-npm-package-name": "^8.0.0",
     "vitest": "catalog:",
     "yaml": "catalog:",
     "yauzl": "3.4.0"
