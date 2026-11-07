@@ -6,7 +6,7 @@ import { expect, it } from 'vitest'
 // are real Node processes importing the same built artifacts delivered to users.
 it.each(['index', 'tooling-entry', 'cli'])('%s starts without loading unused lint plugins, test runners or installer internals', (entry) => {
   const target = new URL(`../../dist/${entry}.mjs`, import.meta.url).href
-  const forbidden = ['@icebreakers/eslint-config', '@pnpm/workspace.find-packages', '@pnpm/cli-utils', '@pnpm/store-connection-manager', 'vitest/config']
+  const forbidden = ['@icebreakers/eslint-config', '@icebreakers/stylelint-config', 'stylelint', 'stylelint-plugin-tailwindcss', '@pnpm/workspace.find-packages', '@pnpm/cli-utils', '@pnpm/store-connection-manager', 'vitest/config']
   const loader = `
     const forbidden = ${JSON.stringify(forbidden)}
     export async function resolve(specifier, context, next) {
@@ -29,4 +29,12 @@ it.each(['index', 'tooling-entry', 'cli'])('%s starts without loading unused lin
   `], { encoding: 'utf8', timeout: 30_000 })
   expect(result.status, result.stderr).toBe(0)
   expect(result.stdout).toContain(entry === 'cli' ? 'repoctl' : 'startup boundary passed')
+})
+
+it.each(['index', 'tooling-entry'])('%s still creates Stylelint configs when the host is installed', async (entry) => {
+  const target = new URL(`../../dist/${entry}.mjs`, import.meta.url).href
+  const { createMonorepoStylelintConfig, defineStylelintConfig } = await import(target) as typeof import('../../src/tooling/linters')
+  const options = { rules: { 'color-no-invalid-hex': true } }
+  expect(createMonorepoStylelintConfig(options).rules?.['color-no-invalid-hex']).toBe(true)
+  expect((await defineStylelintConfig({ options })).rules?.['color-no-invalid-hex']).toBe(true)
 })

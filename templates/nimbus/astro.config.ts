@@ -6,7 +6,11 @@ import { docsChannel } from './src/lib/deployment/integration'
 export default defineConfig({
   output: 'static',
   // Keep the Pagefind loader external so Vite finalizes dynamic imports before Astro renders it.
-  vite: { build: { assetsInlineLimit: 0 } },
+  vite: {
+    build: { assetsInlineLimit: 0 },
+    // 将 Astro 的 cookie 实现随预渲染入口打包，避免解析到父项目的旧版依赖。
+    resolve: { noExternal: ['cookie'] },
+  },
   integrations: [nimbus(defineNimbusConfig({
     site: deployment.origin,
     title: 'Project docs',

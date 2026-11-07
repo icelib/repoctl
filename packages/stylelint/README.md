@@ -9,7 +9,9 @@
 ## Requirements
 
 - Node.js `^22.23.4 || ^24.22.1 || >=26.12.1` (24.22.1 LTS recommended)
-- Stylelint 16 (flat-compatible configuration)
+- Stylelint 18 (flat-compatible configuration)
+
+The default SCSS, Vue and ordering presets are tested with Stylelint 18. The SCSS and recess-order upstream packages still declare Stylelint 17 peer ranges, so package managers can report peer warnings; strict peer installation is not supported until those packages publish compatible metadata. No peer overrides are applied. Custom `stylelint-scss` rules outside this preset may require their own Stylelint 18 migration.
 
 ## Installation
 
@@ -104,7 +106,7 @@ The same `rules` option also works with `icebreaker({ rules: { ... } })`.
 ### Option Reference
 
 - `miniProgram` – ignore Mini Program build outputs by default: `dist/**`, `.weapp-vite/**`, `node_modules/**`, `miniprogram_npm/**`
-- `presets.scss` – include `stylelint-config-standard-scss` (default `true`)
+- `presets.scss` – include the bundled standard SCSS preset based on `stylelint-config-standard@41` (default `true`)
 - `presets.vue` – include `stylelint-config-recommended-vue/scss` (default `true`)
 - `presets.order` – include `stylelint-config-recess-order` (default `true`)
 - `formattingPreset` – enable fix-oriented formatting conventions. Use `'safe'` for a conservative autofix layer, or `'off'` (default) to keep only the linting presets.
@@ -138,7 +140,7 @@ export default createStylelintConfig({
 ```
 
 `formattingPreset: 'safe'` is intentionally conservative. It focuses on rules
-that Stylelint 16+ still supports and can fix reliably, such as:
+that Stylelint 18 still supports and can fix reliably, such as:
 
 - modern color function notation (`rgba()` -> `rgb(... / ...)`)
 - quoted `url(...)` values

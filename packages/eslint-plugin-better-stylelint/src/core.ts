@@ -38,7 +38,6 @@ type RunStylelintWorker = (
 ) => StylelintWorkerResponse
 
 const MAX_CACHE_ENTRIES = 100
-const CORE_JS_PATTERN = /core\.js$/u
 const resultCache = new Map<string, BetterStylelintMessage[]>()
 const configCacheIds = new WeakMap<object, number>()
 let nextConfigCacheId = 0
@@ -160,7 +159,7 @@ function resolveWorkerPath() {
   if (currentFilePath.endsWith('.ts')) {
     return path.resolve(path.dirname(currentFilePath), '../dist/worker.js')
   }
-  return currentFilePath.replace(CORE_JS_PATTERN, 'worker.js')
+  return path.resolve(path.dirname(currentFilePath), 'worker.js')
 }
 
 function getWorkerExecArgv() {

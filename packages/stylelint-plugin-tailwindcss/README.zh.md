@@ -12,6 +12,8 @@
 虽然包名偏 Tailwind，但它也提供了并行的 `unocss/*` 命名空间，因此在
 UnoCSS 风格项目里也能复用同一套 Stylelint 工作流。
 
+支持 Stylelint `^17.16.0 || ^18.0.0`。
+
 ## 安装
 
 ```bash

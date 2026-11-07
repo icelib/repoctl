@@ -1,10 +1,13 @@
 import fs from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
+import process from 'node:process'
+import { runStylelintSync as runBuiltStylelintSync } from 'eslint-plugin-better-stylelint'
 import { __clearStylelintResultCache, __resetStylelintWorker, runStylelintSync } from '@/core'
 import { lintRule } from '@/index'
 
-describe('synckit worker integration', () => {
+describe('stylelint worker integration', () => {
   let tempDir = ''
 
   async function writeConfig(filename: string, contents: string) {
@@ -51,6 +54,19 @@ describe('synckit worker integration', () => {
         severity: 2,
       }),
     ])
+  })
+
+  it('runs the standalone worker through the public built entry', () => {
+    const filename = path.join(tempDir, 'sample.css')
+
+    expect(runBuiltStylelintSync('.demo { color: #ggg; }\n', filename, tempDir)).toEqual([
+      expect.objectContaining({
+        ruleId: 'color-no-invalid-hex',
+        line: 1,
+        severity: 2,
+      }),
+    ])
+    expect(runBuiltStylelintSync('.demo { color: #fff; }\n', filename, tempDir)).toEqual([])
   })
 
   it('auto-discovers stylelint.config.ts', async () => {
@@ -115,6 +131,16 @@ describe('synckit worker integration', () => {
   })
 
   it('supports plugins declared in the project stylelint config', async () => {
+    const require = createRequire(import.meta.url)
+    const stylelintDirectory = await fs.realpath(path.dirname(require.resolve('stylelint/package.json')))
+    const nodeModulesDirectory = path.join(tempDir, 'node_modules')
+    await fs.mkdir(nodeModulesDirectory, { recursive: true })
+    await fs.symlink(
+      stylelintDirectory,
+      path.join(nodeModulesDirectory, 'stylelint'),
+      process.platform === 'win32' ? 'junction' : 'dir',
+    )
+    await fs.rm(path.join(tempDir, 'stylelint.config.cjs'))
     await writeConfig(
       'stylelint.config.ts',
       [
@@ -153,7 +179,7 @@ describe('synckit worker integration', () => {
     expect(diagnostics).toEqual([
       expect.objectContaining({
         ruleId: 'demo/no-red',
-        message: 'Unexpected red color',
+        message: 'Unexpected red color (demo/no-red)',
       }),
     ])
   })
@@ -206,8 +232,12 @@ describe('synckit worker integration', () => {
           line: 3,
           column: 15,
         },
+        end: {
+          line: 3,
+          column: 19,
+        },
       },
-      message: 'Unexpected invalid hex color "#ggg" (color-no-invalid-hex)',
+      message: 'Invalid hex color "#ggg" (color-no-invalid-hex)',
     }))
   })
 
@@ -235,10 +265,30 @@ describe('synckit worker integration', () => {
 
     expect(report).toHaveBeenCalledTimes(2)
     expect(report).toHaveBeenNthCalledWith(1, expect.objectContaining({
-      message: '[style#1 scoped] Unexpected invalid hex color "#ggg" (color-no-invalid-hex)',
+      loc: {
+        start: {
+          line: 3,
+          column: 16,
+        },
+        end: {
+          line: 3,
+          column: 20,
+        },
+      },
+      message: '[style#1 scoped] Invalid hex color "#ggg" (color-no-invalid-hex)',
     }))
     expect(report).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      message: '[style#2 module=$style lang=scss] Unexpected invalid hex color "#ggg" (color-no-invalid-hex)',
+      loc: {
+        start: {
+          line: 6,
+          column: 17,
+        },
+        end: {
+          line: 6,
+          column: 21,
+        },
+      },
+      message: '[style#2 module=$style lang=scss] Invalid hex color "#ggg" (color-no-invalid-hex)',
     }))
   })
 })

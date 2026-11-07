@@ -12,7 +12,7 @@ catalog:
   esbuild: ^0.28.2
   postcss: ^8.5.30
   semver: ^7.8.5
-  stylelint: ^17.16.0
+  stylelint: ^18.0.0
   vitest: ^5.0.5
   yaml: ^2.9.1
 
