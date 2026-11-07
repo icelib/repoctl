@@ -1,5 +1,11 @@
 # @icebreakers/changelog-github
 
+## 2.1.8
+
+### Patch Changes
+
+- Update stable dependencies across the shared tooling, runtime packages, and generated templates.
+
 ## 2.1.7
 
 ### Patch Changes
