@@ -129,6 +129,10 @@
   dir: packages/eslint
   intents:
     - old-spoons-refuse
+"@icebreakers/eslint-config@8.0.14":
+  dir: packages/eslint
+  intents:
+    - auto-pr-1138
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -673,6 +677,15 @@
   intents:
     - light-knives-tap
     - old-spoons-refuse
+"@icebreakers/monorepo@6.4.2":
+  dir: packages/monorepo
+  intents:
+    - auto-pr-1139
+    - auto-pr-1140
+    - auto-pr-1141
+    - auto-pr-1142
+    - auto-pr-1144
+    - auto-pr-1145
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
