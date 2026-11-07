@@ -104,7 +104,7 @@
     "@icebreakers/eslint-config": "workspace:*",
     "@icebreakers/monorepo-templates": "workspace:*",
     "@icebreakers/stylelint-config": "workspace:*",
-    "@npmcli/config": "10.14.0",
+    "@npmcli/config": "11.2.0",
     "@pnpm/find-workspace-dir": "^1000.1.5",
     "@pnpm/fs.find-packages": "^1000.0.24",
     "@pnpm/types": "^1102.1.3",
