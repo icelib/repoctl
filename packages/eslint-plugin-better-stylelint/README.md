@@ -7,13 +7,15 @@ This package provides:
 - ESLint processors for `*.css` and `*.scss`
 - an ESLint rule for `.vue` files that forwards Stylelint diagnostics from
   `<style>` blocks
-- a bundled `synckit` worker so `stylelint.lint()` can be invoked through a
+- a bundled standalone worker so `stylelint.lint()` can be invoked through a
   synchronous ESLint bridge
 
 ## Why
 
 Use this when you want style issues to show up in the same ESLint diagnostic
 stream as the rest of your project.
+
+Supports Stylelint `^17.16.0 || ^18.0.0`, preferring the project installation.
 
 ## Installation
 
@@ -59,12 +61,11 @@ not provide one, it falls back to the bundled `stylelint` dependency.
 
 ## Implementation Notes
 
-- The synchronous bridge is implemented with `synckit`, not by spawning the
-  Stylelint CLI.
+- The synchronous bridge runs the standalone worker in a Node.js child process,
+  which calls the Stylelint API.
 - The published package must include both `dist/index.js` and `dist/worker.js`.
-- `src/core.ts` resolves the worker file by swapping `core.(ts|js)` to
-  `worker.(ts|js)`, so removing the worker build entry will break runtime
-  resolution.
+- The emitted entry resolves `worker.js` from its own directory; source tests
+  resolve `../dist/worker.js`. Keep the standalone worker build entry.
 
 ## FAQ
 

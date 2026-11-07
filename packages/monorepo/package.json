@@ -80,7 +80,7 @@
   "peerDependencies": {
     "@commitlint/cli": "catalog:",
     "eslint": "^9.0.0 || ^10.0.0",
-    "stylelint": "catalog:",
+    "stylelint": "^17.16.0 || ^18.0.0",
     "typescript": "^5.0.0 || ^6.0.0"
   },
   "peerDependenciesMeta": {

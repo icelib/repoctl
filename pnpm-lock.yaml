@@ -256,7 +256,7 @@ importers:
         specifier: workspace:*
         version: link:packages/repoctl
       stylelint:
-        specifier: 'catalog:'
+        specifier: ^18.0.0
         version: 18.0.0
       tailwindcss:
         specifier: ^4.3.3
@@ -567,7 +567,7 @@ importers:
         specifier: ^4.0.2
         version: 4.0.2(supports-color@10.2.2)
       stylelint:
-        specifier: 'catalog:'
+        specifier: ^17.16.0 || ^18.0.0
         version: 18.0.0
       tar:
         specifier: 7.5.22
@@ -686,7 +686,7 @@ importers:
         specifier: ^9.0.0 || ^10.0.0
         version: 10.13.0(jiti@2.7.0)(supports-color@10.2.2)
       stylelint:
-        specifier: 'catalog:'
+        specifier: ^17.16.0 || ^18.0.0
         version: 18.0.0
       typescript:
         specifier: 6.0.3
@@ -747,7 +747,7 @@ importers:
         specifier: workspace:*
         version: link:../postcss-tailwindcss
       stylelint:
-        specifier: 'catalog:'
+        specifier: ^17.16.0 || ^18.0.0
         version: 18.0.0
       tailwindcss:
         specifier: ^3.4.0 || ^4.0.0

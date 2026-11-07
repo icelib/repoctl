@@ -219,8 +219,9 @@ describe('createIcebreakerStylelintConfig', () => {
     const { createIcebreakerStylelintConfig } = await withImportMetaResolveDisabled(loadConfig)
     const config = createIcebreakerStylelintConfig()
 
-    expect(config.extends).toEqual([
-      expect.stringMatching(/\/presets\/stylelint-config-standard-scss\.mjs$/),
+    const extendsList = normalizeExtendsList(config)
+    expectBundledStandardScssPreset(extendsList[0] ?? '')
+    expect(extendsList.slice(1)).toEqual([
       `/virtual/${PRESET_VUE_SCSS}`,
       `/virtual/${PRESET_RECESS_ORDER}`,
     ])

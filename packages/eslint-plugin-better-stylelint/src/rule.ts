@@ -106,7 +106,7 @@ function createVueStyleBlockLabel(
     segments.push(`lang=${attributes['lang']}`)
   }
 
-  return segments.length > 1 ? segments.join(' ') : undefined
+  return blockCount > 1 || segments.length > 1 ? segments.join(' ') : undefined
 }
 
 function normalizeStyleLang(attributes: Record<string, string | true>): string {
@@ -189,6 +189,15 @@ function mapDiagnosticToVueFile(
   }
 }
 
+function formatDiagnosticMessage(diagnostic: BetterStylelintDiagnostic, label?: string) {
+  const ruleSuffix = diagnostic.ruleId ? ` (${diagnostic.ruleId})` : ''
+  const message = !ruleSuffix || diagnostic.message.endsWith(ruleSuffix)
+    ? diagnostic.message
+    : `${diagnostic.message}${ruleSuffix}`
+
+  return label ? `[${label}] ${message}` : message
+}
+
 export const lintRule = {
   meta: {
     type: 'problem',
@@ -251,13 +260,7 @@ export const lintRule = {
                     }
                   : {}),
               },
-              message: styleBlock.label
-                ? `[${styleBlock.label}] ${mappedDiagnostic.ruleId
-                  ? `${mappedDiagnostic.message} (${mappedDiagnostic.ruleId})`
-                  : mappedDiagnostic.message}`
-                : mappedDiagnostic.ruleId
-                  ? `${mappedDiagnostic.message} (${mappedDiagnostic.ruleId})`
-                  : mappedDiagnostic.message,
+              message: formatDiagnosticMessage(mappedDiagnostic, styleBlock.label),
             })
           }
         }

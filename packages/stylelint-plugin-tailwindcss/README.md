@@ -15,6 +15,8 @@ Although the package name is Tailwind-oriented, it also ships a parallel
 `unocss/*` namespace so the same stylelint workflow can still be useful in
 UnoCSS-style projects.
 
+Supports Stylelint `^17.16.0 || ^18.0.0`.
+
 ## Installation
 
 ```bash

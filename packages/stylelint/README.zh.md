@@ -9,6 +9,8 @@
 - Node.js `^22.23.4 || ^24.22.1 || >=26.12.1`（推荐 24.22.1 LTS）
 - Stylelint 18（支持 Flat Config）
 
+默认 SCSS、Vue 和排序预设已通过 Stylelint 18 验证。SCSS 与 recess-order 上游包仍声明 Stylelint 17 的 peer 范围，包管理器可能报告 peer 警告；在上游发布兼容声明前，不支持严格 peer 安装。本包不使用 peer override。预设外自行启用的 `stylelint-scss` 规则仍需独立验证其 Stylelint 18 兼容性。
+
 ## 安装
 
 ```bash
@@ -102,7 +104,7 @@ export default createStylelintConfig({
 ### 配置说明
 
 - `miniProgram`：默认忽略小程序常见产物目录：`dist/**`、`.weapp-vite/**`、`node_modules/**`、`miniprogram_npm/**`
-- `presets.scss`：是否包含 `stylelint-config-standard-scss`，默认开启
+- `presets.scss`：是否包含基于 `stylelint-config-standard@41` 的包内标准 SCSS 预设，默认开启
 - `presets.vue`：是否包含 `stylelint-config-recommended-vue/scss`，默认开启
 - `presets.order`：是否包含 `stylelint-config-recess-order`，默认开启
 - `formattingPreset`：是否启用面向 `--fix` 的保守格式化约定层。`'safe'` 表示启用，`'off'`（默认）表示只保留 lint 预设。

@@ -6,8 +6,7 @@ export default defineConfig({
   },
   entry: {
     index: 'src/index.ts',
-    // Keep the worker as a standalone output: src/core.ts resolves it at runtime
-    // via a sibling-file path swap (`core.(ts|js)` -> `worker.(ts|js)`).
+    // 保留独立 worker 入口，运行时从编译后模块所在目录定位 worker.js。
     worker: 'src/worker.ts',
   },
   format: ['esm'],

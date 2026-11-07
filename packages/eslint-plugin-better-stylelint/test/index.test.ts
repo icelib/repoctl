@@ -112,6 +112,34 @@ describe('eslint-plugin-better-stylelint', () => {
     }))
   })
 
+  it.each(['Custom issue', 'Custom issue (demo/rule)'])('formats the rule suffix once for "%s"', (message) => {
+    vi.spyOn(core, 'runStylelintSync').mockReturnValue([
+      {
+        ruleId: 'demo/rule',
+        message,
+        line: 1,
+        column: 1,
+        severity: 2,
+      },
+    ])
+
+    const report = vi.fn()
+    const listeners = lintRule.create({
+      filename: 'sample.vue',
+      options: [],
+      report,
+      sourceCode: {
+        text: '<style scoped>.demo {}</style>',
+      },
+    })
+
+    listeners.Program()
+
+    expect(report).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      message: '[style scoped] Custom issue (demo/rule)',
+    }))
+  })
+
   it('extracts vue style blocks with source locations', () => {
     const source = [
       '<template />',
