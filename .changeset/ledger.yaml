@@ -392,6 +392,10 @@
     - light-knives-tap
     - old-spoons-refuse
     - vast-eagles-chew
+"@icebreakers/monorepo-templates@3.2.2":
+  dir: packages/monorepo-templates
+  intents:
+    - quiet-template-release
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:

@@ -1,5 +1,11 @@
 # @icebreakers/monorepo-templates
 
+## 3.2.2
+
+### Patch Changes
+
+- Publish the reviewed template and documentation input updates in a new template package version.
+
 ## 3.2.1
 
 ### Patch Changes
