@@ -149,7 +149,7 @@
     "@types/yauzl": "3.4.0",
     "ci-info": "^4.4.0",
     "fdir": "^6.5.0",
-    "knip": "6.44.0"
+    "knip": "6.44.1"
   },
   "publishConfig": {
     "access": "public",
