@@ -5,7 +5,6 @@ import type { CommitlintToolingConfig, EslintToolingConfig, StylelintToolingConf
 import type { DefineConfigOptions, DefineEslintConfigOptions, MonorepoCommitlintConfig, MonorepoEslintConfig, MonorepoStylelintConfig } from './types'
 import { createRequire } from 'node:module'
 import { icebreaker as createCommitlint } from '@icebreakers/commitlint-config'
-import { icebreaker as createStylelint } from '@icebreakers/stylelint-config'
 import { isDefineConfigWrapper, loadToolingSection, resolveConfigInput } from './shared'
 
 const require = createRequire(import.meta.url)
@@ -153,6 +152,8 @@ export async function defineEslintConfig(
 export function createMonorepoStylelintConfig(
   options: StylelintToolingConfig = {},
 ): MonorepoStylelintConfig {
+  // 仅在生成样式检查配置时加载插件，普通 CLI 消费者无需安装可选的 Stylelint peer。
+  const { icebreaker: createStylelint } = require('@icebreakers/stylelint-config') as typeof import('@icebreakers/stylelint-config')
   return createStylelint(options as IcebreakerStylelintOptions)
 }
 
