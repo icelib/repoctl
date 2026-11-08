@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -39,4 +39,5 @@ export const templatesDir = path.join(templatesPackageDir, 'templates')
 /**
  * monorepo 根目录，方便需要跳出当前包的逻辑（例如定位工作区文件）。
  */
-export const rootDir = path.resolve(packageDir, '..', '..')
+const workspaceRootDir = path.resolve(packageDir, '..', '..')
+export const rootDir = existsSync(path.join(workspaceRootDir, 'pnpm-workspace.yaml')) ? workspaceRootDir : packageDir

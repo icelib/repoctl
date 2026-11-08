@@ -14,9 +14,10 @@ function isConcreteNpmSpecifier(version: string) {
 function collectConcreteDependencyVersions(pkg: {
   dependencies?: Record<string, string>
   devDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
 }) {
   const versions: Record<string, string> = {}
-  for (const group of [pkg.dependencies, pkg.devDependencies]) {
+  for (const group of [pkg.dependencies, pkg.devDependencies, pkg.peerDependencies]) {
     for (const [name, version] of Object.entries(group ?? {})) {
       if (typeof version === 'string' && version.length > 0 && isConcreteNpmSpecifier(version)) {
         versions[name] = version
@@ -26,15 +27,18 @@ function collectConcreteDependencyVersions(pkg: {
   return versions
 }
 
+const packageManifest = JSON.parse(readFileSync(path.join(packageDir, 'package.json'), 'utf8')) as {
+  dependencies?: Record<string, string>
+  devDependencies?: Record<string, string>
+  peerDependencies?: Record<string, string>
+}
+
 const packageDependencies = {
   ...collectConcreteDependencyVersions(JSON.parse(readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
     dependencies?: Record<string, string>
     devDependencies?: Record<string, string>
   }),
-  ...collectConcreteDependencyVersions(JSON.parse(readFileSync(path.join(packageDir, 'package.json'), 'utf8')) as {
-    dependencies?: Record<string, string>
-    devDependencies?: Record<string, string>
-  }),
+  ...collectConcreteDependencyVersions(packageManifest),
 }
 
 function getDependencyVersion(name: string) {

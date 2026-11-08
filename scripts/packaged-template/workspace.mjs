@@ -32,8 +32,11 @@ export function writeJson(file, data) {
 }
 
 export function packDependencies(packDir) {
-  const packages = new Map(readdirSync(path.join(repoRoot, 'packages')).flatMap((dir) => {
-    const manifest = json(path.join(repoRoot, 'packages', dir, 'package.json'))
+  const packages = new Map(readdirSync(path.join(repoRoot, 'packages'), { withFileTypes: true }).flatMap((entry) => {
+    if (!entry.isDirectory()) {
+      return []
+    }
+    const manifest = json(path.join(repoRoot, 'packages', entry.name, 'package.json'))
     return [[manifest.name, manifest]]
   }))
   const overrides = {}

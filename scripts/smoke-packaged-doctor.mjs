@@ -147,6 +147,13 @@ try {
     throw new Error('the packaged tooling entry must load the bundled tsconfig')
   }
   run(['exec', 'repoctl', 'doctor', '--strict'], workspaceDir)
+  run(['exec', 'repoctl', 'tooling', 'init', '--all'], workspaceDir)
+  const toolingManifest = JSON.parse(readFileSync(path.join(workspaceDir, 'package.json'), 'utf8'))
+  for (const name of ['@commitlint/cli', '@vitest/coverage-v8', 'eslint', 'lefthook', 'repoctl', 'stylelint', 'typescript', 'vitest']) {
+    if (typeof toolingManifest.devDependencies?.[name] !== 'string') {
+      throw new TypeError(`the packaged tooling initializer must declare a concrete ${name} version`)
+    }
+  }
   const demoManifest = path.join(workspaceDir, 'packages', 'demo', 'package.json')
   const demo = JSON.parse(readFileSync(demoManifest, 'utf8'))
   writeFileSync(demoManifest, `${JSON.stringify({ ...demo, private: false }, null, 2)}\n`)
