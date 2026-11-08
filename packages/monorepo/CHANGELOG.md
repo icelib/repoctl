@@ -1,5 +1,11 @@
 # @icebreakers/monorepo
 
+## 6.5.1
+
+### Patch Changes
+
+- Fix packaged monorepo runtime paths so tooling discovery reads package metadata from the installed package.
+
 ## 6.5.0
 
 ### Minor Changes

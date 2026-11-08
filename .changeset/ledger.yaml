@@ -714,6 +714,10 @@
   dir: packages/monorepo
   intents:
     - honest-deers-reply
+"@icebreakers/monorepo@6.5.1":
+  dir: packages/monorepo
+  intents:
+    - steady-tools-resolve
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
