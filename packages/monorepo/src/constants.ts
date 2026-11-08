@@ -1,17 +1,9 @@
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { name as packageName, version } from '../package.json'
 
 const require = createRequire(import.meta.url)
-
-/**
- * CLI 本身的基础信息，直接复用 package.json 里的 name/version，避免重复维护。
- */
-export {
-  packageName,
-  version,
-}
 
 /**
  * 用户默认看到的 CLI 名称，帮助文案和生成脚本都统一引导到 repo。
@@ -22,6 +14,14 @@ export const cliName = 'repo'
  * 还原出 package.json 所在的绝对路径，方便后续按目录组织资源文件。
  */
 const packageJsonPath = fileURLToPath(new URL('../package.json', import.meta.url))
+
+const packageMetadata = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { name: string, version: string }
+
+/**
+ * CLI 本身的基础信息，直接复用 package.json 里的 name/version，避免重复维护。
+ */
+export const packageName = packageMetadata.name
+export const version = packageMetadata.version
 
 /**
  * @icebreakers/monorepo 包的根目录。

@@ -81,10 +81,10 @@
     }
   },
   "devDependencies": {
-    "stylelint-config-recess-order": "7.9.0",
+    "stylelint-config-recess-order": "7.10.0",
     "stylelint-config-recommended-scss": "17.0.1",
     "stylelint-config-recommended-vue": "2.0.0",
-    "stylelint-scss": "7.2.0",
-    "tailwindcss": "^4.3.3"
+    "stylelint-scss": "7.4.0",
+    "tailwindcss": "^4.3.5"
   }
 }

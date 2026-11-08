@@ -7,13 +7,13 @@ packages:
 catalog:
   '@commitlint/cli': ^21.2.4
   '@types/semver': ^7.8.0
-  commander: ^15.0.0
+  commander: ^15.1.0
   comment-json: ^5.0.0
   esbuild: ^0.28.2
   postcss: ^8.5.32
-  semver: ^7.8.5
+  semver: ^7.8.6
   stylelint: ^18.0.0
-  vitest: ^5.0.5
+  vitest: ^5.1.0
   yaml: ^2.9.1
 
 minimumReleaseAge: 0
@@ -38,13 +38,12 @@ allowBuilds:
   workerd: true
 overrides:
   prettier: 3.9.10
-  typescript: 6.0.3
   # ATTW relies on the compiler internals of its pinned TypeScript version.
   '@arethetypeswrong/core>typescript': 5.9.3
   # astro2tsx uses the legacy WASM bridge with emnapi core 1.x.
   # Pin only that bridge's runtime; Rolldown's core/runtime 2.x pair must stay aligned.
   '@napi-rs/wasm-runtime@1.2.4>@emnapi/runtime': 1.11.3
-  vite: 8.3.5
+  vite: 8.3.6
   postcss: 8.5.32
   postcss-selector-parser: 7.1.7
   js-yaml: 5.5.0
@@ -57,3 +56,8 @@ overrides:
   adm-zip: 0.6.1
   uuid: 14.0.3
   esbuild: 0.28.2
+  # Patch vulnerable transitive dependencies while keeping each override scoped to affected ranges.
+  oxfmt>tinypool: 2.2.0
+  glob@<14: 14.0.4
+  minimatch@>=7 <11: 11.0.5
+  micromark-extension-math>katex: 0.18.10

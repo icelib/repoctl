@@ -51,7 +51,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "enhanced-resolve": "^5.26.0",
+    "enhanced-resolve": "^5.26.1",
     "get-tsconfig": "^4.14.3",
     "postcss": "catalog:",
     "postcss-selector-parser": "^7.1.7",
@@ -69,6 +69,6 @@
     }
   },
   "devDependencies": {
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.5"
   }
 }

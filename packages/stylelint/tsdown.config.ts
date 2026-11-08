@@ -13,7 +13,7 @@ export default defineConfig({
   },
   format: ['esm'],
   dts: {
-    resolver: 'tsc',
+    resolver: 'oxc',
   },
   clean: true,
   fixedExtension: false,

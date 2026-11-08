@@ -1,7 +1,6 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@icebreakers/stylelint-config": [
         "../stylelint/src/index.ts"
@@ -10,7 +9,7 @@
         "../eslint-plugin-better-stylelint/src/index.ts"
       ],
       "@/*": [
-        "src/*"
+        "./src/*"
       ]
     }
   },

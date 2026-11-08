@@ -1,13 +1,12 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "postcss-tailwindcss": [
         "../postcss-tailwindcss/src/index.ts"
       ],
       "@/*": [
-        "src/*"
+        "./src/*"
       ]
     }
   },

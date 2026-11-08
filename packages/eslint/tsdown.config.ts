@@ -11,7 +11,7 @@ export default defineConfig({
   },
   format: ['esm', 'cjs'],
   dts: {
-    resolver: 'tsc',
+    resolver: 'oxc',
   },
   clean: true,
   fixedExtension: false,

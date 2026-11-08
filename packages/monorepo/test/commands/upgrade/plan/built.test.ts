@@ -121,9 +121,13 @@ describe('built upgrade plans', () => {
     const before = await readFile(path.join(h.cwd, 'pnpm-workspace.yaml'), 'utf8')
     const result = cli(h.cwd, [])
     expect(result.status, result.stderr).toBe(0)
-    expect(await readFile(path.join(h.cwd, '.changeset/pre.json'), 'utf8')).toContain('beta')
-    expect(await readFile(path.join(h.cwd, '.changeset/config.json'), 'utf8')).toBe('{}')
-    expect(await readFile(path.join(h.cwd, 'pnpm-workspace.yaml'), 'utf8')).toBe(before)
+    await expect(readFile(path.join(h.cwd, '.changeset/pre.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+    await expect(readFile(path.join(h.cwd, '.changeset/config.json'))).rejects.toMatchObject({ code: 'ENOENT' })
+    const workspace = await readFile(path.join(h.cwd, 'pnpm-workspace.yaml'), 'utf8')
+    expect(workspace).not.toBe(before)
+    expect(workspace).toContain('a: beta')
+    const ledger = JSON.parse(await readFile(path.join(h.cwd, '.repoctl/migrations/ledger.json'), 'utf8'))
+    expect(ledger.entries['changesets-to-pnpm-versioning'].status).toBe('completed')
   })
 
   it('explains omitted large-text diffs and exposes both public CLI help routes', async () => {

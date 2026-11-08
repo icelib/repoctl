@@ -14,8 +14,8 @@ interface UploadResult { packages?: { name: string, url: string, shasum: string 
 async function pinnedPublisher() {
   const manifestPath = createRequire(import.meta.url).resolve('pkg-pr-new/package.json')
   const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
-  if (manifest.version !== '0.0.91' || typeof manifest.bin?.['pkg-pr-new'] !== 'string') {
-    throw new Error('Nightly requires its own pinned pkg-pr-new@0.0.91 dependency.')
+  if (manifest.version !== '0.0.93' || typeof manifest.bin?.['pkg-pr-new'] !== 'string') {
+    throw new Error('Nightly requires its own pinned pkg-pr-new@0.0.93 dependency.')
   }
   const root = await realpath(path.dirname(manifestPath))
   const executable = await realpath(path.resolve(root, manifest.bin['pkg-pr-new']))

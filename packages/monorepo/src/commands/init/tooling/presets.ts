@@ -1,12 +1,11 @@
 import type { InitToolingContext, InitToolingPreset, InitToolingTarget } from './types'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import { ensureTemplateAssetsPrepared } from '@icebreakers/monorepo-templates'
-import { assetsDir, version } from '@/constants'
+import { assetsDir, packageDir, rootDir, version } from '@/constants'
 import { localize } from '@/i18n'
 import { defineTsconfigConfig } from '@/tooling'
 import fs from '@/utils/fs'
-import rootPackageJson from '../../../../../../package.json'
-import monorepoPackageJson from '../../../../package.json'
 
 function isConcreteNpmSpecifier(version: string) {
   return !version.startsWith('catalog:') && !version.startsWith('workspace:')
@@ -28,11 +27,11 @@ function collectConcreteDependencyVersions(pkg: {
 }
 
 const packageDependencies = {
-  ...collectConcreteDependencyVersions(rootPackageJson as {
+  ...collectConcreteDependencyVersions(JSON.parse(readFileSync(path.join(rootDir, 'package.json'), 'utf8')) as {
     dependencies?: Record<string, string>
     devDependencies?: Record<string, string>
   }),
-  ...collectConcreteDependencyVersions(monorepoPackageJson as {
+  ...collectConcreteDependencyVersions(JSON.parse(readFileSync(path.join(packageDir, 'package.json'), 'utf8')) as {
     dependencies?: Record<string, string>
     devDependencies?: Record<string, string>
   }),

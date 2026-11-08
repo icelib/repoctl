@@ -1,11 +1,12 @@
+import type { Project } from '@pnpm/types'
 import { findPackages } from '@pnpm/fs.find-packages'
 
 /** Discover manifests, including foreign-platform packages, without installing them. */
-export async function findWorkspacePackages(root: string, options: { patterns?: string[] } = {}) {
+export async function findWorkspacePackages(root: string, options: { patterns?: string[] } = {}): Promise<Project[]> {
   const packages = await findPackages(root, {
     ...options,
     ignore: ['**/node_modules/**', '**/bower_components/**'],
     includeRoot: true,
   })
-  return packages.sort((left, right) => left.rootDir < right.rootDir ? -1 : left.rootDir > right.rootDir ? 1 : 0)
+  return packages.sort((left, right) => left.rootDir < right.rootDir ? -1 : left.rootDir > right.rootDir ? 1 : 0) as Project[]
 }

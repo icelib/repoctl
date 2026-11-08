@@ -114,7 +114,14 @@ export async function planMigrations(context: UpgradeContext, registry: readonly
           return
         }
       }
-      const files = plan.files.filter(file => file.group === migrationGroup && (actionable(file) || file.status === 'identical'))
+      const migrationGroupFiles = plan.files.filter(file => file.group === migrationGroup)
+      const files = migrationGroupFiles.filter(file => actionable(file) || file.status === 'identical')
+      const migrationIsSafeToApply = files.length > 0 && files.length === migrationGroupFiles.length
+      if (migrationIsSafeToApply) {
+        for (const file of files) {
+          file.automatic = true
+        }
+      }
       const inputs = plan.inputs.filter(input => !(input.area === 'target' && input.path === ledgerPath))
       const attempt = { id: hash(Buffer.from(JSON.stringify({ files, inputs, discovery: plan.discovery }))), files: structuredClone(files), inputs: structuredClone(inputs), discovery: structuredClone(plan.discovery) }
       const completed = transition(ledger, steps, fromVersion, toVersion, 'completed', attempt)

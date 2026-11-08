@@ -1,3 +1,4 @@
+import type { Project } from '@pnpm/types'
 import { realpath } from 'node:fs/promises'
 import { findWorkspaceDir } from '@pnpm/find-workspace-dir'
 import { readWorkspaceManifest } from '@pnpm/workspace.read-manifest'
@@ -6,7 +7,10 @@ import { findWorkspacePackages } from '../../core/workspace/discovery'
 import { localize } from '../../i18n'
 
 /** Keep lexical package paths: resolving symlinks here would hide unsafe targets. */
-export async function discoverCleanWorkspace(cwd: string) {
+export async function discoverCleanWorkspace(cwd: string): Promise<{
+  workspaceDir: string
+  packages: Array<Omit<Project, 'rootDir'> & { rootDir: string }>
+}> {
   const found = await findWorkspaceDir(cwd)
   if (!found) {
     throw new Error(localize('Cleanup requires a pnpm workspace.', '清理必须在 pnpm 工作区内执行。'))

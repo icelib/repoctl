@@ -13,11 +13,19 @@ export interface ProjectConfig {
 }
 
 export function loadCompiler(root: string): typeof TypeScript {
+  const require = createRequire(path.join(root, 'package.json'))
   try {
-    return createRequire(path.join(root, 'package.json'))('typescript')
+    const compiler = require('typescript') as typeof TypeScript
+    if (typeof compiler.parseConfigFileTextToJson === 'function' && compiler.ScriptTarget) {
+      return compiler
+    }
+  }
+  catch {}
+  try {
+    return createRequire(import.meta.url)('@typescript/typescript6') as typeof TypeScript
   }
   catch {
-    throw new Error('Install TypeScript in the workspace before checking or synchronizing project references.')
+    throw new Error('Install TypeScript 5 or 6 in the workspace, or install @typescript/typescript6 for TypeScript 7 workspaces.')
   }
 }
 

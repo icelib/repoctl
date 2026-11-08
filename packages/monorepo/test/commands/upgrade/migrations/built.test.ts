@@ -13,6 +13,8 @@ describe('built versioned migration planning and application', () => {
     const plan = await h.plan()
     expect(plan.status, JSON.stringify(plan.blockers)).toBe('ready')
     expect(plan.migrations).toMatchObject({ fromVersion: null, recovery: [], steps: [{ id: 'changesets-to-pnpm-versioning', version: '1.1.0', status: 'pending', reason: 'adopt-detected-legacy-format' }] })
+    const migrationFiles = plan.files.filter(file => file.group === 'legacy-versioning')
+    expect(migrationFiles.every(file => file.automatic), JSON.stringify(migrationFiles.map(({ path, status, automatic, workspacePolicy }) => ({ path, status, automatic, findings: workspacePolicy?.findings })), null, 2)).toBe(true)
     expect(formatUpgradePlan(plan)).toContain('changesets-to-pnpm-versioning @ 1.1.0')
     expect(plan.files.find(file => file.path === ledgerPath)?.diff).toContain('completed')
     expect(JSON.parse(Buffer.from(plan.migrations!.ledger!.pending, 'base64').toString()).entries['changesets-to-pnpm-versioning'].status).toBe('pending')

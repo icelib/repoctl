@@ -35,6 +35,6 @@ export function registerVerifyCommands(program: Command, cwd: string) {
     .argument('[files...]')
     .action(async (files: string[] = []) => {
       const { verifyStagedTypecheck } = await import('@/commands')
-      verifyStagedTypecheck(files.length ? files : undefined, { cwd })
+      await verifyStagedTypecheck(files.length ? files : undefined, { cwd })
     })
 }

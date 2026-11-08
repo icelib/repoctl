@@ -19,8 +19,8 @@
     "check:locales": "node scripts/check-locales.mjs"
   },
   "dependencies": {
-    "@cloudflare/nimbus-docs": "0.19.1",
-    "astro": "7.4.4"
+    "@cloudflare/nimbus-docs": "0.19.4",
+    "astro": "7.4.7"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
@@ -28,9 +28,9 @@
     "@emnapi/runtime": "^1.11.3",
     "astro-eslint-parser": "^3.2.0",
     "eslint-plugin-astro": "^3.2.1",
-    "eslint-plugin-mdx": "^3.8.3",
-    "pagefind": "^1.5.2",
+    "eslint-plugin-mdx": "^3.9.1",
+    "pagefind": "^1.6.0",
     "repoctl": "workspace:*",
-    "typescript": "^6.0.3"
+    "typescript": "~6.0.3"
   }
 }

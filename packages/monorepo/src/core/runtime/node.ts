@@ -1,4 +1,8 @@
-import { engines } from '../../../package.json'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
+import { packageDir } from '../../constants'
+
+const { engines } = JSON.parse(readFileSync(path.join(packageDir, 'package.json'), 'utf8')) as { engines: { node: string } }
 
 export const supportedNodeRange = engines.node
 export const defaultNodeVersion = '24.22.1'

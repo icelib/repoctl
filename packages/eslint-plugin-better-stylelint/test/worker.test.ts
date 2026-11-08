@@ -1,4 +1,4 @@
-const createRequireMock = vi.fn()
+const createRequireMock = vi.fn<() => { resolve: (specifier: string) => string }>()
 
 vi.mock('node:module', () => {
   return {

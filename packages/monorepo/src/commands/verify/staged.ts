@@ -3,6 +3,8 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { readWorkspaceManifest } from '@pnpm/workspace.read-manifest'
+import { findWorkspacePackages } from '../../core/workspace/discovery'
 import { runPnpmCommand } from './run'
 
 const typecheckExtensions = new Set(['.ts', '.tsx', '.mts', '.cts', '.vue', '.astro', '.mdx'])
@@ -46,7 +48,15 @@ function findRepositoryRoot(startDir: string) {
   }
 }
 
-function resolveTypecheckWorkspaceDir(filePath: string, workspaceRoot: string) {
+function resolveTypecheckWorkspaceDir(filePath: string, workspaceRoot: string, workspaceDirs?: string[]) {
+  if (workspaceDirs) {
+    const absoluteFile = path.resolve(filePath)
+    const matchingWorkspaces = workspaceDirs
+      .filter(dir => absoluteFile === dir || absoluteFile.startsWith(`${dir}${path.sep}`))
+      .sort((left, right) => right.length - left.length)
+    return matchingWorkspaces.find(hasTypecheckScript) ?? workspaceRoot
+  }
+
   let current = path.dirname(path.resolve(workspaceRoot, filePath))
 
   while (current === workspaceRoot || current.startsWith(`${workspaceRoot}${path.sep}`)) {
@@ -72,10 +82,14 @@ function resolveTypecheckWorkspaceDir(filePath: string, workspaceRoot: string) {
  * @param stagedFiles 相对于 cwd 的暂存区文件路径列表；省略时从 Git 根目录读取暂存区
  * @param options 运行参数
  */
-export function verifyStagedTypecheck(stagedFiles: string[] | undefined, options: StagedTypecheckOptions = {}) {
+export async function verifyStagedTypecheck(stagedFiles: string[] | undefined, options: StagedTypecheckOptions = {}) {
   const cwd = path.resolve(options.cwd ?? process.cwd())
   const workspaceRoot = findRepositoryRoot(cwd)
   const spawn = options.spawn ?? spawnSync
+  const workspaceManifest = await readWorkspaceManifest(workspaceRoot)
+  const workspacePackageDirs = workspaceManifest?.packages
+    ? (await findWorkspacePackages(workspaceRoot, { patterns: workspaceManifest.packages })).map(pkg => path.resolve(pkg.rootDir))
+    : undefined
   const files = stagedFiles === undefined
     ? readStagedFiles(workspaceRoot).map(file => path.resolve(workspaceRoot, file))
     : stagedFiles.map(file => path.resolve(cwd, file))
@@ -85,7 +99,7 @@ export function verifyStagedTypecheck(stagedFiles: string[] | undefined, options
         const basename = path.basename(file)
         return typecheckExtensions.has(path.extname(file)) || typecheckBasenames.has(basename)
       })
-      .map(file => resolveTypecheckWorkspaceDir(file, workspaceRoot)),
+      .map(file => resolveTypecheckWorkspaceDir(file, workspaceRoot, workspacePackageDirs)),
   )]
 
   if (workspaceDirs.length === 0) {

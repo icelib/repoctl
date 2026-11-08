@@ -46,10 +46,10 @@ describe('Nimbus template delivery', () => {
     expect(shouldSkipTemplatePath(root, `${root}/nimbus.json`)).toBe(false)
   })
 
-  it('routes Astro and MDX changes to one workspace typecheck', () => {
+  it('routes Astro and MDX changes to one workspace typecheck', async () => {
     const root = path.resolve(import.meta.dirname, '../../../..')
     const spawn = vi.fn(() => ({ status: 0 }))
-    verifyStagedTypecheck(['templates/nimbus/src/pages/index.astro', 'templates/nimbus/src/content/docs/index.mdx'], {
+    await verifyStagedTypecheck(['templates/nimbus/src/pages/index.astro', 'templates/nimbus/src/content/docs/index.mdx'], {
       cwd: root,
       spawn: spawn as unknown as typeof import('node:child_process').spawnSync,
     })

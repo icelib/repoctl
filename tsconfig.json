@@ -1,8 +1,6 @@
 {
   "extends": "repoctl/tsconfig.json",
-  "compilerOptions": {
-    "ignoreDeprecations": "6.0"
-  },
+  "compilerOptions": {},
   "references": [
     {
       "path": "./apps/mock"

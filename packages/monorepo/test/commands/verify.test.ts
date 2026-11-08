@@ -65,10 +65,10 @@ describe('verify commands', () => {
     )
   })
 
-  it('runs root and child workspace typechecks once when both are staged', () => {
+  it('runs root and child workspace typechecks once when both are staged', async () => {
     const spawnMock = vi.fn(() => createSpawnResult())
 
-    verifyStagedTypecheck([
+    await verifyStagedTypecheck([
       'packages/monorepo/src/index.ts',
       'packages/monorepo/test/program.test.ts',
       'templates/client/package.json',
@@ -86,10 +86,10 @@ describe('verify commands', () => {
     ])
   })
 
-  it('routes package.json files to the owning workspace typecheck', () => {
+  it('routes package.json files to the owning workspace typecheck', async () => {
     const spawnMock = vi.fn(() => createSpawnResult())
 
-    verifyStagedTypecheck([
+    await verifyStagedTypecheck([
       'templates/client/package.json',
     ], {
       cwd: repoRoot,
@@ -101,11 +101,11 @@ describe('verify commands', () => {
     ])
   })
 
-  it('resolves asset template files back to the owning workspace', () => {
+  it('resolves asset template files back to the owning workspace', async () => {
     const spawnMock = vi.fn(() => createSpawnResult())
     const assetsDir = path.join(repoRoot, 'packages/monorepo/assets')
 
-    verifyStagedTypecheck([
+    await verifyStagedTypecheck([
       'commitlint.config.ts',
       'vitest.config.ts',
     ], {
