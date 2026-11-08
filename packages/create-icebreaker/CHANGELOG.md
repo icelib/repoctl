@@ -1,5 +1,14 @@
 # create-icebreaker
 
+## 2.1.16
+
+### Patch Changes
+
+- Refresh workspace dependencies for the updated release toolchain.
+
+- Updated dependencies:
+  - create-repoctl@1.2.16
+
 ## 2.1.15
 
 ### Patch Changes

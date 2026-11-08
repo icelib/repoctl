@@ -137,6 +137,10 @@
   dir: packages/eslint
   intents:
     - pretty-mice-drive
+"@icebreakers/eslint-config@8.0.16":
+  dir: packages/eslint
+  intents:
+    - young-horses-bow
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -173,6 +177,10 @@
   dir: packages/eslint
   intents:
     - auto-pr-1051
+"@icebreakers/mock@0.0.58":
+  dir: apps/mock
+  intents:
+    - big-elephants-ring
 "@icebreakers/monorepo-templates@1.1.0":
   dir: packages/monorepo-templates
   intents:
@@ -400,6 +408,10 @@
   dir: packages/monorepo-templates
   intents:
     - quiet-template-release
+"@icebreakers/monorepo-templates@3.2.3":
+  dir: packages/monorepo-templates
+  intents:
+    - young-horses-bow
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -698,6 +710,10 @@
   dir: packages/monorepo
   intents:
     - new-dolphins-move
+"@icebreakers/monorepo@6.5.0":
+  dir: packages/monorepo
+  intents:
+    - honest-deers-reply
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -730,6 +746,10 @@
   dir: packages/stylelint
   intents:
     - pretty-mice-drive
+"@icebreakers/stylelint-config@6.0.2":
+  dir: packages/stylelint
+  intents:
+    - big-elephants-ring
 create-icebreaker@1.1.0:
   dir: packages/create-icebreaker
   intents:
@@ -769,6 +789,10 @@ create-icebreaker@2.1.1:
   dir: packages/create-icebreaker
   intents:
     - quiet-rats-trade
+create-icebreaker@2.1.16:
+  dir: packages/create-icebreaker
+  intents:
+    - big-elephants-ring
 create-icebreaker@2.1.6:
   dir: packages/create-icebreaker
   intents:
@@ -817,6 +841,10 @@ create-repoctl@1.2.1:
   dir: packages/create-repoctl
   intents:
     - quiet-rats-trade
+create-repoctl@1.2.16:
+  dir: packages/create-repoctl
+  intents:
+    - big-elephants-ring
 create-repoctl@1.2.6:
   dir: packages/create-repoctl
   intents:
@@ -917,6 +945,10 @@ postcss-tailwindcss@3.1.6:
   dir: packages/postcss-tailwindcss
   intents:
     - old-spoons-refuse
+postcss-tailwindcss@3.1.7:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - young-horses-bow
 repoctl@5.10.0:
   dir: packages/repoctl
   intents:
@@ -1118,6 +1150,10 @@ repoctl@6.4.4:
   dir: packages/repoctl
   intents:
     - new-dolphins-move
+repoctl@6.5.0:
+  dir: packages/repoctl
+  intents:
+    - honest-deers-reply
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
@@ -1162,3 +1198,7 @@ stylelint-plugin-tailwindcss@3.2.0:
   intents:
     - light-knives-tap
     - old-spoons-refuse
+stylelint-plugin-tailwindcss@3.2.1:
+  dir: packages/stylelint-plugin-tailwindcss
+  intents:
+    - big-elephants-ring

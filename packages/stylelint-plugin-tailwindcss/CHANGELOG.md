@@ -1,5 +1,14 @@
 # stylelint-plugin-tailwindcss
 
+## 3.2.1
+
+### Patch Changes
+
+- Refresh workspace dependencies for the updated release toolchain.
+
+- Updated dependencies:
+  - postcss-tailwindcss@3.1.7
+
 ## 3.2.0
 
 ### Minor Changes

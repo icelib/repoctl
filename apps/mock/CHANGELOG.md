@@ -1,5 +1,14 @@
 # @icebreakers/mock
 
+## 0.0.58
+
+### Patch Changes
+
+- Refresh workspace dependencies for the updated release toolchain.
+
+- Updated dependencies:
+  - @icebreakers/stylelint-config@6.0.2
+
 ## 0.0.57
 
 ### Patch Changes

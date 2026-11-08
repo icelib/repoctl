@@ -625,6 +625,9 @@ importers:
       '@types/yauzl':
         specifier: 3.4.0
         version: 3.4.0
+      '@vitest/coverage-v8':
+        specifier: ~5.1.0
+        version: 5.1.0(vitest@5.1.0)
       ci-info:
         specifier: ^4.4.0
         version: 4.4.0
@@ -634,6 +637,9 @@ importers:
       knip:
         specifier: 6.44.2
         version: 6.44.2
+      lefthook:
+        specifier: 2.2.2
+        version: 2.2.2
       typescript:
         specifier: ~6.0.3
         version: 6.0.3

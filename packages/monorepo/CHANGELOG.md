@@ -1,5 +1,18 @@
 # @icebreakers/monorepo
 
+## 6.5.0
+
+### Minor Changes
+
+- Add TypeScript 7 support and improve upgrade and staged verification behavior.
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.16
+  - @icebreakers/monorepo-templates@3.2.3
+  - @icebreakers/stylelint-config@6.0.2
+
 ## 6.4.4
 
 ### Patch Changes

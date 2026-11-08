@@ -1,5 +1,11 @@
 # @icebreakers/monorepo-templates
 
+## 3.2.3
+
+### Patch Changes
+
+- Refresh published tooling dependencies and project template assets.
+
 ## 3.2.2
 
 ### Patch Changes

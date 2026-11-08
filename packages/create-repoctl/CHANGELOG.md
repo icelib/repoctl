@@ -1,5 +1,14 @@
 # create-repoctl
 
+## 1.2.16
+
+### Patch Changes
+
+- Refresh workspace dependencies for the updated release toolchain.
+
+- Updated dependencies:
+  - @icebreakers/monorepo-templates@3.2.3
+
 ## 1.2.15
 
 ### Patch Changes

@@ -1,5 +1,16 @@
 # repoctl
 
+## 6.5.0
+
+### Minor Changes
+
+- Add TypeScript 7 support and improve upgrade and staged verification behavior.
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/monorepo@6.5.0
+
 ## 6.4.4
 
 ### Patch Changes
