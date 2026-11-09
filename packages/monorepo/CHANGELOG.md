@@ -1,5 +1,16 @@
 # @icebreakers/monorepo
 
+## 6.5.2
+
+### Patch Changes
+
+- Refresh stable workspace dependencies and packaged template tooling.
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.17
+  - @icebreakers/monorepo-templates@3.2.4
+  - @icebreakers/stylelint-config@6.0.3
+
 ## 6.5.1
 
 ### Patch Changes
