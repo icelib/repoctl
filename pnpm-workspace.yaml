@@ -43,9 +43,9 @@ overrides:
   # astro2tsx uses the legacy WASM bridge with emnapi core 1.x.
   # Pin only that bridge's runtime; Rolldown's core/runtime 2.x pair must stay aligned.
   '@napi-rs/wasm-runtime@1.2.4>@emnapi/runtime': 1.11.3
-  vite: 8.3.6
+  vite: 8.3.7
   postcss: 8.5.32
-  postcss-selector-parser: 7.1.7
+  postcss-selector-parser: 7.2.0
   js-yaml: 5.5.0
   nanoid: 6.0.2
   brace-expansion: 5.0.12

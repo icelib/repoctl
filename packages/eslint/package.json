@@ -89,7 +89,7 @@
     "@typescript-eslint/typescript-estree": "^8.72.1",
     "@typescript-eslint/utils": "^8.72.1",
     "@vue/compiler-sfc": "^3.5.45",
-    "@weapp-vite/eslint": "^0.3.1",
+    "@weapp-vite/eslint": "^0.3.2",
     "defu": "^6.1.7",
     "eslint-config-flat-gitignore": "^2.4.0",
     "eslint-flat-config-utils": "3.2.0",

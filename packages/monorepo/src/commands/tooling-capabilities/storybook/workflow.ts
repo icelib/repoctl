@@ -16,7 +16,7 @@ export function storybookWorkflow({ workspace }: StorybookSettings) {
         'env': { CI: 'true' },
         'steps': [
           { uses: 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' },
-          { uses: 'pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413' },
+          { uses: 'pnpm/action-setup@9bbca1e9dc2902adb87e8780fe5c98796985a62d' },
           { uses: 'actions/setup-node@820762786026740c76f36085b0efc47a31fe5020', with: { 'node-version': defaultNodeVersion } },
           { name: 'Install workspace dependencies', run: 'pnpm install --frozen-lockfile' },
           { name: 'Build library and static stories', run: `pnpm exec turbo run build:storybook --filter=${filter}` },
