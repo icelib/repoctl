@@ -208,7 +208,7 @@ overrides:
   oxfmt>tinypool: 2.2.0
   glob@<14: 14.0.4
   minimatch@>=7 <11: 11.0.5
-  micromark-extension-math>katex: 0.18.10
+  micromark-extension-math>katex: 0.19.1
 
 importers:
 
@@ -1228,7 +1228,7 @@ packages:
     resolution: {integrity: sha512-hazpqxIfZWj2VhyPyR0pOEQ/IhFDM/2nIApL96zMXABdD8NrUKYDmhxTy7h+drTDl9MQG/Sd1ET/4amadVJUUA==}
     hasBin: true
     peerDependencies:
-      typescript: 7.0.2
+      typescript: ^5.0.0 || ^6.0.0
 
   '@astrojs/compiler-binding-android-arm64@0.5.2':
     resolution: {integrity: sha512-kckIxon6Rm/Bxzh9mGPYpRRqUbToUQoHptCmpMmE+Yt0Xumq8CqrKUidyYhrBsrHVO7bxuRzzWUUqvpf+iYceQ==}
@@ -2216,7 +2216,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -2226,7 +2226,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -2236,7 +2236,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -2246,7 +2246,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -2256,7 +2256,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -2266,7 +2266,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -2276,7 +2276,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -4309,27 +4309,27 @@ packages:
     peerDependencies:
       '@typescript-eslint/parser': ^8.72.1
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: 6.0.3
+      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/parser@8.72.1':
     resolution: {integrity: sha512-ZGwZP4OCfyA0AQTpEAMWz+rtX01DRhQWW5hB0ucKDEIX5U7jdmPSaMx94rQfaPAQzIYz2BimOgKOJtjfpRFQ9g==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: 6.0.3
+      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/project-service@8.72.1':
     resolution: {integrity: sha512-fAuVMkwdO/huI8nyo/WKnNKf6Gag93S56Rh3Ts5mGcavwSdaN8tRg1gCeIGX8PF+nzp1BjGfO4gHhGzW1J6jTg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: 6.0.3
+      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/rule-tester@8.72.1':
     resolution: {integrity: sha512-fRI+xtZ8ae43H3fq5TGzJMKvjqHUJIO5FDrFNdQzeTqbaNH+srWJQmAHBCY4zZdenpew8kXzTGhKq8fJJat6lA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: 7.0.2
+      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/scope-manager@8.72.1':
     resolution: {integrity: sha512-lC/t6eMCZZQAAKZEYGL6RDVSuFehpdmMT6h+nJIjIa6oylN/PwDgDVtEIbB7O9xFfZYtZAYLoLlDNWKJhtF+uQ==}
@@ -4339,14 +4339,14 @@ packages:
     resolution: {integrity: sha512-e4D5R5vpeAEPBxT2BAzsFQL3sbwyeeeo5+aczgNSRK1V734jE7pTqaGFU+fXapWEQwnZbpFaTn32+Z8DwS6OTg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/type-utils@8.72.1':
     resolution: {integrity: sha512-iY2wlmyrXJmx4yxUGP3aYCFF3cA/6ShddOKmLU2dx7LnEykbAM8WThlxZEfd1NddqceF6eJmZUayxx9oKIYNlg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: 6.0.3
+      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/types@8.72.1':
     resolution: {integrity: sha512-LmE5IhQet1BWOWEXqBrVtBPsMAOQ6Nzk35d+WLh3mk4EUF33sqlfxjio1MdYeSvKSG5skactKKuixBIKXhL4Rw==}
@@ -4356,14 +4356,14 @@ packages:
     resolution: {integrity: sha512-DAlUoUV93hIvrtIQLwCbmZQYVZwOMhiHJrOVUUIWicFZaIYjTRqlY3I/NZevfkLmSqkNHRu2qYDcq9lrn16oOQ==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: 6.0.3
+      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/utils@8.72.1':
     resolution: {integrity: sha512-5v5liypurJBFHCBNqh/RjsymAD+VWcE0djuGY/BUqp5fC3Qn+luWDEksjuTtWjPn6i5zQlUtkZCRG/CYG0yCkA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: 7.0.2
+      typescript: '>=4.8.4 <6.1.0'
 
   '@typescript-eslint/visitor-keys@8.72.1':
     resolution: {integrity: sha512-SB8xqipSzZHUePCCLNeYxqnxq83X61/qzNhjQGbTfjxGZIeOEP7tBgWYX05Tcd6CgE02WdTJnh5b8kMZJ/+bnQ==}
@@ -4565,7 +4565,7 @@ packages:
     peerDependencies:
       '@typescript-eslint/eslint-plugin': '*'
       eslint: '>=8.57.0'
-      typescript: 7.0.2
+      typescript: '>=6.0.0'
       vitest: '*'
     peerDependenciesMeta:
       '@typescript-eslint/eslint-plugin':
@@ -4600,7 +4600,7 @@ packages:
   '@volar/kit@2.4.31':
     resolution: {integrity: sha512-pQgvegC28dfdNcs/iDNZVHkMs+dG7rpD9Aj+sNU2hildv1QuH7/MIoff/cSJW/IR25AGOeHWbJXWWFKDXXWtVw==}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: <7
 
   '@volar/language-core@2.4.30':
     resolution: {integrity: sha512-73fjwEV8wat6aOZ6U/y/hqtE30ocrIWECg67b0txGczOMNw+MffLmvJ5fnFfN9drVUEYZzLdaNo6VAy6G6avMw==}
@@ -4611,7 +4611,7 @@ packages:
   '@volar/language-server@2.4.31':
     resolution: {integrity: sha512-PI/3CLcoHzb3RUNuh3ecWEf3d3doGnJ7/dYTvvE+8Y9dnV2SjVXp6BP7G2S5mdq9L1yFYP5yhoEHXc1OIfmX0A==}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: <7
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -4619,7 +4619,7 @@ packages:
   '@volar/language-service@2.4.30':
     resolution: {integrity: sha512-w/xDsASiqC71ggCOm7sTDXDNk/l72XEptodeRC68tgZ0e5QM4hM3zAqBGC7mBctvhrpYwKfMG+t9xcUo2hEFtA==}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: <7
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -4627,7 +4627,7 @@ packages:
   '@volar/language-service@2.4.31':
     resolution: {integrity: sha512-LM9HFsBVhHZ7RbFUZK9P23FvamK8XCDcN0kNgOTts02wVgnygo3ReLbmBmUZ3GuYnrYn6HHoQvqk/eHIzzTnrg==}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: <7
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -4761,7 +4761,7 @@ packages:
   '@vue/tsconfig@0.9.1':
     resolution: {integrity: sha512-buvjm+9NzLCJL29KY1j1991YYJ5e6275OiK+G4jtmfIb+z4POywbdm0wXusT9adVWqe0xqg70TbI7+mRx4uU9w==}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: '>= 5.8'
       vue: ^3.4.0
     peerDependenciesMeta:
       typescript:
@@ -5332,7 +5332,7 @@ packages:
     resolution: {integrity: sha512-gtTZxTDau1wL7Y7zifc2dd8jHSK/k6BTx/2Xp/BpdlAdnlYWFVt7qhJqgwi7637yRwRQ3qL4ZidbB4I8tA5VOg==}
     engines: {node: '>=14'}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: '>=4.9.5'
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5910,7 +5910,7 @@ packages:
     engines: {node: ^22.22.2 || >=24.15.0}
     peerDependencies:
       eslint: ^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -5933,7 +5933,7 @@ packages:
     peerDependencies:
       eslint: '>=8.57.1'
       ts-declaration-location: ^1.0.6
-      typescript: 7.0.2
+      typescript: '>=5.0.0'
     peerDependenciesMeta:
       ts-declaration-location:
         optional: true
@@ -5963,7 +5963,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -5979,7 +5979,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -5989,7 +5989,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -6004,7 +6004,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -6014,7 +6014,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -6024,7 +6024,7 @@ packages:
     engines: {node: '>=20.19.0'}
     peerDependencies:
       eslint: '*'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       eslint:
         optional: true
@@ -6051,7 +6051,7 @@ packages:
     peerDependencies:
       eslint: ^9.0.0 || ^10.0.0
       tailwindcss: ^4.0.0
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -6067,7 +6067,7 @@ packages:
     engines: {node: '>=22'}
     peerDependencies:
       eslint: '>=10.4'
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -6889,6 +6889,10 @@ packages:
 
   katex@0.18.10:
     resolution: {integrity: sha512-/B6p9eY9DX7aHBfpkHdpirDTZ5QH9xTwL9y837PWuzuv41O5jFdqNQwVQEQsimY0/iVNkwBY4+4hMfhQ7d4Dbw==}
+    hasBin: true
+
+  katex@0.19.1:
+    resolution: {integrity: sha512-jG8uKntjSEcm2EpQOh0XturpPuuC9r3Sq5HLHdsFdWZT27E672SF19QEi+of0/YeOy15lDgRhKvr5614uRrEfA==}
     hasBin: true
 
   keyv@5.6.0:
@@ -7815,7 +7819,7 @@ packages:
     resolution: {integrity: sha512-+5/HMuVjYQfKlCD5xQ7zfXn1xUzYFEa7pd0DQK5SaMfZCaFRTHlaH/c02N1FoGOdlzSiwf5EOPgJx//1QDw6gw==}
     peerDependencies:
       '@vue/devtools-api': ^8.2.1
-      typescript: 7.0.2
+      typescript: '>=5.6.0'
       vue: ^3.5.11
     peerDependenciesMeta:
       typescript:
@@ -8216,7 +8220,7 @@ packages:
       '@vue/language-core': ~3.2.0 || ~3.3.0
       rolldown: ^1.2.0
       tsrs: '*'
-      typescript: 7.0.2
+      typescript: ^5.0.0 || ^6.0.0 || ~7.0.0 || ~7.1.0-0
       vue-tsc: ~3.2.0 || ~3.3.0
     peerDependenciesMeta:
       '@volar/typescript':
@@ -8793,7 +8797,7 @@ packages:
     resolution: {integrity: sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA==}
     engines: {node: '>=18.12'}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: '>=4.8.4'
 
   ts-dedent@2.3.0:
     resolution: {integrity: sha512-JfJeIHke7y2egdGGgRAvpCwYFUsHlM2gPcrVOxFkznt/4uzQ7HFmvE63iFHVLBJNDuyDOQgijDK/tXH/f6Msjg==}
@@ -8808,7 +8812,7 @@ packages:
     deprecated: unmaintained
     hasBin: true
     peerDependencies:
-      typescript: 7.0.2
+      typescript: ^5.0.0
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -8837,7 +8841,7 @@ packages:
       '@vitejs/devtools': '*'
       publint: ^0.3.8
       tsx: '*'
-      typescript: 7.0.2
+      typescript: ^5.0.0 || ^6.0.0 || ^7.0.0
       unplugin-unused: '>=0.5.0'
       unrun: '*'
     peerDependenciesMeta:
@@ -9017,7 +9021,7 @@ packages:
       esbuild: 0.28.2
       rolldown: '*'
       rollup: '>=3'
-      typescript: 7.0.2
+      typescript: '>=4'
       vite: 8.3.7
       webpack: ^4 || ^5
     peerDependenciesMeta:
@@ -9159,7 +9163,7 @@ packages:
   valibot@1.5.0:
     resolution: {integrity: sha512-nil6AkP2TChWL43Z5uJ6GTxX01CUA+g8LWUM+N/rB9NBbkUMaUsi9PUNzlUPgoKASgmx9f7eGOYpJ04/fSa6FQ==}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: '>=5'
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -9403,7 +9407,7 @@ packages:
     resolution: {integrity: sha512-9K2k72s4n7rV9s4bX0MyjbX9iBribvKZbBJKuEmTCZfeWJXs6Yh7bGpY4eoc7UufAjvpheBqwyZCOIPBvxCv0A==}
     peerDependencies:
       '@volar/language-service': ~2.4.0
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       '@volar/language-service':
         optional: true
@@ -9414,7 +9418,7 @@ packages:
     resolution: {integrity: sha512-yTtM/BVT6hoyEYnDtaCyAtNhdNeS/mhTTABlBOdw3NNiRBUin3IznFJpgfjer4c6RYopiPjjQjc9VFhxVl1mLw==}
     peerDependencies:
       '@volar/language-service': ~2.4.0
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       '@volar/language-service':
         optional: true
@@ -9525,7 +9529,7 @@ packages:
   vue@3.5.45:
     resolution: {integrity: sha512-3cvsib8m9c0vB24+MDKsgcW4+Da4xaBl9Z/5Tbm2pmSIsRPxcil4cdXjXlVsmJ2g64XJo5h+IRd7rsdGT9pZaw==}
     peerDependencies:
-      typescript: 7.0.2
+      typescript: '*'
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -15657,6 +15661,10 @@ snapshots:
     dependencies:
       commander: 15.1.0
 
+  katex@0.19.1:
+    dependencies:
+      commander: 15.1.0
+
   keyv@5.6.0:
     dependencies:
       '@keyv/serialize': 1.1.1
@@ -16239,7 +16247,7 @@ snapshots:
     dependencies:
       '@types/katex': 0.16.8
       devlop: 1.1.0
-      katex: 0.18.10
+      katex: 0.19.1
       micromark-factory-space: 2.1.0
       micromark-util-character: 2.1.1
       micromark-util-symbol: 2.0.1

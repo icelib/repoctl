@@ -60,4 +60,4 @@ overrides:
   oxfmt>tinypool: 2.2.0
   glob@<14: 14.0.4
   minimatch@>=7 <11: 11.0.5
-  micromark-extension-math>katex: 0.18.10
+  micromark-extension-math>katex: 0.19.1
