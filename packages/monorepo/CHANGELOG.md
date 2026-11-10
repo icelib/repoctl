@@ -1,5 +1,12 @@
 # @icebreakers/monorepo
 
+## 6.5.3
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/commitlint-config@4.1.6
+
 ## 6.5.2
 
 ### Patch Changes

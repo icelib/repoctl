@@ -1,5 +1,11 @@
 # lightningcss-tailwindcss
 
+## 2.1.4
+
+### Patch Changes
+
+- Align published packages with the TypeScript 7 workspace configuration.
+
 ## 2.1.3
 
 ### Patch Changes

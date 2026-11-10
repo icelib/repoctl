@@ -1,5 +1,12 @@
 # repoctl
 
+## 6.5.3
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/monorepo@6.5.3
+
 ## 6.5.2
 
 ### Patch Changes

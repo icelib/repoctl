@@ -1,5 +1,11 @@
 # @icebreakers/commitlint-config
 
+## 4.1.6
+
+### Patch Changes
+
+- Align published packages with the TypeScript 7 workspace configuration.
+
 ## 4.1.5
 
 ### Patch Changes
