@@ -50,7 +50,28 @@ it.each([
   expect(existsSync(path.dirname(h.state.output))).toBe(false)
 })
 
-it('requires post-upload API confirmation of the exact reported version', async () => {
+it('waits for delayed post-upload activation without reuploading', async () => {
+  const h = await nativeFixture()
+  const original = h.request.getMockImplementation()!
+  let confirmations = 0
+  h.request.mockImplementation(async (url) => {
+    if (!h.state.uploadCount) {
+      return original(url)
+    }
+    confirmations++
+    if (confirmations < 3) {
+      return String(url).endsWith('/deployments')
+        ? api({ deployments: [{ created_on: '2026-10-23T00:00:00Z', strategy: 'percentage', versions: [{ version_id: otherVersion, percentage: 100 }] }] })
+        : api({ id: otherVersion, annotations: { 'workers/message': 'repoctl-docs:previous-deployment' } })
+    }
+    return original(url)
+  })
+  const result = await deployDocs({ ...h.options, sleep: async () => {} })
+  expect(result).toMatchObject({ status: 'deployed', versionId })
+  expect(h.state.uploadCount).toBe(1)
+})
+
+it('keeps delayed activation recoverable when confirmation times out', async () => {
   const h = await nativeFixture()
   const original = h.request.getMockImplementation()!
   h.request.mockImplementation(async (url) => {
@@ -61,7 +82,7 @@ it('requires post-upload API confirmation of the exact reported version', async 
       ? api({ deployments: [{ created_on: '2026-10-23T00:00:00Z', strategy: 'percentage', versions: [{ version_id: otherVersion, percentage: 100 }] }] })
       : api({ id: otherVersion, annotations: { 'workers/message': h.state.message } })
   })
-  await expectDocsFailure(deployDocs(h.options), 'provider', 'provider-version-inactive')
+  await expectDocsFailure(deployDocs({ ...h.options, sleep: async () => {} }), 'provider', 'provider-version-inactive')
   expect(h.store.records.get('docs/website/stable')!.value).toHaveProperty('pending.phase', 'deploying')
 })
 
