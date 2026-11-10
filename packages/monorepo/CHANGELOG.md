@@ -1,5 +1,11 @@
 # @icebreakers/monorepo
 
+## 6.5.4
+
+### Patch Changes
+
+- Retry Cloudflare documentation version confirmation after uploads while the provider activates the deployment.
+
 ## 6.5.3
 
 ### Patch Changes

@@ -738,6 +738,10 @@
   dir: packages/monorepo
   intents:
     - stable-dependency-refresh
+"@icebreakers/monorepo@6.5.4":
+  dir: packages/monorepo
+  intents:
+    - quiet-docs-activate
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
