@@ -1,5 +1,12 @@
 # create-icebreaker
 
+## 2.1.17
+
+### Patch Changes
+
+- Updated dependencies:
+  - create-repoctl@1.2.17
+
 ## 2.1.16
 
 ### Patch Changes

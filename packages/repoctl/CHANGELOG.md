@@ -1,5 +1,14 @@
 # repoctl
 
+## 6.5.2
+
+### Patch Changes
+
+- Refresh stable workspace dependencies and packaged template tooling.
+
+- Updated dependencies:
+  - @icebreakers/monorepo@6.5.2
+
 ## 6.5.1
 
 ### Patch Changes

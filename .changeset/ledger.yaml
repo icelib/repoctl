@@ -46,6 +46,10 @@
   dir: packages/changelog-github
   intents:
     - old-spoons-refuse
+"@icebreakers/changelog-github@2.1.9":
+  dir: packages/changelog-github
+  intents:
+    - stable-dependency-refresh
 "@icebreakers/commitlint-config@4.0.6":
   dir: packages/commitlint
   intents:
@@ -141,6 +145,10 @@
   dir: packages/eslint
   intents:
     - young-horses-bow
+"@icebreakers/eslint-config@8.0.17":
+  dir: packages/eslint
+  intents:
+    - stable-dependency-refresh
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -412,6 +420,10 @@
   dir: packages/monorepo-templates
   intents:
     - young-horses-bow
+"@icebreakers/monorepo-templates@3.2.4":
+  dir: packages/monorepo-templates
+  intents:
+    - stable-dependency-refresh
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -718,6 +730,10 @@
   dir: packages/monorepo
   intents:
     - steady-tools-resolve
+"@icebreakers/monorepo@6.5.2":
+  dir: packages/monorepo
+  intents:
+    - stable-dependency-refresh
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -953,6 +969,10 @@ postcss-tailwindcss@3.1.7:
   dir: packages/postcss-tailwindcss
   intents:
     - young-horses-bow
+postcss-tailwindcss@3.1.8:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - stable-dependency-refresh
 repoctl@5.10.0:
   dir: packages/repoctl
   intents:
@@ -1158,6 +1178,10 @@ repoctl@6.5.0:
   dir: packages/repoctl
   intents:
     - honest-deers-reply
+repoctl@6.5.2:
+  dir: packages/repoctl
+  intents:
+    - stable-dependency-refresh
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:

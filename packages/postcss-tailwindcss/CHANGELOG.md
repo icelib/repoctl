@@ -1,5 +1,11 @@
 # postcss-tailwindcss
 
+## 3.1.8
+
+### Patch Changes
+
+- Refresh stable workspace dependencies and packaged template tooling.
+
 ## 3.1.7
 
 ### Patch Changes

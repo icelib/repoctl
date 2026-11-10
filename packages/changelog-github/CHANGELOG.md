@@ -1,5 +1,11 @@
 # @icebreakers/changelog-github
 
+## 2.1.9
+
+### Patch Changes
+
+- Refresh stable workspace dependencies and packaged template tooling.
+
 ## 2.1.8
 
 ### Patch Changes
