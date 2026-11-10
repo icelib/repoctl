@@ -82,6 +82,10 @@
   dir: packages/commitlint
   intents:
     - khaki-birds-type
+"@icebreakers/commitlint-config@4.1.6":
+  dir: packages/commitlint
+  intents:
+    - curly-configs-bump
 "@icebreakers/eslint-config@7.1.1":
   dir: packages/eslint
   intents:
@@ -904,6 +908,10 @@ eslint-plugin-better-stylelint@2.2.0:
   dir: packages/eslint-plugin-better-stylelint
   intents:
     - light-knives-tap
+eslint-plugin-better-stylelint@2.2.1:
+  dir: packages/eslint-plugin-better-stylelint
+  intents:
+    - curly-configs-bump
 lightningcss-tailwindcss@2.0.4:
   dir: packages/lightningcss-tailwindcss
   intents:
@@ -925,6 +933,10 @@ lightningcss-tailwindcss@2.1.3:
   dir: packages/lightningcss-tailwindcss
   intents:
     - great-mice-wonder
+lightningcss-tailwindcss@2.1.4:
+  dir: packages/lightningcss-tailwindcss
+  intents:
+    - curly-configs-bump
 postcss-tailwindcss@3.0.7:
   dir: packages/postcss-tailwindcss
   intents:

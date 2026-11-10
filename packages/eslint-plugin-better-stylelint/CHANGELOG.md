@@ -1,5 +1,11 @@
 # eslint-plugin-better-stylelint
 
+## 2.2.1
+
+### Patch Changes
+
+- Align published packages with the TypeScript 7 workspace configuration.
+
 ## 2.2.0
 
 ### Minor Changes
