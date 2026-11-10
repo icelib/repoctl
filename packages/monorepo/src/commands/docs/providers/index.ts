@@ -10,6 +10,20 @@ import { activeMatchingVersion, cloudflareClient, deploymentMessage } from './cl
 import { preflightConfiguration } from './cloudflare/config'
 import { localWrangler, readWranglerVersion, wranglerEnvironment } from './cloudflare/wrangler'
 
+const providerConfirmationDelays = [2_000, 4_000, 8_000, 16_000]
+
+async function confirmUploadedVersion(options: DocsOptions, client: ReturnType<typeof cloudflareClient>, deploymentId: string, expectedVersionId: string) {
+  for (const delay of [0, ...providerConfirmationDelays]) {
+    if (delay > 0) {
+      await (options.sleep?.(delay) ?? new Promise<void>(resolve => setTimeout(resolve, delay)))
+    }
+    if (await activeMatchingVersion(client, deploymentId) === expectedVersionId) {
+      return
+    }
+  }
+  throw new DocsDiagnosticError('provider-version-inactive')
+}
+
 /** Select a closed provider contract without changing script targets or frozen plan identities. */
 export async function prepareDocsProvider(options: DocsOptions, source: string, site: DocsSiteConfig, plan: DocsDeploymentPlan, env: NodeJS.ProcessEnv, resultFile: string, operation?: { operation: 'upload' | 'reconcile' }) {
   const target = site[plan.channel]
@@ -42,9 +56,7 @@ export async function prepareDocsProvider(options: DocsOptions, source: string, 
         try {
           runDocsProcess(options, path.dirname(config.filename), ['exec', 'node', cli, 'deploy', '--config', config.filename, '--env', config.environment, '--message', deploymentMessage(plan.deploymentId)], wranglerEnvironment(env, target.accountId, config.environment, output))
           versionId = await readWranglerVersion(output, target.workerName, config.environment)
-          if (await activeMatchingVersion(client, plan.deploymentId) !== versionId) {
-            throw new DocsDiagnosticError('provider-version-inactive')
-          }
+          await confirmUploadedVersion(options, client, plan.deploymentId, versionId)
         }
         finally {
           await rm(temporary, { recursive: true, force: true })

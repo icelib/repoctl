@@ -22,6 +22,8 @@ export interface DocsOptions {
   spawn?: typeof spawnSync
   /** Read-only provider and optional public readiness HTTP transport; credentials are never persisted. */
   fetch?: typeof fetch
+  /** Delay provider confirmation retries; defaults to a bounded production backoff. */
+  sleep?: (milliseconds: number) => Promise<void>
   /** Stream child stdout to stderr so CLI JSON stdout contains only the result/report. */
   json?: boolean
 }
