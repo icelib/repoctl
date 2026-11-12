@@ -8,6 +8,7 @@ import { resolveConsumerPeerAliases } from '../../package-check/consumer/peer-al
 import { consumerPackageApplicability } from '../../package-check/consumer/platform'
 import { consumerRuntimeClosure } from '../../package-check/consumer/runtime-closure'
 import { consumerTypeToolchain, installedConsumerTypeToolchain } from '../../package-check/consumer/typescript'
+import { consumerWorkspace } from '../consumer/workspace'
 import { matchesSnapshotMetadata } from '../snapshot/identity'
 import { checkInstalledEntries } from './consumer/entries'
 import { consumerEnvironment, consumerPnpmOptions } from './consumer/environment'
@@ -54,12 +55,7 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
     }
     await Promise.all([
       writeFile(path.join(directory, 'package.json'), `${JSON.stringify(manifest, null, 2)}\n`),
-      writeFile(path.join(directory, 'pnpm-workspace.yaml'), `${JSON.stringify({
-        packages: [],
-        // The confirmed batch must be installable immediately, while unrelated
-        // packages and other versions retain pnpm's default release-age policy.
-        ...(report.provider === 'npm' ? { minimumReleaseAgeExclude: report.packages.map(pkg => `${pkg.name}@${pkg.version}`) } : {}),
-      }, null, 2)}\n`),
+      writeFile(path.join(directory, 'pnpm-workspace.yaml'), consumerWorkspace(report.provider === 'npm' ? report.packages : undefined)),
       writeFile(path.join(directory, 'user.npmrc'), ''),
       writeFile(path.join(directory, 'global.npmrc'), ''),
     ])
