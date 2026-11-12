@@ -10,18 +10,18 @@ export function storybookFiles(settings: StorybookSettings) {
   const framework = options.framework === 'vue' ? 'vue3-vite' : 'react-vite'
   const scripts = { 'storybook': 'storybook dev --host 127.0.0.1 --port 6006 --no-open --disable-telemetry', 'build:storybook': 'storybook build --disable-telemetry', 'test:storybook': 'vitest run --config vitest.config.ts', 'test:storybook:install': 'playwright install chromium', 'lint': 'eslint .', 'typecheck': 'tsc --noEmit' }
   const dependencies: Record<string, string> = {
-    '@storybook/addon-vitest': '10.6.1',
-    [`@storybook/${framework}`]: '10.6.1',
+    '@storybook/addon-vitest': '10.6.7',
+    [`@storybook/${framework}`]: '10.6.7',
     '@types/node': '^22.0.0',
-    '@vitest/browser-playwright': '5.0.3',
-    [`@vitejs/plugin-${options.framework}`]: options.framework === 'vue' ? '^6.0.9' : '^6.1.1',
-    'eslint': '^10.0.0',
-    'playwright': '1.63.0',
+    '@vitest/browser-playwright': '5.1.0',
+    [`@vitejs/plugin-${options.framework}`]: options.framework === 'vue' ? '^6.0.10' : '^6.3.0',
+    'eslint': '^10.14.0',
+    'playwright': '1.65.0',
     'repoctl': `^${version}`,
-    'storybook': '10.6.1',
+    'storybook': '10.6.7',
     'typescript': '^6.0.3',
-    'vite': '^8.3.2',
-    'vitest': '5.0.3',
+    'vite': '^8.3.8',
+    'vitest': '5.1.0',
     [options.framework]: runtimeRange,
     [target.name]: 'workspace:*',
   }

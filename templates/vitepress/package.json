@@ -45,9 +45,9 @@
     "tailwindcss": "^4.3.5",
     "typescript": "~6.0.3",
     "vitepress": "2.0.0-alpha.21",
-    "vitepress-plugin-llms": "^1.14.0",
+    "vitepress-plugin-llms": "^1.15.0",
     "vitest": "~5.1.0",
     "vue-tsc": "^3.3.14",
-    "wrangler": "^4.158.0"
+    "wrangler": "^4.160.1"
   }
 }

@@ -99,7 +99,7 @@
   },
   "dependencies": {
     "@arethetypeswrong/core": "0.18.5",
-    "@babel/parser": "^8.1.0",
+    "@babel/parser": "^8.1.2",
     "@icebreakers/commitlint-config": "workspace:*",
     "@icebreakers/eslint-config": "workspace:*",
     "@icebreakers/monorepo-templates": "workspace:*",
@@ -131,7 +131,7 @@
     "publint": "0.3.25",
     "semver": "catalog:",
     "simple-git": "^4.0.2",
-    "tar": "7.5.22",
+    "tar": "7.5.23",
     "tinyglobby": "^0.2.17",
     "validate-npm-package-name": "^8.0.0",
     "vitest": "catalog:",
@@ -151,7 +151,7 @@
     "@vitest/coverage-v8": "~5.1.0",
     "ci-info": "^4.5.0",
     "fdir": "^6.5.0",
-    "knip": "6.44.2",
+    "knip": "6.45.1",
     "lefthook": "2.2.2",
     "typescript": "~6.0.3"
   },
