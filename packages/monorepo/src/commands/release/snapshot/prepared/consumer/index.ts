@@ -7,6 +7,7 @@ import { resolveConsumerPeerAliases } from '../../../../package-check/consumer/p
 import { consumerPackageApplicability } from '../../../../package-check/consumer/platform'
 import { consumerRuntimeClosure } from '../../../../package-check/consumer/runtime-closure'
 import { consumerTypeToolchain, installedConsumerTypeToolchain } from '../../../../package-check/consumer/typescript'
+import { consumerWorkspace } from '../../../consumer/workspace'
 import { checkInstalledEntries } from '../../../nightly/consumer/entries'
 import { consumerEnvironment, consumerPnpmOptions } from '../../../nightly/consumer/environment'
 import { consumerRunner } from '../../../nightly/consumer/run'
@@ -50,7 +51,7 @@ export async function verifyPreparedSnapshotConsumer(options: PreparedSnapshotCo
     const toolchain = checkTypes ? await consumerTypeToolchain(directory, dependencies, closure) : undefined
     await Promise.all([
       writeFile(path.join(directory, 'package.json'), `${JSON.stringify({ name: 'repoctl-snapshot-consumer', private: true, type: 'module', packageManager: manifest.plan.packageManager, dependencies, ...(toolchain ? { devDependencies: toolchain.devDependencies } : {}) }, null, 2)}\n`),
-      writeFile(path.join(directory, 'pnpm-workspace.yaml'), `${JSON.stringify({ packages: [], minimumReleaseAgeExclude: manifest.packages.map(pkg => `${pkg.name}@${pkg.version}`) }, null, 2)}\n`),
+      writeFile(path.join(directory, 'pnpm-workspace.yaml'), consumerWorkspace(manifest.packages)),
       writeFile(path.join(directory, 'user.npmrc'), ''),
       writeFile(path.join(directory, 'global.npmrc'), ''),
     ])
