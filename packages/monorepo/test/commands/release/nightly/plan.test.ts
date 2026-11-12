@@ -15,6 +15,7 @@ describe('nightly source and event planning', () => {
     expect(report.packages.every(pkg => pkg.locator === `${pkg.name}@snapshot-nightly`)).toBe(true)
     expect(report.snapshot?.identity).toMatchObject({ kind: 'nightly', buildId: '123-1' })
     expect(report.snapshot?.packages.every(pkg => !pkg.tarball)).toBe(true)
+    expect(report.packages.map(pkg => pkg.version)).toEqual([expect.stringMatching(/^1\.0\.1-dev\.\d{8}\.1$/u), expect.stringMatching(/^1\.0\.0-dev\.\d{8}\.1$/u)])
     expect(JSON.parse(await readFile(path.join(report.outputDirectory!, 'nightly-report.json'), 'utf8'))).toEqual(report)
     expect(await readFile(h.env.GITHUB_STEP_SUMMARY, 'utf8')).toContain('Status: planned')
     expect(await snapshot(h.cwd)).toEqual(before)
@@ -31,6 +32,7 @@ describe('nightly source and event planning', () => {
     expect(manual.status, manual.error).toBe('planned')
     expect(manual.snapshot?.identityKey).not.toBe(first.snapshot?.identityKey)
     expect(manual.packages[0]?.version).not.toBe(first.packages[0]?.version)
+    expect(manual.packages.every(pkg => /-dev\.\d{8}\.2$/u.test(pkg.version))).toBe(true)
   })
 
   it('rebuilds partially published channels and channels containing different build identities', async () => {
@@ -38,8 +40,33 @@ describe('nightly source and event planning', () => {
     const first = await createNightlyPlan(h.options)
     const partial = await createNightlyPlan({ ...h.options, registryFetch: npmFetch(first, (name, metadata) => name === 'snapshot-a' ? metadata : null) })
     expect(partial.status, partial.error).toBe('planned')
-    const mixed = await createNightlyPlan({ ...h.options, registryFetch: npmFetch(first, (name, metadata) => name === 'snapshot-a' ? metadata : { ...metadata, repoctlSnapshot: { ...metadata.repoctlSnapshot, buildId: 'other-build' } }) })
+    expect(partial.packages.map(pkg => pkg.version)).toEqual(first.packages.map(pkg => pkg.version))
+    const other = await createNightlyPlan({ ...h.options, env: { ...h.env, GITHUB_RUN_ATTEMPT: '2' } })
+    const mixed = await createNightlyPlan({ ...h.options, registryFetch: npmFetch(first, (name, metadata) => name === 'snapshot-a' ? metadata : { ...metadata, repoctlSnapshot: { ...other.snapshot!.identity, identityKey: other.snapshot!.identityKey, tag: other.snapshot!.tag } }) })
     expect(mixed.status, mixed.error).toBe('planned')
+  })
+
+  it('retains explicit snapshot naming and skips a complete legacy channel after upgrading the default', async () => {
+    const h = await fixture('schedule')
+    const legacy = await createNightlyPlan({ ...h.options, config: { ...h.options.config, nightly: { schedule, versioning: 'snapshot' } } })
+    expect(legacy.status, legacy.error).toBe('planned')
+    expect(legacy.packages.every(pkg => pkg.version.includes('-snapshot.nightly.'))).toBe(true)
+    const upgraded = await releaseNightly({ ...h.options, registryFetch: npmFetch(legacy) })
+    expect(upgraded.status, upgraded.error).toBe('skipped')
+    expect(upgraded.commands).toEqual([])
+  })
+
+  it('preserves native base versions for unchanged packages with no pending release intent', async () => {
+    const h = await fixture()
+    await h.write('.changeset/snapshot.md', '---\n---\nNo release intent.\n')
+    const filename = 'packages/b/package.json'
+    const manifest = JSON.parse(await readFile(path.join(h.cwd, filename), 'utf8'))
+    await h.write(filename, JSON.stringify({ ...manifest, version: '7.1.0-beta.1' }))
+    h.run('git', ['add', '.'])
+    h.run('git', ['-c', 'commit.gpgsign=false', 'commit', '-qm', 'independent fixture versions'])
+    const report = await createNightlyPlan({ ...h.options, env: { ...h.env, GITHUB_SHA: h.run('git', ['rev-parse', 'HEAD']) } })
+    expect(report.status, report.error).toBe('planned')
+    expect(report.packages.map(pkg => pkg.version)).toEqual([expect.stringMatching(/^1\.0\.0-dev\.\d{8}\.1$/u), expect.stringMatching(/^7\.1\.0-dev\.\d{8}\.1$/u)])
   })
 
   it.each([401, 429, 503])('fails closed when the registry returns HTTP %i', async (status) => {

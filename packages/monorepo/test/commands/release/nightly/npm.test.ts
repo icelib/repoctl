@@ -14,6 +14,18 @@ it('freezes latest and requires all npm tags to share the current commit and one
   expect(await inspectNpmNightly(report, { cwd: '.', registryFetch: npmFetch(report, (name, metadata) => name === 'b' ? npmMetadata(previous, name) : metadata) })).toBe(false)
 })
 
+it('recognizes date versions with the same identity evidence and requires a consistent date and counter', async () => {
+  const report = reportFixture()
+  const registryFetch = npmFetch(report, (_name, metadata) => ({ ...metadata, version: '1.0.0-dev.20261112.1' }))
+  expect(await inspectNpmNightly(report, { cwd: '.', registryFetch })).toBe(true)
+  for (const version of ['1.0.0-dev.20261112.2', '1.0.0-dev.20261111.1', report.packages[1]!.version, '1.0.0-dev.20260229.1']) {
+    const mixed = npmFetch(report, (name, metadata) => ({ ...metadata, version: name === 'b' ? version : '1.0.0-dev.20261112.1' }))
+    expect(await inspectNpmNightly(report, { cwd: '.', registryFetch: mixed })).toBe(false)
+  }
+  const invalid = npmFetch(report, (_name, metadata) => ({ ...metadata, version: '1.0.0-dev.20261112.1', repoctlSnapshot: { ...metadata.repoctlSnapshot, identityKey: 'invalid' } }))
+  expect(await inspectNpmNightly(report, { cwd: '.', registryFetch: invalid })).toBe(false)
+})
+
 it.each(['extra metadata', 'invalid identity', 'invalid integrity', 'wrong version'])('does not skip an ambiguous nightly channel: %s', async (reason) => {
   const report = reportFixture()
   const registryFetch = npmFetch(report, (_name, metadata) => {

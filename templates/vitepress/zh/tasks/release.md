@@ -221,7 +221,7 @@ pnpm exec repo upgrade --apply ../repoctl-upgrade-plan.json
 
 | 渠道          | 安装方式                     | 同提交手动重跑                           | 前置条件                                                                                                           |
 | ------------- | ---------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `npm`（默认） | `<package>@snapshot-nightly` | 生成新的构建身份与快照版本               | 每个公开包配置匹配仓库、`release.yml` 与 environment 的 npm Trusted Publisher；`contents: read`、`id-token: write` |
+| `npm`（默认） | `<package>@snapshot-nightly` | 生成新的构建身份与日期版本               | 每个公开包配置匹配仓库、`release.yml` 与 environment 的 npm Trusted Publisher；`contents: read`、`id-token: write` |
 | `pkg-pr-new`  | 报告中的完整提交 URL         | 核验已有字节，复用相同产物，仅上传缺失包 | 为仓库安装官方 pkg.pr.new GitHub App；`contents: read`；无需 npm token 或 npm Trusted Publisher                    |
 
 npm 首次使用前，在工作流中运行 `oidc-audit` 并核对每个包的 npm 设置。nightly 上传前会针对实际包计划再次核验，通过 OIDC/provenance 发布，确认精确版本与 `snapshot-nightly` 标签，并检查 `latest` 未变化。安装项目发布的包：
@@ -232,11 +232,21 @@ pnpm add -D <package>@snapshot-nightly
 
 使用 `pkg-pr-new` 时，先安装[官方 GitHub App](https://github.com/apps/pkg-pr-new) 并授权该仓库，再设置 `provider: 'pkg-pr-new'` 并同步工作流。报告返回 `https://pkg.pr.new/<owner>/<repo>/<package>@<完整提交-SHA>` 形式的 URL，内部依赖指向同批 URL。该渠道不发布 npm dist-tag；已有 URL 的元数据或字节与准备产物不一致时，任务失败，不覆盖已有内容。
 
-npm 定时任务只有在全部公开包都对应当前提交和同一构建身份时才跳过。缺失包或部分发布会重新准备；registry 查询失败会使任务失败。npm 手动运行始终准备新批次，同一提交也会生成新版本。pkg-pr-new 的定时与手动运行都会重新构建并比较字节，只复用该提交 URL 下完全一致的产物，仅上传缺失包。
+npm 定时任务只有在全部公开包都对应当前提交和同一构建身份时才跳过，历史 snapshot 版本也能被识别。缺失包或部分发布会重新准备；registry 查询失败会使任务失败。新的 npm 手动运行或 attempt 会准备新批次，同一提交也会生成新版本。pkg-pr-new 的定时与手动运行都会重新构建并比较字节，只复用该提交 URL 下完全一致的产物，仅上传缺失包。
+
+### nightly 版本号
+
+npm 默认使用 `commands.release.nightly.versioning: 'date'`，生成 `7.1.0-dev.20261112.1` 这样的版本。基础版本来自 pnpm 原生发布计划；没有计划变更的包使用当前清单版本。日期按 UTC 计算，与 cron 的本地时间解释无关。同一批公开包共用日期和序号，各自保留基础版本。
+
+序号取本批包 npm 历史中当天全部 `dev.YYYYMMDD.N` 的最大值加一，包含其他基础版本以及 dist-tag 已不再指向的版本。新的 UTC 日期从 `.1` 开始。日期在构建前的规划阶段固定，跨零点构建也沿用该日期。dry-run 不预留序号；其他发布者占用计划版本且身份或完整性不符时停止，不会临时改号重新使用已准备产物。
+
+部分发布后恢复相同 `run_id-run_attempt`，会复用已发布的日期和序号，跨日恢复也一样。跳过已有上传前仍核对精确元数据和 tarball 完整性；构建有变化时使用新的运行或 attempt。完整提交 SHA 与构建身份继续保存在 `repoctlSnapshot` 元数据和 JSON 报告里。
+
+设置 `commands.release.nightly.versioning: 'snapshot'` 可恢复 `<base>-snapshot.nightly.c<commit>.b<digest>`。`pkg-pr-new` 默认使用该确定性格式，因完整提交 URL 不可覆盖，显式设置 `versioning: 'date'` 会报配置错误。npm 两种格式都使用 `snapshot-nightly` 安装标签。版本策略运行时直接读取配置，调整它无需重新生成工作流。
 
 ### 检查与诊断
 
-nightly 执行配置的 `qualityScripts` 和 `hooks.verify`，在检出目录以外从已提交源码构建真实 tarball，并验证包导出、类型和隔离安装。版本包含基础版本、nightly 标记、完整提交 SHA 和构建摘要。发布后，干净消费者通过实际标签或 URL 安装，再核验身份、运行入口和类型。正式版本准备与发布后 hooks 仍属于普通发布流程。
+nightly 执行配置的 `qualityScripts` 和 `hooks.verify`，在检出目录以外从已提交源码构建真实 tarball，并验证包导出、类型和隔离安装。npm 默认版本包含基础版本、UTC 日期和当日序号；源码 SHA 与构建摘要保存在包元数据中。发布后，干净消费者通过实际标签或 URL 安装，再核验身份、运行入口和类型。正式版本准备与发布后 hooks 仍属于普通发布流程。
 
 每个质量脚本和 verify hook 分别计时，默认超时为 `2_700_000` 毫秒（45 分钟）。可将 `commands.release.nightly.qualityTimeoutMs` 设为正安全整数毫秒数；上面的示例为每个脚本提供 60 分钟。工作流的 job 超时仍限制整个运行，若全部任务需要更长时间，需单独调整该限制。脚本超时会中止发布，并在诊断报告中保留命令输出。
 
@@ -262,7 +272,7 @@ repo release snapshot --kind pr --pr 123 --commit <完整-HEAD-SHA> --build-id <
 repo release snapshot --kind nightly --commit <完整-HEAD-SHA> --build-id <run-id>-<attempt> --output /tmp/repoctl-artifacts
 ```
 
-候选解释与基础版本复用 pnpm 原生发布计划，全部公开包共同生成快照。临时版本包含完整源码 SHA 和 PR/nightly 构建身份的确定性摘要；目标 tag 固定为 `snapshot-pr-<编号>` 或 `snapshot-nightly`，没有指定正式 tag 的入口。只在恢复同一源码、同一产物时复用 build identity。报告提供精确版本的 `pnpm add` 安装命令。
+候选解释与基础版本复用 pnpm 原生发布计划，全部公开包共同生成快照。临时版本包含完整源码 SHA 和 PR/nightly 构建身份的确定性摘要。`repo release snapshot --kind nightly` 仍保留该格式；上面的日期默认值仅适用于 `repo release nightly`。目标 tag 固定为 `snapshot-pr-<编号>` 或 `snapshot-nightly`，没有指定正式 tag 的入口。只在恢复同一源码、同一产物时复用 build identity。报告提供精确版本的 `pnpm add` 安装命令。
 
 CLI 和 API 的快照计划均不加载或执行 `repoctl.config.*`，仅根据已提交的 pnpm 元数据生成计划，独立于正式发布配置。普通发布命令仍在执行前校验配置。
 

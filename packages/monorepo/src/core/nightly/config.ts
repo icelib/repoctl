@@ -1,6 +1,10 @@
-import type { ReleaseNightlyConfig } from '../../types/release'
+import type { NightlyProvider, NightlyVersioning, ReleaseNightlyConfig } from '../../types/release'
 
 export const defaultNightlyQualityTimeoutMs = 2_700_000
+
+export function defaultNightlyVersioning(provider: NightlyProvider): NightlyVersioning {
+  return provider === 'npm' ? 'date' : 'snapshot'
+}
 
 const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 const weekdays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
@@ -48,6 +52,13 @@ export function resolveNightlyConfig(config: ReleaseNightlyConfig = {}) {
   if (provider !== 'npm' && provider !== 'pkg-pr-new') {
     throw new Error('Nightly provider must be npm or pkg-pr-new.')
   }
+  const versioning = config.versioning === undefined ? defaultNightlyVersioning(provider) : config.versioning
+  if (versioning !== 'date' && versioning !== 'snapshot') {
+    throw new Error('Nightly versioning must be date or snapshot.')
+  }
+  if (provider === 'pkg-pr-new' && versioning !== 'snapshot') {
+    throw new Error('Nightly pkg-pr-new only supports snapshot versioning because commit URLs are immutable.')
+  }
   if (config.schedule !== undefined && !isNightlySchedule(config.schedule)) {
     throw new Error('Nightly schedule must be a valid five-field UTC GitHub Actions cron expression.')
   }
@@ -56,6 +67,7 @@ export function resolveNightlyConfig(config: ReleaseNightlyConfig = {}) {
   }
   return {
     provider,
+    versioning,
     ...(config.schedule === undefined ? {} : { schedule: config.schedule.trim().toUpperCase().replaceAll(/\s+/gu, ' ') }),
     ...(config.qualityTimeoutMs === undefined ? {} : { qualityTimeoutMs: config.qualityTimeoutMs }),
   }

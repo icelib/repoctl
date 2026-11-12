@@ -32,6 +32,7 @@ export function npmFetch(report: NightlyReport, transform: (name: string, metada
       return json(metadata ? { 'latest': '1.0.0', 'snapshot-nightly': metadata.version } : { latest: '1.0.0' })
     }
     const name = decodeURIComponent(url.pathname.split('/')[1]!)
-    return json(transform(name, npmMetadata(report, name)))
+    const metadata = transform(name, npmMetadata(report, name)) as ReturnType<typeof npmMetadata> | null
+    return json(url.pathname.split('/').length === 2 ? { name, versions: metadata ? { [metadata.version]: metadata } : {} } : metadata)
   })
 }

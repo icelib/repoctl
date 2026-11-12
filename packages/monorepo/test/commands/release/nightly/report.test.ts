@@ -14,6 +14,8 @@ it('only advertises the full installation batch after publication, provider conf
   expect(summary).toContain('published and consumer verified')
   expect(summary).toContain('pnpm add @scope/a@snapshot-nightly b@snapshot-nightly')
   expect(summary).toContain('latest tags are unchanged')
+  expect(summary).toContain('| Package | Version | Install |')
+  expect(summary).toContain(report.packages[0]!.version)
   report.status = 'failed'
   expect(formatNightlySummary(report)).not.toContain('| Install |')
 })

@@ -9,7 +9,7 @@ it('forwards the programmatic callback through nightly preparation without chang
   const h = await fixture()
   const prepareSource = vi.fn(async (context: SnapshotPreparationContext) => {
     expect(context.identity.commit).toBe(h.env['GITHUB_SHA'])
-    expect(context.packages.every(pkg => pkg.version.includes('-snapshot.nightly.'))).toBe(true)
+    expect(context.packages.every(pkg => /-dev\.\d{8}\.1$/u.test(pkg.version))).toBe(true)
     return { files: [] }
   })
   const report = await releaseNightly({ ...h.options, prepareSource })

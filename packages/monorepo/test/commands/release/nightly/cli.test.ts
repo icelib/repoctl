@@ -24,3 +24,20 @@ it('routes the built nightly CLI and emits one parseable JSON report without con
   expect(JSON.parse(await readFile(path.join(report.outputDirectory, 'nightly-report.json'), 'utf8'))).toEqual(report)
   expect(h.run('git', ['status', '--porcelain'])).toBe('')
 })
+
+it('exposes provider-dependent versioning defaults and validates explicit policies through the built CLI', async () => {
+  const h = await fixture()
+  const cli = path.resolve(import.meta.dirname, '../../../../bin/repo.js')
+  for (const [settings, versioning] of [
+    [[], 'date'],
+    [['nightly.provider="pkg-pr-new"'], 'snapshot'],
+    [['nightly.versioning="snapshot"'], 'snapshot'],
+  ] as const) {
+    const result = crossSpawn.sync(process.execPath, [cli, 'config', 'inspect', '--command', 'release', '--json', ...settings.flatMap(setting => ['--set', setting])], { cwd: h.cwd, env: h.env, encoding: 'utf8' })
+    expect(result.status, result.stderr).toBe(0)
+    expect(JSON.parse(result.stdout).effective.values.nightly.versioning).toBe(versioning)
+  }
+  const invalid = crossSpawn.sync(process.execPath, [cli, 'config', 'inspect', '--command', 'release', '--json', '--set', 'nightly.provider="pkg-pr-new"', '--set', 'nightly.versioning="date"'], { cwd: h.cwd, env: h.env, encoding: 'utf8' })
+  expect(invalid.status).toBe(1)
+  expect(JSON.parse(invalid.stdout)).toMatchObject({ valid: false, diagnostics: [expect.objectContaining({ id: 'config.conflict', path: 'commands.release.nightly.versioning' })] })
+})

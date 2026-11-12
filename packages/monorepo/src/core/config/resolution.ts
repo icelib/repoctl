@@ -1,6 +1,8 @@
 import type { MonorepoConfig } from '../../types'
 import type { ConfigSourceLayer, ConfigValueSource } from '../../types/presets'
+import type { ReleaseNightlyConfig } from '../../types/release'
 import { chinaMirrorsEnvs } from '../../commands/mirror/sources'
+import { defaultNightlyVersioning } from '../nightly/config'
 import { replaceDocsTarget } from './docs-targets'
 import { mergeConfigValues } from './merge'
 import { assertMonorepoConfig, ConfigValidationError } from './validation'
@@ -52,6 +54,13 @@ export function resolveCommandValues<Name extends ConfigCommand>(name: Name, pro
     ...(options.layers ? options.layers.map(layer => ({ source: layer.source, values: layer.config.commands?.[name] ?? {} })) : [{ source: { kind: 'project' as const }, values: project }]),
     { source: { kind: 'cli' }, values: overrides },
   ], name === 'docs' ? replaceDocsTarget : undefined)
+  if (name === 'release') {
+    const nightly = values['nightly'] as ReleaseNightlyConfig
+    if (nightly.versioning === undefined) {
+      nightly.versioning = defaultNightlyVersioning(nightly.provider ?? 'npm')
+      sources['nightly.versioning'] = { kind: 'default' }
+    }
+  }
   const origins = Object.fromEntries(Object.entries(sources).map(([field, source]) => [field, source.kind === 'preset' ? 'project' : source.kind])) as Record<string, ConfigOrigin>
   if (name === 'create' && values['type'] === undefined) {
     values['type'] = values['defaultTemplate']

@@ -50,9 +50,9 @@ export function formatNightlySummary(report: NightlyReport) {
   }
   if (verified) {
     lines.push('Install the complete batch (including internal peers):', '', `\`pnpm add ${report.packages.map(pkg => escape(pkg.locator)).join(' ')}\``, '')
-    lines.push('| Package | Install |', '| --- | --- |')
+    lines.push('| Package | Version | Install |', '| --- | --- | --- |')
     for (const pkg of report.packages) {
-      lines.push(`| ${escape(pkg.name)} | \`pnpm add ${escape(pkg.locator)}\` |`)
+      lines.push(`| ${escape(pkg.name)} | \`${escape(pkg.version)}\` | \`pnpm add ${escape(pkg.locator)}\` |`)
     }
     lines.push('', report.provider === 'npm' ? 'All snapshot-nightly tags match this build; latest tags are unchanged.' : 'All full-commit preview URLs match the verified tarballs.', '')
   }
