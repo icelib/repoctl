@@ -153,6 +153,10 @@
   dir: packages/eslint
   intents:
     - stable-dependency-refresh
+"@icebreakers/eslint-config@8.0.18":
+  dir: packages/eslint
+  intents:
+    - tidy-pumas-sell
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -428,6 +432,11 @@
   dir: packages/monorepo-templates
   intents:
     - stable-dependency-refresh
+"@icebreakers/monorepo-templates@3.2.5":
+  dir: packages/monorepo-templates
+  intents:
+    - tidy-pumas-sell
+    - wide-cows-wink
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -742,6 +751,12 @@
   dir: packages/monorepo
   intents:
     - quiet-docs-activate
+"@icebreakers/monorepo@6.6.0":
+  dir: packages/monorepo
+  intents:
+    - breezy-dragons-repair
+    - consumer-editable-workspace
+    - tidy-pumas-sell
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -1198,6 +1213,12 @@ repoctl@6.5.2:
   dir: packages/repoctl
   intents:
     - stable-dependency-refresh
+repoctl@6.6.0:
+  dir: packages/repoctl
+  intents:
+    - breezy-dragons-repair
+    - consumer-editable-workspace
+    - tidy-pumas-sell
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:

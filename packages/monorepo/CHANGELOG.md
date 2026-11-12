@@ -1,5 +1,21 @@
 # @icebreakers/monorepo
 
+## 6.6.0
+
+### Minor Changes
+
+- nightly 默认采用 UTC 日期与同日递增序号生成可读的 dev 版本，支持恢复部分发布并保留 snapshot 版本策略。
+
+### Patch Changes
+
+- 修复 pnpm 12.18 消费 Nightly 和 PR snapshot 时无法追加安装例外的问题，使用可编辑的 YAML 配置并保留已确认批次的精确版本例外。
+
+- 升级核心引擎、代码检查配置和模板的稳定版依赖，同步 Playwright、Storybook 生成器及其工作流版本，保留编译器 API 所需的兼容版本。
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.18
+  - @icebreakers/monorepo-templates@3.2.5
+
 ## 6.5.4
 
 ### Patch Changes
