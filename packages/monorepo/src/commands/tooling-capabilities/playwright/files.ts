@@ -10,7 +10,7 @@ const quote = (value: string) => `'${JSON.stringify(value).slice(1, -1).replaceA
 export function playwrightFiles(settings: CapabilitySettings) {
   const { options, target, workspace } = settings
   const scripts = { 'test:e2e': 'playwright test', 'test:e2e:install': 'playwright install chromium', 'lint': 'eslint .', 'typecheck': 'tsc --noEmit' }
-  const dependencies = { '@playwright/test': '1.63.0', '@types/node': '^22.0.0', 'eslint': '^10.0.0', 'repoctl': `^${version}`, 'typescript': '^6.0.2', [target.name]: 'workspace:*' }
+  const dependencies = { '@playwright/test': '1.65.0', '@types/node': '^22.0.0', 'eslint': '^10.14.0', 'repoctl': `^${version}`, 'typescript': '^6.0.3', [target.name]: 'workspace:*' }
   const targetUrl = `${path.relative(workspace.directory, target.directory).split('/').map(encodeURIComponent).join('/')}/`
   const click = options.interaction.click
   const locator = 'testId' in click

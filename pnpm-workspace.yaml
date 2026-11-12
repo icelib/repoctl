@@ -37,27 +37,27 @@ allowBuilds:
   vue-demi: true
   workerd: true
 overrides:
-  prettier: 3.9.10
+  prettier: 3.10.0
   # ATTW relies on the compiler internals of its pinned TypeScript version.
   '@arethetypeswrong/core>typescript': 5.9.3
   # astro2tsx uses the legacy WASM bridge with emnapi core 1.x.
   # Pin only that bridge's runtime; Rolldown's core/runtime 2.x pair must stay aligned.
   '@napi-rs/wasm-runtime@1.2.4>@emnapi/runtime': 1.11.3
-  vite: 8.3.7
+  vite: 8.3.8
   postcss: 8.5.32
   postcss-selector-parser: 7.2.0
   js-yaml: 5.5.0
   nanoid: 6.0.2
-  brace-expansion: 5.0.12
+  brace-expansion: 5.0.13
   # Older minimatch imports the CommonJS default; v5 only exports named functions.
-  minimatch@<4>brace-expansion: 1.1.21
-  minimatch@>=4 <10>brace-expansion: 2.1.7
+  minimatch@<4>brace-expansion: 1.1.22
+  minimatch@>=4 <10>brace-expansion: 2.1.8
   cross-spawn: 7.0.6
   adm-zip: 0.6.1
   uuid: 14.0.3
   esbuild: 0.28.2
   # Patch vulnerable transitive dependencies while keeping each override scoped to affected ranges.
   oxfmt>tinypool: 2.2.0
-  glob@<14: 14.0.4
-  minimatch@>=7 <11: 11.0.5
+  glob@<14: 14.0.5
+  minimatch@>=7 <11: 11.0.8
   micromark-extension-math>katex: 0.19.1

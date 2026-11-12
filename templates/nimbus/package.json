@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@cloudflare/nimbus-docs": "0.19.4",
-    "astro": "7.4.7"
+    "astro": "7.4.11"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
@@ -28,7 +28,7 @@
     "@emnapi/runtime": "^1.11.3",
     "astro-eslint-parser": "^3.2.0",
     "eslint-plugin-astro": "^3.2.1",
-    "eslint-plugin-mdx": "^3.9.4",
+    "eslint-plugin-mdx": "^3.9.5",
     "pagefind": "^1.6.0",
     "repoctl": "workspace:*",
     "typescript": "~6.0.3"
