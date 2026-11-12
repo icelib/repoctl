@@ -91,11 +91,19 @@ pnpm create repoctl@snapshot-nightly my-project
 
 These install commands target repoctl's own npm nightly packages. Consumer projects use their own package names. Before using `pkg-pr-new`, install the [official GitHub App](https://github.com/apps/pkg-pr-new) and grant it access to the publishing repository. Use the full-commit URLs from the report; internal workspace dependencies point to URLs in the same batch. This provider does not publish npm versions or dist-tags and does not run npm Trusted Publisher checks.
 
-Scheduled npm runs skip only when every current public package already points to the current source SHA and one consistent build identity. Missing packages or partial publication trigger preparation; registry/network errors fail the job instead of being treated as missing packages. Manual npm runs always prepare a new batch. Both scheduled and manual pkg-pr-new runs rebuild and compare the resulting bytes with existing immutable URLs, reusing only identical artifacts and uploading only missing packages.
+Scheduled npm runs skip only when every current public package already points to the current source SHA and one consistent build identity, including historical snapshot versions. Missing packages or partial publication trigger preparation; registry/network errors fail the job instead of being treated as missing packages. New manual npm runs or attempts prepare a new batch. Both scheduled and manual pkg-pr-new runs rebuild and compare the resulting bytes with existing immutable URLs, reusing only identical artifacts and uploading only missing packages.
+
+### Readable nightly versions
+
+npm defaults to `commands.release.nightly.versioning: 'date'`, producing `<base>-dev.YYYYMMDD.N`, for example `7.1.0-dev.20261112.1`. The native pnpm plan supplies each package's base; packages without planned changes retain their current base. A batch shares one UTC date and a sequence one greater than the maximum counter in that day's npm history across its public packages and base versions. Dist-tags do not determine the counter. New UTC dates start at `.1`; planning freezes the date before building, even across midnight. Dry runs do not reserve versions.
+
+Partial publication of the same `run_id-run_attempt` recovers its existing date and counter, including on a later day. Exact-version metadata and SHA-512 integrity must match before an upload can be skipped. Conflicts stop publication without renumbering prepared artifacts. Registry failures are never treated as absent history. The source SHA, build identity and digest remain in `repoctlSnapshot` metadata and reports.
+
+Explicit `versioning: 'snapshot'` retains `<base>-snapshot.nightly.c<commit>.b<digest>`. `pkg-pr-new` defaults to this deterministic format and rejects `date` because its full-commit URLs are immutable. Both npm formats retain the `snapshot-nightly` tag. The standalone `repo release snapshot` CLI and APIs retain their existing naming rules. Changing only `versioning` does not require a workflow upgrade.
 
 ### Checks, artifacts and execution boundary
 
-Package selection comes from the existing snapshot plan and includes every public workspace package. The nightly engine runs the configured `qualityScripts` and `hooks.verify`; the source repository explicitly uses build → lint → typecheck → tsd → tests plus workflow contract checks. It extracts the committed source outside the checkout, builds real tarballs, verifies package exports/types and isolated installation, and rewrites internal dependency references for the selected provider. Versions retain the existing base version, nightly marker, full commit SHA and build digest.
+Package selection comes from the existing snapshot plan and includes every public workspace package. The nightly engine runs the configured `qualityScripts` and `hooks.verify`; the source repository explicitly uses build → lint → typecheck → tsd → tests plus workflow contract checks. It extracts the committed source outside the checkout, builds real tarballs, verifies package exports/types and isolated installation, and rewrites internal dependency references for the selected provider. npm versions default to the base, UTC date and daily sequence; full commit SHA and build digest remain in package metadata.
 
 The workflow invokes:
 

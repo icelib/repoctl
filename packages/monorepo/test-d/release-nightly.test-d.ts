@@ -1,9 +1,15 @@
-import type { MonorepoConfig, NightlyOptions, NightlyProvider, NightlyReport, ReleaseNightlyConfig } from '@icebreakers/monorepo'
+import type { MonorepoConfig, NightlyOptions, NightlyProvider, NightlyReport, NightlyVersioning, ReleaseNightlyConfig } from '@icebreakers/monorepo'
 import { createNightlyPlan, releaseNightly } from '@icebreakers/monorepo'
 import { expectAssignable, expectNotAssignable, expectType } from 'tsd'
 
 expectAssignable<NightlyProvider>('npm')
 expectAssignable<NightlyProvider>('pkg-pr-new')
+expectAssignable<NightlyVersioning>('date')
+expectAssignable<NightlyVersioning>('snapshot')
+expectAssignable<ReleaseNightlyConfig>({ versioning: 'date' })
+expectAssignable<MonorepoConfig>({ commands: { release: { nightly: { versioning: 'snapshot' } } } })
+expectNotAssignable<NightlyVersioning>('custom')
+expectNotAssignable<ReleaseNightlyConfig>({ versioning: 'custom' })
 expectAssignable<ReleaseNightlyConfig>({ provider: 'npm', schedule: '17 19 * * *' })
 expectAssignable<ReleaseNightlyConfig>({ qualityTimeoutMs: 3_600_000 })
 expectAssignable<MonorepoConfig>({ commands: { release: { nightly: { qualityTimeoutMs: 3_600_000 } } } })

@@ -35,6 +35,10 @@ it('retries a transitive consumer miss after confirmed publication without uploa
       return json({ latest: '1.0.0', ...(published ? { 'snapshot-nightly': published.version } : {}) })
     }
     const [, encodedName, encodedVersion] = url.pathname.split('/')
+    if (!encodedVersion) {
+      const name = decodeURIComponent(encodedName!)
+      return json({ name, versions: manifests(name) })
+    }
     const manifest = manifests(decodeURIComponent(encodedName!))[decodeURIComponent(encodedVersion!)]
     return manifest ? json(manifest) : json({}, 404)
   })
@@ -94,6 +98,11 @@ it('retries a transitive consumer miss after confirmed publication without uploa
   expect(new Set(h.uploads.map(args => args[1])).size).toBe(2)
   expect(h.uploads.every(args => args[args.indexOf('--tag') + 1] === 'snapshot-nightly')).toBe(true)
   expect(report.packages.every(pkg => pkg.published)).toBe(true)
+  expect(report.packages.map(pkg => pkg.version)).toEqual([expect.stringMatching(/^1\.0\.1-dev\.\d{8}\.1$/u), expect.stringMatching(/^1\.0\.0-dev\.\d{8}\.1$/u)])
+  for (const pkg of report.snapshot!.packages) {
+    expect(report.snapshot!.installCommand).toContain(`${pkg.name}@${pkg.version}`)
+    expect(manifests(pkg.name)[pkg.version]).toMatchObject({ repoctlSnapshot: { ...report.snapshot!.identity, identityKey: report.snapshot!.identityKey, tag: 'snapshot-nightly' } })
+  }
   expect(report.latest).toEqual({ 'snapshot-a': '1.0.0', 'snapshot-b': '1.0.0' })
   expect(JSON.parse(await readFile(path.join(report.outputDirectory!, 'consumer-report.json'), 'utf8'))).toEqual(report.consumer)
   expect(h.run('git', ['status', '--porcelain'])).toBe('')

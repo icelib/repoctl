@@ -59,14 +59,15 @@ export default defineMonorepoConfig({
 })
 ```
 
-| 配置                                        | 作用                                                              |
-| ------------------------------------------- | ----------------------------------------------------------------- |
-| `commands.init.preset`                      | 控制初始化默认预设                                                |
-| `commands.create.defaultTemplate`           | 控制 `repo new <name>` 的默认模板                                 |
-| `commands.clean.autoConfirm`                | 不提示并选择所有符合条件的工作区包                                |
-| `commands.clean.dryRun`                     | 预览删除及依赖变更，不写入文件                                    |
-| `commands.upgrade.skipOverwrite`            | 同步标准资产时是否保留已有 drifted 文件                           |
-| `commands.release.nightly.qualityTimeoutMs` | nightly 每个质量脚本与 verify hook 的超时毫秒数，默认 `2_700_000` |
+| 配置                                        | 作用                                                                                                           |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `commands.init.preset`                      | 控制初始化默认预设                                                                                             |
+| `commands.create.defaultTemplate`           | 控制 `repo new <name>` 的默认模板                                                                              |
+| `commands.clean.autoConfirm`                | 不提示并选择所有符合条件的工作区包                                                                             |
+| `commands.clean.dryRun`                     | 预览删除及依赖变更，不写入文件                                                                                 |
+| `commands.upgrade.skipOverwrite`            | 同步标准资产时是否保留已有 drifted 文件                                                                        |
+| `commands.release.nightly.versioning`       | npm 默认 `date`：`<base>-dev.YYYYMMDD.N`，按 UTC 计日；npm 可切换为 `snapshot`，`pkg-pr-new` 仅支持 `snapshot` |
+| `commands.release.nightly.qualityTimeoutMs` | nightly 每个质量脚本与 verify hook 的超时毫秒数，默认 `2_700_000`                                              |
 
 ## 查看当前配置
 

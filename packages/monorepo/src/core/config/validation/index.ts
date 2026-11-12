@@ -37,6 +37,11 @@ export function validateMonorepoConfig(value: unknown): ConfigDiagnostic[] {
   }
   validateSchema(Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'extends' && !key.startsWith('$') && key !== '_layers')), rootSchema, '', diagnostics)
   validateTemplateSources(value, diagnostics)
+  const release = isRecord(value['commands']) && isRecord(value['commands']['release']) ? value['commands']['release'] : undefined
+  const nightly = isRecord(release?.['nightly']) ? release['nightly'] : undefined
+  if (nightly?.['provider'] === 'pkg-pr-new' && nightly['versioning'] === 'date') {
+    diagnostics.push({ id: 'config.conflict', path: 'commands.release.nightly.versioning', actualType: 'string', expected: 'snapshot for pkg-pr-new', suggestion: 'Use snapshot versioning with immutable pkg-pr-new commit URLs, or select the npm provider.' })
+  }
   const upgrade = isRecord(value['commands']) && isRecord(value['commands']['upgrade']) ? value['commands']['upgrade'] : undefined
   if (upgrade?.['overwrite'] === true && (upgrade['noOverwrite'] === true || upgrade['skipOverwrite'] === true)) {
     diagnostics.push({ id: 'config.conflict', path: 'commands.upgrade.overwrite', actualType: 'boolean', expected: 'one overwrite policy', suggestion: 'Choose overwrite or noOverwrite/skipOverwrite, not both.' })

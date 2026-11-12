@@ -228,4 +228,4 @@ export type { CleanCommandConfig } from './clean'
 export type * from './config/tooling'
 
 export type { DoctorCommandConfig, DoctorOptions, DoctorSuppression } from './doctor'
-export type { NightlyProvider, ReleaseAfterPublishHookConfig, ReleaseCommandConfig, ReleaseNightlyConfig, ReleaseRegistryConfig } from './release'
+export type { NightlyProvider, NightlyVersioning, ReleaseAfterPublishHookConfig, ReleaseCommandConfig, ReleaseNightlyConfig, ReleaseRegistryConfig } from './release'

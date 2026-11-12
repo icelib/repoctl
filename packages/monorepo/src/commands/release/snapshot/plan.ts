@@ -8,6 +8,7 @@ import { clearWorkspaceCache, getWorkspaceData } from '../../../core/workspace'
 import { dependencyReferences } from '../../package-check/dependencies'
 import { createNativeReleasePlan } from '../plan/native-report'
 import { assertSnapshotSource, snapshotIdentity } from './identity'
+import { snapshotInstallation } from './install'
 import { assertReferenceDependencies, snapshotSourceEvidence } from './source/references'
 
 /** Reuse pnpm's version explanations, while snapshotting every public package together. */
@@ -66,8 +67,6 @@ export async function createSnapshotPlan(options: SnapshotOptions): Promise<Snap
     throw new Error('No public versioned workspace packages are available for snapshots.')
   }
   assertSnapshotSource({ ...options, cwd: source })
-  const installArgs = ['add', ...packages.map(pkg => `${pkg.name}@${pkg.version}`), '--registry', registry.href]
-  const quote = (value: string) => /^[\w@./:-]+$/.test(value) ? value : `'${value.replaceAll('\'', '\'\\\'\'')}'`
   return {
     schemaVersion: 1,
     identity,
@@ -80,7 +79,6 @@ export async function createSnapshotPlan(options: SnapshotOptions): Promise<Snap
     status: 'planned',
     packages,
     nativePlan,
-    install: { executable: 'pnpm', args: installArgs },
-    installCommand: `pnpm ${installArgs.map(quote).join(' ')}`,
+    ...snapshotInstallation(packages, registry.href),
   }
 }

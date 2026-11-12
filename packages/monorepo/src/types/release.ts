@@ -22,10 +22,13 @@ export interface ReleaseRegistryConfig {
 }
 
 export type NightlyProvider = 'npm' | 'pkg-pr-new'
+export type NightlyVersioning = 'date' | 'snapshot'
 
 export interface ReleaseNightlyConfig {
   /** Nightly publication backend. @default 'npm' */
   provider?: NightlyProvider
+  /** npm defaults to date (<base>-dev.YYYYMMDD.N, UTC); pkg-pr-new only supports snapshot. */
+  versioning?: NightlyVersioning
   /** Five-field UTC cron. Omit for manual nightly only; synchronize with repo upgrade. */
   schedule?: string
   /** Timeout for each nightly quality script and verify hook, in positive safe integer milliseconds. @default 2700000 */

@@ -215,7 +215,7 @@ Commit the configuration, workflow and `.repoctl/baselines/root` records to the 
 
 | Provider        | Installation                     | Same-commit manual run                                                            | Requirements                                                                                                                                |
 | --------------- | -------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm` (default) | `<package>@snapshot-nightly`     | New build identity and snapshot versions                                          | npm Trusted Publisher for every public package, matching the repository, `release.yml` and environment; `contents: read`, `id-token: write` |
+| `npm` (default) | `<package>@snapshot-nightly`     | New build identity and date versions                                              | npm Trusted Publisher for every public package, matching the repository, `release.yml` and environment; `contents: read`, `id-token: write` |
 | `pkg-pr-new`    | Full-commit URLs from the report | Verify existing bytes, reuse identical artifacts and upload only missing packages | Official pkg.pr.new GitHub App installed for the repository; `contents: read`; no npm token or npm Trusted Publisher                        |
 
 For npm, run the `oidc-audit` workflow mode before first use and check every package's npm settings. Nightly repeats the audit for its exact package plan before uploading, uses OIDC/provenance, confirms exact versions and `snapshot-nightly` tags, and verifies that `latest` did not change. Install one of your project's published packages with:
@@ -226,11 +226,21 @@ pnpm add -D <package>@snapshot-nightly
 
 To use `pkg-pr-new`, install the [official GitHub App](https://github.com/apps/pkg-pr-new), grant it access to this repository, set `provider: 'pkg-pr-new'` and synchronize the workflow. This provider returns URLs shaped like `https://pkg.pr.new/<owner>/<repo>/<package>@<full-commit-sha>` and rewrites internal dependencies to the same batch. It does not publish npm dist-tags. Existing URL metadata or bytes that disagree with the prepared artifact fail the run rather than being overwritten.
 
-Scheduled npm checks skip only when every current public package is already available for the current commit and the same build identity. Missing or partially published packages require preparation; registry/query failures fail the run. A manual npm run always starts a new batch, even for the same commit. Both scheduled and manual pkg-pr-new runs rebuild and compare bytes, reusing only identical artifacts at that commit's URLs and uploading only missing packages.
+Scheduled npm checks skip only when every current public package is already available for the current commit and the same build identity, including historical snapshot versions. Missing or partially published packages require preparation; registry/query failures fail the run. A new manual npm run or attempt starts a new batch, even for the same commit. Both scheduled and manual pkg-pr-new runs rebuild and compare bytes, reusing only identical artifacts at that commit's URLs and uploading only missing packages.
+
+### Nightly version numbers
+
+npm defaults to `commands.release.nightly.versioning: 'date'`, producing versions such as `7.1.0-dev.20261112.1`. The base comes from the native pnpm release plan, or the current manifest version for packages without a planned change. The date uses UTC, independently of the cron's local-time interpretation. All public packages in a batch share one date and sequence, while retaining their own base versions.
+
+The sequence is one greater than the highest `dev.YYYYMMDD.N` counter found in that day's npm version history across the selected packages, including other base versions and versions no longer pointed to by a dist-tag. The first batch of a new UTC date starts at `.1`. Planning freezes the date before building; a build that crosses midnight keeps that date. A dry run does not reserve a counter. If another publisher occupies the planned version, conflicting identity or integrity stops publication; prepared artifacts are never silently renumbered.
+
+Resuming the same `run_id-run_attempt` after a partial publication reuses the published date and counter, including on a later day, and verifies exact metadata and tarball integrity before skipping an existing upload. Use a new run or attempt for a changed build. Full commit SHA and build identity remain in `repoctlSnapshot` metadata and JSON reports.
+
+Set `commands.release.nightly.versioning: 'snapshot'` to retain `<base>-snapshot.nightly.c<commit>.b<digest>`. `pkg-pr-new` defaults to this deterministic format and rejects `versioning: 'date'` because its full-commit URLs are immutable. The `snapshot-nightly` install tag stays the same for both npm formats. Versioning is read from configuration at runtime; changing it does not require regenerating the workflow.
 
 ### Checks and diagnostics
 
-Nightly runs configured `qualityScripts` and `hooks.verify`, prepares real tarballs from committed source outside the checkout, and validates package exports, types and isolated installation. Versions include the base version, nightly marker, full commit SHA and build digest. After publication, a clean consumer installs the actual tags or URLs and checks identities, entrypoints and types. Formal versioning and post-publication hooks remain part of the normal release flow.
+Nightly runs configured `qualityScripts` and `hooks.verify`, prepares real tarballs from committed source outside the checkout, and validates package exports, types and isolated installation. The default npm version contains the base, UTC date and daily sequence; source SHA and build digest remain in package metadata. After publication, a clean consumer installs the actual tags or URLs and checks identities, entrypoints and types. Formal versioning and post-publication hooks remain part of the normal release flow.
 
 Each quality script and verify hook has its own timeout, defaulting to `2_700_000` milliseconds (45 minutes). Set `commands.release.nightly.qualityTimeoutMs` to a positive safe integer number of milliseconds to override it; the example above allows 60 minutes per script. The workflow's job timeout still limits the whole run, so increase that separately if the combined work needs more time. A timeout stops publication and retains the command's output in the diagnostic report.
 
@@ -256,7 +266,7 @@ repo release snapshot --kind pr --pr 123 --commit <full-HEAD-sha> --build-id <ru
 repo release snapshot --kind nightly --commit <full-HEAD-sha> --build-id <run-id>-<attempt> --output /tmp/repoctl-artifacts
 ```
 
-The command reuses the native pnpm release plan for candidate explanations and base versions, then snapshots every public package together. Versions include the full source SHA and a deterministic digest of the PR/nightly build identity. The only tags are `snapshot-pr-<number>` and `snapshot-nightly`; there is no option to target a stable tag. Reuse a build identity only to recover the same source and artifacts. The report contains exact `pnpm add` instructions.
+The command reuses the native pnpm release plan for candidate explanations and base versions, then snapshots every public package together. Versions include the full source SHA and a deterministic digest of the PR/nightly build identity. `repo release snapshot --kind nightly` retains this format; the date default above applies only to `repo release nightly`. The only tags are `snapshot-pr-<number>` and `snapshot-nightly`; there is no option to target a stable tag. Reuse a build identity only to recover the same source and artifacts. The report contains exact `pnpm add` instructions.
 
 Snapshot planning through the CLI and API does not load or execute `repoctl.config.*`. It uses committed pnpm metadata independently of stable release configuration; ordinary release commands still validate their configuration before running.
 

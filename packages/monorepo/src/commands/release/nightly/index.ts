@@ -17,6 +17,7 @@ import { confirmNpmNightly, inspectNpmNightly } from './providers/npm'
 import { publishPkgPrNew } from './providers/pkg-pr-new'
 import { inspectPkgPrNew, pkgPrNewLocator } from './providers/pkg-pr-new/registry'
 import { checkpointNightly, createNightlyOutput, writeNightlySummary } from './report'
+import { planDateNightlyVersions } from './versioning'
 
 export { formatNightlySummary, writeNightlySummary } from './report'
 export type { NightlyConsumerReport, NightlyOptions, NightlyPackage, NightlyReport } from './types'
@@ -74,6 +75,10 @@ async function nightly(options: NightlyOptions, execute: boolean): Promise<Night
       report.status = 'skipped'
       report.reason = 'Every public package already matches this commit and the same nightly build identity.'
       return report
+    }
+    if (config.versioning === 'date') {
+      await planDateNightlyVersions(report.snapshot, options)
+      updatePackages(report)
     }
     if (!execute || options.dryRun) {
       return report
