@@ -1,5 +1,13 @@
 # @icebreakers/monorepo-templates
 
+## 3.2.5
+
+### Patch Changes
+
+- 升级核心引擎、代码检查配置和模板的稳定版依赖，同步 Playwright、Storybook 生成器及其工作流版本，保留编译器 API 所需的兼容版本。
+
+- 同步 nightly 日期版本、旧格式切换和发布恢复规则的中英文文档与配置参考。
+
 ## 3.2.4
 
 ### Patch Changes
