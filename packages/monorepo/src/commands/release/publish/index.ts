@@ -4,6 +4,7 @@ import { clearWorkspaceCache, getWorkspacePackages } from '../../../core/workspa
 import { ReleaseCommandError } from '../errors'
 import { readPublishSummary } from '../shared'
 import { runPublishAttempt } from './command'
+import { publishCommandError } from './diagnostics'
 import { acceptedFromOutput, isPublishConflict, isTransientPublishFailure } from './evidence'
 import { confirmVisibility, refreshRegistry, sleep } from './registry'
 import { packageKey, PublishState } from './state'
@@ -53,7 +54,7 @@ export async function publishWithRetry(args: string[], options: ReleaseOptions &
       const transient = isTransientPublishFailure(result.output)
       const conflict = isPublishConflict(result.output)
       if (!transient && !conflict) {
-        throw new ReleaseCommandError(`command failed: pnpm ${args.join(' ')}`, result.status ?? 1)
+        throw publishCommandError(`command failed: pnpm ${args.join(' ')}`, result, options)
       }
       await refreshRegistry(state, options)
       await state.save(options.cwd, 'publishing')
@@ -63,7 +64,7 @@ export async function publishWithRetry(args: string[], options: ReleaseOptions &
         return
       }
       if (attempt === publishAttempts) {
-        throw new ReleaseCommandError(`command failed after ${publishAttempts} publish attempts: pnpm ${args.join(' ')}`, result.status ?? 1)
+        throw publishCommandError(`command failed after ${publishAttempts} publish attempts: pnpm ${args.join(' ')}`, result, options)
       }
 
       const delay = retryDelays[attempt - 1]!

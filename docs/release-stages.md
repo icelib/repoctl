@@ -118,6 +118,8 @@ After publication, both providers install the reported targets in a clean consum
 
 For npm, the clean consumer exempts only the confirmed batch's exact `name@version` entries from pnpm's release-age policy so newly published snapshots can be verified immediately. Other versions and dependencies retain pnpm's default policy; the source workspace's overrides and cooldown settings are not copied into the consumer.
 
+If an upload fails, the error includes the child process exit code, termination signal when available, and up to 8,000 characters from the end of its output with credentials redacted. Quiet JSON publication retains this evidence in the error field without writing command output into JSON stdout. Inspect the error and registry state before starting another publication.
+
 If publication is confirmed but consumer verification fails, the run remains failed and its summary identifies the confirmed build. Review `nightly-report.json`, `consumer-report.json` and the retained tarballs before retrying. A scheduled npm run for the same commit may skip the already published batch without repeating consumer verification. After fixing the failure, if a new nightly publication is intended, manually run **Release → mode: nightly** with `dry-run: false`; this repeats the pipeline and publishes snapshots with a new build identity.
 
 ### Preparing external build artifacts through the public API
