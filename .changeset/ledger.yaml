@@ -757,6 +757,10 @@
     - breezy-dragons-repair
     - consumer-editable-workspace
     - tidy-pumas-sell
+"@icebreakers/monorepo@6.6.1":
+  dir: packages/monorepo
+  intents:
+    - fix-release-publish-diagnostics
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
