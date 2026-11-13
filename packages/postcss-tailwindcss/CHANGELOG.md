@@ -1,5 +1,11 @@
 # postcss-tailwindcss
 
+## 3.1.9
+
+### Patch Changes
+
+- Refresh stable workspace and generated tooling dependencies, review Nimbus 0.20 migrations, and align snapshot workflows with pnpm 12.18.0.
+
 ## 3.1.8
 
 ### Patch Changes

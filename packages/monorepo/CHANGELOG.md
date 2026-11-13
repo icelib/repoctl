@@ -1,5 +1,20 @@
 # @icebreakers/monorepo
 
+## 6.6.2
+
+### Patch Changes
+
+- Resolve consumer compiler files relative to the installed package manifest so TypeScript 7 export boundaries do not block package verification or nightly publishing.
+
+- 绑定 ESLint 公开声明的 TypeScript 6 API 依赖，修复 TypeScript 7 消费项目中的严格类型检查与 nightly 包验证。
+
+- Refresh stable workspace and generated tooling dependencies, review Nimbus 0.20 migrations, and align snapshot workflows with pnpm 12.18.0.
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.19
+  - @icebreakers/monorepo-templates@3.2.6
+  - @icebreakers/stylelint-config@6.0.4
+
 ## 6.6.1
 
 ### Patch Changes

@@ -1,5 +1,14 @@
 # stylelint-plugin-tailwindcss
 
+## 3.2.3
+
+### Patch Changes
+
+- Update the UnoCSS config and core implementations to 66.13.0 while preserving utility rule behavior.
+
+- Updated dependencies:
+  - postcss-tailwindcss@3.1.9
+
 ## 3.2.2
 
 ### Patch Changes

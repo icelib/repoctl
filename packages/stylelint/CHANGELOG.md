@@ -1,5 +1,14 @@
 # @icebreakers/stylelint-config
 
+## 6.0.4
+
+### Patch Changes
+
+- Refresh stable workspace and generated tooling dependencies, review Nimbus 0.20 migrations, and align snapshot workflows with pnpm 12.18.0.
+
+- Updated dependencies:
+  - stylelint-plugin-tailwindcss@3.2.3
+
 ## 6.0.3
 
 ### Patch Changes

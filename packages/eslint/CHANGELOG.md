@@ -1,5 +1,16 @@
 # @icebreakers/eslint-config
 
+## 8.0.19
+
+### Patch Changes
+
+- 绑定 ESLint 公开声明的 TypeScript 6 API 依赖，修复 TypeScript 7 消费项目中的严格类型检查与 nightly 包验证。
+
+- Refresh stable workspace and generated tooling dependencies, review Nimbus 0.20 migrations, and align snapshot workflows with pnpm 12.18.0.
+
+- Updated dependencies:
+  - @icebreakers/stylelint-config@6.0.4
+
 ## 8.0.18
 
 ### Patch Changes
