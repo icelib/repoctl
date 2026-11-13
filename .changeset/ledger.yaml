@@ -157,6 +157,11 @@
   dir: packages/eslint
   intents:
     - tidy-pumas-sell
+"@icebreakers/eslint-config@8.0.19":
+  dir: packages/eslint
+  intents:
+    - tidy-rats-sin
+    - wise-turtles-guess
 "@icebreakers/eslint-config@8.0.2":
   dir: packages/eslint
   intents:
@@ -437,6 +442,11 @@
   intents:
     - tidy-pumas-sell
     - wide-cows-wink
+"@icebreakers/monorepo-templates@3.2.6":
+  dir: packages/monorepo-templates
+  intents:
+    - silent-toys-poke
+    - wise-turtles-guess
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -761,6 +771,12 @@
   dir: packages/monorepo
   intents:
     - fix-release-publish-diagnostics
+"@icebreakers/monorepo@6.6.2":
+  dir: packages/monorepo
+  intents:
+    - little-olives-juggle
+    - tidy-rats-sin
+    - wise-turtles-guess
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -797,6 +813,10 @@
   dir: packages/stylelint
   intents:
     - big-elephants-ring
+"@icebreakers/stylelint-config@6.0.4":
+  dir: packages/stylelint
+  intents:
+    - wise-turtles-guess
 create-icebreaker@1.1.0:
   dir: packages/create-icebreaker
   intents:
@@ -1008,6 +1028,10 @@ postcss-tailwindcss@3.1.8:
   dir: packages/postcss-tailwindcss
   intents:
     - stable-dependency-refresh
+postcss-tailwindcss@3.1.9:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - wise-turtles-guess
 repoctl@5.10.0:
   dir: packages/repoctl
   intents:
@@ -1223,6 +1247,12 @@ repoctl@6.6.0:
     - breezy-dragons-repair
     - consumer-editable-workspace
     - tidy-pumas-sell
+repoctl@6.6.2:
+  dir: packages/repoctl
+  intents:
+    - little-olives-juggle
+    - tidy-rats-sin
+    - wise-turtles-guess
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
@@ -1271,3 +1301,7 @@ stylelint-plugin-tailwindcss@3.2.1:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
     - big-elephants-ring
+stylelint-plugin-tailwindcss@3.2.3:
+  dir: packages/stylelint-plugin-tailwindcss
+  intents:
+    - fast-peaches-destroy
