@@ -2,6 +2,7 @@ import type { CopyOptionsFn, TsdownHooks } from 'tsdown'
 import { readFile, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
 import path from 'node:path'
+import { bindTypeScriptApi } from './typescript-api.ts'
 
 export const antfuDeclarationVersion = '10.0.0'
 
@@ -64,10 +65,14 @@ async function readAntfuSource(directory: string) {
 // tsdown assigns shared copies to one format, including single-format and watch builds.
 export const antfuLicenseCopy: CopyOptionsFn = async ({ cwd }) => {
   const { dependencyRoot } = await readAntfuSource(cwd)
-  return {
+  const require = createRequire(path.join(cwd, 'package.json'))
+  return [{
     from: path.join(dependencyRoot, 'LICENSE'),
     rename: 'ANTFU-LICENSE',
-  }
+  }, {
+    from: path.join(path.dirname(require.resolve('@typescript-eslint/parser/package.json')), 'LICENSE'),
+    rename: 'TYPESCRIPT-ESLINT-LICENSE',
+  }]
 }
 
 /** Post-process both ESM and CJS declaration builds without modifying dependency files. */
@@ -85,8 +90,11 @@ export function antfuDeclarationHooks(): Partial<TsdownHooks> {
       for (const chunk of declarations) {
         const filename = path.join(options.outDir, chunk.fileName)
         const source = await readFile(filename, 'utf8')
-        const notice = `// Includes @antfu/eslint-config ${version} declarations (MIT); see ANTFU-LICENSE.\n`
-        await writeFile(filename, notice + correctAntfuDeclarations(source, version))
+        const corrected = correctAntfuDeclarations(source, version)
+        const bound = bindTypeScriptApi(corrected)
+        const notice = `// Includes @antfu/eslint-config ${version} declarations (MIT); see ANTFU-LICENSE.\n${
+          bound === corrected ? '' : '// Includes typescript-eslint declarations (MIT); see TYPESCRIPT-ESLINT-LICENSE.\n'}`
+        await writeFile(filename, notice + bound)
       }
     },
   }

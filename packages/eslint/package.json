@@ -88,6 +88,7 @@
     "@typescript-eslint/rule-tester": "^8.72.2",
     "@typescript-eslint/typescript-estree": "^8.72.2",
     "@typescript-eslint/utils": "^8.72.2",
+    "@typescript/typescript6": "6.0.2",
     "@vue/compiler-sfc": "^3.5.45",
     "@weapp-vite/eslint": "^0.3.3",
     "defu": "^6.1.7",

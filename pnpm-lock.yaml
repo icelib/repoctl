@@ -371,6 +371,9 @@ importers:
       '@typescript-eslint/utils':
         specifier: ^8.72.2
         version: 8.72.2(@typescript/typescript6@6.0.2)(eslint@10.14.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
+      '@typescript/typescript6':
+        specifier: 6.0.2
+        version: 6.0.2
       '@vue/compiler-sfc':
         specifier: ^3.5.45
         version: 3.5.45

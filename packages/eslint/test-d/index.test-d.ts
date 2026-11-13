@@ -10,6 +10,7 @@ import type {
   UserDefinedOptions,
 } from '@icebreakers/eslint-config'
 import type * as CommonJSStylelint from '@icebreakers/eslint-config/stylelint' with { 'resolution-mode': 'require' }
+import type { Program } from '@typescript/typescript6'
 import type { Linter } from 'eslint'
 import { getPresets, icebreaker, icebreakerLegacy } from '@icebreakers/eslint-config'
 import { expectAssignable, expectType } from 'tsd'
@@ -52,6 +53,9 @@ expectAssignable<UserConfigItem>(Promise.resolve(configs))
 expectAssignable<CommonJS.UserConfigItem>(Promise.resolve(configs))
 expectAssignable<OptionsConfig>({ typescript: true })
 expectAssignable<CommonJS.OptionsConfig>({ typescript: true })
+declare const programs: Program[]
+expectAssignable<OptionsConfig>({ typescript: { parserOptions: { programs, debugLevel: ['typescript'] } } })
+expectAssignable<CommonJS.OptionsConfig>({ typescript: { parserOptions: { programs, debugLevel: ['typescript'] } } })
 expectType<[CommonJS.UserDefinedOptions, ...CommonJS.UserConfigItem[]]>(commonjs.getPresets())
 expectAssignable<UserDefinedOptions>({ formatters: { css: 'oxfmt' } })
 expectAssignable<CommonJS.UserDefinedOptions>({ formatters: { css: 'oxfmt' } })

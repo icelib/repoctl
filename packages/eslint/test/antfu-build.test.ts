@@ -14,6 +14,7 @@ vi.mock('node:fs/promises', async (original) => {
 const packageRoot = path.resolve(import.meta.dirname, '..')
 const require = createRequire(import.meta.url)
 const dependencyRoot = path.dirname(require.resolve('@antfu/eslint-config/package.json'))
+const parserRoot = path.dirname(require.resolve('@typescript-eslint/parser/package.json'))
 const roots: string[] = []
 
 afterEach(async () => {
@@ -75,6 +76,7 @@ async function fixture(formats: Format[] = ['esm', 'cjs']) {
 
   async function verify(outDir = path.join(root, 'dist')) {
     expect(await readFile(path.join(outDir, 'ANTFU-LICENSE'), 'utf8')).toBe(license)
+    expect(await readFile(path.join(outDir, 'TYPESCRIPT-ESLINT-LICENSE'), 'utf8')).toBe(await readFile(path.join(parserRoot, 'LICENSE'), 'utf8'))
     for (const format of formats) {
       const extension = format === 'cjs' ? 'cts' : 'ts'
       const content = await readFile(path.join(outDir, `index.d.${extension}`), 'utf8')

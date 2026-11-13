@@ -37,13 +37,11 @@ it.each(['mts', 'cts'])('checks strict built %s declarations with the supported 
     types: [],
   }
   const peer = ts.resolveModuleName('eslint', filename, options, ts.sys).resolvedModule
-  const compiler = ts.resolveModuleName('typescript', filename, options, ts.sys).resolvedModule
   expect(peer).toBeDefined()
-  expect(compiler).toBeDefined()
   // eslint-flat-config-utils omits its ESLint peer, so the source pnpm store finds an
   // unrelated @types/eslint 7 first. Bind the supported installed peer for this type
   // contract; isolated tarball consumer checks separately exercise default resolution.
-  options.paths = { eslint: [peer!.resolvedFileName], typescript: [compiler!.resolvedFileName] }
+  options.paths = { eslint: [peer!.resolvedFileName] }
   const host = ts.createCompilerHost(options)
   const getSourceFile = host.getSourceFile.bind(host)
   host.getSourceFile = (fileName, languageVersion, onError, shouldCreateNewSourceFile) => path.normalize(fileName) === filename

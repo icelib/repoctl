@@ -20,7 +20,9 @@ export default defineConfig({
   deps: {
     dts: {
       neverBundle: true,
-      alwaysBundle: ['@antfu/eslint-config'],
+      // Upstream parser types omit a TypeScript dependency in part of their closure.
+      // Bundle that closure so its compiler API can use our explicit legacy package.
+      alwaysBundle: ['@antfu/eslint-config', /^@typescript-eslint\//u],
     },
     neverBundle: ['eslint-plugin-mdx'],
     onlyBundle: false,
