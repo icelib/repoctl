@@ -71,7 +71,10 @@ export async function consumerTypeToolchain(sourceDirectory: string, dependencie
 async function installedTool(directory: string, dependency: ConsumerTypeDependency, name: string, entry: string) {
   const root = await realpath(directory)
   const require = createRequire(path.join(root, 'package.json'))
-  const files = await Promise.all([`${dependency.alias}/package.json`, `${dependency.alias}/${entry}`].map(specifier => realpath(require.resolve(specifier))))
+  const manifest = await realpath(require.resolve(`${dependency.alias}/package.json`))
+  // Executables and declaration files are installed files, not public module
+  // subpaths. TypeScript 7 intentionally does not export its bin/tsc entry.
+  const files = [manifest, await realpath(path.join(path.dirname(manifest), entry))]
   for (const filename of files) {
     const relative = path.relative(root, filename)
     if (!relative || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {

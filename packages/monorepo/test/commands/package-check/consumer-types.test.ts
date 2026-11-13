@@ -52,14 +52,15 @@ it('installs an explicit fallback compiler and Node types without borrowing ance
   expect(typecheck.args.slice(typecheck.args.indexOf('--skipLibCheck'), typecheck.args.indexOf('--skipLibCheck') + 2)).toEqual(['--skipLibCheck', 'false'])
 }, 120_000)
 
-it('uses the installed workspace TypeScript version for generic typed arrays and installs that exact compiler in the consumer', async () => {
+it.each([6, 7])('uses the installed workspace TypeScript %s version for generic typed arrays and installs that exact compiler in the consumer', async (major) => {
   const cwd = await workspace()
   const rootManifest = JSON.parse(await readFile(path.join(cwd, 'package.json'), 'utf8'))
   await writeFile(path.join(cwd, 'package.json'), JSON.stringify({ ...rootManifest, devDependencies: { typescript: 'catalog:' } }))
-  await writeFile(path.join(cwd, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\ncatalog:\n  typescript: ^6.0.0\n')
-  const source = path.dirname(createRequire(import.meta.url).resolve('typescript/package.json'))
+  await writeFile(path.join(cwd, 'pnpm-workspace.yaml'), `packages:\n  - packages/*\ncatalog:\n  typescript: ^${major}.0.0\n`)
+  const require = createRequire(major === 7 ? new URL('../../../../../package.json', import.meta.url) : import.meta.url)
+  const source = path.dirname(require.resolve('typescript/package.json'))
   const { version } = JSON.parse(await readFile(path.join(source, 'package.json'), 'utf8'))
-  expect(version).toMatch(/^6\./)
+  expect(version).toMatch(new RegExp(`^${major}\\.`))
   await mkdir(path.join(cwd, 'node_modules'))
   await symlink(source, path.join(cwd, 'node_modules/typescript'), 'junction')
   await addPackage(cwd, 'fixture-modern-declarations', { exports: { '.': { types: './dist/index.d.mts', import: './dist/index.mjs' } } }, {
