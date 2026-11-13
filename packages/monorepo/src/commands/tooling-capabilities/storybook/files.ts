@@ -14,7 +14,7 @@ export function storybookFiles(settings: StorybookSettings) {
     [`@storybook/${framework}`]: '10.6.7',
     '@types/node': '^22.0.0',
     '@vitest/browser-playwright': '5.1.0',
-    [`@vitejs/plugin-${options.framework}`]: options.framework === 'vue' ? '^6.0.10' : '^6.3.0',
+    [`@vitejs/plugin-${options.framework}`]: options.framework === 'vue' ? '^6.0.11' : '^6.3.0',
     'eslint': '^10.14.0',
     'playwright': '1.65.0',
     'repoctl': `^${version}`,

@@ -1,7 +1,7 @@
 import { valid } from 'semver'
 
 export interface SnapshotWorkflowOptions {
-  /** Trusted pnpm pin matching the consumer workspace packageManager; defaults to 12.14.0. */
+  /** Trusted pnpm pin matching the consumer workspace packageManager; defaults to 12.18.0. */
   pnpmVersion?: string
   /** Protected environment whose reviewers approve the frozen candidate. */
   environment?: string
@@ -15,7 +15,7 @@ export interface SnapshotWorkflowOptions {
 }
 
 export const snapshotWorkflowDefaults: Required<SnapshotWorkflowOptions> = {
-  pnpmVersion: '12.14.0',
+  pnpmVersion: '12.18.0',
   environment: 'pr-snapshot',
   builderWorkflowPath: '.github/workflows/repoctl-snapshot-build.yml',
   publisherWorkflowPath: '.github/workflows/repoctl-snapshot-publish.yml',

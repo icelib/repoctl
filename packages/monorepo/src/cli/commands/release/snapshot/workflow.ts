@@ -4,7 +4,7 @@ import type { SnapshotWorkflowOptions } from '../../../../commands/release/snaps
 import { lstat, mkdir, open, readFile, unlink } from 'node:fs/promises'
 import path from 'node:path'
 import { getSnapshotWorkflows } from '../../../../commands/release/snapshot/prepared/workflow'
-import { resolveSnapshotWorkflowOptions } from '../../../../commands/release/snapshot/prepared/workflow/options'
+import { resolveSnapshotWorkflowOptions, snapshotWorkflowDefaults } from '../../../../commands/release/snapshot/prepared/workflow/options'
 import { localize } from '../../../../i18n'
 import { writeSnapshotOutput } from './output'
 
@@ -62,7 +62,7 @@ export function registerSnapshotWorkflow(snapshot: Command, cwd: string) {
   snapshot.command('workflow')
     .description(localize('Export the approved builder and independent trusted publisher workflows', '导出审批构建与独立可信发布工作流'))
     .requiredOption('--out <directory>', localize('Workflow directory; existing different files are protected', '工作流目录；保护已有的不同内容文件'))
-    .option('--pnpm-version <version>', localize('Exact trusted pnpm 12 version matching packageManager', '与 packageManager 一致的可信 pnpm 12 精确版本'), '12.14.0')
+    .option('--pnpm-version <version>', localize('Exact trusted pnpm 12 version matching packageManager', '与 packageManager 一致的可信 pnpm 12 精确版本'), snapshotWorkflowDefaults.pnpmVersion)
     .option('--environment <name>', localize('Protected builder approval environment', '受保护的构建审批环境'))
     .option('--builder-workflow <path>', localize('Repository-relative builder workflow filename', '仓库相对的构建工作流文件路径'))
     .option('--publisher-workflow <path>', localize('Repository-relative trusted publisher filename', '仓库相对的可信发布工作流文件路径'))
