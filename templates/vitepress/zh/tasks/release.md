@@ -289,8 +289,8 @@ CLI 和 API 的快照计划均不加载或执行 `repoctl.config.*`，仅根据�
 PR 快照可以同时导出审批构建与独立发布两份工作流：
 
 ```bash
-repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0 --dry-run --json
-repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0
+repo release snapshot workflow --out .github/workflows --pnpm-version 12.18.0 --dry-run --json
+repo release snapshot workflow --out .github/workflows --pnpm-version 12.18.0
 ```
 
 选择与工作区 `packageManager` 一致的 pnpm 12 精确版本。命令生成 `repoctl-snapshot-build.yml` 和 `repoctl-snapshot-publish.yml`，遇到已有不同内容会整体拒绝，相同内容重复导出不修改文件。升级或自定义时，先导出到空目录，审核后一起替换两份文件。publisher 内嵌构建工作流实际字节的 SHA256，仅修改 builder 会被拒绝。导出固定当前已安装的 repoctl 版本；使用前先将审核后的两份文件合入默认分支。这是按需启用的独立流程，不改变普通 PR CI 或 Release 工作流。

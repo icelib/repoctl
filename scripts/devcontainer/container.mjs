@@ -37,7 +37,7 @@ export function containerHarness(workspace, packDirectory) {
   }
   const docker = (args, allowFailure) => run('docker', args, allowFailure)
   const existingImages = new Set(docker(['image', 'ls', '--quiet', '--no-trunc']).output.trim().split(/\s+/u))
-  const devcontainer = args => run('pnpm', ['dlx', '@devcontainers/cli@0.89.0', ...args])
+  const devcontainer = args => run('pnpm', ['dlx', '@devcontainers/cli@0.90.0', ...args])
   const ids = () => docker(['ps', '--all', '--quiet', '--filter', `label=${label}`]).output.trim().split(/\s+/u).filter(Boolean)
   let containerId
   return {
@@ -55,7 +55,7 @@ export function containerHarness(workspace, packDirectory) {
     },
     expectFailure(args) {
       assert.ok(containerId)
-      const result = run('pnpm', ['dlx', '@devcontainers/cli@0.89.0', 'exec', '--workspace-folder', workspace, '--id-label', label, ...args], true)
+      const result = run('pnpm', ['dlx', '@devcontainers/cli@0.90.0', 'exec', '--workspace-folder', workspace, '--id-label', label, ...args], true)
       assert.notEqual(result.status, 0)
       return result.output
     },

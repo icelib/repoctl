@@ -283,8 +283,8 @@ The public APIs are `createSnapshotPlan(options)` and `releaseSnapshot(options)`
 For PR snapshots, export the approved builder and independent publisher together:
 
 ```bash
-repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0 --dry-run --json
-repo release snapshot workflow --out .github/workflows --pnpm-version 12.14.0
+repo release snapshot workflow --out .github/workflows --pnpm-version 12.18.0 --dry-run --json
+repo release snapshot workflow --out .github/workflows --pnpm-version 12.18.0
 ```
 
 Select the exact pnpm 12 version declared by the workspace's `packageManager`. The command creates `repoctl-snapshot-build.yml` and `repoctl-snapshot-publish.yml`; it protects existing different files and treats identical files as a no-op. To upgrade or customize the recipe, export into an empty directory, review both files together, and replace the reviewed pair. The publisher embeds the SHA256 of the exact builder bytes, so changing only the builder makes verification fail. Export pins the installed repoctl version; merge the reviewed pair into the default branch before use. This recipe is opt-in and does not change the ordinary PR CI or Release workflow.

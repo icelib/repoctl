@@ -40,3 +40,16 @@ For a subpath deployment, publish the generated `.well-known/` directory at the 
 The project-owned `src/lib/deployment.ts` resolves `repoctl/docs-context` before `defineNimbusConfig`, so Nimbus 0.17.0 receives one origin for Astro metadata, baked Markdown/LLM endpoints and agent discovery. A final config assertion rejects hosting-environment origin drift. Preview disables sitemap generation but does not mark content entries noindex, preserving Nimbus discovery and Pagefind indexing. The local head adds crawler restrictions independently; explicit content `searchable: true` is honored even with authored noindex.
 
 The channel integration follows Nimbus's build hook and merges only marked repoctl X-Robots-Tag fields into `_headers`. Nimbus's discovery markers, Link headers and owner headers remain intact across channel switches. Preview/stable is a repoctl adaptation, not an upstream version migration; the reviewed Nimbus 0.17.0 baseline is unchanged. Existing origin-root `.well-known/` hosting instructions still apply with Astro `base`.
+
+## Nimbus 0.20.0 upgrade review
+
+The `0.19.4` → `0.20.0` review uses the installed package's `nimbus-docs migrate --dry-run --json` and `nimbus-docs check --json` reports. The migration plan contains no automatic source edits. Its two required reviews are resolved as follows:
+
+| Required review | Template decision |
+| --- | --- |
+| `dependency-runtime-requirements` | The workspace's Node range starts at 22.23.4, 24.22.1 or 26.12.1, and Astro is pinned to 7.4.11. Both exceed Nimbus's Node 22.23.4 and Astro 7.2.10 minimums. No runtime policy change is required. |
+| `agent-route-shape` | Markdown and MDX factories live in `[...slug]/index.md.ts` and `[...slug]/index.mdx.ts`; LLM factories use static `llms.txt` and `llms-full.txt` filenames. No route wraps a factory GET or changes its body. The layout and head already guard optional `markdownUrl` values. The preflight reports no route-shape or TypeScript findings. |
+
+The optional starter, layout, language, shortcut and API-component changes were reviewed. This template owns its bilingual layouts and search UI, retains its site and section LLM routes, and has no API reference components; those optional changes are not adopted. The existing page-language implementation remains in place.
+
+After recording these decisions, `nimbus-docs migrate --yes --json` advances `lastReviewedNimbusVersion` to 0.20.0. The template keeps TypeScript 6.0.3 for Volar compatibility, Vite 8.3.8 and the existing WASM runtime isolation. Packaged regression checks cover the bilingual Markdown/MDX and LLM surfaces, agent discovery, real Pagefind search, and preview → stable → preview builds.
