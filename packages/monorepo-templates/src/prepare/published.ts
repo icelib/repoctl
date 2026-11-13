@@ -1,6 +1,6 @@
 import YAML from 'yaml'
 
-const sourceScriptNames = new Set(['tooling:build', 'check:no-tracked-build-artifacts', 'check:nimbus-upgrade', 'check:workflows', 'test:dev-scenarios', 'test:worker-types', 'docs:build', 'docs:deploy:preview', 'docs:deploy:stable', 'docs:test', 'docs:lint'])
+const sourceScriptNames = new Set(['tooling:build', 'check:no-tracked-build-artifacts', 'check:nimbus-upgrade', 'check:workflows', 'test:published-types', 'test:dev-scenarios', 'test:worker-types', 'docs:build', 'docs:deploy:preview', 'docs:deploy:stable', 'docs:test', 'docs:lint'])
 
 export const isSourceOnlyScript = (name: string) => name.startsWith('dev:') || sourceScriptNames.has(name) || name.startsWith('test:packaged-')
 
@@ -16,24 +16,26 @@ export function sanitizePublishedManifestContent(content: string) {
     }
   }
   if (manifest.scripts) {
-    for (const name of Object.keys(manifest.scripts)) {
+    for (const [name, command] of Object.entries(manifest.scripts)) {
       if (isSourceOnlyScript(name)) {
+        delete manifest.scripts[name]
+        continue
+      }
+      // Source acceptance scripts use simple && chains. Classify whole pnpm
+      // calls using the same registry as their definitions, so they stay aligned.
+      const stages = command.split(' && ').filter((stage) => {
+        const script = /^pnpm (?:run )?([\w:.-]+)$/u.exec(stage)?.[1]
+        return !script || !isSourceOnlyScript(script)
+      })
+      if (stages.length) {
+        manifest.scripts[name] = stages.join(' && ')
+      }
+      else {
         delete manifest.scripts[name]
       }
     }
     // Source profiles reference packages and scripts that consumers do not receive.
     manifest.scripts['dev'] = 'turbo run dev --concurrency=20'
-    if (manifest.scripts['lint']) {
-      manifest.scripts['lint'] = manifest.scripts['lint'].replace(/^pnpm run tooling:build && /u, '').replace(' && pnpm docs:lint', '')
-    }
-    if (manifest.scripts['test']) {
-      manifest.scripts['test'] = manifest.scripts['test'].replace(' && pnpm test:dev-scenarios', '').replace(' && pnpm docs:test', '')
-    }
-    for (const name of ['test', 'test:dev']) {
-      if (manifest.scripts[name]) {
-        manifest.scripts[name] = manifest.scripts[name].replace('pnpm check:no-tracked-build-artifacts && ', '')
-      }
-    }
   }
   return `${JSON.stringify(manifest, null, 2)}\n`
 }

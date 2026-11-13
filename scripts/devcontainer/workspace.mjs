@@ -23,6 +23,8 @@ export function prepareWorkspace(tempRoot) {
   const workspace = createWorkspace(tempRoot, ['react-vite', 'tsdown'])
   const rootManifest = json(path.join(workspace, 'package.json'))
   assert.equal(rootManifest.scripts['test:packaged-devcontainer'], undefined)
+  assert.equal(rootManifest.scripts['test:published-types'], undefined)
+  assert.doesNotMatch(rootManifest.scripts.test, /test:published-types/u)
   assert.equal(existsSync(path.join(workspace, '.github/workflows/devcontainer.yml')), false)
   const planPath = path.join(tempRoot, 'devcontainer-plan.json')
   run('pnpm', ['exec', 'repo', 'tooling', 'devcontainer', '--json', '--out', planPath], workspace)
