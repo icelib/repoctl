@@ -39,7 +39,7 @@ allowBuilds:
 overrides:
   prettier: 3.10.1
   # ATTW relies on the compiler internals of its pinned TypeScript version.
-  '@arethetypeswrong/core>typescript': 5.9.3
+  '@arethetypeswrong/core>typescript': 7.0.2
   # astro2tsx uses the legacy WASM bridge with emnapi core 1.x.
   # Pin only that bridge's runtime; Rolldown's core/runtime 2.x pair must stay aligned.
   '@napi-rs/wasm-runtime@1.2.4>@emnapi/runtime': 1.11.3
