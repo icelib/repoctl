@@ -56,10 +56,12 @@ it('keeps generated tests runnable without source repository check scripts', () 
       'check:no-tracked-build-artifacts': 'node ./scripts/check-no-tracked-build-artifacts.mjs',
       'check:nimbus-upgrade': 'node ./scripts/nimbus/check-upgrade.mjs',
       'check:workflows': 'node ./scripts/check-workflows.mjs',
+      'test:published-types': 'node scripts/published-types/index.mjs',
       'test:dev-scenarios': 'vitest run --config scripts/dev/vitest.config.mjs',
-      'test': 'pnpm check:no-tracked-build-artifacts && vitest run && pnpm test:types && pnpm test:dev-scenarios',
+      'test': 'pnpm check:no-tracked-build-artifacts && vitest run && pnpm test:published-types && pnpm test:types && pnpm test:dev-scenarios',
       'test:dev': 'pnpm check:no-tracked-build-artifacts && vitest',
       'test:types': 'turbo run test:types',
+      'validate': 'pnpm run check:workflows && pnpm build && pnpm run test:published-types && pnpm test',
     },
   }))
   expect(JSON.parse(content).scripts).toEqual({
@@ -67,6 +69,7 @@ it('keeps generated tests runnable without source repository check scripts', () 
     'test': 'vitest run && pnpm test:types',
     'test:dev': 'vitest',
     'test:types': 'turbo run test:types',
+    'validate': 'pnpm build && pnpm test',
   })
   expect(sanitizePublishedManifestContent(content)).toBe(content)
 })
