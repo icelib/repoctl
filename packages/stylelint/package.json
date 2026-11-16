@@ -61,7 +61,7 @@
   "dependencies": {
     "comment-json": "catalog:",
     "css-tree": "^3.2.1",
-    "postcss-html": "^2.0.0",
+    "postcss-html": "^2.0.1",
     "postcss-scss": "^4.0.9",
     "stylelint-config-html": "^2.0.0",
     "stylelint-config-recommended": "^19.0.0",
