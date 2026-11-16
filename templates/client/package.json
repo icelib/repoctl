@@ -41,21 +41,21 @@
     "@tanstack/vue-query-devtools": "^6.4.1",
     "@tanstack/vue-table": "^9.3.1",
     "@tanstack/vue-virtual": "^3.13.52",
-    "@trpc/client": "^11.28.0",
+    "@trpc/client": "^11.28.3",
     "clsx": "^2.1.1",
     "pinia": "^4.1.0",
     "tailwind-merge": "^3.7.0",
     "tailwind-variants": "^4.0.2",
     "vue": "^3.5.45",
-    "vue-i18n": "^11.4.19",
-    "vue-router": "^5.5.0"
+    "vue-i18n": "^11.4.20",
+    "vue-router": "^5.5.1"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.69.1",
     "@hono/node-server": "^2.1.8",
     "@hono/trpc-server": "^0.4.2",
     "@tailwindcss/vite": "^4.3.5",
-    "@trpc/server": "^11.28.0",
+    "@trpc/server": "^11.28.3",
     "@vitejs/plugin-vue": "^6.0.11",
     "@vitejs/plugin-vue-jsx": "^5.1.6",
     "@vue/tsconfig": "^0.9.1",
@@ -67,7 +67,7 @@
     "vite-plugin-vue-devtools": "^8.2.1",
     "vite-tsconfig-paths": "^6.1.1",
     "vue-tsc": "3.3.14",
-    "wrangler": "^4.161.0",
+    "wrangler": "^4.162.0",
     "zod": "^4.6.7"
   }
 }

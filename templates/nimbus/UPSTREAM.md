@@ -47,7 +47,7 @@ The `0.19.4` → `0.20.0` review uses the installed package's `nimbus-docs migra
 
 | Required review | Template decision |
 | --- | --- |
-| `dependency-runtime-requirements` | The workspace's Node range starts at 22.23.4, 24.22.1 or 26.12.1, and Astro is pinned to 7.4.11. Both exceed Nimbus's Node 22.23.4 and Astro 7.2.10 minimums. No runtime policy change is required. |
+| `dependency-runtime-requirements` | The workspace's Node range starts at 22.23.4, 24.22.1 or 26.12.1, and Astro is pinned to 7.4.12. Both exceed Nimbus's Node 22.23.4 and Astro 7.2.10 minimums. No runtime policy change is required. |
 | `agent-route-shape` | Markdown and MDX factories live in `[...slug]/index.md.ts` and `[...slug]/index.mdx.ts`; LLM factories use static `llms.txt` and `llms-full.txt` filenames. No route wraps a factory GET or changes its body. The layout and head already guard optional `markdownUrl` values. The preflight reports no route-shape or TypeScript findings. |
 
 The optional starter, layout, language, shortcut and API-component changes were reviewed. This template owns its bilingual layouts and search UI, retains its site and section LLM routes, and has no API reference components; those optional changes are not adopted. The existing page-language implementation remains in place.
