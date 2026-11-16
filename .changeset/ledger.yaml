@@ -168,6 +168,10 @@
     - auto-pr-899
     - auto-pr-907
     - icelib-repository-migration
+"@icebreakers/eslint-config@8.0.20":
+  dir: packages/eslint
+  intents:
+    - new-foxes-brake
 "@icebreakers/eslint-config@8.0.3":
   dir: packages/eslint
   intents:
@@ -447,6 +451,10 @@
   intents:
     - silent-toys-poke
     - wise-turtles-guess
+"@icebreakers/monorepo-templates@3.2.7":
+  dir: packages/monorepo-templates
+  intents:
+    - new-foxes-brake
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -777,6 +785,10 @@
     - little-olives-juggle
     - tidy-rats-sin
     - wise-turtles-guess
+"@icebreakers/monorepo@6.6.3":
+  dir: packages/monorepo
+  intents:
+    - new-foxes-brake
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -817,6 +829,10 @@
   dir: packages/stylelint
   intents:
     - wise-turtles-guess
+"@icebreakers/stylelint-config@6.0.5":
+  dir: packages/stylelint
+  intents:
+    - new-foxes-brake
 create-icebreaker@1.1.0:
   dir: packages/create-icebreaker
   intents:
@@ -999,6 +1015,10 @@ postcss-tailwindcss@3.1.1:
   dir: packages/postcss-tailwindcss
   intents:
     - auto-pr-898
+postcss-tailwindcss@3.1.10:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - new-foxes-brake
 postcss-tailwindcss@3.1.2:
   dir: packages/postcss-tailwindcss
   intents:
@@ -1253,6 +1273,10 @@ repoctl@6.6.2:
     - little-olives-juggle
     - tidy-rats-sin
     - wise-turtles-guess
+repoctl@6.6.3:
+  dir: packages/repoctl
+  intents:
+    - new-foxes-brake
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
@@ -1305,3 +1329,7 @@ stylelint-plugin-tailwindcss@3.2.3:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
     - fast-peaches-destroy
+stylelint-plugin-tailwindcss@3.2.4:
+  dir: packages/stylelint-plugin-tailwindcss
+  intents:
+    - new-foxes-brake

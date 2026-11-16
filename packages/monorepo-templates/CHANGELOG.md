@@ -1,5 +1,11 @@
 # @icebreakers/monorepo-templates
 
+## 3.2.7
+
+### Patch Changes
+
+- Refresh stable workspace dependencies and align pnpm 12.21.0 snapshot tooling.
+
 ## 3.2.6
 
 ### Patch Changes

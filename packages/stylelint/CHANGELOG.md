@@ -1,5 +1,14 @@
 # @icebreakers/stylelint-config
 
+## 6.0.5
+
+### Patch Changes
+
+- Refresh stable workspace dependencies and align pnpm 12.21.0 snapshot tooling.
+
+- Updated dependencies:
+  - stylelint-plugin-tailwindcss@3.2.4
+
 ## 6.0.4
 
 ### Patch Changes

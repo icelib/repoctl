@@ -1,5 +1,11 @@
 # postcss-tailwindcss
 
+## 3.1.10
+
+### Patch Changes
+
+- Refresh stable workspace dependencies and align pnpm 12.21.0 snapshot tooling.
+
 ## 3.1.9
 
 ### Patch Changes

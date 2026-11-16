@@ -1,5 +1,14 @@
 # stylelint-plugin-tailwindcss
 
+## 3.2.4
+
+### Patch Changes
+
+- Refresh stable workspace dependencies and align pnpm 12.21.0 snapshot tooling.
+
+- Updated dependencies:
+  - postcss-tailwindcss@3.1.10
+
 ## 3.2.3
 
 ### Patch Changes
