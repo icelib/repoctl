@@ -1,5 +1,16 @@
 # @icebreakers/monorepo
 
+## 6.6.3
+
+### Patch Changes
+
+- Refresh stable workspace dependencies and align pnpm 12.21.0 snapshot tooling.
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.20
+  - @icebreakers/monorepo-templates@3.2.7
+  - @icebreakers/stylelint-config@6.0.5
+
 ## 6.6.2
 
 ### Patch Changes
