@@ -1,7 +1,8 @@
 import type { InitToolingContext, InitToolingPreset, InitToolingTarget } from './types'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { ensureTemplateAssetsPrepared } from '@icebreakers/monorepo-templates'
+import YAML from 'yaml'
 import { assetsDir, packageDir, rootDir, version } from '@/constants'
 import { localize } from '@/i18n'
 import { defineTsconfigConfig } from '@/tooling'
@@ -9,6 +10,35 @@ import fs from '@/utils/fs'
 
 function isConcreteNpmSpecifier(version: string) {
   return !version.startsWith('catalog:') && !version.startsWith('workspace:')
+}
+
+interface WorkspaceCatalogs {
+  catalog?: Record<string, string>
+  catalogs?: Record<string, Record<string, string>>
+}
+
+const workspaceManifestPath = path.join(rootDir, 'pnpm-workspace.yaml')
+const workspaceCatalogs = existsSync(workspaceManifestPath)
+  ? YAML.parse(readFileSync(workspaceManifestPath, 'utf8')) as WorkspaceCatalogs
+  : undefined
+
+function resolveCatalogSpecifier(name: string, specifier: string) {
+  if (!specifier.startsWith('catalog:') || !workspaceCatalogs) {
+    return specifier
+  }
+
+  const catalog = specifier.slice('catalog:'.length) || 'default'
+  const namedCatalogs = workspaceCatalogs.catalogs
+  const duplicateDefault = workspaceCatalogs.catalog != null && namedCatalogs?.['default'] != null
+  if (catalog === 'default' && duplicateDefault) {
+    return undefined
+  }
+
+  const entries = catalog === 'default'
+    ? workspaceCatalogs.catalog ?? namedCatalogs?.['default']
+    : namedCatalogs?.[catalog]
+  const resolved = entries?.[name]
+  return typeof resolved === 'string' && !resolved.startsWith('catalog:') ? resolved : undefined
 }
 
 function collectConcreteDependencyVersions(pkg: {
@@ -19,8 +49,12 @@ function collectConcreteDependencyVersions(pkg: {
   const versions: Record<string, string> = {}
   for (const group of [pkg.dependencies, pkg.devDependencies, pkg.peerDependencies]) {
     for (const [name, version] of Object.entries(group ?? {})) {
-      if (typeof version === 'string' && version.length > 0 && isConcreteNpmSpecifier(version)) {
-        versions[name] = version
+      if (typeof version !== 'string' || version.length === 0) {
+        continue
+      }
+      const resolved = resolveCatalogSpecifier(name, version)
+      if (resolved && isConcreteNpmSpecifier(resolved)) {
+        versions[name] = resolved
       }
     }
   }

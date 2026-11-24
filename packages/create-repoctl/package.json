@@ -55,7 +55,7 @@
     "@icebreakers/monorepo-templates": "workspace:*"
   },
   "devDependencies": {
-    "tsd": "^0.33.0"
+    "tsd": "catalog:"
   },
   "publishConfig": {
     "access": "public",

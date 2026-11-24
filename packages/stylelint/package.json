@@ -85,6 +85,6 @@
     "stylelint-config-recommended-scss": "18.0.0",
     "stylelint-config-recommended-vue": "2.0.0",
     "stylelint-scss": "7.5.0",
-    "tailwindcss": "^4.3.5"
+    "tailwindcss": "catalog:"
   }
 }

@@ -106,7 +106,7 @@
     "docs:lint": "eslint scripts/docs-deployment repoctl.config.ts"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.4",
+    "@commitlint/cli": "catalog:",
     "@eslint/config-inspector": "^3.5.0",
     "@icebreakers/commitlint-config": "workspace:*",
     "@icebreakers/eslint-config": "workspace:*",
@@ -116,19 +116,19 @@
     "@vitest/coverage-v8": "~5.1.1",
     "eslint": "^10.15.0",
     "execa": "^10.2.1",
-    "lefthook": "2.2.2",
+    "lefthook": "catalog:",
     "make-fetch-happen": "16.0.2",
     "only-allow": "^1.2.2",
     "playwright": "^1.65.1",
     "repoctl": "workspace:*",
-    "stylelint": "^18.1.0",
-    "tailwindcss": "^4.3.5",
-    "tsd": "^0.33.0",
+    "stylelint": "catalog:",
+    "tailwindcss": "catalog:",
+    "tsd": "catalog:",
     "tsdown": "0.23.7",
     "turbo": "^2.11.13",
     "typescript": "^7.0.2",
     "vitest": "~5.1.1",
-    "yaml": "^2.9.1"
+    "yaml": "catalog:"
   },
   "publishConfig": {
     "access": "public",

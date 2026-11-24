@@ -189,18 +189,33 @@ catalogs:
     '@types/semver':
       specifier: ^7.8.0
       version: 7.8.0
+    '@typescript/typescript6':
+      specifier: 6.0.2
+      version: 6.0.2
     commander:
       specifier: ^15.1.0
       version: 15.1.0
     comment-json:
       specifier: ^5.0.0
       version: 5.0.0
+    defu:
+      specifier: ^6.1.7
+      version: 6.1.7
+    lefthook:
+      specifier: 2.2.2
+      version: 2.2.2
     semver:
       specifier: ^7.8.6
       version: 7.8.6
     stylelint:
       specifier: ^18.1.0
       version: 18.1.0
+    tailwindcss:
+      specifier: ^4.3.5
+      version: 4.3.5
+    tsd:
+      specifier: ^0.33.0
+      version: 0.33.0
     vitest:
       specifier: ^5.1.1
       version: 5.1.1
@@ -234,7 +249,7 @@ importers:
   .:
     devDependencies:
       '@commitlint/cli':
-        specifier: ^21.2.4
+        specifier: 'catalog:'
         version: 21.2.4(conventional-commits-parser@7.1.4)(typescript@7.0.2)
       '@eslint/config-inspector':
         specifier: ^3.5.0
@@ -264,7 +279,7 @@ importers:
         specifier: ^10.2.1
         version: 10.2.1
       lefthook:
-        specifier: 2.2.2
+        specifier: 'catalog:'
         version: 2.2.2
       make-fetch-happen:
         specifier: 16.0.2
@@ -279,13 +294,13 @@ importers:
         specifier: workspace:*
         version: link:packages/repoctl
       stylelint:
-        specifier: ^18.1.0
+        specifier: 'catalog:'
         version: 18.1.0
       tailwindcss:
-        specifier: ^4.3.5
+        specifier: 'catalog:'
         version: 4.3.5
       tsd:
-        specifier: ^0.33.0
+        specifier: 'catalog:'
         version: 0.33.0
       tsdown:
         specifier: 0.23.7
@@ -300,7 +315,7 @@ importers:
         specifier: ~5.1.1
         version: 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       yaml:
-        specifier: ^2.9.1
+        specifier: 'catalog:'
         version: 2.9.1
 
   apps/mock:
@@ -361,7 +376,7 @@ importers:
         version: link:../monorepo-templates
     devDependencies:
       tsd:
-        specifier: ^0.33.0
+        specifier: 'catalog:'
         version: 0.33.0
 
   packages/eslint:
@@ -391,7 +406,7 @@ importers:
         specifier: ^8.74.0
         version: 8.74.0(@typescript/typescript6@6.0.2)(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)
       '@typescript/typescript6':
-        specifier: 6.0.2
+        specifier: 'catalog:'
         version: 6.0.2
       '@vue/compiler-sfc':
         specifier: ^3.5.46
@@ -400,7 +415,7 @@ importers:
         specifier: ^0.3.6
         version: 0.3.6(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))
       defu:
-        specifier: ^6.1.7
+        specifier: 'catalog:'
         version: 6.1.7
       eslint:
         specifier: ^9.10.0 || ^10.0.0
@@ -533,7 +548,7 @@ importers:
         specifier: 26.6.6
         version: 26.6.6
       '@typescript/typescript6':
-        specifier: 6.0.2
+        specifier: 'catalog:'
         version: 6.0.2
       c12:
         specifier: ^3.3.4
@@ -551,7 +566,7 @@ importers:
         specifier: 7.0.6
         version: 7.0.6
       defu:
-        specifier: ^6.1.7
+        specifier: 'catalog:'
         version: 6.1.7
       esbuild:
         specifier: 0.28.2
@@ -660,7 +675,7 @@ importers:
         specifier: 6.48.0
         version: 6.48.0
       lefthook:
-        specifier: 2.2.2
+        specifier: 'catalog:'
         version: 2.2.2
       typescript:
         specifier: ~6.0.3
@@ -709,7 +724,7 @@ importers:
         version: 4.2.0
     devDependencies:
       tailwindcss:
-        specifier: ^4.3.5
+        specifier: 'catalog:'
         version: 4.3.5
 
   packages/repoctl:
@@ -779,7 +794,7 @@ importers:
         specifier: 7.5.0
         version: 7.5.0(stylelint@18.1.0)
       tailwindcss:
-        specifier: ^4.3.5
+        specifier: 'catalog:'
         version: 4.3.5
 
   packages/stylelint-plugin-tailwindcss:

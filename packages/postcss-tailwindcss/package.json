@@ -69,6 +69,6 @@
     }
   },
   "devDependencies": {
-    "tailwindcss": "^4.3.5"
+    "tailwindcss": "catalog:"
   }
 }
