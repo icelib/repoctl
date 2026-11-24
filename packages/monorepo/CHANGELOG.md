@@ -1,5 +1,18 @@
 # @icebreakers/monorepo
 
+## 6.6.4
+
+### Patch Changes
+
+- Resolve catalog-managed dependency versions when initializing repository tooling.
+
+- Refresh stable dependencies and toolchain pins
+
+- Updated dependencies:
+  - @icebreakers/eslint-config@8.0.21
+  - @icebreakers/monorepo-templates@3.2.8
+  - @icebreakers/stylelint-config@6.0.6
+
 ## 6.6.3
 
 ### Patch Changes

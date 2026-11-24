@@ -1,5 +1,11 @@
 # @icebreakers/stylelint-config
 
+## 6.0.6
+
+### Patch Changes
+
+- Refresh stable dependencies and toolchain pins
+
 ## 6.0.5
 
 ### Patch Changes
