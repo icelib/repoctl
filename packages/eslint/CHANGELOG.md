@@ -1,5 +1,14 @@
 # @icebreakers/eslint-config
 
+## 8.0.21
+
+### Patch Changes
+
+- Refresh stable dependencies and toolchain pins
+
+- Updated dependencies:
+  - @icebreakers/stylelint-config@6.0.6
+
 ## 8.0.20
 
 ### Patch Changes
