@@ -81,16 +81,16 @@
   },
   "dependencies": {
     "@antfu/eslint-config": "10.0.0",
-    "@eslint-react/eslint-plugin": "^5.30.3",
+    "@eslint-react/eslint-plugin": "^5.30.6",
     "@icebreakers/stylelint-config": "workspace:*",
-    "@stylistic/eslint-plugin": "^5.10.0",
-    "@typescript-eslint/parser": "^8.72.2",
-    "@typescript-eslint/rule-tester": "^8.72.2",
-    "@typescript-eslint/typescript-estree": "^8.72.2",
-    "@typescript-eslint/utils": "^8.72.2",
+    "@stylistic/eslint-plugin": "^6.0.1",
+    "@typescript-eslint/parser": "^8.74.0",
+    "@typescript-eslint/rule-tester": "^8.74.0",
+    "@typescript-eslint/typescript-estree": "^8.74.0",
+    "@typescript-eslint/utils": "^8.74.0",
     "@typescript/typescript6": "6.0.2",
-    "@vue/compiler-sfc": "^3.5.45",
-    "@weapp-vite/eslint": "^0.3.4",
+    "@vue/compiler-sfc": "^3.5.46",
+    "@weapp-vite/eslint": "^0.3.6",
     "defu": "^6.1.7",
     "eslint-config-flat-gitignore": "^2.4.0",
     "eslint-flat-config-utils": "3.2.0",
@@ -133,7 +133,7 @@
     "prettier": "^3.10.1",
     "prettier-plugin-astro": "^1.1.2",
     "semver": "catalog:",
-    "svelte": "^5.57.3",
-    "svelte-eslint-parser": "^1.10.1"
+    "svelte": "^5.59.1",
+    "svelte-eslint-parser": "^1.12.0"
   }
 }

@@ -127,7 +127,7 @@ it('rejects lifecycle changes to the packed identity', async () => {
   await expect(prepareBootstrap({ ...options, plan })).rejects.toThrow('pack lifecycle changed')
 }, 120_000)
 
-it('fails an unavailable internal runtime dependency without packing additional workspace packages', async () => {
+it('rejects a private internal runtime dependency without packing additional workspace packages', async () => {
   const h = await prepareFixture()
   const file = path.join(h.cwd, 'packages/a/package.json')
   const original = JSON.parse(await readFile(file, 'utf8')) as Record<string, unknown>
@@ -144,8 +144,8 @@ it('fails an unavailable internal runtime dependency without packing additional 
   }) as NonNullable<typeof h.options.spawn>
   const options = { ...h.options, source: h.source(), spawn }
   const plan = await createBootstrapPlan(options)
-  await expect(prepareBootstrap({ ...options, plan })).rejects.toThrow('automatic publication expansion is not allowed')
-  expect(registryQuery).toBe(true)
+  await expect(prepareBootstrap({ ...options, plan })).rejects.toThrow('ERR_PNPM_PRIVATE_WORKSPACE_DEPENDENCY')
+  expect(registryQuery).toBe(false)
   expect(h.run('git', ['status', '--porcelain'])).toBe('')
 }, 120_000)
 

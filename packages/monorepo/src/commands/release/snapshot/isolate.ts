@@ -57,7 +57,7 @@ export async function isolateSnapshot(report: SnapshotReport, options: SnapshotO
   await rm(archive)
   await rejectLinks(source)
   await assertOmittedReferences(source, evidence.referenceGitlinks)
-  snapshotCommand('pnpm', [...isolatedPnpmOptions, 'install', '--frozen-lockfile'], { ...options, cwd: source, env: isolatedSnapshotEnvironment(options, directory) })
+  snapshotCommand('pnpm', [...isolatedPnpmOptions, 'install', '--frozen-lockfile', '--registry', report.registry], { ...options, cwd: source, env: isolatedSnapshotEnvironment(options, directory) })
   await assertOmittedReferences(source, evidence.referenceGitlinks)
   return source
 }

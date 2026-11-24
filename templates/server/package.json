@@ -64,11 +64,11 @@
     "types": "./dist/index.d.ts"
   },
   "devDependencies": {
-    "@hono/node-server": "^2.1.8",
+    "@hono/node-server": "^2.1.11",
     "consola": "^3.4.2",
-    "hono": "^4.13.18",
+    "hono": "^4.13.21",
     "tsdown": "0.23.7",
-    "wrangler": "^4.162.0",
+    "wrangler": "^4.167.0",
     "zod": "^4.6.7"
   }
 }

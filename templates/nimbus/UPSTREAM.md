@@ -53,3 +53,7 @@ The `0.19.4` → `0.20.0` review uses the installed package's `nimbus-docs migra
 The optional starter, layout, language, shortcut and API-component changes were reviewed. This template owns its bilingual layouts and search UI, retains its site and section LLM routes, and has no API reference components; those optional changes are not adopted. The existing page-language implementation remains in place.
 
 After recording these decisions, `nimbus-docs migrate --yes --json` advances `lastReviewedNimbusVersion` to 0.20.0. The template keeps TypeScript 6.0.3 for Volar compatibility, Vite 8.3.8 and the existing WASM runtime isolation. Packaged regression checks cover the bilingual Markdown/MDX and LLM surfaces, agent discovery, real Pagefind search, and preview → stable → preview builds.
+
+## Nimbus 0.20.1 upgrade review
+
+The `0.20.0` → `0.20.1` review found no required migrations and no source changes to apply. The template's custom layout and component integrations remain compatible with the patch release, so the review baseline advances to 0.20.1 without rewriting generated files.

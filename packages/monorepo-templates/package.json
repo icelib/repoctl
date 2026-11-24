@@ -56,10 +56,10 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@inquirer/checkbox": "^5.3.0",
-    "@inquirer/input": "^5.2.0",
-    "@inquirer/password": "^5.3.0",
-    "@inquirer/select": "^5.3.0",
+    "@inquirer/checkbox": "^5.3.1",
+    "@inquirer/input": "^5.2.1",
+    "@inquirer/password": "^5.3.1",
+    "@inquirer/select": "^5.3.1",
     "commander": "catalog:",
     "nanoexec": "^1.1.0",
     "yaml": "catalog:"

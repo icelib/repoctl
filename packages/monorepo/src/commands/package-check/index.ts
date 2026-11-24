@@ -60,7 +60,11 @@ export async function checkPackages(options: PackageCheckOptions): Promise<Packa
         packed.push(item)
       }
       catch (error) {
-        result.diagnostics.push({ source: 'repoctl', code: 'PACK_ANALYSIS_FAILED', severity: 'error', message: String(error) })
+        const message = String(error)
+        const code = message.includes('ERR_PNPM_PRIVATE_WORKSPACE_DEPENDENCY')
+          ? 'WORKSPACE_DEPENDENCY_UNAVAILABLE'
+          : 'PACK_ANALYSIS_FAILED'
+        result.diagnostics.push({ source: 'repoctl', code, severity: 'error', message })
       }
     }
     for (const [index, item] of packed.entries()) {
