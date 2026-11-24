@@ -11,7 +11,7 @@ import { preparePublishedGithubAssets } from './github'
 import { publishedToolingConfigs, removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedManifestContent, sanitizePublishedWorkspaceContent } from './published'
 import { sanitizeTemplateManifest } from './template-manifest'
 
-export { removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedWorkspaceContent } from './published'
+export { removeSourceRepoReleaseToolingBuildStepContent, sanitizePublishedManifestContent, sanitizePublishedWorkspaceContent } from './published'
 
 // npm intentionally excludes files named `.npmrc` from published tarballs.
 // Keep the managed config under a publishable name and restore the dotfile
@@ -189,11 +189,14 @@ async function removeSourceRepoReleaseToolingBuildStep() {
   }
 }
 
-async function sanitizePublishedManifest() {
+async function sanitizePublishedManifest(repoRoot: string) {
   const manifestPath = path.join(assetsDir, 'package.json')
   if (await pathExists(manifestPath)) {
-    const content = await fs.readFile(manifestPath, 'utf8')
-    await fs.writeFile(manifestPath, sanitizePublishedManifestContent(content))
+    const [content, workspaceContent] = await Promise.all([
+      fs.readFile(manifestPath, 'utf8'),
+      fs.readFile(path.join(repoRoot, 'pnpm-workspace.yaml'), 'utf8'),
+    ])
+    await fs.writeFile(manifestPath, sanitizePublishedManifestContent(content, workspaceContent))
   }
 }
 
@@ -233,6 +236,6 @@ export async function prepareAssets(options: PrepareAssetsOptions = {}) {
   await writePublishedToolingConfigs()
   await writePublishedAgentSkill(repoRoot)
   await removeSourceRepoReleaseToolingBuildStep()
-  await sanitizePublishedManifest()
+  await sanitizePublishedManifest(repoRoot)
   await copyTemplates(repoRoot, overwriteExisting)
 }

@@ -4,7 +4,44 @@ const sourceScriptNames = new Set(['tooling:build', 'check:no-tracked-build-arti
 
 export const isSourceOnlyScript = (name: string) => name.startsWith('dev:') || sourceScriptNames.has(name) || name.startsWith('test:packaged-')
 
-export function sanitizePublishedManifestContent(content: string) {
+interface WorkspaceCatalogs {
+  catalog?: Record<string, string>
+  catalogs?: Record<string, Record<string, string>>
+}
+
+function resolveCatalogDependencies(manifest: Record<string, unknown>, workspaceContent?: string) {
+  const workspace = workspaceContent ? YAML.parse(workspaceContent) as WorkspaceCatalogs : undefined
+  for (const section of ['dependencies', 'devDependencies', 'optionalDependencies', 'peerDependencies']) {
+    const dependencyGroup = manifest[section]
+    if (!dependencyGroup || typeof dependencyGroup !== 'object' || Array.isArray(dependencyGroup)) {
+      continue
+    }
+    const dependencies = dependencyGroup as Record<string, unknown>
+    for (const [name, value] of Object.entries(dependencies)) {
+      if (typeof value !== 'string' || !value.startsWith('catalog:')) {
+        continue
+      }
+      if (!workspace) {
+        throw new Error(`Cannot publish ${name}: its catalog reference has no source pnpm-workspace.yaml.`)
+      }
+      const catalogName = value.slice('catalog:'.length) || 'default'
+      const namedCatalogs = workspace.catalogs
+      if (catalogName === 'default' && workspace.catalog != null && namedCatalogs?.['default'] != null) {
+        throw new Error('Cannot publish catalog dependencies: the default catalog is defined twice.')
+      }
+      const catalog = catalogName === 'default'
+        ? workspace.catalog ?? namedCatalogs?.['default']
+        : namedCatalogs?.[catalogName]
+      const resolved = catalog?.[name]
+      if (typeof resolved !== 'string' || /^(?:catalog|workspace|file|link):/u.test(resolved)) {
+        throw new Error(`Cannot publish ${name}: catalog ${catalogName} has no concrete dependency version.`)
+      }
+      dependencies[name] = resolved
+    }
+  }
+}
+
+export function sanitizePublishedManifestContent(content: string, workspaceContent?: string) {
   const manifest = JSON.parse(content) as { scripts?: Record<string, string>, devDependencies?: Record<string, string> }
   // Generated configs import repoctl/tooling, which owns the shared config dependencies.
   if (manifest.devDependencies) {
@@ -15,6 +52,7 @@ export function sanitizePublishedManifestContent(content: string) {
       manifest.devDependencies['repoctl'] = 'latest'
     }
   }
+  resolveCatalogDependencies(manifest as Record<string, unknown>, workspaceContent)
   if (manifest.scripts) {
     for (const [name, command] of Object.entries(manifest.scripts)) {
       if (isSourceOnlyScript(name)) {

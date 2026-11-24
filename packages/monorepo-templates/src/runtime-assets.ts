@@ -3,7 +3,7 @@ import path from 'node:path'
 import { templateChoices } from '../template-data.mjs'
 import { readPackageManagerFromManifest } from './package-manager/read'
 import { assetsDir, packageDir, templatesDir } from './paths'
-import { prepareAssets, sanitizePublishedWorkspaceContent } from './prepare'
+import { prepareAssets, sanitizePublishedManifestContent, sanitizePublishedWorkspaceContent } from './prepare'
 import { arePublishedConfigAssetsPrepared } from './prepare/config'
 import { arePublishedGithubAssetsPrepared } from './prepare/github'
 
@@ -50,8 +50,10 @@ export async function areTemplateAssetsPrepared() {
   const sourceRoot = path.resolve(packageDir, '..', '..')
   const sourceManifest = path.join(sourceRoot, 'package.json')
   let sourcePackage: { name?: unknown }
+  let sourcePackageContent: string
   try {
-    sourcePackage = JSON.parse(await readFile(sourceManifest, 'utf8')) as { name?: unknown }
+    sourcePackageContent = await readFile(sourceManifest, 'utf8')
+    sourcePackage = JSON.parse(sourcePackageContent) as { name?: unknown }
   }
   catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -77,11 +79,13 @@ export async function areTemplateAssetsPrepared() {
   let preparedAgentContent: string[]
   let sourceSkillContent: string
   let preparedSkillContent: string
+  let preparedPackageContent: string
   try {
     const sourceAgentFiles = ['AGENTS.md', 'CLAUDE.md'] as const
     const [prepared, sourceAgents, preparedAgents, sourceSkill, preparedSkill] = await Promise.all([
       Promise.all([
         readPackageManagerFromManifest(path.join(assetsDir, 'package.json')),
+        readFile(path.join(assetsDir, 'package.json'), 'utf8'),
         readFile(path.join(assetsDir, 'npmrc'), 'utf8'),
         readFile(path.join(assetsDir, 'pnpm-workspace.yaml'), 'utf8'),
       ]),
@@ -91,8 +95,9 @@ export async function areTemplateAssetsPrepared() {
       readFile(path.join(assetsDir, '.agents/skills/repoctl/SKILL.md'), 'utf8'),
     ])
     preparedPackageManager = prepared[0]
-    preparedNpmrc = prepared[1]
-    preparedWorkspace = prepared[2]
+    preparedPackageContent = prepared[1]
+    preparedNpmrc = prepared[2]
+    preparedWorkspace = prepared[3]
     sourceAgentContent = sourceAgents
     preparedAgentContent = preparedAgents
     sourceSkillContent = sourceSkill
@@ -109,6 +114,7 @@ export async function areTemplateAssetsPrepared() {
   }
 
   return sourcePackageManager === preparedPackageManager
+    && sanitizePublishedManifestContent(sourcePackageContent, sourceWorkspace) === preparedPackageContent
     && sourceNpmrc === preparedNpmrc
     && sanitizePublishedWorkspaceContent(sourceWorkspace) === preparedWorkspace
     && sourceAgentContent.every((content, index) => content === preparedAgentContent[index])
