@@ -34,6 +34,34 @@ it('publishes an installable tooling entrypoint without source workspace depende
   expect(manifest.devDependencies).toEqual({ repoctl: 'latest', typescript: '^6.0.3' })
 })
 
+it('resolves default and named catalog dependencies for published manifests', () => {
+  const manifest = JSON.parse(sanitizePublishedManifestContent(JSON.stringify({
+    devDependencies: {
+      '@commitlint/cli': 'catalog:',
+      'stylelint': 'catalog:quality',
+      'vitest': '^5.1.1',
+    },
+  }), [
+    'catalog:',
+    '  "@commitlint/cli": ^21.2.4',
+    'catalogs:',
+    '  quality:',
+    '    stylelint: ^18.1.0',
+  ].join('\n')))
+
+  expect(manifest.devDependencies).toEqual({
+    '@commitlint/cli': '^21.2.4',
+    'stylelint': '^18.1.0',
+    'vitest': '^5.1.1',
+  })
+})
+
+it('rejects unresolved catalog dependency versions', () => {
+  const manifest = JSON.stringify({ devDependencies: { vitest: 'catalog:' } })
+  expect(() => sanitizePublishedManifestContent(manifest, 'catalog: {}')).toThrow('no concrete dependency version')
+  expect(() => sanitizePublishedManifestContent(manifest)).toThrow('no source pnpm-workspace.yaml')
+})
+
 it('removes the source tooling build prerequisite from generated lint scripts', () => {
   const content = sanitizePublishedManifestContent(JSON.stringify({
     scripts: {

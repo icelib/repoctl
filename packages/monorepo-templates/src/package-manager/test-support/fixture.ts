@@ -42,9 +42,13 @@ export async function createPackageManagerFixture() {
   await Promise.all([
     ...['dist', 'assets-data.mjs', 'template-data.mjs'].map(name => cp(path.join(sourcePackageDir, name), path.join(packageDir, name), { recursive: true })),
     ...sourceFiles.map(async name => outputFile(path.join(root, name), await readFile(path.join(sourceRoot, name), 'utf8'))),
-    outputFile(path.join(root, 'package.json'), JSON.stringify({ name: 'repoctl-workspace', packageManager: sourceManifest.packageManager })),
+    outputFile(path.join(root, 'package.json'), JSON.stringify({
+      name: 'repoctl-workspace',
+      packageManager: sourceManifest.packageManager,
+      devDependencies: { lefthook: 'catalog:' },
+    })),
     outputFile(path.join(root, '.npmrc'), npmrc),
-    outputFile(path.join(root, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\npmOnFail: error\n'),
+    outputFile(path.join(root, 'pnpm-workspace.yaml'), 'packages:\n  - packages/*\ncatalog:\n  lefthook: 2.2.2\npmOnFail: error\n'),
     outputFile(path.join(root, 'templates/tsdown/package.json'), JSON.stringify({ name: 'fixture-library' })),
     outputFile(path.join(assetsDir, 'package.json'), JSON.stringify({ packageManager: 'pnpm@10.20.0' })),
     outputFile(path.join(assetsDir, 'npmrc'), 'package-manager-strict=false\n'),

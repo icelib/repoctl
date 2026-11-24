@@ -12,6 +12,8 @@ describe('built workspace package manager API', () => {
       expect(await fixture.getPackageManager()).toBe(fixture.packageManager)
       const manifest = JSON.parse(await readFile(path.join(fixture.assetsDir, 'package.json'), 'utf8'))
       expect(manifest.packageManager).toBe(fixture.packageManager)
+      expect(manifest.devDependencies.lefthook).toBe('2.2.2')
+      expect(manifest.devDependencies.lefthook).not.toMatch(/^catalog:/u)
       expect(await readFile(path.join(fixture.assetsDir, 'npmrc'), 'utf8')).toBe(fixture.npmrc)
       expect(fixture.npmrc).toContain('package-manager-strict=true')
       expect(fixture.npmrc).toContain('package-manager-strict-version=true')
