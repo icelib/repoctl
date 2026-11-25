@@ -35,6 +35,16 @@ async function fixture(files: string[], options: {
     expect(result.status, result.stderr).toBe(0)
     return result.stdout.trim()
   }
+  const gitInput = (input: string, ...args: string[]) => {
+    const result = spawnSync('git', ['-c', 'commit.gpgsign=false', '-c', `core.hooksPath=${path.join(root, 'no-hooks')}`, ...args], {
+      cwd,
+      env: { ...process.env, GIT_AUTHOR_NAME: 'Fixture', GIT_AUTHOR_EMAIL: 'fixture@example.invalid', GIT_COMMITTER_NAME: 'Fixture', GIT_COMMITTER_EMAIL: 'fixture@example.invalid' },
+      encoding: 'utf8',
+      input,
+    })
+    expect(result.status, result.stderr).toBe(0)
+    return result.stdout.trim()
+  }
   const packageDirectories = [...new Set([...files.flatMap((file) => {
     const match = /^packages\/([^/]+)\//u.exec(file)
     return match?.[1] ? [match[1]] : []
@@ -79,13 +89,23 @@ async function fixture(files: string[], options: {
   git('commit', '-qm', 'base')
   const base = git('rev-parse', 'HEAD')
   candidate = true
+  const virtualFiles: Array<{ blob: string, filename: string }> = []
   for (const filename of files) {
-    await write(filename)
+    if (filename.includes('\n')) {
+      const blob = gitInput('fixture\n', 'hash-object', '-w', '--stdin')
+      virtualFiles.push({ blob, filename })
+    }
+    else {
+      await write(filename)
+    }
   }
   if (options.deletedIntent) {
     await rm(path.join(cwd, '.changeset/previous.md'))
   }
   git('add', '.')
+  for (const { blob, filename } of virtualFiles) {
+    git('update-index', '--add', '--cacheinfo', `100644,${blob},${filename}`)
+  }
   git('commit', '--allow-empty', '-qm', 'candidate')
   const head = git('rev-parse', 'HEAD')
   const env = { ...process.env, BASE_SHA: options.invalidBase ? 'invalid-commit' : base, HEAD_SHA: head }
@@ -148,7 +168,7 @@ describe.each([
   })
 
   it('does not treat a newline in a package path as an added intent', async () => {
-    const filename = 'packages/a package/src/line\n.changeset/fake.md'
+    const filename = 'packages/library/src/line\n.txt'
     const result = await run([filename])
     expect(result.status, result.stderr).toBe(1)
     expect(result.stderr).toContain('Missing .changeset entries')
