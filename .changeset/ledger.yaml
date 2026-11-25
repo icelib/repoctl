@@ -464,6 +464,10 @@
   intents:
     - fix-published-catalogs
     - weak-mice-marry
+"@icebreakers/monorepo-templates@3.2.9":
+  dir: packages/monorepo-templates
+  intents:
+    - hungry-foxes-open
 "@icebreakers/monorepo@5.1.0":
   dir: packages/monorepo
   intents:
@@ -993,6 +997,10 @@ eslint-plugin-better-stylelint@2.2.1:
   dir: packages/eslint-plugin-better-stylelint
   intents:
     - curly-configs-bump
+eslint-plugin-better-stylelint@2.2.2:
+  dir: packages/eslint-plugin-better-stylelint
+  intents:
+    - hungry-foxes-open
 lightningcss-tailwindcss@2.0.4:
   dir: packages/lightningcss-tailwindcss
   intents:
@@ -1041,6 +1049,10 @@ postcss-tailwindcss@3.1.10:
   dir: packages/postcss-tailwindcss
   intents:
     - new-foxes-brake
+postcss-tailwindcss@3.1.11:
+  dir: packages/postcss-tailwindcss
+  intents:
+    - hungry-foxes-open
 postcss-tailwindcss@3.1.2:
   dir: packages/postcss-tailwindcss
   intents:

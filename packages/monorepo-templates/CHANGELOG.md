@@ -1,5 +1,11 @@
 # @icebreakers/monorepo-templates
 
+## 3.2.9
+
+### Patch Changes
+
+- Publish catalog dependency updates for Stylelint and Tailwind CSS packages
+
 ## 3.2.8
 
 ### Patch Changes
