@@ -45,6 +45,38 @@ async function fixture(files: string[], options: {
     expect(result.status, result.stderr).toBe(0)
     return result.stdout.trim()
   }
+  const insertTreeFile = (tree: string, segments: string[], blob: string): string => {
+    const entries = gitInput('', 'ls-tree', '-z', tree)
+      .split('\0')
+      .filter(Boolean)
+      .map((entry) => {
+        const separator = entry.indexOf('\t')
+        const [mode, type, object] = entry.slice(0, separator).split(' ')
+        return { mode: mode!, type: type!, object: object!, name: entry.slice(separator + 1) }
+      })
+    const [name, ...remaining] = segments
+    const existingIndex = entries.findIndex(entry => entry.name === name)
+    const object = remaining.length
+      ? insertTreeFile(
+          existingIndex >= 0 && entries[existingIndex]!.type === 'tree'
+            ? entries[existingIndex]!.object
+            : gitInput('', 'mktree'),
+          remaining,
+          blob,
+        )
+      : blob
+    const replacement = remaining.length
+      ? { mode: '040000', type: 'tree', object, name: name! }
+      : { mode: '100644', type: 'blob', object, name: name! }
+    if (existingIndex >= 0) {
+      entries[existingIndex] = replacement
+    }
+    else {
+      entries.push(replacement)
+    }
+    const input = entries.map(entry => `${entry.mode} ${entry.type} ${entry.object}\t${JSON.stringify(entry.name)}\n`).join('')
+    return gitInput(input, 'mktree')
+  }
   const packageDirectories = [...new Set([...files.flatMap((file) => {
     const match = /^packages\/([^/]+)\//u.exec(file)
     return match?.[1] ? [match[1]] : []
@@ -103,11 +135,11 @@ async function fixture(files: string[], options: {
     await rm(path.join(cwd, '.changeset/previous.md'))
   }
   git('add', '.')
+  let tree = git('write-tree')
   for (const { blob, filename } of virtualFiles) {
-    git('update-index', '--add', '--cacheinfo', '100644', blob, filename)
+    tree = insertTreeFile(tree, filename.split('/'), blob)
   }
-  git('commit', '--allow-empty', '-qm', 'candidate')
-  const head = git('rev-parse', 'HEAD')
+  const head = gitInput('candidate\n', 'commit-tree', tree, '-p', base)
   const env = { ...process.env, BASE_SHA: options.invalidBase ? 'invalid-commit' : base, HEAD_SHA: head }
   return (script: string) => {
     expect(script).toContain('node .github/release-intents/check.mjs')
