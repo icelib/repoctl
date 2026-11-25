@@ -1,5 +1,14 @@
 # repoctl
 
+## 6.6.7
+
+### Patch Changes
+
+- 修复 package-check、历史 release source 恢复、stable 文档覆盖和 nightly npm consumer 的兼容性校验。
+
+- Updated dependencies:
+  - @icebreakers/monorepo@6.6.7
+
 ## 6.6.6
 
 ### Patch Changes

@@ -811,6 +811,10 @@
   dir: packages/monorepo
   intents:
     - compact-release-notes
+"@icebreakers/monorepo@6.6.7":
+  dir: packages/monorepo
+  intents:
+    - quiet-nights-check
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -1319,6 +1323,10 @@ repoctl@6.6.5:
   dir: packages/repoctl
   intents:
     - compact-release-notes
+repoctl@6.6.7:
+  dir: packages/repoctl
+  intents:
+    - quiet-nights-check
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
