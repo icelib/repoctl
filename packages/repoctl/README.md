@@ -54,6 +54,22 @@ If an older release PR omits these packages, upgrade the tool and lockfile on yo
 pnpm add -Dw repoctl@^5.8.0
 ```
 
+## Compact release notes
+
+For workspaces with repeated cross-package changes, enable compact release notes in `repoctl.config.ts`:
+
+```ts
+export default {
+  commands: {
+    release: {
+      notes: { mode: 'compact' },
+    },
+  },
+}
+```
+
+Release PRs group matching summaries that share at least one source reference, show a short summary and collapse full details. The package/version table retains a changelog link for every package. GitHub Releases use the same compact summaries with the full entry collapsed. Omit `notes.mode` to keep the existing full output.
+
 ## Sync published packages to npmmirror
 
 Use the HTTP API directly; cnpm is not required.

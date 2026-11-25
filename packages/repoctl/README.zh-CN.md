@@ -47,6 +47,22 @@ repoctl 5.8.0 起会在发布 PR 的包数量和版本表中保留这些包，�
 pnpm add -Dw repoctl@^5.8.0
 ```
 
+## 精简发布说明
+
+多包发布中存在大量重复变更时，可在 `repoctl.config.ts` 启用精简模式：
+
+```ts
+export default {
+  commands: {
+    release: {
+      notes: { mode: 'compact' },
+    },
+  },
+}
+```
+
+Release PR 会合并摘要相同且至少共享一个来源引用的跨包条目，只展示简短摘要并折叠完整说明。包版本表仍保留每个包及其 changelog 链接。GitHub Release 使用相同摘要，并折叠完整条目。省略 `notes.mode` 时继续使用原有完整输出。
+
 ## 同步已发布包到 npmmirror
 
 直接调用 HTTP API，无须安装 cnpm。

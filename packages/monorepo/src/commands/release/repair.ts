@@ -4,6 +4,7 @@ import type { ReleaseOptions } from './types'
 import { spawnSync } from 'node:child_process'
 import { realpath } from 'node:fs/promises'
 import path from 'pathe'
+import { resolveCommandConfig } from '../../core/config'
 import { getWorkspacePackages } from '../../core/workspace'
 import { buildGitHubReleaseBodyFromChangelog } from './body'
 import { ReleaseCommandError } from './errors'
@@ -87,12 +88,14 @@ async function readTagChangelog(tag: string, relativePackagePath: string, option
 function releaseMetadata(options: ReleaseOptions): ReleaseBodyMetadata {
   const env = getReleaseEnv(options)
   return {
+    ...(options.config?.notes?.mode === 'compact' ? { compact: true } : {}),
     ...(env['GITHUB_REPOSITORY'] ? { repository: env['GITHUB_REPOSITORY'] } : {}),
     ...(env['GITHUB_SERVER_URL'] ? { serverUrl: env['GITHUB_SERVER_URL'] } : {}),
   }
 }
 
 export async function repairReleaseNotes(options: RepairReleaseNotesOptions) {
+  options = { ...options, config: options.config ?? await resolveCommandConfig('release', options.cwd) ?? {} }
   if (!options.all && !options.tag) {
     throw new ReleaseCommandError('release notes repair requires --all or --tag <package@version>')
   }

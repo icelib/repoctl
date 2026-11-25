@@ -32,6 +32,7 @@ async function createReleasePullRequest(options: ReleaseCiOptions) {
   const releaseEnv = getReleaseEnv(options)
   const metadata = {
     locale: resolveReleaseLocale(options),
+    ...(options.config?.notes?.mode === 'compact' ? { compact: true } : {}),
     commits: sourceCommits,
     ...(releaseEnv['GITHUB_REPOSITORY'] ? { repository: releaseEnv['GITHUB_REPOSITORY'] } : {}),
     ...(releaseEnv['GITHUB_SERVER_URL'] ? { serverUrl: releaseEnv['GITHUB_SERVER_URL'] } : {}),
