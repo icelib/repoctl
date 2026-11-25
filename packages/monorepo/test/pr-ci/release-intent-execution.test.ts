@@ -104,7 +104,7 @@ async function fixture(files: string[], options: {
   }
   git('add', '.')
   for (const { blob, filename } of virtualFiles) {
-    git('update-index', '--add', '--cacheinfo', `100644,${blob},${filename}`)
+    gitInput(`100644 ${blob}\t${filename}\0`, 'update-index', '-z', '--index-info')
   }
   git('commit', '--allow-empty', '-qm', 'candidate')
   const head = git('rev-parse', 'HEAD')
