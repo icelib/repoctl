@@ -26,7 +26,7 @@ describe('source package manager environment', () => {
     const pathEntries = Object.entries(env).filter(([key]) => key.toLowerCase() === 'path')
 
     expect(pathEntries).toHaveLength(1)
-    expect(pathEntries[0]![0]).toBe('Path')
+    expect(pathEntries[0]![0]).toBe('PATH')
     expect(pathEntries[0]![1]).toBe([
       path.join(root, 'package-manager'),
       'C:\\Windows\\System32',

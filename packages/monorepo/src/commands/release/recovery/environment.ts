@@ -24,14 +24,13 @@ export async function sourcePackageManagerEnvironment(options: ReleaseOptions, r
   run('corepack', ['enable', '--install-directory', directory, 'pnpm'], options)
   const env = { ...getReleaseEnv(options) }
   const pathEntries = Object.entries(env).filter(([key]) => key.toLowerCase() === 'path')
-  const pathKey = pathEntries[0]?.[0] ?? 'PATH'
   const inheritedPath = pathEntries
     .map(([, value]) => value)
     .filter((value): value is string => Boolean(value))
   for (const [key] of pathEntries) {
     delete env[key]
   }
-  env[pathKey] = [directory, ...inheritedPath].join(path.delimiter)
+  env['PATH'] = [directory, ...inheritedPath].join(path.delimiter)
   env['COREPACK_ENABLE_PROJECT_SPEC'] = '1'
   env['COREPACK_ENABLE_STRICT'] = '1'
   env['COREPACK_ENABLE_AUTO_PIN'] = '0'
