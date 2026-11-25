@@ -1,6 +1,7 @@
 import type { ExpectedWorkspaceLocators } from './consumer/dependencies'
 import type { ConsumerEntry, PackageCheckResult, PackedPackage } from './types'
 import { mkdir, realpath, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import process from 'node:process'
 import { stringify } from 'yaml'
@@ -20,6 +21,7 @@ interface ConsumerOptions {
   packageManager?: string
   packageManagerLauncher?: 'corepack' | 'installed'
   expectedWorkspaceLocators?: ExpectedWorkspaceLocators
+  typeScriptWorkspace?: string
 }
 
 export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage[], results: PackageCheckResult[], entries: ConsumerEntry[], directory: string, timeout: number, options: ConsumerOptions = {}) {
@@ -36,7 +38,7 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
   const checkTypes = entries.length > 0 && result.files.some(file => /\.d\.[cm]?ts$/u.test(file))
   const closure = consumerRuntimeClosure([pkg.manifest], packages.map(item => item.manifest), options.expectedWorkspaceLocators)
   const dependencies = { ...consumerOptionalPeers(closure, new Map(packages.map(item => [String(item.manifest.name), `file:${item.result.tarball}`]))), [String(pkg.manifest.name)]: `file:${result.tarball}` }
-  const tooling = checkTypes ? await consumerTypeToolchain(result.directory, dependencies, closure) : undefined
+  const tooling = checkTypes ? await consumerTypeToolchain(options.typeScriptWorkspace ?? result.directory, dependencies, closure) : undefined
   const manifest = {
     name: 'repoctl-package-consumer',
     private: true,
@@ -96,6 +98,16 @@ export async function consumeTarball(pkg: PackedPackage, packages: PackedPackage
     throw new Error('Consumer resolved a package outside its isolated directory.')
   }
   const toolchain = tooling ? await installedConsumerTypeToolchain(directory, tooling) : undefined
+  if (toolchain && options.typeScriptWorkspace) {
+    try {
+      toolchain.tsc = createRequire(path.join(options.typeScriptWorkspace, 'package.json')).resolve('typescript/bin/tsc')
+    }
+    catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'MODULE_NOT_FOUND') {
+        throw error
+      }
+    }
+  }
   for (const [index, entry] of entries.entries()) {
     const specifier = `${pkg.manifest.name}${entry.subpath === '.' ? '' : entry.subpath.slice(1)}`
     if (entry.runtime) {

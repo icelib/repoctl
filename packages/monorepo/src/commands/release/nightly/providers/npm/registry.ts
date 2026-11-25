@@ -8,7 +8,7 @@ export interface RegistryMetadata {
   name: string
   version: string
   repoctlSnapshot?: unknown
-  dist?: { integrity?: string }
+  dist?: { integrity?: string, tarball?: string }
 }
 interface Publication { latest: string | null, version: string | null, metadata: RegistryMetadata | null }
 
@@ -17,14 +17,14 @@ export function registryObject(value: unknown): value is Record<string, unknown>
 }
 
 export function createNightlyRegistry(options: NightlyOptions) {
-  async function request(pathname: string, deadline = Number.POSITIVE_INFINITY) {
+  async function request(pathname: string, deadline = Number.POSITIVE_INFINITY, accept = 'application/json') {
     const timeout = Math.min(10_000, deadline - Date.now())
     if (timeout <= 0) {
       throw new Error('Nightly registry confirmation timed out.')
     }
     let response: Response
     try {
-      response = await (options.registryFetch ?? fetch)(new URL(pathname, registry), { redirect: 'error', headers: { 'accept': 'application/json', 'cache-control': 'no-cache' }, signal: AbortSignal.timeout(Math.max(1, Math.floor(timeout))) })
+      response = await (options.registryFetch ?? fetch)(new URL(pathname, registry), { redirect: 'error', headers: { accept, 'cache-control': 'no-cache' }, signal: AbortSignal.timeout(Math.max(1, Math.floor(timeout))) })
     }
     catch {
       throw new Error(`Nightly registry request failed for ${pathname}; publication state is unknown.`)
@@ -44,6 +44,10 @@ export function createNightlyRegistry(options: NightlyOptions) {
     return value
   }
   return {
+    installation(name: string, deadline: number, accept: string) {
+      const pathname = name.startsWith('@') ? `@${encodeURIComponent(name.slice(1))}` : encodeURIComponent(name)
+      return request(pathname, deadline, accept)
+    },
     async versions(name: string): Promise<RegistryMetadata[]> {
       const metadata = await request(encodeURIComponent(name))
       if (!metadata) {

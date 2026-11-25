@@ -71,6 +71,18 @@ it('confirms exact versions, metadata and integrity without changing latest', as
   await expect(confirmNpmNightly(report, options)).rejects.toThrow('latest tag changed')
 })
 
+it('confirms both npm packument formats and rejects installation metadata drift', async () => {
+  const report = reportFixture()
+  const options = { cwd: '.', registryFetch: npmFetch(report) }
+  await inspectNpmNightly(report, options)
+  await expect(confirmNpmNightly(report, {
+    cwd: '.',
+    registryFetch: npmFetch(report, (name, metadata, kind) => name === 'b' && kind === 'installation'
+      ? { ...metadata, dist: { ...metadata.dist, tarball: 'https://registry.npmjs.org/wrong.tgz' } }
+      : metadata),
+  })).rejects.toThrow('installation metadata conflicts')
+})
+
 it('waits for a newly published tag and fails when propagation never completes', async () => {
   const report = reportFixture()
   report.latest = { '@scope/a': '1.0.0', 'b': '1.0.0' }

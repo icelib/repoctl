@@ -42,7 +42,7 @@ export async function prepareSnapshotArtifacts(source: string, report: SnapshotR
   }
   report.checks = packed.map(item => item.result)
   for (const [index, item] of packed.entries()) {
-    await consumeTarball(item, packed, report.checks, consumerEntries(item.manifest, item.result.files), path.join(report.outputDirectory!, 'consumers', String(index)), 600_000, { env: options.env ?? process.env, expectedWorkspaceLocators: locators })
+    await consumeTarball(item, packed, report.checks, consumerEntries(item.manifest, item.result.files), path.join(report.outputDirectory!, 'consumers', String(index)), 600_000, { env: options.env ?? process.env, expectedWorkspaceLocators: locators, typeScriptWorkspace: source })
     item.result.status = item.result.diagnostics.some(diagnostic => diagnostic.severity === 'error') ? 'failed' : 'passed'
   }
   if (report.checks.some(check => check.status === 'failed')) {

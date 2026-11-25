@@ -5,6 +5,7 @@ import type { ReleaseCompletionRecord, ReleaseCompletionResult } from './types'
 import { spawnSync } from 'node:child_process'
 import semver from 'semver'
 import { loadMonorepoConfig } from '../../../core/config'
+import { withLegacyReleaseSourceConfig } from '../../../core/config/legacy-hooks'
 import { ReleaseCommandError } from '../errors'
 import { inspectRegistry } from '../lifecycle/registry'
 import { resolveGitHub } from '../metadata'
@@ -38,7 +39,9 @@ export async function recordReleaseCompletion(options: ReleaseCiOptions, state: 
   if (rule.kind !== 'stable' || rule.branch !== 'main' || rule.distTag !== 'latest') {
     return
   }
-  const config = await loadMonorepoConfig(options.cwd)
+  const config = await (getReleaseEnv(options)['REPO_RELEASE_SOURCE_SHA']
+    ? withLegacyReleaseSourceConfig(() => loadMonorepoConfig(options.cwd))
+    : loadMonorepoConfig(options.cwd))
   const sites = Object.keys(config.commands?.docs?.sites ?? {}).sort()
   if (!sites.length) {
     return

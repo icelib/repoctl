@@ -6,7 +6,7 @@ import { loadConfig } from 'c12'
 import path from 'pathe'
 import { commandConfigDirectory } from './config/context'
 import { replaceDocsTarget } from './config/docs-targets'
-import { legacyHookConfigEnabled } from './config/legacy-hooks'
+import { legacyHookConfigEnabled, legacyReleaseSourceConfigEnabled } from './config/legacy-hooks'
 import { validatedConfigLoading } from './config/loading'
 import { mergeConfigValues } from './config/merge'
 import { assertMonorepoConfig, ConfigValidationError } from './config/validation'
@@ -125,7 +125,7 @@ export function defineMonorepoConfig(config: MonorepoConfig) {
  */
 export async function loadMonorepoConfigDetails(cwd: string, options: { refresh?: boolean } = {}): Promise<LoadedMonorepoConfig> {
   const directory = path.resolve(cwd)
-  const key = `${directory}:${legacyHookConfigEnabled() ? 'legacy-hooks' : 'current'}`
+  const key = `${directory}:${legacyHookConfigEnabled() ? 'legacy-hooks' : legacyReleaseSourceConfigEnabled() ? 'release-source' : 'current'}`
   if (options.refresh) {
     cache.delete(key)
   }
