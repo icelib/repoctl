@@ -14,7 +14,7 @@ it.each(['npm', 'pkg-pr-new'] as const)('installs required workspace peer aliase
   await verifyNightlyConsumer(h.report, h.options)
   const host = h.report.packages[0]!
   const dependencies = h.manifest()['dependencies'] as Record<string, string>
-  expect(dependencies['provider-alias']).toBe(provider === 'npm' ? `npm:${host.name}@snapshot-nightly` : host.locator)
+  expect(dependencies['provider-alias']).toBe(provider === 'npm' ? `npm:${host.name}@${host.version}` : host.locator)
   expect(h.report.consumer?.status).toBe('verified')
   expect(h.report.consumer?.packages).toHaveLength(2)
 })

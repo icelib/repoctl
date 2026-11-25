@@ -3,6 +3,7 @@ import { copyFile, mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'pathe'
 import { resolveCommandConfig } from '../../../core/config'
+import { withLegacyReleaseSourceConfig } from '../../../core/config/legacy-hooks'
 import { clearWorkspaceCache } from '../../../core/workspace'
 import { ReleaseCommandError } from '../errors'
 import { runQualityScripts } from '../hooks'
@@ -76,7 +77,7 @@ export async function recoverSource(options: ReleaseCiOptions, source: string) {
     if (!dryRun) {
       recovery = { ...recovery, env: await sourcePackageManagerEnvironment(recovery, root) }
       run('pnpm', ['install', '--frozen-lockfile'], recovery)
-      const config = await resolveCommandConfig('release', cwd)
+      const config = await withLegacyReleaseSourceConfig(() => resolveCommandConfig('release', cwd))
       recovery = { ...recovery, config: { ...config, branches: options.config?.branches ?? {} } }
       await runQualityScripts(recovery)
     }

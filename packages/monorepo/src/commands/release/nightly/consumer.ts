@@ -43,7 +43,8 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
     await mkdir(report.outputDirectory, { recursive: true })
     directory = await realpath(await mkdtemp(path.join(report.outputDirectory, 'consumer-')))
     const checkTypes = report.snapshot.checks?.some(check => applicable.has(check.name) && check.files.some(file => /\.d\.[cm]?ts$/u.test(file)))
-    const dependencies = { ...consumerOptionalPeers(closure, new Map(packages.map(pkg => [pkg.name, report.provider === 'npm' ? `npm:${pkg.name}@snapshot-nightly` : pkg.locator]))), ...Object.fromEntries(packages.map(pkg => [pkg.name, report.provider === 'npm' ? 'snapshot-nightly' : pkg.locator])) }
+    const packageLocators = new Map(packages.map(pkg => [pkg.name, report.provider === 'npm' ? `npm:${pkg.name}@${pkg.version}` : pkg.locator]))
+    const dependencies = { ...consumerOptionalPeers(closure, packageLocators), ...Object.fromEntries(packages.map(pkg => [pkg.name, report.provider === 'npm' ? pkg.version : pkg.locator])) }
     const tooling = checkTypes ? await consumerTypeToolchain(options.cwd, dependencies, closure) : undefined
     const manifest = {
       name: 'repoctl-nightly-consumer',
@@ -76,7 +77,7 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
       }
       const manifest = JSON.parse(await readFile(path.join(installed, 'package.json'), 'utf8')) as PackedManifest & { repoctlSnapshot?: unknown }
       if (manifest.name !== pkg.name || manifest.version !== pkg.version || !matchesSnapshotMetadata(manifest.repoctlSnapshot, report.snapshot)) {
-        throw new Error(`Nightly consumer installed an unexpected version or identity for ${pkg.name}.`)
+        throw new Error(`Nightly consumer installed an unexpected version or identity for ${pkg.name}: expected ${JSON.stringify({ name: pkg.name, version: pkg.version, identityKey: report.snapshot.identityKey })}; actual ${JSON.stringify({ name: manifest.name ?? null, version: manifest.version ?? null, identityKey: (manifest.repoctlSnapshot as { identityKey?: unknown } | undefined)?.identityKey ?? null })}.`)
       }
       const files = report.snapshot.checks?.find(check => check.name === pkg.name)?.files
       if (!files) {

@@ -116,6 +116,9 @@ async function nightly(options: NightlyOptions, execute: boolean): Promise<Night
       updatePackages(report)
       await checkpoint()
       await verifyNightlyConsumer(report, options)
+      if (report.provider === 'npm') {
+        await confirmNpmNightly(report, options, false)
+      }
       report.status = 'published'
     }
     return report

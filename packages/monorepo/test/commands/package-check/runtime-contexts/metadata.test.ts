@@ -22,6 +22,10 @@ it('keeps ordinary entries in Node and associates only exact ESM exports with th
   expect(consumerEntries({ ...manifest, repoctl: { packageCheck: { runtimeContexts: { '.': guard } } } }, files)[0]?.context).toEqual(guard)
 })
 
+it('preserves null conditional export targets instead of falling through to a later condition', () => {
+  expect(consumerEntries({ name: 'fixture-null-export', exports: { '.': { node: null, default: './index.mjs' } } }, ['index.mjs'])).toEqual([])
+})
+
 it.each([
   null,
   [],

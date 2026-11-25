@@ -20,19 +20,27 @@ export async function fixture(eventName = 'workflow_dispatch') {
 export function npmMetadata(report: NightlyReport, name: string) {
   const snapshot = report.snapshot!
   const pkg = snapshot.packages.find(item => item.name === name)!
-  return { name, version: pkg.version, repoctlSnapshot: { ...snapshot.identity, identityKey: snapshot.identityKey, tag: snapshot.tag }, dist: { integrity: `sha512-${'A'.repeat(86)}==` } }
+  return { name, version: pkg.version, repoctlSnapshot: { ...snapshot.identity, identityKey: snapshot.identityKey, tag: snapshot.tag }, dist: { integrity: `sha512-${'A'.repeat(86)}==`, tarball: `https://registry.npmjs.org/${name}/-/${name.replace(/^@/u, '').replace('/', '-')}-${pkg.version}.tgz` } }
 }
 
-export function npmFetch(report: NightlyReport, transform: (name: string, metadata: ReturnType<typeof npmMetadata>) => unknown = (_name, metadata) => metadata) {
+export function npmFetch(report: NightlyReport, transform: (name: string, metadata: ReturnType<typeof npmMetadata>, kind: 'publication' | 'installation') => unknown = (_name, metadata) => metadata) {
   return vi.fn<typeof fetch>(async (input) => {
     const url = new URL(String(input))
     if (url.pathname.startsWith('/-/package/')) {
       const name = decodeURIComponent(url.pathname.split('/')[3]!)
-      const metadata = transform(name, npmMetadata(report, name)) as ReturnType<typeof npmMetadata> | null
+      const metadata = transform(name, npmMetadata(report, name), 'publication') as ReturnType<typeof npmMetadata> | null
       return json(metadata ? { 'latest': '1.0.0', 'snapshot-nightly': metadata.version } : { latest: '1.0.0' })
     }
     const name = decodeURIComponent(url.pathname.split('/')[1]!)
-    const metadata = transform(name, npmMetadata(report, name)) as ReturnType<typeof npmMetadata> | null
-    return json(url.pathname.split('/').length === 2 ? { name, versions: metadata ? { [metadata.version]: metadata } : {} } : metadata)
+    const kind = url.pathname.split('/').length === 2 ? 'installation' : 'publication'
+    const metadata = transform(name, npmMetadata(report, name), kind) as ReturnType<typeof npmMetadata> | null
+    if (url.pathname.split('/').length === 2) {
+      return json({
+        name,
+        'dist-tags': { latest: '1.0.0', ...(metadata ? { 'snapshot-nightly': metadata.version } : {}) },
+        'versions': metadata ? { [metadata.version]: metadata } : {},
+      })
+    }
+    return json(metadata)
   })
 }

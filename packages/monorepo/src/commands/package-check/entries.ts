@@ -2,18 +2,31 @@ import type { ConsumerEntry, PackedManifest } from './types'
 import { consumerRuntimeAssets } from './consumer/runtime-assets'
 import { consumerRuntimeContexts, validateRuntimeContextEntries } from './consumer/runtime-contexts'
 
-function resolveTarget(value: unknown, conditions: Set<string>): string | undefined {
+function resolveTarget(value: unknown, conditions: Set<string>): string | null | undefined {
+  if (value === null) {
+    return null
+  }
   if (typeof value === 'string') {
     return value
   }
   if (Array.isArray(value)) {
-    return value.map(item => resolveTarget(item, conditions)).find(Boolean)
+    let fallback: null | undefined = value.length ? undefined : null
+    for (const item of value) {
+      const resolved = resolveTarget(item, conditions)
+      if (resolved === null) {
+        fallback = null
+      }
+      else if (resolved !== undefined) {
+        return resolved
+      }
+    }
+    return fallback
   }
   if (value && typeof value === 'object') {
     for (const [key, target] of Object.entries(value)) {
       if (conditions.has(key)) {
         const resolved = resolveTarget(target, conditions)
-        if (resolved) {
+        if (resolved !== undefined) {
           return resolved
         }
       }

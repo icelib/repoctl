@@ -1,8 +1,9 @@
 import type { NightlyOptions, NightlyReport } from '../../types'
+import type { RegistryMetadata } from './registry'
 import { setTimeout } from 'node:timers/promises'
 import { matchesSnapshotMetadata } from '../../../snapshot/identity'
 import { validPublishedIdentity } from './identity'
-import { createNightlyRegistry } from './registry'
+import { createNightlyRegistry, nightlyTag } from './registry'
 
 export { createNightlyRegistry } from './registry'
 
@@ -29,7 +30,7 @@ export async function inspectNpmNightly(report: NightlyReport, options: NightlyO
   return complete
 }
 
-export async function confirmNpmNightly(report: NightlyReport, options: NightlyOptions) {
+export async function confirmNpmNightly(report: NightlyReport, options: NightlyOptions, allowPending = true) {
   const snapshot = report.snapshot!
   const client = createNightlyRegistry(options)
   const deadline = Date.now() + 900_000
@@ -48,10 +49,30 @@ export async function confirmNpmNightly(report: NightlyReport, options: NightlyO
         || !matchesSnapshotMetadata(publication.metadata.repoctlSnapshot, snapshot)) {
         throw new Error(`Nightly registry evidence conflicts with the published artifact for ${pkg.name}.`)
       }
+      for (const accept of ['application/json; q=1.0, */*', 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*']) {
+        const installation = await client.installation(pkg.name, deadline, accept) as {
+          'versions'?: Record<string, RegistryMetadata | undefined>
+          'dist-tags'?: Record<string, string | undefined>
+        } | null
+        const manifest = installation?.versions?.[pkg.version]
+        const manifestDist = manifest?.dist
+        if (manifest && (manifest.name !== pkg.name || manifest.version !== pkg.version
+          || !manifestDist || manifestDist.integrity !== pkg.integrity || typeof manifestDist.tarball !== 'string'
+          || !manifestDist.tarball || manifestDist.tarball !== publication.metadata.dist?.tarball
+          || (accept.startsWith('application/json;') && !matchesSnapshotMetadata(manifest.repoctlSnapshot, snapshot)))) {
+          throw new Error(`Nightly installation metadata conflicts with the published artifact for ${pkg.name} (${accept}).`)
+        }
+        if (installation?.['dist-tags']?.[nightlyTag] !== pkg.version || !manifest) {
+          pending.push(`${pkg.name} (${accept})`)
+        }
+      }
     }
     if (!pending.length) {
       report.confirmed = true
       return
+    }
+    if (!allowPending) {
+      throw new Error(`Nightly channel changed after consumer verification: ${pending.join(', ')}.`)
     }
     if (Date.now() >= deadline || attempt === 179) {
       throw new Error(`Nightly tags did not become visible: ${pending.join(', ')}.`)

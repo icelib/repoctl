@@ -1,7 +1,7 @@
 import type { MonorepoConfig } from '../../../types'
 import type { ConfigDiagnostic, Schema } from './schema'
 import { presetReferencesSchema } from '../../presets/reference'
-import { legacyHookConfigEnabled } from '../legacy-hooks'
+import { legacyHookConfigEnabled, legacyReleaseSourceConfigEnabled } from '../legacy-hooks'
 import { admissionSchema } from './admission'
 import { commandSchemas, dependencyTypes } from './commands'
 import { installationSecuritySchema } from './installation-security'
@@ -46,8 +46,11 @@ export function validateMonorepoConfig(value: unknown): ConfigDiagnostic[] {
   if (upgrade?.['overwrite'] === true && (upgrade['noOverwrite'] === true || upgrade['skipOverwrite'] === true)) {
     diagnostics.push({ id: 'config.conflict', path: 'commands.upgrade.overwrite', actualType: 'boolean', expected: 'one overwrite policy', suggestion: 'Choose overwrite or noOverwrite/skipOverwrite, not both.' })
   }
-  return legacyHookConfigEnabled()
-    ? diagnostics.filter(item => !/^tooling\.(?:husky|lintStaged)(?:\.|$)/u.test(item.path))
+  if (legacyHookConfigEnabled()) {
+    return diagnostics.filter(item => !/^tooling\.(?:husky|lintStaged)(?:\.|$)/u.test(item.path))
+  }
+  return legacyReleaseSourceConfigEnabled()
+    ? diagnostics.filter(item => item.path !== 'tooling.lintStaged')
     : diagnostics
 }
 

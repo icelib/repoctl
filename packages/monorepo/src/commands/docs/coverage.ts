@@ -1,6 +1,7 @@
 import type { DocsSiteConfig } from '../../types/docs'
 import type { ReleaseCompletionRecord } from '../release/completion/types'
 import { readFile } from 'node:fs/promises'
+import { isDeepStrictEqual } from 'node:util'
 import micromatch from 'micromatch'
 import path from 'pathe'
 import { isIntentConsumed, parseIntent, readLedger, readPendingIntents } from '../release/intents'
@@ -11,6 +12,34 @@ import { coveredPackages } from './packages'
 const excludedInputs = ['**/README*', '**/CHANGELOG*', '**/docs/**', '**/test/**', '**/tests/**', '**/__tests__/**', '**/test-d/**', '**/*.test.*', '**/*.spec.*']
 
 export { coveredPackages } from './packages'
+
+function onlyDevelopmentDependenciesChanged(source: string, publishedSha: string, currentSha: string, filename: string, packageName: string, version: string) {
+  try {
+    const published: unknown = JSON.parse(git(source, ['show', `${publishedSha}:${filename}`]))
+    const current: unknown = JSON.parse(git(source, ['show', `${currentSha}:${filename}`]))
+    if (!published || typeof published !== 'object' || Array.isArray(published)
+      || !current || typeof current !== 'object' || Array.isArray(current)) {
+      return false
+    }
+    const publishedManifest = published as Record<string, unknown>
+    const currentManifest = current as Record<string, unknown>
+    if (publishedManifest['name'] !== packageName || currentManifest['name'] !== packageName
+      || publishedManifest['version'] !== version || currentManifest['version'] !== version) {
+      return false
+    }
+    for (const manifest of [publishedManifest, currentManifest]) {
+      const dependencies = manifest['devDependencies']
+      if (dependencies !== undefined && (!dependencies || typeof dependencies !== 'object' || Array.isArray(dependencies))) {
+        return false
+      }
+      delete manifest['devDependencies']
+    }
+    return isDeepStrictEqual(publishedManifest, currentManifest)
+  }
+  catch {
+    return false
+  }
+}
 
 export async function checkReleaseCoverage(source: string, record: ReleaseCompletionRecord, site: DocsSiteConfig) {
   const packages = await coveredPackages(source, site)
@@ -45,7 +74,12 @@ export async function checkReleaseCoverage(source: string, record: ReleaseComple
     const selected = new Set(micromatch(changed, patterns, { dot: true }))
     const manifest = `${directory}/package.json`
     if (changed.includes(manifest)) {
-      selected.add(manifest)
+      if (onlyDevelopmentDependenciesChanged(source, proof.sourceSha, record.sourceSha, manifest, name, proof.version)) {
+        selected.delete(manifest)
+      }
+      else {
+        selected.add(manifest)
+      }
     }
     else {
       // The manifest is identical to its published source, but catalog values live outside it.
