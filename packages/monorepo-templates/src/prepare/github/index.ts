@@ -1,10 +1,11 @@
-import { access, cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, copyFile, cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { sanitizePublishedCiWorkflowContent } from '../workflows'
 import { sanitizePublishedReleaseWorkflowContent } from './release'
 
 const consumerWorkflowNames = ['ci.yml', 'release-intent-auto.yml', 'release-intent-check.yml', 'repoctl-docs.yml', 'repoctl-docs-deploy.yml']
 const sourceOnlyGithubPaths = ['pr-ci', 'nightly', 'workflows/pr-ci.yml', 'workflows/pr-ci-manual.yml', 'workflows/devcontainer.yml']
+const sharedGithubFiles = ['release-intents/check.mjs']
 
 function isPublishedSourcePath(sourceRoot: string, source: string) {
   const relative = path.relative(sourceRoot, source).split(path.sep).join('/')
@@ -57,6 +58,18 @@ export async function preparePublishedGithubAssets(repoRoot: string, assetRoot: 
 
   // Also repair old local caches prepared from source-repository workflows.
   await Promise.all(sourceOnlyGithubPaths.map(entry => rm(path.join(targetRoot, entry), { force: true, recursive: true })))
+  const releaseIntentSource = path.join(sourceRoot, 'release-intents/check.mjs')
+  try {
+    await access(releaseIntentSource)
+    const releaseIntentValidator = path.join(targetRoot, 'release-intents/check.mjs')
+    await mkdir(path.dirname(releaseIntentValidator), { recursive: true })
+    await copyFile(releaseIntentSource, releaseIntentValidator)
+  }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+      throw error
+    }
+  }
   await mkdir(path.join(targetRoot, 'workflows'), { recursive: true })
   await Promise.all([...consumerWorkflowNames, 'release.yml'].map(async (filename) => {
     const content = await readFile(workflowSource(repoRoot, filename), 'utf8')
@@ -65,6 +78,7 @@ export async function preparePublishedGithubAssets(repoRoot: string, assetRoot: 
 }
 
 export async function arePublishedGithubAssetsPrepared(repoRoot: string, assetRoot: string) {
+  const sourceRoot = path.join(repoRoot, '.github')
   const targetRoot = path.join(assetRoot, '.github')
   try {
     const results = await Promise.all([...consumerWorkflowNames, 'release.yml'].map(async (filename) => {
@@ -73,6 +87,21 @@ export async function arePublishedGithubAssetsPrepared(repoRoot: string, assetRo
         readFile(path.join(targetRoot, 'workflows', filename), 'utf8'),
       ])
       return await consumerWorkflowContent(repoRoot, filename, source) === prepared
+    }))
+    const sharedResults = await Promise.all(sharedGithubFiles.map(async (filename) => {
+      try {
+        const [source, prepared] = await Promise.all([
+          readFile(path.join(sourceRoot, filename), 'utf8'),
+          readFile(path.join(targetRoot, filename), 'utf8'),
+        ])
+        return source === prepared
+      }
+      catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+          return true
+        }
+        throw error
+      }
     }))
     for (const entry of sourceOnlyGithubPaths) {
       try {
@@ -85,7 +114,7 @@ export async function arePublishedGithubAssetsPrepared(repoRoot: string, assetRo
         }
       }
     }
-    return results.every(Boolean)
+    return [...results, ...sharedResults].every(Boolean)
   }
   catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {

@@ -25,6 +25,7 @@ async function createFixture() {
     outputFile(path.join(root, '.github/pr-ci/index.mjs'), 'throw new Error("Source-only approval tooling")\n'),
     outputFile(path.join(root, '.github/nightly/index.mjs'), 'throw new Error("Source-only nightly tooling")\n'),
     outputFile(path.join(root, '.github/auto-changeset/index.mjs'), 'console.log("Shared changeset tooling")\n'),
+    outputFile(path.join(root, '.github/release-intents/check.mjs'), 'console.log("Shared release-intent validation")\n'),
     outputFile(path.join(root, '.github/FUNDING.yml'), 'github: sonofmagic\n'),
     outputFile(path.join(consumerRoot, 'ci.yml'), 'on: [pull_request]\njobs:\n  test:\n    steps:\n      - run: pnpm check:workflows\n      - run: pnpm test\n'),
     outputFile(path.join(consumerRoot, 'release-intent-auto.yml'), 'on: [pull_request_target]\njobs: {}\n'),
@@ -59,6 +60,7 @@ it.each([true, false])('publishes automatic consumer workflows and removes sourc
     expect(ci.on).toEqual(['pull_request'])
     expect(ci.jobs.test.steps).toEqual([{ run: 'pnpm test' }])
     expect(await readFile(path.join(github, 'auto-changeset/index.mjs'), 'utf8')).toContain('Shared changeset tooling')
+    expect(await readFile(path.join(github, 'release-intents/check.mjs'), 'utf8')).toContain('Shared release-intent validation')
     expect(await readFile(path.join(github, 'FUNDING.yml'), 'utf8')).toBe('github: sonofmagic\n')
     expect(YAML.parse(await readFile(path.join(github, 'workflows/release.yml'), 'utf8')).on).toEqual(['push'])
     await expect(access(path.join(github, 'pr-ci'))).rejects.toMatchObject({ code: 'ENOENT' })
@@ -91,6 +93,10 @@ it.each([true, false])('publishes automatic consumer workflows and removes sourc
     expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(false)
     await preparePublishedGithubAssets(fixture.root, fixture.assets, false)
     await expect(access(path.join(github, 'nightly'))).rejects.toMatchObject({ code: 'ENOENT' })
+    expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(true)
+    await writeFile(path.join(github, 'release-intents/check.mjs'), 'stale release-intent validation\n')
+    expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(false)
+    await preparePublishedGithubAssets(fixture.root, fixture.assets, false)
     expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(true)
     await writeFile(path.join(github, 'workflows/release-intent-check.yml'), 'on: [workflow_call]\njobs: {}\n')
     expect(await arePublishedGithubAssetsPrepared(fixture.root, fixture.assets)).toBe(false)
@@ -160,4 +166,7 @@ it('keeps independently maintained consumer definitions automatic and approval-f
       expect(job.environment).toBeUndefined()
     }
   }
+  const intentWorkflow = YAML.parse(await readFile(path.join(sourceRoot, 'release-intent-check.yml'), 'utf8'))
+  const coverage = intentWorkflow.jobs['release-intent'].steps.find((step: { name?: string }) => step.name === 'Validate release intent coverage')
+  expect(coverage.run).toContain('node .github/release-intents/check.mjs')
 })
