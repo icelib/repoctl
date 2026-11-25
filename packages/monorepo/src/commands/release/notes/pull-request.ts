@@ -4,13 +4,17 @@ import path from 'pathe'
 import { getWorkspacePackages } from '../../../core/workspace'
 import { ReleaseCommandError } from '../errors'
 import { capture } from '../shared'
+import { groupReleaseNoteEntries } from './groups'
 import { categoryOrder } from './model'
-import { formatCategoryEntries, formatContributors, formatVersion, localized, renderReleasePullRequest } from './render'
+import { formatCategoryEntries, formatCompactCategoryEntries, formatContributors, formatVersion, localized, renderReleasePullRequest } from './render'
 
 const releasePullRequestBodyLimit = 65536
 
 /** 超长说明只省略完整条目，始终保留全部包版本和不可变 changelog 链接。 */
 function renderSummary(document: ReleaseNoteDocument, metadata: ReleaseBodyMetadata, packages: string[], entries: ReleaseNoteEntry[]) {
+  const groups = metadata.compact ? groupReleaseNoteEntries(entries) : []
+  const totalChanges = metadata.compact ? groupReleaseNoteEntries(document.entries).length : document.entries.length
+  const visibleChanges = metadata.compact ? groups.length : entries.length
   const sections = [
     `# ${localized(metadata, 'Release Notes (Summary)', '发布说明（摘要）')}`,
     '',
@@ -18,10 +22,12 @@ function renderSummary(document: ReleaseNoteDocument, metadata: ReleaseBodyMetad
     '',
     ...packages,
     '',
-    localized(metadata, `Showing ${entries.length} of ${document.entries.length} changes. Read the complete CHANGELOG links above for all changes.`, `已展示 ${entries.length} / ${document.entries.length} 项变更；全部变更请查看上方各包的完整 CHANGELOG。`),
+    localized(metadata, `Showing ${visibleChanges} of ${totalChanges} changes. Read the complete CHANGELOG links above for all changes.`, `已展示 ${visibleChanges} / ${totalChanges} 项变更；全部变更请查看上方各包的完整 CHANGELOG。`),
   ]
   for (const category of categoryOrder) {
-    const section = formatCategoryEntries(entries, category, metadata, 2, false)
+    const section = metadata.compact
+      ? formatCompactCategoryEntries(groups, category, metadata, 2, true)
+      : formatCategoryEntries(entries, category, metadata, 2, false)
     if (section.length) {
       sections.push('', ...section)
     }
@@ -70,13 +76,14 @@ export async function renderBoundedReleasePullRequest(document: ReleaseNoteDocum
   if (body.length > releasePullRequestBodyLimit) {
     throw new ReleaseCommandError('Complete package/version/changelog summary exceeds GitHub\'s 65536-character PR body limit; no PR pushed')
   }
-  for (const category of categoryOrder) {
-    for (const entry of document.entries.filter(entry => entry.category === category)) {
-      const candidate = renderSummary(document, metadata, packages, [...selected, entry])
-      if (candidate.length <= releasePullRequestBodyLimit) {
-        selected.push(entry)
-        body = candidate
-      }
+  const candidates = metadata.compact
+    ? groupReleaseNoteEntries(document.entries).flatMap(group => [group.entries])
+    : document.entries.map(entry => [entry])
+  for (const group of candidates) {
+    const candidate = renderSummary(document, metadata, packages, [...selected, ...group])
+    if (candidate.length <= releasePullRequestBodyLimit) {
+      selected.push(...group)
+      body = candidate
     }
   }
   return body

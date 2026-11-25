@@ -28,6 +28,7 @@ interface PackageRelease {
   previousVersion?: string
   npmUrl?: string
   private?: boolean
+  changelogPath?: string
   content: string
 }
 
@@ -124,6 +125,7 @@ function buildReleasePackage(release: PackageRelease) {
     name: release.name,
     version: release.version,
     ...(release.previousVersion ? { previousVersion: release.previousVersion } : {}),
+    ...(release.changelogPath !== undefined ? { changelogPath: release.changelogPath } : {}),
     ...packageLinks,
   }
 }
@@ -185,6 +187,7 @@ export async function buildReleaseNoteDocument(
       const previousVersion = previousVersions?.get(manifest.name) || release.previousVersion
       releases.push({
         ...release,
+        changelogPath: path.relative(cwd, pkg.rootDir).replaceAll('\\', '/'),
         ...(manifest.private === true
           ? { private: true }
           : { npmUrl: buildNpmPackageUrl(manifest.name, manifest.version) }),

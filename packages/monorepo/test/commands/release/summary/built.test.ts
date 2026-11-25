@@ -101,6 +101,28 @@ describe('repoctl release note classification', () => {
     expect(release).toContain('保留新增功能和性能边界。')
   }, 30_000)
 
+  it('applies compact notes through Release PR creation, publication, and repair', async () => {
+    const fixture = await createClassificationFixture({
+      compact: true,
+      summary: 'fix: 修复发布正文重复。第二句属于完整说明。',
+      sourceSubject: 'fix(release): 修复发布正文',
+    })
+    const pullRequest = await fixture.pullRequestBody()
+    const release = await fixture.publishedReleaseBody()
+    const repaired = await fixture.releaseBody()
+
+    expect(pullRequest).toContain('fix: 修复发布正文重复。')
+    expect(pullRequest).toContain('<summary>Full details</summary>')
+    expect(pullRequest).toContain('fix: 修复发布正文重复。第二句属于完整说明。')
+    expect(pullRequest).toContain('[CHANGELOG](packages/library/CHANGELOG.md)')
+    for (const body of [release, repaired]) {
+      expect(body).toContain('<summary>fix: 修复发布正文重复。</summary>')
+      expect(body).toContain('fix: 修复发布正文重复。第二句属于完整说明。')
+      expect(body.match(/<details>/g)).toHaveLength(1)
+      expect(body.match(/<\/details>/g)).toHaveLength(1)
+    }
+  }, 30_000)
+
   it('keeps native dependency propagation in maintenance despite an explicit feature and source commit', async () => {
     const fixture = await createClassificationFixture({
       summary: 'feat: Native pnpm propagation: dependency.',

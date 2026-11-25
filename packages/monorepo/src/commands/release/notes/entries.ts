@@ -144,6 +144,7 @@ function readMarkdownEntries(content: string) {
 interface NormalizedMarkdownEntry {
   heading: string
   summary: string
+  details: string
   commits: ReleaseCommit[]
   pullRequests: number[]
   issues: number[]
@@ -152,6 +153,7 @@ interface NormalizedMarkdownEntry {
 }
 
 function normalizeMarkdownEntry(item: { heading: string, summary: string }): NormalizedMarkdownEntry {
+  const details = item.summary.trim()
   const raw = item.summary.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim()
   const commitMatches = [...raw.matchAll(/\[{1,2}`?([0-9a-f]{7,40})`?\]\(([^)]+\/commit\/[^)]+)\)/gi)]
   const pullRequests = [...raw.matchAll(/\[#(\d+)\]\(([^)]+\/pull\/\d+)\)/gi)].map(match => Number(match[1]))
@@ -199,6 +201,7 @@ function normalizeMarkdownEntry(item: { heading: string, summary: string }): Nor
   return {
     heading: categoryHint ? `${item.heading} ${categoryHint}` : item.heading,
     summary,
+    details,
     commits,
     pullRequests: [...new Set(pullRequests)],
     issues: [...new Set(issues)],
@@ -256,6 +259,7 @@ export function buildEntries(release: PackageReleaseSource, commits: ReleaseComm
       ...(release.npmUrl ? { npmUrl: release.npmUrl } : {}),
       category: classifyChange(normalized.heading, summary, entryCommits),
       summary,
+      details: normalized.details,
       commits: entryCommits,
       pullRequests: [...new Set([...refs.pullRequests, ...normalized.pullRequests])].sort((a, b) => a - b),
       issues: [...new Set([...refs.issues, ...normalized.issues])].sort((a, b) => a - b),

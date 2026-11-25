@@ -19,6 +19,7 @@ interface ClassificationOptions {
   sourceSubject?: string
   emptyNotes?: boolean
   realVersion?: boolean
+  compact?: boolean
 }
 
 interface Manifest {
@@ -171,7 +172,14 @@ export async function createClassificationFixture(options: ClassificationOptions
     listReleases: vi.fn(async () => [release]),
     updateRelease: vi.fn(async (request: Parameters<NonNullable<GitHubOperations['updateRelease']>>[0]) => ({ ...release, name: request.name, body: request.body })),
   }
-  const releaseOptions = { cwd, branch: 'main', config: { qualityScripts: [] }, env: { REPOCTL_LANG: 'en' }, spawn, github }
+  const releaseOptions = {
+    cwd,
+    branch: 'main',
+    config: { qualityScripts: [], ...(options.compact ? { notes: { mode: 'compact' as const } } : {}) },
+    env: { REPOCTL_LANG: 'en' },
+    spawn,
+    github,
+  }
   return {
     cwd,
     versionCalls,

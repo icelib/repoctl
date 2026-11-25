@@ -61,7 +61,10 @@ export async function reconcileRelease(options: ReleaseReconcileOptions) {
     assertReleaseLineVersions(await resolveReleaseBranch(options), packages)
   }
   const env = getReleaseEnv(options)
-  const metadata: { repository?: string, serverUrl?: string } = {}
+  const metadata: { repository?: string, serverUrl?: string, compact?: boolean } = {}
+  if (options.config?.notes?.mode === 'compact') {
+    metadata.compact = true
+  }
   if (env['GITHUB_REPOSITORY']) {
     metadata.repository = env['GITHUB_REPOSITORY']
   }
@@ -88,7 +91,7 @@ export async function reconcileRelease(options: ReleaseReconcileOptions) {
       entries: document.entries.filter(entry => entry.packageName === pkg.name && entry.version === pkg.version),
       compareUrls: document.compareUrls.filter(url => url.includes(encodeURIComponent(`${pkg.name}@`))),
     }
-    const body = renderGitHubRelease(packageDocument)
+    const body = renderGitHubRelease(packageDocument, metadata)
     const tagTarget = github.readTagTarget ? await github.readTagTarget(tag) : remoteTagTarget(tag, options)
     if (tagTarget && tagTarget !== target) {
       throw new ReleaseCommandError(`Tag target conflict for ${tag}`)

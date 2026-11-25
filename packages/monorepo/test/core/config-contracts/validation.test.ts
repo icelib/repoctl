@@ -12,6 +12,11 @@ describe('built runtime config contracts', () => {
     expect(report[1]).toMatchObject({ id: 'config.invalid-type', actualType: 'string', expected: 'boolean' })
   })
 
+  it('accepts compact release notes and rejects unknown note modes', () => {
+    expect(validateMonorepoConfig({ commands: { release: { notes: { mode: 'compact' } } } })).toEqual([])
+    expect(validateMonorepoConfig({ commands: { release: { notes: { mode: 'brief' } } } }).map(item => item.path)).toEqual(['commands.release.notes.mode'])
+  })
+
   it.each(['ts', 'mjs', 'cjs'])('rejects invalid %s exports before init writes anything', async (extension) => {
     const declaration = extension === 'cjs' ? 'module.exports =' : 'export default'
     const cwd = await fixture(`${declaration} { commands: { init: { force: 'sensitive-value' } } }`, extension)

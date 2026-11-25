@@ -21,6 +21,11 @@ export interface ReleaseRegistryConfig {
   visibilityTimeoutMs?: number
 }
 
+export interface ReleaseNotesConfig {
+  /** 发布正文使用聚合摘要和折叠式完整说明。省略时保留完整逐包条目。 */
+  mode?: 'compact'
+}
+
 export type NightlyProvider = 'npm' | 'pkg-pr-new'
 export type NightlyVersioning = 'date' | 'snapshot'
 
@@ -38,6 +43,7 @@ export interface ReleaseNightlyConfig {
 export interface ReleaseCommandConfig {
   nightly?: ReleaseNightlyConfig
   registry?: ReleaseRegistryConfig
+  notes?: ReleaseNotesConfig
   /** Stable, maintenance and prerelease branch mappings. */
   branches?: ReleaseBranchesConfig
   /**

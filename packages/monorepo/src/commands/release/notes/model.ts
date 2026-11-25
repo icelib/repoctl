@@ -19,6 +19,7 @@ export interface ReleaseBodyMetadata {
   serverUrl?: string
   contributors?: string[]
   locale?: RepoctlLocale
+  compact?: boolean
 }
 
 export interface ReleaseNoteEntry {
@@ -27,6 +28,7 @@ export interface ReleaseNoteEntry {
   npmUrl?: string
   category: ReleaseCategory
   summary: string
+  details?: string
   commits: ReleaseCommit[]
   pullRequests: number[]
   issues: number[]
@@ -39,6 +41,7 @@ export interface ReleaseNotePackage {
   previousVersion?: string
   npmUrl?: string
   previousNpmUrl?: string
+  changelogPath?: string
 }
 
 export interface ReleaseNoteDocument {
@@ -46,6 +49,17 @@ export interface ReleaseNoteDocument {
   entries: ReleaseNoteEntry[]
   contributors: string[]
   compareUrls: string[]
+}
+
+export interface ReleaseNoteGroup {
+  category: ReleaseCategory
+  summary: string
+  entries: ReleaseNoteEntry[]
+  packageNames: string[]
+  commits: ReleaseCommit[]
+  pullRequests: number[]
+  issues: number[]
+  authors: string[]
 }
 
 export interface PackageReleaseSource {
