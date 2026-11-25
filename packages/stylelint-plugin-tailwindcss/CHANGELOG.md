@@ -1,5 +1,12 @@
 # stylelint-plugin-tailwindcss
 
+## 3.2.5
+
+### Patch Changes
+
+- Updated dependencies:
+  - postcss-tailwindcss@3.1.11
+
 ## 3.2.4
 
 ### Patch Changes

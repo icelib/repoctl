@@ -1,5 +1,11 @@
 # eslint-plugin-better-stylelint
 
+## 2.2.2
+
+### Patch Changes
+
+- Publish catalog dependency updates for Stylelint and Tailwind CSS packages
+
 ## 2.2.1
 
 ### Patch Changes

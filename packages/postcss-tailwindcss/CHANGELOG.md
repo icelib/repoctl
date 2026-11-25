@@ -1,5 +1,11 @@
 # postcss-tailwindcss
 
+## 3.1.11
+
+### Patch Changes
+
+- Publish catalog dependency updates for Stylelint and Tailwind CSS packages
+
 ## 3.1.10
 
 ### Patch Changes
