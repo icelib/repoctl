@@ -11,7 +11,7 @@ it.each(['npm', 'pkg-pr-new'] as const)('installs the real %s channel with no ov
   await verifyNightlyConsumer(h.report, h.options)
   expect(h.report.consumer?.status).toBe('verified')
   expect(h.report.consumer?.packages).toHaveLength(2)
-  expect(h.manifest()).toMatchObject({ dependencies: Object.fromEntries(h.report.packages.map(pkg => [pkg.name, provider === 'npm' ? 'snapshot-nightly' : pkg.locator])) })
+  expect(h.manifest()).toMatchObject({ dependencies: Object.fromEntries(h.report.packages.map(pkg => [pkg.name, provider === 'npm' ? pkg.version : pkg.locator])) })
   expect(h.manifest()).not.toHaveProperty('pnpm')
   expect(h.spawn.mock.calls.filter(([, args]) => args?.includes('--eval'))).toHaveLength(2)
   expect(h.spawn.mock.calls.filter(([, args]) => args?.includes('--check'))).toHaveLength(2)

@@ -62,7 +62,10 @@ it.each([false, true])('uses the isolated workspace compiler for published night
     }
     const [, name, version] = url.pathname.split('/')
     if (!version) {
-      return json({ name: decodeURIComponent(name!), versions: manifests(decodeURIComponent(name!)) })
+      const packageName = decodeURIComponent(name!)
+      const versions = manifests(packageName)
+      const published = Object.values(versions)[0]
+      return json({ 'name': packageName, versions, 'dist-tags': { latest: '1.0.0', ...(published ? { 'snapshot-nightly': published.version } : {}) } })
     }
     const published = manifests(decodeURIComponent(name!))[decodeURIComponent(version!)]
     return published ? json(published) : json({}, 404)

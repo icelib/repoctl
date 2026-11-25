@@ -37,7 +37,9 @@ it('retries a transitive consumer miss after confirmed publication without uploa
     const [, encodedName, encodedVersion] = url.pathname.split('/')
     if (!encodedVersion) {
       const name = decodeURIComponent(encodedName!)
-      return json({ name, versions: manifests(name) })
+      const versions = manifests(name)
+      const published = Object.values(versions)[0]
+      return json({ name, versions, 'dist-tags': { latest: '1.0.0', ...(published ? { 'snapshot-nightly': published.version } : {}) } })
     }
     const manifest = manifests(decodeURIComponent(encodedName!))[decodeURIComponent(encodedVersion!)]
     return manifest ? json(manifest) : json({}, 404)

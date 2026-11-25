@@ -43,7 +43,8 @@ export async function verifyNightlyConsumer(report: NightlyReport, options: Nigh
     await mkdir(report.outputDirectory, { recursive: true })
     directory = await realpath(await mkdtemp(path.join(report.outputDirectory, 'consumer-')))
     const checkTypes = report.snapshot.checks?.some(check => applicable.has(check.name) && check.files.some(file => /\.d\.[cm]?ts$/u.test(file)))
-    const dependencies = { ...consumerOptionalPeers(closure, new Map(packages.map(pkg => [pkg.name, report.provider === 'npm' ? pkg.version : pkg.locator]))), ...Object.fromEntries(packages.map(pkg => [pkg.name, report.provider === 'npm' ? pkg.version : pkg.locator])) }
+    const packageLocators = new Map(packages.map(pkg => [pkg.name, report.provider === 'npm' ? `npm:${pkg.name}@${pkg.version}` : pkg.locator]))
+    const dependencies = { ...consumerOptionalPeers(closure, packageLocators), ...Object.fromEntries(packages.map(pkg => [pkg.name, report.provider === 'npm' ? pkg.version : pkg.locator])) }
     const tooling = checkTypes ? await consumerTypeToolchain(options.cwd, dependencies, closure) : undefined
     const manifest = {
       name: 'repoctl-nightly-consumer',
