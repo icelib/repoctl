@@ -803,6 +803,10 @@
   intents:
     - tidy-catalogs-manage
     - weak-mice-marry
+"@icebreakers/monorepo@6.6.5":
+  dir: packages/monorepo
+  intents:
+    - compact-release-notes
 "@icebreakers/stylelint-config@5.0.7":
   dir: packages/stylelint
   intents:
@@ -1299,6 +1303,10 @@ repoctl@6.6.4:
   dir: packages/repoctl
   intents:
     - weak-mice-marry
+repoctl@6.6.5:
+  dir: packages/repoctl
+  intents:
+    - compact-release-notes
 stylelint-plugin-tailwindcss@3.0.7:
   dir: packages/stylelint-plugin-tailwindcss
   intents:
