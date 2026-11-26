@@ -1,5 +1,11 @@
 # stylelint-plugin-tailwindcss
 
+## 3.2.6
+
+### Patch Changes
+
+- 放宽 repoctl 运行时依赖闭包中的 peer 版本约束，减少宿主项目安装时的版本冲突。
+
 ## 3.2.5
 
 ### Patch Changes

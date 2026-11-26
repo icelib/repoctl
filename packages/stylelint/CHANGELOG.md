@@ -1,5 +1,14 @@
 # @icebreakers/stylelint-config
 
+## 6.0.8
+
+### Patch Changes
+
+- 放宽 repoctl 运行时依赖闭包中的 peer 版本约束，减少宿主项目安装时的版本冲突。
+
+- Updated dependencies:
+  - stylelint-plugin-tailwindcss@3.2.6
+
 ## 6.0.7
 
 ### Patch Changes
