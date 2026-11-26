@@ -1,5 +1,14 @@
 # @icebreakers/eslint-config
 
+## 8.0.23
+
+### Patch Changes
+
+- 放宽 repoctl 运行时依赖闭包中的 peer 版本约束，减少宿主项目安装时的版本冲突。
+
+- Updated dependencies:
+  - @icebreakers/stylelint-config@6.0.8
+
 ## 8.0.22
 
 ### Patch Changes
