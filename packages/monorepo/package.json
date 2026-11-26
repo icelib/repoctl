@@ -78,10 +78,10 @@
     "lint:fix": "eslint . --fix"
   },
   "peerDependencies": {
-    "@commitlint/cli": "catalog:",
-    "eslint": "^9.0.0 || ^10.0.0",
-    "stylelint": "^17.16.0 || ^18.0.0",
-    "typescript": "^5.0.0 || ^6.0.0 || ^7.0.0",
+    "@commitlint/cli": "*",
+    "eslint": "*",
+    "stylelint": "*",
+    "typescript": "*",
     "vitest": "*"
   },
   "peerDependenciesMeta": {
