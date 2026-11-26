@@ -51,6 +51,7 @@ it.each([false, true])('consumes an editable pnpm workspace through the built sn
       return
     }
     expect(result.error).toBeUndefined()
+    expect(registry.policies[0]?.['overrides']).toEqual({ vitest: '5.1.1' })
     expect(registry.policies[0]?.['minimumReleaseAgeExclude']).toEqual(expect.arrayContaining([
       ...fixture.manifest.packages.map(pkg => `${pkg.name}@${pkg.version}`),
       `${freshPeer.name}@${freshPeer.version}`,

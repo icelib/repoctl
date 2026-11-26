@@ -5,6 +5,8 @@ import { stringify } from 'yaml'
 export function consumerWorkspace(packages?: readonly PublishedPackage[]) {
   return stringify({
     packages: [],
+    // Keep release consumers on the repository's known-good Vitest version.
+    overrides: { vitest: '5.1.1' },
     // 仅豁免本轮已确认的版本，其余依赖保留 pnpm 默认的冷却策略。
     ...(packages ? { minimumReleaseAgeExclude: packages.map(pkg => `${pkg.name}@${pkg.version}`) } : {}),
   }, { collectionStyle: 'block' })
