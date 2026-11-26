@@ -15,6 +15,10 @@ it('adds optional Vue stories without changing library scripts, exports, files o
   const before = await h.snapshot()
   const plan = await planToolingCapability(h.root, vue)
   expect(plan.capability.id).toBe('storybook')
+  expect(plan.dependencies).toEqual(expect.arrayContaining([
+    expect.objectContaining({ name: 'vitest', version: '5.1.1' }),
+    expect.objectContaining({ name: '@vitest/browser-playwright', version: '5.1.1' }),
+  ]))
   expect(plan.status).toBe('ready')
   const workflow = YAML.parse(plan.files.find(file => file.path.startsWith('.github/workflows/'))!.after)
   expect(workflow.jobs.storybook.steps).toContainEqual(expect.objectContaining({

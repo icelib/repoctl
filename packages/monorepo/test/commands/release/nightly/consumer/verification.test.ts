@@ -25,7 +25,7 @@ it.each(['npm', 'pkg-pr-new'] as const)('installs the real %s channel with no ov
   expect(JSON.parse(await readFile(path.join(h.report.outputDirectory!, 'consumer-report.json'), 'utf8'))).toEqual(h.report.consumer)
 })
 
-it.each(['npm', 'pkg-pr-new'] as const)('limits %s consumer cooldown exceptions to the confirmed npm batch', async (provider) => {
+it.each(['npm', 'pkg-pr-new'] as const)('limits %s consumer overrides to Vitest and cooldown exceptions to the confirmed batch', async (provider) => {
   const h = await consumerFixture({ provider, manifest: { peerDependencies: { provider: 'npm:semver@7.8.5' }, peerDependenciesMeta: { provider: { optional: true } } } })
   // Source policy must not authorize unrelated fresh versions in the consumer.
   await writeFile(path.join(h.root, 'pnpm-workspace.yaml'), 'packages: []\nminimumReleaseAge: 0\nminimumReleaseAgeExclude:\n  - "*"\noverrides:\n  b: 0.0.0\n')
@@ -33,7 +33,7 @@ it.each(['npm', 'pkg-pr-new'] as const)('limits %s consumer cooldown exceptions 
     const policy = parse(readFileSync(path.join(String(settings.cwd), 'pnpm-workspace.yaml'), 'utf8'))
     expect(policy.packages).toEqual([])
     expect(policy).not.toHaveProperty('minimumReleaseAge')
-    expect(policy).not.toHaveProperty('overrides')
+    expect(policy.overrides).toEqual({ vitest: '5.1.1' })
     if (provider === 'npm') {
       expect(policy.minimumReleaseAgeExclude).toEqual(h.report.packages.map(pkg => `${pkg.name}@${pkg.version}`))
       expect(policy.minimumReleaseAgeExclude).not.toContain('@scope/a@*')

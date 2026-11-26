@@ -13,7 +13,7 @@ export function storybookFiles(settings: StorybookSettings) {
     '@storybook/addon-vitest': '10.6.7',
     [`@storybook/${framework}`]: '10.6.7',
     '@types/node': '^22.0.0',
-    '@vitest/browser-playwright': '5.1.0',
+    '@vitest/browser-playwright': '5.1.1',
     [`@vitejs/plugin-${options.framework}`]: options.framework === 'vue' ? '^6.0.11' : '^6.3.0',
     'eslint': '^10.15.0',
     'playwright': '1.65.1',
@@ -21,7 +21,7 @@ export function storybookFiles(settings: StorybookSettings) {
     'storybook': '10.6.7',
     'typescript': '^6.0.3',
     'vite': '^8.3.8',
-    'vitest': '5.1.0',
+    'vitest': '5.1.1',
     [options.framework]: runtimeRange,
     [target.name]: 'workspace:*',
   }

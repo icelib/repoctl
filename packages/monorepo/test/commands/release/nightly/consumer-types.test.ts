@@ -87,6 +87,7 @@ it.each([false, true])('uses the isolated workspace compiler for published night
       expect(manifest.devDependencies['repoctl-consumer-typescript']).toBe(`npm:typescript@${compiler.version}`)
       expect(manifest.devDependencies['repoctl-consumer-node-types']).toBe(`npm:@types/node@${nodeTypes.version}`)
       const policy = parse(readFileSync(path.join(consumerDirectory, 'pnpm-workspace.yaml'), 'utf8'))
+      expect(policy.overrides).toEqual({ vitest: '5.1.1' })
       expect(policy.minimumReleaseAgeExclude).toEqual(['snapshot-a', 'snapshot-b'].map(name => `${name}@${Object.values(manifests(name))[0]!.version}`))
       for (const name of ['snapshot-a', 'snapshot-b']) {
         const published = Object.values(manifests(name))[0]!

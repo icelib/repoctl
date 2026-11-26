@@ -216,9 +216,6 @@ catalogs:
     tsd:
       specifier: ^0.33.0
       version: 0.33.0
-    vitest:
-      specifier: ^5.1.1
-      version: 5.1.1
     yaml:
       specifier: ^2.9.1
       version: 2.9.1
@@ -626,7 +623,7 @@ importers:
         specifier: ^8.0.0
         version: 8.0.0
       vitest:
-        specifier: 'catalog:'
+        specifier: '*'
         version: 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
       yaml:
         specifier: 'catalog:'
@@ -745,7 +742,7 @@ importers:
         specifier: ^5.0.0 || ^6.0.0 || ^7.0.0
         version: 7.0.2
       vitest:
-        specifier: 'catalog:'
+        specifier: '*'
         version: 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(jsdom@31.0.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/stylelint:
