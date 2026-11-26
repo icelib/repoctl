@@ -415,7 +415,7 @@ importers:
         specifier: 'catalog:'
         version: 6.1.7
       eslint:
-        specifier: ^9.10.0 || ^10.0.0
+        specifier: '*'
         version: 10.15.0(jiti@2.7.0)(supports-color@10.2.2)
       eslint-config-flat-gitignore:
         specifier: ^2.4.0
@@ -430,7 +430,7 @@ importers:
         specifier: 2.0.1
         version: 2.0.1(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))
       eslint-plugin-pnpm:
-        specifier: ^1.9.1
+        specifier: '*'
         version: 1.9.1(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))
       eslint-plugin-react-hooks:
         specifier: ^7.1.1
@@ -445,7 +445,7 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0(@vue/compiler-sfc@3.5.46)(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))
       tailwindcss:
-        specifier: ^3.3.0 || ^4.1.17
+        specifier: '*'
         version: 4.3.5
       typescript:
         specifier: npm:@typescript/typescript6@6.0.2
@@ -512,7 +512,7 @@ importers:
         specifier: ^8.1.3
         version: 8.1.3
       '@commitlint/cli':
-        specifier: 'catalog:'
+        specifier: '*'
         version: 21.2.4(conventional-commits-parser@7.1.4)(typescript@6.0.3)
       '@icebreakers/commitlint-config':
         specifier: workspace:*
@@ -569,7 +569,7 @@ importers:
         specifier: 0.28.2
         version: 0.28.2
       eslint:
-        specifier: ^9.0.0 || ^10.0.0
+        specifier: '*'
         version: 10.15.0(jiti@2.7.0)(supports-color@10.2.2)
       git-url-parse:
         specifier: ^16.1.0
@@ -611,7 +611,7 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0(supports-color@10.2.2)
       stylelint:
-        specifier: ^17.16.0 || ^18.0.0
+        specifier: '*'
         version: 18.1.0
       tar:
         specifier: 7.5.23
@@ -727,19 +727,19 @@ importers:
   packages/repoctl:
     dependencies:
       '@commitlint/cli':
-        specifier: 'catalog:'
+        specifier: '*'
         version: 21.2.4(conventional-commits-parser@7.1.4)(typescript@7.0.2)
       '@icebreakers/monorepo':
         specifier: workspace:*
         version: link:../monorepo
       eslint:
-        specifier: ^9.0.0 || ^10.0.0
+        specifier: '*'
         version: 10.15.0(jiti@2.7.0)(supports-color@10.2.2)
       stylelint:
-        specifier: ^17.16.0 || ^18.0.0
+        specifier: '*'
         version: 18.1.0
       typescript:
-        specifier: ^5.0.0 || ^6.0.0 || ^7.0.0
+        specifier: '*'
         version: 7.0.2
       vitest:
         specifier: '*'
@@ -760,7 +760,7 @@ importers:
         specifier: ^4.0.9
         version: 4.0.9(postcss@8.5.33)
       stylelint:
-        specifier: ^18.0.0
+        specifier: '*'
         version: 18.1.0
       stylelint-config-html:
         specifier: ^2.0.0
@@ -809,10 +809,10 @@ importers:
         specifier: workspace:*
         version: link:../postcss-tailwindcss
       stylelint:
-        specifier: ^17.16.0 || ^18.0.0
+        specifier: '*'
         version: 18.1.0
       tailwindcss:
-        specifier: ^3.4.0 || ^4.0.0
+        specifier: '*'
         version: 4.3.5
 
   templates/cli:

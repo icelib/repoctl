@@ -56,7 +56,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
-    "stylelint": "^18.0.0"
+    "stylelint": "*"
   },
   "dependencies": {
     "comment-json": "catalog:",
