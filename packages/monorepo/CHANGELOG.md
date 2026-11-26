@@ -1,5 +1,12 @@
 # @icebreakers/monorepo
 
+## 6.6.9
+
+### Patch Changes
+
+- Updated dependencies:
+  - @icebreakers/monorepo-templates@3.2.10
+
 ## 6.6.8
 
 ### Patch Changes
