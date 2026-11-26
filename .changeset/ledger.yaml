@@ -441,6 +441,10 @@
     - light-knives-tap
     - old-spoons-refuse
     - vast-eagles-chew
+"@icebreakers/monorepo-templates@3.2.10":
+  dir: packages/monorepo-templates
+  intents:
+    - friendly-sheep-rest
 "@icebreakers/monorepo-templates@3.2.2":
   dir: packages/monorepo-templates
   intents:
